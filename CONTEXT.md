@@ -9,6 +9,14 @@ _Avoid_: 以“4 bit”“低精度”代替完整格式
 
 **精度族（Precision Family）**：用于分析的格式分组，如 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4。分组不表示组内硬件成本或数值行为相同。
 
+**H/Q/E 容量（HQE Capacity）**：H=half、Q=quarter、E=eighth 家族每次接收可处理的实际 K 元素数，例如 H16Q32E64。Q 包含 FP8/FP6，E 包含 MX/NV/HiF4；共享模式的三项容量不能同时相加。
+
+**PE（Scaled Dot-Product PE）**：完成带 scale 的多维 A·B 并输出未舍入 dot 的计算单元。旧 SubPE/PEGroup 在其内部展开，不再作为计算层级。
+
+**MN-PE（Independent Output PE）**：一个 PE 加独立 C 累加、规格化/舍入和 FP32 D 输出；M/N 方向的实例复制属于阵列。
+
+**K-PE（K-Reduction PE）**：内部 1–4 个 PE 在 K 方向规约，共享一个 C 和最终 D 处理；HQE 名称为对应模式的 K 容量合计，完整物理布局另记录。
+
 **硬件实现（Hardware Implementation）**：具有确定资源组织和时序行为的物理计算单元设计。一个实现可以支持一个或多个数值模式。
 
 **运行模式（Operating Mode）**：一个硬件实现在一次计算期间采用的数值与资源使用方式。共享物理资源的互斥模式不能同时贡献其各自峰值算力。

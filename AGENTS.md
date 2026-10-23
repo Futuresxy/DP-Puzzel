@@ -2,7 +2,7 @@
 
 本文件适用于整个仓库。目标是构建面向 AI 芯片张量计算的多精度算力配比 DSE 系统，对 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 等设计选择的面积、功耗和负载延迟进行成本收益权衡。
 
-**当前阶段只定义项目、职责、数据流和开发规范；不编写硬件/模型实现代码、不导出 RTL、不执行仿真或 EDA 分析。** 用户另行授权准备 paper 的 LaTeX 模板和写作 skill；可下载并校验这些资产。后续获得实施指示后再逐阶段开发。下文的构建、测试和分析要求属于未来实施契约，不表示工具已经存在。
+**当前阶段已获授权迁移并重构 PE 的 Chisel 源码及逐文件 spec，供用户审查，并提供集中参数和配置驱动的 RTL 生成。** 可做 Scala 编译、Chisel elaboration 和导出结构检查；Verilog/SystemVerilog 数值 testbench 和 EDA 在后续阶段完善。不得把本轮源码审查/展开检查称为 RTL 精度验证通过。ratio_dse 仍处于定义阶段，paper 保持模板与写作准备。
 
 先阅读 `README.md`、`CONTEXT.md` 和 `docs/architecture.md`。`hw` 只负责单阵列/单核心；`ratio_dse` 负责多核心、多阵列芯片级建模。未定案事项记录在 `docs/roadmap.md`，不能用 INT4/INT8 示例代替目标浮点格式。
 
@@ -10,6 +10,7 @@
 
 - `hw/spec/`：接口、数值语义、参数约束、数据流、流水级、周期定义和验收标准。
 - `hw/chisel_src/`：可综合 Chisel，按 package 组织；一个硬件 Module 一个同名 Scala 文件。
+  子目录为 `config/`、`common/`、`pe/`、`core/`、`elaborate/`，分别对应参数、基础算术/接口、PE、MN/K 顶层、生成工具；`hw/spec/` 镜像这些路径。
 - `hw/configs/`：可复现的硬件参数配置。
 - `hw/rtl/`：全仓库唯一的生成 RTL 存储位置。
 - `hw/test/`：参考模型、测试驱动、回归；禁止在此保留另一份设计 RTL。
@@ -31,9 +32,13 @@
 3. 硬件端口、寄存器、连线用 `lower_snake_case`。端口用 `in_`、`out_` 前缀，寄存器用 `_q`，组合下一状态用 `_d`，使能用 `_en`，低有效信号用 `_n`。时钟/复位保留 Chisel 默认 `clock`/`reset`；异步复位必须由 spec 明确要求。
 4. 实例名表达功能，例如 `dot_product`、`input_buffer`；避免 `tmp1`、`data2` 等无语义名称。顶层 `desiredName` 稳定，与导出映射一致。
 5. 使用不可变 `case class` 集中参数化，使用 `require` 检查合法范围、整除关系和位宽约束。不得把测试配置写死在设计里，不增加尚无需求的参数。
+   当前集中入口为 `hw/chisel_src/config/Parameters.scala`，可调参数由 `hw/configs/*.json` 传入，运行生成命令时选择配置即可改变结构。固定流水/位宽合同与可调参数明确分开，禁止通过隐式环境变量改变电路。
 6. 位宽、signed/unsigned、扩展、截断、舍入、饱和和溢出行为必须显式定义。乘法/累加保留所需精度，禁止依赖隐式截断获得“正确结果”。单元素和非二次幂参数必须有明确行为。
 7. 每个 Module 注释说明功能、接口协议、延迟、吞吐、复位和数值语义；关键逻辑注释说明设计理由、位宽推导或时序取舍，不逐句翻译代码。
 8. 组合逻辑完整赋值，避免锁存器、组合环和多驱动；禁止以 `DontCare` 掩盖未实现功能。提交的模块必须具备完整可运行实现，未实现方案只放在 spec。
+9. 修改 Chisel 前读取 [.skill/chisel-design/SKILL.md](.skill/chisel-design/SKILL.md)。每个 `hw/chisel_src/<relative>.scala` 必须对应 `hw/spec/<relative>.md`，包括参数、Bundle、算术辅助和展开入口；源码与 spec 在同一 PR 更新。spec 解释架构、设计理由、位宽/二进制小数点、共享资源、接口、周期、限制和待验收内容，不能只有文件名或函数列表。
+10. 计算架构只有 PE 与 MN-PE/K-PE 两层：PE 完成带 scale 的向量 A·B；MN-PE 是一个 PE 加独立 C/D 路径；K-PE 在内部组合 1–4 个 PE，共享一次 C 累加和 D 处理。旧 SubPE/PEGroup 仅可作为 PE 内联算术区域，不能恢复为计算层级。
+11. H/Q/E 分别代表 half、quarter、eighth 家族，数字为该模式实际 K 元素数。例如 `H16Q32E64`；Q 包含 8/6-bit，E 包含 MX/NV/HiF4。RTL 合法名称使用 `MN_PE_H…Q…E…`、`K_PE_H…Q…E…`，K 顶层数字为内部各 PE 对应容量之和；MN 顶层只有一个 PE，不加并行 PE 数后缀。内部标签使用 `sub_H…Q…E…`、`group_H…Q…E…`。完整实例布局仍需记录，单凭总容量无法唯一还原架构。
 
 ## 3. 面积、时序与功耗
 

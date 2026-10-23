@@ -4,7 +4,7 @@
 
 系统应支持两类设计决策：在已有架构的面积余量内增配计算资源，以及在下一代芯片的面积/功耗预算内重新分配张量计算资源。结果应给出可行配置、成本与收益分解及 Pareto 前沿，而不是预设一种“最佳比例”。
 
-**当前状态：项目定义、文档骨架和论文写作准备。没有 Chisel/Python/RTL 实现、可执行硬件构建入口或实验结果。** DC 综合和功耗分析需要在本机挂载的 EDA 环境中执行，当前会话不能直接运行。已准备 [paper 入口](paper/README.md)、IEEEtran 模板及学术润色 skill。
+**当前状态：PE/MN-PE/K-PE 的 Chisel 迁移与源码审查，已提供集中参数、配置驱动的 RTL 生成和逐文件 spec。尚未完成 RTL 数值验证、PPA 或 ratio_dse 实现。** 从 [迁移说明](hw/spec/pe-migration.md)、[参数配置](hw/configs/README.md)、[源码导航](hw/chisel_src/README.md) 开始。DC/功耗需要挂载 EDA 环境，当前不运行。论文模板和写作 skill 保留在 [paper](paper/README.md)。
 
 ## 两个核心部分
 
@@ -28,8 +28,8 @@
     │   └── roadmap.md         实施顺序与待定事项
     ├── hw/
     │   ├── spec/              数值语义、接口、周期、验收标准
-    │   ├── configs/           后续硬件参数集
-    │   ├── chisel_src/        后续单阵列/单核硬件
+    │   ├── configs/           PE 与 MN/K 顶层参数文件
+    │   ├── chisel_src/        单阵列/单核硬件，当前为 PE 迁移源码
     │   ├── rtl/               唯一生成 RTL 存储位置
     │   ├── test/              Verilog/SystemVerilog 验证职责
     │   ├── dc_syn/            挂载 EDA 中的面积、时序分析

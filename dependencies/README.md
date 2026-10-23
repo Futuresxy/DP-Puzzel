@@ -6,4 +6,6 @@ CACTI 等项目作为依赖接入时，仓库只保存来源、固定版本、�
 
 实施阶段的版本清单应记录：name、upstream URL、完整 commit 或带 hash 的 release、license、用途、获取方式、构建说明、补丁及输入输出单位。禁止正式实验依赖浮动 main/master。第三方构建产物放在 .deps 或 run 目录。
 
-当前没有选定依赖版本、拉取脚本或 clone 操作。接入 CACTI 前应明确建模对象、工艺适用范围、容量/端口/带宽与结果误差；缓存/SRAM 模型不能自动代替 HBM、全部互连或整芯片成本。
+当前没有引入 CACTI 等建模依赖；接入前应明确建模对象、工艺适用范围、容量/端口/带宽与结果误差。缓存/SRAM 模型不能自动代替 HBM、全部互连或整芯片成本。
+
+Chisel 构建使用 Maven 发布依赖，由 Mill/Coursier 获取并缓存，源码没有 vendoring：Mill 0.11.8、Scala 2.13.12、Chisel/plugin 6.4.0、os-lib 0.9.1、ujson 3.1.0，具体坐标在 [hw/build.sc](../hw/build.sc)；RTL 生成器要求 firtool 1.62.0。版本与有效工具字符串随导出 manifest 保存。本机已有缓存，不从旧工程复制构建产物或 FPU 依赖。
