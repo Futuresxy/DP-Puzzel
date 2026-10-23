@@ -6,6 +6,8 @@
 
 **当前状态：PE/MN-PE/K-PE 的 Chisel 迁移与源码审查，已提供集中参数、配置驱动的 RTL 生成和逐文件 spec。尚未完成 RTL 数值验证、PPA 或 ratio_dse 实现。** 从 [迁移说明](hw/spec/pe-migration.md)、[参数配置](hw/configs/README.md)、[源码导航](hw/chisel_src/README.md) 开始。DC/功耗需要挂载 EDA 环境，当前不运行。论文模板和写作 skill 保留在 [paper](paper/README.md)。
 
+阵列扩展目前只做 [调研与方案讨论](hw/spec/array-design-discussion.md)：2×2 group 组内广播/组间脉动、L0 A/B/C、逻辑 M8N32 指令及 GEMM 调度。物理阵列规模参数化；方案待用户审核，尚未新增阵列代码。
+
 ## 两个核心部分
 
 | 部分 | 范围 | 对外输出 |
