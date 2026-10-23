@@ -8,6 +8,8 @@
 
 阵列扩展目前只做 [调研与方案讨论](hw/spec/array-design-discussion.md)：2×2 group 组内广播/组间脉动、L0 A/B/C、逻辑 M8N32 指令及 GEMM 调度。物理阵列规模参数化；方案待用户审核，尚未新增阵列代码。
 
+进一步的 [OS 内部调度调研](hw/spec/os-array-scheduling-research.md) 聚焦一条指令如何拆成物理 tile，比较 L0C 反馈与 group 本地累加，并给出论文、逆向研究和公开 RTL 的依据。
+
 ## 两个核心部分
 
 | 部分 | 范围 | 对外输出 |

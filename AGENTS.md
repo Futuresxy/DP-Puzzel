@@ -6,6 +6,8 @@
 
 **阵列扩展当前仅获授权调研和方案讨论，用户审核确定方案前不写阵列代码。** 已确认采用 2×2 group 组内广播、组间脉动；M8N32 是逻辑指令输出块，物理阵列参数化；FP4 目标 K64/96/128/192/256，FP8 目标 K32/64/96/128。控制、L0 和 layout 候选见 [讨论稿](hw/spec/array-design-discussion.md)，其中建议不等于已批准的实现合同。
 
+阵列调研须覆盖逻辑指令以下的物理 tile 切分、preload/compute/drain、本地 accumulator 与累加 RAW。区分 L0 层输出驻留和 PE/group 内 OS；文献已实现机制、逆向推断与本项目建议分别标记。当前候选与证据见 [OS 调度调研](hw/spec/os-array-scheduling-research.md)。
+
 先阅读 `README.md`、`CONTEXT.md` 和 `docs/architecture.md`。`hw` 只负责单阵列/单核心；`ratio_dse` 负责多核心、多阵列芯片级建模。未定案事项记录在 `docs/roadmap.md`，不能用 INT4/INT8 示例代替目标浮点格式。
 
 ## 1. 目录与职责
