@@ -1,34 +1,91 @@
 # Ascend Cube：计算分形、矩阵指令与软件 K 切分
 
-调研日期：2026-10-24。状态：**资料核验与方案讨论，未批准阵列实现**。本轮没有运行 Ascend 编译器、反汇编、仿真器或设备实验；未新增 Chisel/RTL/testbench。主要对照 Atlas A2/A3 的 FP16 路径，不将新一代 Ascend 950 的布局或计算能力混入该例。
+调研日期：2026-10-24。状态：**资料核验与方案讨论，未批准阵列实现**。本轮阅读了官方机器码解码/插桩源码、算子库源码镜像和第三方公开的指令级 simulator 工件；没有自行运行 Ascend 编译器、反汇编、仿真器或设备实验。未新增 Chisel/RTL/testbench。主要对照 A2/C220 的 FP16 路径，不将新一代 Ascend 950 的布局或计算能力混入该例。
 
 ## 1. 结论与证据边界
 
-Ascend FP16 的 16×16×16 描述基本 Cube 计算粒度，**不是一条 MMAD 的固定形状上限**。低阶 `Mmad`/`asc_mmad`/`mad` 可描述更大的 M/N/K。在合法的 L0 容量、布局、地址与同步条件下，128×128×128 可以作为一个矩阵指令块；软件不必发出 512 条 16×16×16 指令。
+Ascend FP16 的 16×16×16 描述基本 Cube 计算粒度，**不是一条 MMAD 的固定形状上限**。这次追查到机器指令层：官方 A2 解码表识别 `MMAD f16_to_f32`，其 M/K/N 来自配置寄存器的三个 12-bit 字段。公开 C220 仿真工件中，FP16 M32N32K32 对应一次 MMAD 动态执行，直接排除了“底层只能 K16”及“底层只能固定 K128”的说法。
+
+指令接口采用可配置 M/N/K，而不是只枚举一个固定的 K128。K128 属于可描述的尺寸，是否能在给定 M/N 下执行还受 L0 容量、布局、地址和同步约束；本轮没有重跑 K64/K128/K256 的编译和执行对照。下面将源码合同、机器编码、已发布指令记录和数学推演分别标明。
 
 因此需要分开三个层次：
 
 | 层次 | 表达内容 | 谁组织切分 |
 | --- | --- | --- |
 | 完整 GEMM / 高阶 Matmul | 任意更大矩阵、多核分配、片上缓存分块 | Kernel、库和编译器 |
-| 低阶 MMAD | 已在 L0 的 M×K 与 K×N，相加到 L0C 的 M×N | 软件提供尺寸/地址，矩阵执行硬件完成该块 |
+| 机器 MMAD | 已在 L0 的 M×K 与 K×N，相加到 L0C 的 M×N | 软件配置尺寸/地址，矩阵执行硬件完成该块 |
 | FP16 Cube 基本计算 | 16×16×16 的算术工作量 | MMAD 以下的硬件执行 |
 
 “单条矩阵指令包含 K 方向多个计算分形”与“软件沿 K 发多条矩阵指令”可以同时成立。低阶指令范围、物理计算粒度和完整 GEMM K 不应使用同一个 K 名称。
 
-## 2. 为什么不是把高级 API 错当作一条指令
+## 2. 从算子库追到机器 MMAD
 
-官方 `asc-devkit` 把 Basic API 定义为基于单指令抽象的接口，SIMD C API 定义为指令级透明映射，并与封装完整算法的高阶 API 分开。[官方 API 分层](https://gitcode.com/cann/asc-devkit)
+API 接收可变 K，不能单独证明它只发一条计算指令。以下证据分别检查调用路径、机器 opcode、配置位段和动态指令次数；不以 `Matmul::Iterate` 或 C++ 函数调用次数代替机器指令次数。
 
-`Mmad` 的参数表允许 m/n/k 分别取 0..4095，零尺寸不执行；这只是参数编码范围，**不保证任意三元组都能放入实际 L0**。官方还以 FP16 M30K70N40 说明 A/B/C 分别覆盖 2×5、5×3、2×3 个 16×16 分形，表明其计算范围并不局限于一个分形。[Mmad 参数与尾部示例](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/910/API/ascendcopapi/docs/en/api/SIMD-API/basic_api/cube_compute_ISASI/mmad_compute/Mmad.md)
+### 2.1 算子库最底层如何调用
 
-更低层的 `asc_mmad` 在架构 2201 原型中直接接收 `m,k,n`；官方 CCE intrinsic `mad` 也直接描述 A(m×k)、B(k×n)、C(m×n)。这些资料与单指令 API 分层相互印证，不能仅以高阶 `Matmul::Iterate` 的形状替代。[asc_mmad 原型](https://asc.gitcode.com/api/SIMD-API/c_api/cube_compute/mmad_compute/asc_mmad.html)、[CCE mad](https://www.hiascend.com/document/detail/zh/canncommercial/850/API/cceintrinsicapi/cceapi_0063.html)
+阅读 `asc-devkit` 的 C220 路径，调用关系为：
 
-这里核实的是公开的指令接口合同；没有自行检查 A2/A3 编译产物，不能宣称所有版本、类型和包装调用都恰好编译成同样数量的机器指令。
+```text
+AscendC::Mmad(dst, a, b, params)
+  → MmadImpl：检查并取得 L0C/L0A/L0B 物理地址
+  → MmadCal：选择类型、形成 C 初始化标志
+  → mad(c, a, b, m, k, n, 控制标志...)
+```
+
+这是对真实源码的精简表示，不是可直接编译的函数原型。`__NPU_ARCH__ == 2201` 选择 `dav_c220`；FP16→FP32 分支把原始 `m/k/n` 传给一次 `mad`，这几层没有把 K 除以16再循环调用 `mad`。地址空间 `__cc__`、`__ca__`、`__cb__` 分别对应 C、A、B 的专用片上存储。源码保留初始化/累加与 UnitFlag 等控制参数，不能只看三个尺寸而忽略它们。
+
+本次可访问的是 `hicann/asc-devkit` 源码镜像，固定 commit `56500ea0dc219380f50f4a17ce73ef5264f830fc`，不是声称在官方站点重新编译了该库：[Mmad 入口](https://github.com/hicann/asc-devkit/blob/56500ea0dc219380f50f4a17ce73ef5264f830fc/impl/basic_api/kernel_operator_mm_intf_impl.h#L444)、[MmadImpl 与地址提取](https://github.com/hicann/asc-devkit/blob/56500ea0dc219380f50f4a17ce73ef5264f830fc/impl/basic_api/kernel_operator_mm_base_impl.h#L486)、[C220 MmadCal 的 mad 调用](https://github.com/hicann/asc-devkit/blob/56500ea0dc219380f50f4a17ce73ef5264f830fc/impl/basic_api/dav_c220/kernel_operator_mm_impl.h#L367)。镜像版本与下面 CANN 8.5.0 的 trace 不是同一次构建，不能混称为完整重建的编译链。
+
+更低层的 CANN 8.1.RC1 编译器头文件也明确将这一路命名为 v220 MMAD instruction，描述 XT/XD 的寄存器控制；其中 bias wrapper 只拼接地址，然后调用 `mad` 的配置字或 m/k/n 重载。本次没有取得编译器后端 lowering 源码，不虚构其 builtin 符号或内部微操作。[SDK 编译器头文件镜像，固定版本](https://github.com/leideng/CANN-8.1.RC1/blob/551ed27c29284929bbdc2239e929ddfedfdf0b8b/Ascend/ascend-toolkit/8.1.RC1/aarch64-linux/ccec_compiler/lib/clang/15.0.5/include/__clang_cce_aicore_functions.h#L2285)
+
+### 2.2 确认它是机器指令，以及 M/N/K 的位置
+
+官方 `Ascend/msopprof` 从 ELF `.text` 读取机器码，给 910B/910_93 系列选择 A2 表，并按 mask 匹配指令类型。Cube mask 为 `0xefc00001`，其中解码键 `0xe0c00000` 对应 `MMAD f16_to_f32`。这是机器 opcode 分类，不是源代码 API 名称；解码键也不是上述例子完整的机器指令字。[ELF 解码流程](https://github.com/Ascend/msopprof/blob/a52c8694979016be703006ec242901519bef31d8/csrc/op_profiling/instr_encoding/instr_encoding.cpp)、[A2 Cube opcode 表](https://github.com/Ascend/msopprof/blob/a52c8694979016be703006ec242901519bef31d8/csrc/op_profiling/instr_encoding/encodingA2/CubeInstrTableA2.h#L29)、[解码 mask](https://github.com/Ascend/msopprof/blob/a52c8694979016be703006ec242901519bef31d8/csrc/op_profiling/instr_encoding/instr_encoding.h)
+
+官方 `Ascend/mssanitizer` 为旧代 `mad` 提供 FP16→FP32 插桩入口，并用 `ParseMadConfig` 读取配置：
+
+| 参数 | 64-bit config / XT 中的位段 |
+| --- | --- |
+| M | `[11:0]` |
+| K | `[23:12]` |
+| N | `[35:24]` |
+| 初始化、累加来源等控制 | 更高位，具体定义见源码 |
+
+所以，K 是传入矩阵计算指令的长度参数，不是 opcode 中固定为16或128的常量。12-bit 字段说明编码范围；**不能仅凭字段宽度断言任意1..4095及任意 M/N 组合都合法、都装得进 L0**。[FP16 mad 插桩入口](https://github.com/Ascend/mssanitizer/blob/78037658773f27796624148ce7680ccb9e24ae66/csrc/plugin/ccec/calc_instructions/mad.cpp#L79)、[M/K/N 位段定义](https://github.com/Ascend/mssanitizer/blob/78037658773f27796624148ce7680ccb9e24ae66/csrc/plugin/record_calc_instructions.h#L1006)
+
+该插桩的访存检查另按 FP16 `k0=256/16=16`、`ceil(K/16)` 计算分形数。这同时保留了“指令长度 K”和“存储分形 K16”两个量；访存检查源码不能用来断言实际逐拍执行顺序。[分形访存范围计算](https://github.com/Ascend/mssanitizer/blob/78037658773f27796624148ce7680ccb9e24ae66/csrc/plugin/record_calc_instructions.h#L1034)
+
+### 2.3 一个实际发布的例子：M32N32K32 只执行一次 MMAD
+
+第三方仓库 `rainbay001-dotcom/triton` 的公开工件，固定 commit `0ebd8c7037f2ace93e7bddd01bc3d20e5215cf5b`，包含 FP16 A/B、FP32 C 的 M32N32K32 kernel 及 simulator 输出。流程为 GM → L1 → L0A/L0B → MMAD → L0C → Fixpipe → GM；整个 kernel 还有搬运、标量配置和同步指令，不能说整个 kernel 只有一条指令。[尺寸设置](https://github.com/rainbay001-dotcom/triton/blob/0ebd8c7037f2ace93e7bddd01bc3d20e5215cf5b/kernels/mmad_sample/mmad_custom_cube_only.h#L166)、[Compute](https://github.com/rainbay001-dotcom/triton/blob/0ebd8c7037f2ace93e7bddd01bc3d20e5215cf5b/kernels/mmad_sample/mmad_custom_cube_only.h#L125)
+
+`core0.cubecore0_instr_exe.csv` 只有一条 MMAD 记录，关键字段摘录如下；省略周期数据，避免将第三方 simulator 数字用作本项目硬件性能证据：
+
+```text
+instr      = MMAD
+addr       = 282122692 = 0x10d0d9c4
+pipe       = CUBE
+call_count = 1
+dtype      = F16F32
+XT         = 0x8000000020020020
+```
+
+按官方位段解码，`M=32, K=32, N=32`。同一工件的 `trace.json` 也只有一个 MMAD 事件，PC/XT 一致，源码映射经过 CANN 8.5.0 的 `dav_c220/kernel_operator_mm_impl.h:333` 到示例 `Compute` 的第134行。因此该例是**一次机器 MMAD 覆盖 K32**，没有在软件中拆成两次 K16 MMAD。[原始指令记录](https://github.com/rainbay001-dotcom/triton/blob/0ebd8c7037f2ace93e7bddd01bc3d20e5215cf5b/profiling/mmad_sim_20260411_050738/simulator/core0.cubecore0/core0.cubecore0_instr_exe.csv#L120)、[原始 trace](https://github.com/rainbay001-dotcom/triton/blob/0ebd8c7037f2ace93e7bddd01bc3d20e5215cf5b/profiling/mmad_sim_20260411_050738/simulator/core0.cubecore0/trace.json)
+
+这里的 `call_count=1` 是机器指令执行次数。官方工具文档将 `*_instr_exe.csv` 定义为指令级数据，`addr` 是 PC；另一个 `*_code_exe.csv` 才按源代码行归集指令次数，二者不能混用。[官方记录格式](https://github.com/Ascend/msopprof/blob/a52c8694979016be703006ec242901519bef31d8/docs/en/user_guide/msopprof_simulator_performance_data.md#L53)
+
+**证据限制：**此工件不是本项目重跑结果，没有拿到该样例的 ELF/机器码 dump；能确认 CANN 8.5.0 / dav_c220 路径，不能确定具体 SKU，也不能据此给出真实硬件时延。可变尺寸的编码、库调用与单条 K32 记录相互支持；完整合法形状集合及内部微操作序列仍需厂商合同或受控实验。
+
+### 2.4 API 文档只作为补充合同
+
+`Mmad` 文档允许 m/n/k 分别取0..4095，零尺寸不执行，并以 FP16 M30K70N40 说明尾部分形。`asc_mmad` 在架构2201也直接接收 m/k/n；这些是接口合同的补充证据，不代替上述机器层检查。[Mmad 参数与尾部示例](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/910/API/ascendcopapi/docs/en/api/SIMD-API/basic_api/cube_compute_ISASI/mmad_compute/Mmad.md)、[asc_mmad 原型](https://asc.gitcode.com/api/SIMD-API/c_api/cube_compute/mmad_compute/asc_mmad.html)
+
+更低层的 CCE intrinsic `mad` 文档同样列出 FP16→FP32 的 m/k/n 原型及0..4095元素的参数范围；任一维为零视为 NOP。因此 K64/K128/K256 在该底层接口允许的参数范围内，完整形状仍要满足存储与其他约束。检索时读取到了官方参数表，但该旧版链接直接打开有时会跳转到文档首页；机器层结论还由上述固定版本源码和指令记录独立支持。[CCE mad 低层定义](https://www.hiascend.com/document/detail/zh/canncommercial/850/API/cceintrinsicapi/cceapi_0063.html)
 
 ## 3. M128N128K128 的分解
 
-先考虑一份单核低阶矩阵命令，A/B 为 FP16、C/累加结果为 FP32。若数据及其他同时存活的 buffer 满足该设备的 L0 约束，可以选择 `m=128,n=128,k=128`：
+以下是接口合同下的单核矩阵命令分析，不是本轮获得的 K128 指令 trace。A/B 为 FP16、C/累加结果为 FP32；若数据及其他同时存活的 buffer 满足该设备的 L0 约束，可以选择 `m=128,n=128,k=128`：
 
 - A 的有效载荷：128×128×2 = 32 KiB。
 - B 的有效载荷：128×128×2 = 32 KiB。
@@ -82,7 +139,7 @@ UnitFlag 在 L0C 以512 B内存块管理读写状态，使计算与结果搬出�
 | 大GEMM的K | 软件组织多条MMA | 软件组织多条较大MMAD | 软件组织多条原生指令 |
 | 指令内时间K步骤 | 不能仅由PTX形状判定 | 大于K16的矩阵指令需硬件完成多个基本计算分形 | 候选约束为不重复完整PE+C/D路径来拼K |
 
-NVIDIA的16/32/64不是跨所有指令族的通用常数；CUTLASS的软件K循环与PTX指令内部实现也应分开。[PTX](https://docs.nvidia.com/cuda/parallel-thread-execution/)、[CUTLASS GEMM分层](https://docs.nvidia.com/cutlass/latest/media/docs/cpp/gemm_api_3x.html)
+NVIDIA的16/32/64不是跨所有指令族的通用常数；CUTLASS的软件K循环与PTX指令内部实现也应分开。PTX 本身是虚拟 ISA，严格对比机器指令边界时还要检查目标架构的 SASS，不能仅凭一条 PTX 写法保证唯一的机器指令映射。[PTX](https://docs.nvidia.com/cuda/parallel-thread-execution/)、[CUTLASS GEMM分层](https://docs.nvidia.com/cutlass/latest/media/docs/cpp/gemm_api_3x.html)
 
 本项目目前应保留两个可讨论的接口选择：
 
