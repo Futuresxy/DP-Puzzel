@@ -4,6 +4,8 @@
 
 定义边界、职责、数据契约和工作流，不编写硬件/模型。按用户追加授权准备 paper 模板/写作 skill，以及 DC 自动化/统一 RTL 门禁/项目 skill；仅做软件检查，不启动综合或仿真、不代写研究结果。现有 .codex/.agents 等保持不变，新 skill 统一放 .skill/<name>/SKILL.md。
 
+另有用户明确授权的 Bf16SignPipe 最小 RTL 验收示例，可导出并运行真实 SV 回归和挂载 EDA 中的 DC；不扩展到 MAC/阵列/模型。对应记录须明确例子范围，不能冒充 DSE characterization。
+
 ## Git 与 PR
 
 远程目标：git@github.com:Futuresxy/DP-Puzzel.git。

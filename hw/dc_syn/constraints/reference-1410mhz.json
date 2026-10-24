@@ -15,10 +15,15 @@
   "input_transition_ns": 0.10,
   "output_load_pf": 0.01,
   "timing_max_paths": 50,
-  "clock_gating": false,
+  "clock_gating": true,
   "clock_gating_min_bitwidth": 4,
   "optimize_area": true,
   "hold_fix": true,
-  "preserve_hierarchy": true,
+  "hierarchy": {
+    "keep_modules": ["PE*", "Pe*", "pe_*", "SubPE*", "ProcessingElement*"],
+    "expand_modules": [],
+    "expand_instances": [],
+    "expand_depth": 0
+  },
   "write_sdf": false
 }

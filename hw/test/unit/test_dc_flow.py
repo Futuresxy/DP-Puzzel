@@ -7,15 +7,21 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import time
+from datetime import datetime, timezone
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "hw/dc_syn/scripts"))
-from rtl_gate import sha256, verify_export
+from rtl_gate import rtl_fingerprint, verify_export
 from report_dc import timing
-from run_dc import tcl_string
+from run_dc import tcl_string, default_run_id
+sys.path.insert(0, str(ROOT / "hw/test/scripts"))
+import bf16_sign_pipe as example
 
 EXPORT = "Fixture__test__20261024T010203000000Z__0123456789ab"
+RUN = "dc_Fixture_10240001"
 
 # This process fabricates parser fixtures ONLY inside TemporaryDirectory. It is
 # not a synthesis implementation, numerical model, or project measurement.
@@ -28,7 +34,7 @@ if os.environ.get('DC_FIXTURE_MODE') == 'empty':
 for name in ['reports','netlist','work/WORK','work/alib']:
     (r/name).mkdir(parents=True,exist_ok=True)
 (r/'work/WORK/temp').write_text('disposable test bytes')
-for name in ['units.rpt','check_design.rpt','area_hierarchy.rpt','constraints.rpt','reference.rpt','cell_usage.tsv']:
+for name in ['units.rpt','check_design.rpt','area_hierarchy.rpt','constraints.rpt','reference.rpt','cell_usage.tsv','clock_gating.rpt']:
     (r/'reports'/name).write_text('TEST FIXTURE ONLY')
 (r/'reports/area.rpt').write_text('  testlib (File: /fixture/testlib.db)\\nTotal cell area: 10\\nCombinational area: 6\\nNoncombinational area: 4\\n')
 (r/'reports/quality.tsv').write_text('design_check_pass\\t1\\nunresolved_leaf_count\\t0\\nclock_count\\t1\\n')
@@ -72,7 +78,7 @@ class FlowTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.dc = self.root / "hw/dc_syn"
         for name in ("scripts/rtl_gate.py", "hw/dc_syn/scripts/run_dc.py", "hw/dc_syn/scripts/report_dc.py",
-                     "hw/dc_syn/templates/DC.tcl", "hw/dc_syn/templates/report.md.in"):
+                     "hw/dc_syn/templates/DC.tcl", "hw/dc_syn/templates/report.md.in", "hw/dc_syn/templates/hierarchy.tcl"):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(str(ROOT / name), str(target))
@@ -88,17 +94,19 @@ class FlowTests(unittest.TestCase):
             p = self.root / name
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text("SOFTWARE FIXTURE ONLY " + role)
-            self.inputs.append({"path": name, "sha256": sha256(p), "role": role})
-        payload = {"src/Fixture.sv": sha256(self.export / "src/Fixture.sv")}
-        self.evidence = {"schema_version": 1, "status": "passed", "export_id": EXPORT,
+            self.inputs.append({"path": name, "role": role})
+        fingerprint = rtl_fingerprint(self.export)
+        self.evidence = {"schema_version": 2, "status": "passed", "export_id": EXPORT,
                          "verification_id": "SOFTWARE-FIXTURE-NOT-A-REAL-PASS", "method": "systemverilog_testbench",
-                         "rtl_sha256": payload, "files_f_sha256": sha256(self.export / "files.f"),
+                         "rtl_fingerprint": fingerprint,
+                         "finished_utc": datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ"),
                          "numerical_pass": True, "protocol_pass": True, "command": ["fixture"],
                          "numeric_semantics": "fixture", "coverage_matrix": ["fixture"], "seeds": [1],
                          "simulator": {"version": "fixture"}, "inputs": self.inputs}
-        self.manifest = {"schema_version": 1, "export_id": EXPORT, "status": "passed", "top": "Fixture",
+        self.manifest = {"schema_version": 2, "export_id": EXPORT, "status": "passed", "top": "Fixture",
+                         "rtl_fingerprint": fingerprint,
                          "module_map": {"Fixture": {"chisel_class": "fixture.Fixture", "source_file": "fixture.scala"}},
-                         "files": [{"path": n, "sha256": h, "role": "source"} for n, h in payload.items()]}
+                         "files": [{"path": "src/Fixture.sv", "role": "source"}]}
         self.refresh_receipt()
         self.tool = self.root / "fake tool [no EDA]"
         self.tool.write_text(FAKE_TOOL.replace("#!/usr/bin/env python3", "#!" + sys.executable))
@@ -121,8 +129,7 @@ class FlowTests(unittest.TestCase):
 
     def refresh_receipt(self):
         dump(self.evidence_path, self.evidence)
-        self.manifest["verification"] = {"path": "hw/test/runs/fixture/verification.json",
-                                         "sha256": sha256(self.evidence_path)}
+        self.manifest["verification"] = {"path": "hw/test/runs/fixture/verification.json"}
         dump(self.export / "manifest.json", self.manifest)
 
     def cli(self, *args, **kwargs):
@@ -137,9 +144,9 @@ class FlowTests(unittest.TestCase):
                 "--constraints", str(self.constraints), "--machine", str(self.machine)]
 
     def prepare(self):
-        result = self.cli("prepare", *self.selection(), "--run-id", "fixture-run")
+        result = self.cli("prepare", *self.selection(), "--run-id", RUN)
         self.assertEqual(result.returncode, 0, result.stderr.decode())
-        return self.dc / "runs/fixture-run"
+        return self.dc / "runs" / RUN
 
     def completed(self):
         run = self.prepare()
@@ -156,17 +163,94 @@ class FlowTests(unittest.TestCase):
         self.assertFalse((run / "summary.json").exists())
         self.assertEqual(self.cli("prepare", *self.selection(), "--run-id", run.name).returncode, 2)
 
+    def test_example_export_writes_one_directory_fingerprint_without_running_tools(self):
+        config = json.loads((ROOT / example.CONFIG).read_text())
+        paths = [example.CONFIG, example.TEST_CONFIG, config["source_template"]]
+        for name in paths:
+            target = self.root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(str(ROOT / name), str(target))
+        with patch.object(example, "ROOT", self.root), patch.object(example, "command_output", return_value="fixture"), patch("builtins.print"):
+            export_id = example.export_example()
+        export = self.root / "hw/rtl" / export_id
+        manifest = json.loads((export / "manifest.json").read_text())
+        self.assertEqual(manifest["status"], "generated")
+        self.assertEqual(manifest["rtl_fingerprint"], rtl_fingerprint(export))
+        self.assertNotIn("sha256", manifest["files"][0])
+        self.assertNotIn("verification", manifest)
+
+    def test_minute_names_use_local_time_and_match_top(self):
+        when = datetime(2026, 10, 24, 10, 1, tzinfo=timezone.utc)
+        self.assertEqual(default_run_id("Fixture", when), "dc_Fixture_10241801")
+        self.assertEqual(self.cli("prepare", *self.selection(), "--run-id", "dc_Wrong_10241801").returncode, 2)
+        self.assertEqual(self.cli("prepare", *self.selection(), "--run-id", "dc_Fixture_Extra_10241801").returncode, 2)
+        self.assertEqual(self.cli("prepare", *self.selection(), "--run-id", "dc_Fixture_13329999").returncode, 2)
+
+    def test_clock_gating_and_pe_protection_default_when_omitted(self):
+        config = json.loads(self.constraints.read_text())
+        config.pop("clock_gating")
+        config["hierarchy"] = {"expand_depth": 1}
+        dump(self.constraints, config)
+        run = self.prepare()
+        actual = json.loads((run / "inputs/resolved.json").read_text())["constraints"]
+        self.assertTrue(actual["clock_gating"])
+        self.assertEqual(actual["hierarchy"]["expand_depth"], 1)
+        self.assertIn("PE*", actual["hierarchy"]["keep_modules"])
+
+    def test_one_fingerprint_covers_content_names_headers_and_filelist(self):
+        original = rtl_fingerprint(self.export)
+        (self.export / "README.md").write_text("metadata changed")
+        self.assertEqual(original, rtl_fingerprint(self.export))
+        clone = self.root / "renamed-export"
+        shutil.copytree(str(self.export), str(clone))
+        self.assertEqual(original, rtl_fingerprint(clone))
+        (clone / "src/extra.svh").write_text("header")
+        self.assertNotEqual(original, rtl_fingerprint(clone))
+        (clone / "src/extra.svh").unlink()
+        (clone / "files.f").write_text("src/Fixture.sv\n# different filelist\n")
+        self.assertNotEqual(original, rtl_fingerprint(clone))
+
+    def test_concise_record_preserves_core_results(self):
+        run = self.completed()
+        result = self.cli("report", "--run-id", run.name, "--record", "fixture.json")
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        record = json.loads((self.dc / "records/fixture.json").read_text())
+        self.assertEqual(record["result"]["total_area_um2"], 10)
+        self.assertTrue(record["clock_gating"])
+        self.assertNotIn("rtl_fingerprint", record)
+        self.assertNotIn("artifact_sha256", record)
+
     def test_rtl_and_testbench_changes_rejected(self):
         verify_export(EXPORT, self.root)
         (self.export / "src/Fixture.sv").write_text("changed")
-        with self.assertRaisesRegex(ValueError, "hash mismatch"):
+        with self.assertRaisesRegex(ValueError, "fingerprint mismatch"):
             verify_export(EXPORT, self.root)
-        entry = self.manifest["files"][0]
-        entry["sha256"] = sha256(self.export / entry["path"])
-        self.evidence["rtl_sha256"][entry["path"]] = entry["sha256"]
+        self.manifest["rtl_fingerprint"] = rtl_fingerprint(self.export)
+        self.evidence["rtl_fingerprint"] = self.manifest["rtl_fingerprint"]
         self.refresh_receipt()
         (self.root / self.inputs[0]["path"]).write_text("changed testbench")
-        with self.assertRaisesRegex(ValueError, "Stale verification"):
+        os.utime(str(self.root / self.inputs[0]["path"]), (time.time() + 5, time.time() + 5))
+        with self.assertRaisesRegex(ValueError, "Verification input changed"):
+            verify_export(EXPORT, self.root)
+
+    def test_handwritten_sv_requires_real_byte_identical_source(self):
+        source = self.root / "example.sv.in"
+        source.write_bytes((self.export / "src/Fixture.sv").read_bytes())
+        mapping = {"source_language": "systemverilog", "chisel_class": None,
+                   "source_file": "example.sv.in",
+                   "rtl_file": "src/Fixture.sv"}
+        self.manifest["module_map"] = {"Fixture": mapping}
+        self.refresh_receipt()
+        result = verify_export(EXPORT, self.root)
+        self.assertEqual(result["rtl_fingerprint"], rtl_fingerprint(self.export))
+        source.write_text("different source bytes")
+        with self.assertRaisesRegex(ValueError, "byte-for-byte"):
+            verify_export(EXPORT, self.root)
+
+    def test_unknown_source_language_is_rejected(self):
+        self.manifest["module_map"]["Fixture"]["source_language"] = "unknown"
+        self.refresh_receipt()
+        with self.assertRaisesRegex(ValueError, "module/source mapping"):
             verify_export(EXPORT, self.root)
 
     def test_missing_protocol_evidence_and_generated_status_rejected(self):
@@ -186,8 +270,8 @@ class FlowTests(unittest.TestCase):
         extra.unlink()
         source = self.export / "src/Fixture.sv"
         source.write_text('`include "/outside/fixture.svh"\nmodule Fixture; endmodule\n')
-        self.manifest["files"][0]["sha256"] = sha256(source)
-        self.evidence["rtl_sha256"]["src/Fixture.sv"] = sha256(source)
+        self.manifest["rtl_fingerprint"] = rtl_fingerprint(self.export)
+        self.evidence["rtl_fingerprint"] = self.manifest["rtl_fingerprint"]
         self.refresh_receipt()
         with self.assertRaisesRegex(ValueError, "External include"):
             verify_export(EXPORT, self.root)
@@ -208,10 +292,11 @@ class FlowTests(unittest.TestCase):
 
     def test_failure_unknown_and_library_checks_are_distinct(self):
         self.prepare()
-        for mode, code in (("hold_fail", 3), ("unknown", 4), ("unconstrained", 2),
-                           ("wrong_library", 2), ("license_error", 2), ("ignored_constraint", 2), ("drift", 2)):
+        modes = (("hold_fail", 3), ("unknown", 4), ("unconstrained", 2),
+                 ("wrong_library", 2), ("license_error", 2), ("ignored_constraint", 2), ("drift", 2))
+        for index, (mode, code) in enumerate(modes, 2):
             with self.subTest(mode=mode):
-                run_id = "fixture-" + mode
+                run_id = "dc_Fixture_1024{:04d}".format(index)
                 prepared = self.cli("prepare", *self.selection(), "--run-id", run_id)
                 self.assertEqual(prepared.returncode, 0, prepared.stderr.decode())
                 result = self.cli("run", "--run-id", run_id, env={"DC_FIXTURE_MODE": mode})
@@ -219,7 +304,6 @@ class FlowTests(unittest.TestCase):
                 summary = json.loads((self.dc / "runs" / run_id / "summary.json").read_text())
                 self.assertFalse(summary["timing_pass"])
                 self.assertFalse(summary["power_ready"])
-                self.assertEqual(summary["netlist_equivalence"], "not_run")
                 if mode in ("hold_fail", "unknown"):
                     self.assertTrue(summary["synthesis_valid"])
                     self.assertEqual(summary["area"]["total_cell_area_um2"], 10)
@@ -229,14 +313,16 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(self.cli("report", "--run-id", run.name).returncode, 0)
         self.assertEqual(self.cli("run", "--run-id", run.name).returncode, 2)
         mapped = run / "netlist/Fixture_mapped.v"
-        before = sha256(mapped)
+        before = mapped.read_bytes()
+        self.assertFalse((run / "inputs/hashes.json").exists())
+        self.assertFalse((run / "outputs.sha256.json").exists())
         self.assertEqual(self.cli("clean", "--run-id", run.name).returncode, 0)
         self.assertTrue((run / "work").exists())
         self.assertEqual(self.cli("clean", "--run-id", run.name, "--apply").returncode, 0)
         self.assertFalse((run / "work").exists())
-        self.assertEqual(sha256(mapped), before)
+        self.assertEqual(mapped.read_bytes(), before)
         self.assertEqual(self.cli("report", "--run-id", run.name).returncode, 0)
-        mapped.write_text("tampered")
+        mapped.unlink()
         self.assertEqual(self.cli("report", "--run-id", run.name).returncode, 2)
 
     def test_active_and_symlink_cleanup_rejected(self):
@@ -268,6 +354,25 @@ class FlowTests(unittest.TestCase):
         constraints["period_ns"] = 0
         dump(self.constraints, constraints)
         self.assertEqual(self.cli("prepare", *self.selection()).returncode, 2)
+
+    @unittest.skipUnless(shutil.which("tclsh"), "Tcl not installed")
+    def test_hierarchy_selectors_keep_pe_subtrees_and_expand_selected_dimensions(self):
+        script = self.root / "hierarchy-test.tcl"
+        script.write_text('source ' + tcl_string(ROOT / "hw/dc_syn/templates/hierarchy.tcl") + '''
+set rows {{core Core} {core/pe0 PETile} {core/pe0/dp Dot} {core/buf InputBuffer} {extra Other}}
+foreach row [hierarchy_plan $rows {PE*} {InputBuffer} {extra} 1] { puts [join $row |] }
+puts OVERRIDE
+foreach row [hierarchy_plan $rows {} {} {} 2] { puts [join $row |] }
+''')
+        result = subprocess.run(["tclsh", str(script)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        first, second = result.stdout.decode().strip().split("OVERRIDE\n")
+        self.assertIn("core|Core|1|expand", first)
+        self.assertIn("core/pe0|PETile|2|keep_pe", first)
+        self.assertIn("core/pe0/dp|Dot|3|keep_pe", first)
+        self.assertIn("core/buf|InputBuffer|2|expand", first)
+        self.assertIn("core/pe0|PETile|2|expand", second)
+        self.assertIn("core/pe0/dp|Dot|3|keep", second)
 
     @unittest.skipUnless(shutil.which("tclsh"), "Tcl not installed")
     def test_tcl_quoting_and_template_syntax(self):

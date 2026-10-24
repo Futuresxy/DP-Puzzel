@@ -4,6 +4,8 @@
 
 **当前阶段不编写硬件/模型实现代码、不导出 RTL、不执行仿真或 EDA 分析。** 用户另行授权准备 paper 的 LaTeX 模板和写作 skill，以及 DC 综合自动化脚本、统一 RTL 证据门禁与项目 skill；这些基础设施可实现并做不调用 EDA 的软件检查。实际综合仍需在获准的挂载环境另行验收。其他部分获得实施指示后逐阶段开发，下文的构建、测试和分析要求不表示完整工具链已经存在。
 
+用户后续单独授权了 Bf16SignPipe 最小手写 RTL 示例、该示例的导出/SV 回归和挂载环境 DC 验收，导出与验证入口为 `hw/test/scripts/bf16_sign_pipe.py`，综合入口为 `scripts/dc_syn.sh`。该授权只覆盖此工具链示例，不扩大到浮点 MAC、阵列/核心或芯片模型开发；其他部分仍按上述阶段限制执行。实测状态见 `hw/dc_syn/records/`。
+
 先阅读 `README.md`、`CONTEXT.md` 和 `docs/architecture.md`。`hw` 只负责单阵列/单核心；`ratio_dse` 负责多核心、多阵列芯片级建模。未定案事项记录在 `docs/roadmap.md`，不能用 INT4/INT8 示例代替目标浮点格式。
 
 ## 1. 目录与职责
@@ -39,6 +41,8 @@
 
 DC 流程维护与已授权运行时读取项目技能 `.skill/dc-synthesis/SKILL.md`；调用 `scripts/dc_syn.sh`，目录和路径契约见 `hw/dc_syn/paths.md`。不将项目技能安装到系统 `.codex`。
 
+DC 默认开启 clock gating，保留模块层级和 PE 子树；按层级深度、模块 reference 或实例路径自定义展开，不递归完全平铺。run 目录固定为 `dc_<RTL顶层名>_<MMDDHHMM>`（Asia/Shanghai），同分钟不覆盖。测试脚本、配置、参考和 testbench 统一在 `hw/test/`，DC 只消费通过证据，不维护测试副本。当前 PR 只保留最新工作流定义与无下游引用的最新示例产物。按用户简化要求，只为 RTL 输入目录保留一个整体指纹，不生成其他文件的指纹清单；records 仅记录工艺、时间、源码路径、目的和综合核心结果。
+
 - 选择满足精度与吞吐的最小位宽；控制计数器不得习惯性使用 32/64 位。
 - 点积优先使用平衡加法树，避免长串行加法链；流水位置由目标周期和实测时序确定，并同步修改延迟 spec 和测试。
 - 显式控制资源复制、MUX 深度和广播扇出；仅在吞吐允许且数据支持时复用运算器。
@@ -49,12 +53,12 @@ DC 流程维护与已授权运行时读取项目技能 `.skill/dc-synthesis/SKIL
 ## 4. RTL 单一来源与导出
 
 1. 后续实现统一 RTL 导出入口，参数来自已版本化的 `hw/configs/`。每次导出创建独立目录：
-   `hw/rtl/<Top>__<config-id>__<YYYYMMDDTHHMMSSffffffZ>__<source-sha12>/`。
-2. 每个目录必须有 `README.md`、`manifest.json`、`files.f`、`src/`。README 每次记录时间、原因、源码指纹/Git commit（可用时）、参数、工具版本、模块映射、命令和验证状态。不能静默覆盖旧导出。
+   `hw/rtl/<Top>__<config-id>__<YYYYMMDDTHHMMSSffffffZ>__<rtl-sha12>/`。
+2. 每个目录必须有 `README.md`、`manifest.json`、`files.f`、`src/`。README 记录时间、原因、RTL 目录指纹/Git commit（可用时）、参数、工具版本、模块映射、命令和验证状态。不能静默覆盖旧导出。
 3. 使用编译工具的 split Verilog 能力导出；每个生成 module 独立保存为同名 `.sv`，记录对应的 Chisel 类/文件和参数特化。共享 module 定义只保存一次；不得随意 flatten/inline 破坏映射。工具辅助 module、blackbox、头文件也必须进入清单并说明来源。新增层级时同时更新映射和检查。
-4. `files.f` 使用相对导出目录的路径；仿真、DC、功耗流程用显式 export ID 解析该清单并核对 SHA-256。禁止复制到各自目录、手工修补 `.sv`、用模糊 glob 或“最新文件”作为分析输入。
-5. 导出状态为 `generated`，对该份 RTL 仿真通过后才能成为 `passed`。仅 Scala 编译/Chisel elaboration 成功不等于 RTL 验证通过。RTL 或验证代码发生修改必须重新验证；失败或文件指纹不一致立即阻止 PPA。
-6. 后续 PPA 入口必须调用统一的 RTL 验证门禁，校验导出清单、RTL hash 和该份 RTL 的通过证据；不能手改 manifest 伪造通过。门禁接口与实现须在接入 EDA 前完成。
+4. `files.f` 使用相对导出目录的路径；仿真、DC、功耗流程用显式 export ID 解析清单，并核对 files.f + src/ 的单个目录 SHA-256，不为各文件分别记录指纹。禁止复制到各自目录、手工修补 `.sv`、用模糊 glob 或“最新文件”作为分析输入。
+5. 导出状态为 `generated`，对该份 RTL 仿真通过后才能成为 `passed`。仅 Scala 编译/Chisel elaboration 成功不等于 RTL 验证通过。RTL 或验证代码发生修改必须重新验证；失败或 RTL 目录指纹不一致立即阻止 PPA。
+6. PPA 入口必须调用统一的 RTL 验证门禁，校验导出清单、RTL 目录指纹和该份 RTL 的真实通过证据；不能手改 manifest 伪造通过。不再逐文件散列回执、工具、库、报告或网表。
 7. 综合 netlist、DDC、SDF 是衍生产物，放在对应分析 run 内并记录源 export ID。功耗使用经验证 RTL，或经一致性验证、具有完整来源的综合 netlist；两者不混用。
 
 ## 5. 测试与分析顺序

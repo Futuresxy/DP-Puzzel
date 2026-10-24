@@ -1,0 +1,31 @@
+// One registered BF16 sign-control stage, throughput one item per clock.
+// in_valid samples in_bf16/in_negate at a rising clock edge. The registered
+// result and out_valid are available after that edge (one pipeline stage).
+// reset is synchronous, active high, and clears validity only. Data holds
+// during reset or a bubble. No backpressure. All 16-bit encodings are legal:
+// XOR the BF16 sign bit and preserve exponent/fraction, including NaN payload.
+module Bf16SignPipe (
+  input  wire        clock,
+  input  wire        reset,
+  input  wire        in_valid,
+  input  wire [15:0] in_bf16,
+  input  wire        in_negate,
+  output wire        out_valid,
+  output wire [15:0] out_bf16
+);
+  reg        valid_q;
+  reg [15:0] data_q;
+
+  always @(posedge clock) begin
+    if (reset) begin
+      valid_q <= 1'b0;
+    end else begin
+      valid_q <= in_valid;
+      if (in_valid)
+        data_q <= {in_bf16[15] ^ in_negate, in_bf16[14:0]};
+    end
+  end
+
+  assign out_valid = valid_q;
+  assign out_bf16 = data_q;
+endmodule

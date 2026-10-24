@@ -14,8 +14,18 @@
 
 验证矩阵必须覆盖：格式合法码/边界、缩放、舍入、溢出、特殊值（按格式规范）、累加误差、block 边界、尾 tile、参数边界、复位、连续 valid、气泡、反压和模式切换。bit-exact 的适用边界与允许误差要在 spec 中固定。
 
-每份通过证据绑定 export ID、RTL 文件 hash、参考语义版本、testbench/向量 hash、工具版本和随机种子；失败、未执行或证据过期均不能进入 PPA。真实负载回放还需核对结果、周期、tile 分配与活动窗口。
+每份通过证据绑定 export ID、单个 RTL 目录指纹、参考语义、testbench/向量路径、工具版本和种子；不再逐文件写 hash。失败、未执行、RTL 目录指纹不匹配或数值验证输入比回执更新时阻止 PPA。真实负载回放还需核对结果、周期、tile 分配与活动窗口。
 
-设计 RTL 不复制到 test 目录。失效生成 RTL、无用波形、临时 testbench 和仿真可执行文件按引用关系清理，保留必要失败日志和最小复现。当前无测试实现或通过记录。
+设计 RTL 不复制到 test 目录。失效生成 RTL、无用波形、临时 testbench 和仿真可执行文件按引用关系清理，保留必要失败日志和最小复现。已有用户授权的 Bf16SignPipe 例子：tb/Bf16SignPipeTb.sv、reference/bf16_sign_pipe.py，真实回执写入被忽略的 runs；它不是完整研究硬件回归入口。
 
-已实现 [统一证据门禁](../../scripts/rtl_gate.py) 和 [回执 v1 契约](../dc_syn/input-contract.md)，仅核验现有 RTL/验证输入/日志的指纹及精度/周期状态。它不是仿真入口，也不生产通过记录；后续真实回归入口按该契约写证据。
+已实现 [统一证据门禁](../../scripts/rtl_gate.py) 和 [回执 v2 契约](../dc_syn/input-contract.md)，门禁核验目录指纹、输入路径/更新时间及精度/周期状态。hw/test/scripts/bf16_sign_pipe.py 在真实 SV testbench 通过后生产证据，门禁本身不生产 PASS。
+
+例子硬件参数在 hw/configs，测试参数独立放 configs/bf16_sign_pipe.json。测试入口与综合入口分离：
+
+```bash
+python3 hw/test/scripts/bf16_sign_pipe.py export
+python3 hw/test/scripts/bf16_sign_pipe.py verify --export-id "$export_id"
+python3 -m unittest discover -s hw/test/unit -v
+```
+
+unit/test_dc_flow.py 只验证流程的软件行为，不调用 EDA。DC 目录不维护另一份 testbench、测试脚本或测试配置。

@@ -1,6 +1,7 @@
 # Read only the prepared snapshot; design RTL remains in hw/rtl/<export-id>/.
 if {[catch {
 source inputs/resolved.tcl
+source inputs/hierarchy.tcl
 file mkdir reports netlist work/WORK work/alib
 set_app_var sh_command_log_file logs/command.log
 set_app_var alib_library_analysis_path work/alib
@@ -54,15 +55,29 @@ if {$multi_vt} {
   set_multi_vth_constraint -lvth_groups {lvt} -lvth_percentage $max_lvt_percent -type hard
   set_leakage_optimization true
 }
-if {$preserve_hierarchy} {
-  set hierarchy [get_cells -hierarchical -quiet -filter "is_hierarchical == true"]
-  if {[sizeof_collection $hierarchy] > 0} {
-    set_ungroup $hierarchy false
-    set_boundary_optimization $hierarchy false
+set rows {}
+foreach_in_collection cell [get_cells -hierarchical -quiet -filter "is_hierarchical == true"] {
+  lappend rows [list [get_object_name $cell] [get_attribute $cell ref_name]]
+}
+set plan [hierarchy_plan $rows $keep_module_patterns $expand_module_patterns $expand_instance_patterns $expand_depth]
+set f [open reports/hierarchy.tsv w]
+puts $f "instance\treference\tdepth\taction"
+foreach row $plan { puts $f [join $row "\t"] }
+close $f
+# Expand only selected boundaries, deepest first. Never use ungroup -flatten:
+# that would recursively destroy the PE hierarchy we want to inspect.
+foreach row [lsort -command deepest_first $plan] {
+  if {[lindex $row 3] eq "expand"} {
+    set cell [get_cells -quiet [lindex $row 0]]
+    if {[sizeof_collection $cell] > 0} { ungroup $cell }
   }
 }
-set compile_command [list compile_ultra]
-if {$preserve_hierarchy} { lappend compile_command -no_autoungroup }
+set hierarchy [get_cells -hierarchical -quiet -filter "is_hierarchical == true"]
+if {[sizeof_collection $hierarchy] > 0} {
+  set_ungroup $hierarchy false
+  set_boundary_optimization $hierarchy false
+}
+set compile_command [list compile_ultra -no_autoungroup -no_boundary_optimization]
 if {$clock_gating} {
   set_clock_gating_style -positive_edge_logic integrated -negative_edge_logic integrated \
     -control_point before -minimum_bitwidth $clock_gating_min_bitwidth

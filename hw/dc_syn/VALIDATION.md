@@ -1,20 +1,12 @@
-# 基础设施验证记录
+# 当前工作流验收：2026-10-24
 
-日期：2026-10-24。范围是 DC 自动化软件和项目 skill；没有调用 DC、RTL 仿真、EDA 环境 setup 或功耗工具。
+使用 v2 单个 RTL 目录指纹与简洁摘要；默认开启 clock gating，保留模块和 PE 子树，支持按深度、模块和实例选择展开。DC 唯一公共入口为 scripts/dc_syn.sh，所有 testbench、测试配置、参考和流程软件回归统一放在 hw/test。
 
-## 软件检查
+- 软件：Python 3.6.8 / 3.11 下 21 项通过；覆盖目录内容与清单变化、回归过期、短名/时区/重名拒绝、配置快照、PE 子树保护、三种展开选择、核心记录、时序 FAIL/UNKNOWN、缺库/缺报告、清理边界和 Python 3.6 导出兼容。
+- 静态：Python 编译、Shell 语法、Tcl 完整性及策略行为、skill 校验、文档链接和 diff 检查通过。软件夹具不代表硬件测量。
+- 真实 RTL：Icarus 检查 132423 周期、131867 有效结果，含全部 BF16 编码 × 两种操作、定向/随机、气泡和复位。
+- 真实 DC：dc_Bf16SignPipe_10241850，DC X-2025.06、N22 TT 0.9 V/85°C、1410 MHz；面积 42.434 µm²，setup/hold PASS，未约束检查 clean。
+- 真实门控：1 个工具插入的时钟门控单元，16 个寄存器受门控；剩余 1 个有效位寄存器不门控。
+- 产物：当前 PR 只保留最新示例 run 及其 RTL/验证证据；删除无下游引用的旧示例产物和重复入口。清除当前 work 缓存，保留原始报告和 mapped Verilog/SDC/DDC。
 
-- Python 3.6.8 与 Python 3.11：`python3 -m unittest discover -s hw/dc_syn/tests -v`，13 项测试通过。新增状态异常场景在一项测试中分别覆盖。
-- Shell 语法：`bash -n scripts/dc_syn.sh` 通过；CLI --help 可用。
-- Python 编译检查、Tcl info complete 完整性检查、skill-creator quick_validate 与 git diff --check 通过。
-- 同时检查实际用户项目目录中的路径和入口；没有在系统 .codex 安装或更新项目 skill。
-
-测试临时构造的 RTL/验证 JSON、库字节和假工具报告只用于软件行为验证，明确标注 fixture，并随临时目录销毁；不是硬件实现、真实 PASS 证据或 PPA 数据。
-
-覆盖：只读 check/prepare、重复 run 拒绝、RTL/testbench/约束变更、准备后和运行期间输入漂移、未记录源/外部 include 拦截、缺精度/周期证据、缺库/非法约束、零进程码但无完成标记、setup/hold 分开判定、多路径组汇总、被舍入掩盖的负 slack、报告缺项 UNKNOWN、未约束警告、错误映射库、DCSH-1、被忽略的约束、输出篡改、清理预览与网表保留、活跃目录/符号链接/路径穿越拒绝、含空格与 Tcl 元字符的路径。
-
-## 真实 EDA 待验收
-
-本项目尚无真实验证回执、综合网表或面积/时序测量。首次验收须由后续授权任务在挂载 EDA 环境选择现有通过 RTL，记录实际工具版本、库/PVT/单位及 hash、全部约束、映射/未约束检查、setup/hold、网表/SDC/DDC 导出及 fingerprint。再独立接入 RTL/netlist 一致性与活动检查，才能把网表用于正式 workload power。
-
-本次只读核对 X-2025.06 官方本地手册，不能据此宣称新 Tcl 全部命令在真实运行中已验证。参考工程历史经验和来源 hash 见 `.skill/dc-synthesis/references/machine-experience.md`（相对仓库根）。
+软件检查命令：`python3 -m unittest discover -s hw/test/unit -v`。核心数据见 [records](records/bf16_sign_pipe_smoke_20261024.json)，复现见 [示例](examples/bf16_sign_pipe/README.md)。例子不含 PE 阵列；PE 选择策略由 Tcl 行为测试覆盖，实际 PE 面积/功耗仍须在相应设计上验收。尚未执行布局布线、workload power 或 RTL/netlist 等价性验证。

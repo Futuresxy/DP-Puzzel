@@ -1,0 +1,29 @@
+{
+  "purpose": "BF16 符号流水级：验收默认 clock gating、层级保留和面积时序",
+  "time": "2026-10-24T18:50:26+08:00",
+  "technology": {
+    "process": "TSMC CLN22ULP",
+    "pvt": {
+      "corner": "TT",
+      "voltage_v": 0.9,
+      "temperature_c": 85
+    }
+  },
+  "source_files": [
+    "hw/rtl/Bf16SignPipe__bf16-sign-smoke-v1__20261024T105011765159Z__571d81253084/src/Bf16SignPipe.sv"
+  ],
+  "run": "hw/dc_syn/runs/dc_Bf16SignPipe_10241850",
+  "dc_version": "X-2025.06",
+  "frequency_mhz": 1410.0,
+  "clock_gating": true,
+  "result": {
+    "synthesis_valid": true,
+    "total_area_um2": 42.434,
+    "combinational_area_um2": 12.25,
+    "sequential_area_um2": 30.184,
+    "setup": "PASS",
+    "hold": "PASS",
+    "setup_slack_ns": 0.323671222,
+    "hold_slack_ns": 7.6666e-05
+  }
+}
