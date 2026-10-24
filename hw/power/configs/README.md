@@ -3,7 +3,7 @@
 - [flow-plan.json](flow-plan.json)：选定 Power Compiler，N22 优先 / N12 备选、同源测试数据和方法边界。
 - [windows/steady-state-v1.json](windows/steady-state-v1.json)：预热、候选长度、分段及增长稳定性。
 - [windows/task-complete-v1.json](windows/task-complete-v1.json)：完整任务边界，长度由事件决定。
-- [windows/dp-fixed-macs-v1.json](windows/dp-fixed-macs-v1.json)：用户指定的 DP 微基准默认工作量 `64×1024×2 = 131072 MAC`；H16/Q32/E64每次完整有效PE调用为16/32/64 MAC，对应8192/4096/2048次调用，不固定总周期。
+- [windows/dp-fixed-macs-v2.json](windows/dp-fixed-macs-v2.json)：当前 K-PE/MN-PE 默认预算 `96×1024 = 98304` 对标量A/B数据，即98304 MAC；H16/Q32/E64对应6144/3072/1536次完整有效调用，其他组织按全DUT每次调用容量整除换算。
 - [windows/idle-v1.json](windows/idle-v1.json)：合法 idle 状态、原时钟/输入行为和独立窗口。
 - [machines/machine.example.json](machines/machine.example.json)：私有绑定的无路径填写示例；实际文件命名 `machine.local.json`，由 `*.local.*` 忽略。
 
@@ -13,4 +13,6 @@ technology profile 直接引用 `hw/dc_syn/configs/technologies/`，不再维护
 
 窗口数值是工程起点，依据和算法见 [窗口策略](../window-policy.md)。改阈值/预算/时间边界、工艺或工具版本形成新 plan/run；不修改历史快照后继续宣称同一实验。
 
-DP 固定 MAC 口径与通用稳态增长策略分别使用。131072 MAC 是用户指定的计算量，不是 131072 OP、字节或拍数；其等价算术量为 262144 OP。MAC 总量达到不表示活动已趋稳，若要证明稳态另做窗口检查，不能自动增大固定工作量后仍以原预算命名。
+DP 固定数据对/MAC口径与通用稳态增长策略分别使用。98304对标量A/B数据对应98304 MAC、196608 OP，不是98304字节或拍数；初始化、预热和scale/C元数据另计。整除并完成工作量不表示活动已趋稳，若要证明稳态另做检查，不能自动增大预算后仍以原预算命名。
+
+v2的具体数据清单与RTL testbench路径由用户后续在`hw/test`中明确，当前`test_bindings`为pending/null。门级仿真参考该testbench复用激励、握手、结果检查和完成事件，接入冻结DC网表与匹配单元模型采集SAIF；未绑定不执行。原[dp-fixed-macs-v1.json](windows/dp-fixed-macs-v1.json)保留为历史planned配置，不再被默认flow-plan选择。

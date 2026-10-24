@@ -10,8 +10,8 @@
 | 硬件参数 | `hw/configs/`；硬件实现方 | 使用 export 已绑定的参数 |
 | 设计 RTL | `hw/rtl/<export-id>/src/<Module>.sv`；统一 exporter | 读 manifest / files.f / hash，不复制或补丁 |
 | RTL 验证 | `hw/test/runs/<verification-id>/verification.json`；真实回归入口 | 复用统一门禁，绑定同一 export 和验证输入 |
-| 测试源 / 参考 | `hw/test/tb/`、`hw/test/reference/` | 共用可复现 driver/scoreboard；不得另造宽松数值判据 |
-| 真实负载数据 | `hw/test/vectors/<dataset-id>/` 的清单；大型 payload 按测试清单归档 | 只读引用；缺少工作负载来源时不将其当作真实数据 |
+| 测试源 / 参考 | `hw/test/` 内实际RTL testbench/参考，具体位置待用户绑定；`tb/`、`reference/`为既有目录约定 | 以选定testbench设计门级回放，共用driver/scoreboard，不另造宽松判据 |
+| 真实负载数据 | `hw/test/` 内实际数据清单，具体位置待用户绑定；大型payload按测试清单归档 | 只读引用；未绑定时保持pending/null，不填假路径或真实负载标签 |
 | 综合证据 | `hw/dc_syn/runs/<synthesis-run-id>/`；DC 入口 | 引用明确 run，复核 summary、inputs、outputs 指纹 |
 | 综合网表 | 同一 DC run 的 `netlist/<Top>_mapped.v` | 门级仿真与 PC 共用原文件，不复制进 power |
 | DB / SDC / DDC / 可选 SDF | 同一 DC run 绑定的库及 `netlist/` 导出 | DB、SDC 复用原工况；DDC 不是独立的新设计；SDF 必须匹配网表 |

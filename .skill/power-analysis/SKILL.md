@@ -17,16 +17,16 @@ description: Define and audit DP-Puzzel workload power flows using verified RTL-
 
 ## 输入选择与 DC 交接
 
-1. 明确 export、verification、synthesis run、dataset/segment/task、format/mode、array/core 范围和窗口类型。设计 RTL 只读 `hw/rtl/<export-id>/src/`，按 manifest/files.f 和统一 `scripts/rtl_gate.py` 验证；不复制设计 RTL。
+1. 明确 export、verification、synthesis run、dataset/segment/task、format/mode、dot_product/array/core的完整DUT范围和窗口类型。设计RTL只读`hw/rtl/<export-id>/src/`，按manifest/files.f和统一`scripts/rtl_gate.py`验证，不复制设计RTL。
 2. 读取明确 DC run 的 summary、resolved、input/output hash 和原 `netlist/<Top>_mapped.v` / SDC / DB。正式链要求 `synthesis_valid=true`、`timing_pass=true`；库、PVT、周期/IO/门控/层次一致。DC 的 power-ready/equivalence 尚未运行标记保持不变，由 power 独立提供同负载比对，不冒充形式等价。
 3. 默认选择 [N22 计划](../../hw/power/configs/flow-plan.json) 指向的 DC profile；N12 需任务明确选择和新的匹配综合 run，Base/LVT 模型覆盖全部实际单元。缺 N22 依赖时报告缺项，不静默 fallback；不复制工艺库或提交私有路径。
-4. 真实数据只引用 RTL 测试已经验证的输入/golden/事务时序清单和 hash。保留 A/B/C/scale、顺序、气泡/反压/累加和格式语义；新增片段先走测试数据版本与回归。随机数据不作真实负载，局部模型派生数据不称整网 trace。
+4. 数据及参考RTL testbench归`hw/test`，具体路径由用户后续明确，当前`test_bindings`保持pending/null，不预填假文件。绑定后只引用已验证的输入/golden/事务时序清单及hash；参考该testbench复用driver、激励、时钟/握手、scoreboard与完成事件，接入DC网表和匹配单元模型生成门级SAIF。保留A/B/C/scale、原顺序和累加语义；新增片段先走测试侧回归，不把随机数据当真实负载。
 
 ## 窗口与活动
 
 - 任务主指标用完整 `task_complete`；计入声明边界内的 fill/drain、stall、配置/切换和转换。短任务完整测量，不 padding 或重复；与 warm-start 成本边界分开。
-- DP 计算微基准默认使用 [dp-fixed-macs-v1](../../hw/power/configs/windows/dp-fixed-macs-v1.json) 的 **131072 MAC = 64×1024×2 MAC**。1 MAC=2 OP，目标对应262144 OP。用户确认H16/Q32/E64分别为16/32/64 MAC每有效周期，每次完整有效PE输入调用贡献相应16/32/64 MAC，故需8192/4096/2048次调用；不乘参考项目的16倍单位。每调用K_call、任务总K_job、II、调用数与elapsed cycles分开；实际贡献以验证元数据和有效lane/握手核验。
-- 初始化/预热后合法排空，正式测完整burst的fill/计算/stall/drain，接受与完成MAC均精确等于预算；无合法尾块且不整除时拒绝，缺数据不隐式循环。固定MAC时各模式调用数不同，不能同时强求等调用数/等总周期；未做稳态检查则steady_state_status=not_assessed。保留固定预算结果，稳态检查或更大MAC对照另配run，不为凑1024拍改变用户工作量。
+- K-PE/MN-PE的DP微基准默认使用[dp-fixed-macs-v2](../../hw/power/configs/windows/dp-fixed-macs-v2.json)：**96×1024=98304对有效标量A/B数据=98304 MAC=196608 OP**。H16/Q32/E64每次完整调用处理16/32/64对，需6144/3072/1536次；其他组织用验证后的全DUT满调用容量C_full要求98304%C_full=0。MN-PE并行DP同次调用的有效MAC汇总，不给每路重复分配整个预算后当作等工作量；当前模式所选资源必须完整调用，不允许partial tail、padding或取整。v1仅保留为历史planned配置。
+- 初始化/预热后合法排空，正式测完整burst的fill/计算/stall/drain，接受/完成数据对与MAC均精确等于98304。每调用K_call、任务K_job、全DUT的C_full、II、调用数和elapsed cycles分开，stall/重试不重复计数；缺数据不隐式循环。固定工作量时调用数不同；未查稳态则steady_state_status=not_assessed，稳态检查或其他预算另配run，不为凑拍数改变数据量。
 - 稳态使用已版本化 [steady-state-v1](../../hw/power/configs/windows/steady-state-v1.json)：合法初始化后，预热至少 max(64, pipeline latency+2, state settle)，同相位 `[start,end)`；1024→2048→4096→8192→16384 拍增长，total 2% / dynamic 5%，增长及两半比较连续两步通过。它是未校准起点，不是行业固定拍数或物理误差保证。
 - 目标为三个不同来源片段，各段内判断收敛；跨片段报告差异，不强求相等。不足为 insufficient_trace/coverage_limited，上限未稳定为 not_converged。显式循环只作单列 microbenchmark，重复不增加独立样本。
 - RTL/gate 用同源事务及初态，核对独立 golden 关联、数值、周期/计数/last/idle/stall；合法接口初始化非复位状态，不 force 内部零或忽略 X。

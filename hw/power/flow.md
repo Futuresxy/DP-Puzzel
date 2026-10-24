@@ -43,7 +43,7 @@ DC 原记录中的 `power_ready=false`、`netlist_equivalence=not_run` 是功耗
 
 ## 4. 真实负载来自 RTL 测试
 
-数据清单与大 payload 由 `hw/test` 维护，power 只保存数据选择、归档引用及 hash。只有数值格式、布局、scale、C/累加、映射和时间顺序明确且在真实 RTL 测试中验证过的数据能进入正式 workload 功耗。
+数据清单与大 payload 由 `hw/test` 维护，power 只保存数据选择、归档引用及 hash。具体数据与参考RTL testbench位置由用户后续明确，当前v2配置中的`test_bindings`保留pending/null。只有数值格式、布局、scale、C/累加、映射和时间顺序明确且在真实 RTL 测试中验证过的数据能进入正式 workload 功耗。
 
 复用 RTL 测试的事务顺序、valid/ready、气泡、stall、C/scale 更新、参考输出与数值判据；适配器只负责接到冻结门级接口和采集活动。为功耗另建宽松 golden、重排权重或随机填补缺失事务均不允许。源测试只测 II=1 时，只能宣称持续计算微基准，不能自动生成应用级停顿。
 
@@ -51,7 +51,9 @@ DC 原记录中的 `power_ready=false`、`netlist_equivalence=not_run` 是功耗
 
 稳定窗需要更长 trace 时，先通过 `hw/test` 的数据流程补充真实片段并重新验证；不能只在 power 悄悄循环。允许的显式 cyclic microbenchmark 单列 repetition_count 和 unique_source_transactions，停止将重复拍数当成独立样本。
 
-DP 微基准采用用户指定的 `64×1024×2 = 131072 MAC` 作为默认有效工作量，配置见 [dp-fixed-macs-v1.json](configs/windows/dp-fixed-macs-v1.json)。H16/Q32/E64 每次完整有效 PE 输入调用贡献16/32/64 MAC，需8192/4096/2048次调用；实际有效量由 packing/lane/握手核验。真实 II/流水/停顿决定时间，任务总K另行记录。初始化/预热先排空，正式窗从空流水起测完整计数 burst，含 fill/drain；接受与完成 MAC 都须等于预算。它不替代完整应用 task 或独立稳态检查。
+K-PE/MN-PE微基准采用用户指定的`96×1024 = 98304`对标量A/B数据作为默认工作量，即98304 MAC；配置见[dp-fixed-macs-v2.json](configs/windows/dp-fixed-macs-v2.json)。H16/Q32/E64对应6144/3072/1536次完整调用。每个组织按整个被测DUT的实际满调用容量`C_full`要求`98304 % C_full = 0`；MN-PE并行DP的有效MAC在同次顶层调用内汇总，不给每路分别重复分配整个预算后冒充等工作量。实际lane/packing/握手仍须核验，禁止partial tail。初始化/预热先排空，正式窗计入fill/计算/stall/drain；接受和完成数据对/MAC计数均须等于98304。
+
+门级回放以随后明确的`hw/test` RTL testbench为设计依据：复用driver/激励、时钟与握手、事务顺序、golden/scoreboard以及初始化/完成事件，将DUT实现接为显式DC mapped Verilog和匹配的标准单元模型，并加入窗口控制与SAIF采集。数值语义和协议不因换成门级而放宽；当前不新增testbench代码或波形。
 
 ## 5. SAIF 与 Power Compiler 接口
 

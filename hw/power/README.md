@@ -40,9 +40,9 @@ flowchart LR
     Q --> C[hw/characterization]
 ```
 
-设计 RTL 唯一保存在 `hw/rtl/<export-id>/src/`；DC 衍生网表唯一保存在 `hw/dc_syn/runs/<synthesis-run-id>/netlist/`。power 只读引用两者，不建立自己的设计 RTL 或网表副本。真实输入引用 `hw/test/vectors/` 及验证回执关联的归档，不从参考项目复制数据，不将随机精度测试误标为真实负载。
+设计 RTL 唯一保存在 `hw/rtl/<export-id>/src/`；DC 衍生网表唯一保存在 `hw/dc_syn/runs/<synthesis-run-id>/netlist/`。power 只读引用两者。真实数据及参考RTL testbench归`hw/test`维护，具体位置由用户后续明确，当前配置保留pending/null；不预填不存在的数据路径。后续参考选定testbench复用激励、协议和结果检查，接入冻结网表与单元模型进行门级回放并采集SAIF。
 
-完整任务窗口作为任务平均功耗口径，包含必要 fill/drain、stall 与模式切换。**DP 计算微基准默认采用 [131072 MAC 固定工作量](configs/windows/dp-fixed-macs-v1.json)**。按用户确认，H16/Q32/E64 每次完整有效 PE 输入调用分别贡献16/32/64 MAC，故需要8192/4096/2048次调用；II=1 时对应相同数量的有效输入周期，完整 burst 还计入 fill/drain 和停顿。初始化/预热在预算之外，排空后才开始计数。
+完整任务窗口作为任务平均功耗口径，包含必要 fill/drain、stall 与模式切换。**K-PE/MN-PE的DP微基准默认采用 [96×1024对数据](configs/windows/dp-fixed-macs-v2.json)，即98304 MAC**。H16/Q32/E64每次完整有效调用分别处理16/32/64对，需6144/3072/1536次调用。各K-PE/MN-PE均按实际全DUT每次完整调用容量检查整除，禁止取整、padding或partial tail；II=1的有效输入周期与完整仿真总周期分开记录。初始化/预热在预算之外，排空后开始计数。
 
 稳定计算窗口另用于单元状态特征；计划从 1024 拍增长至 16384 拍检查收敛。固定 MAC 总量不等于固定调用次数、固定总拍数或已达到稳态；任务/burst 按完成事件确定，不凑拍数重复输入。H16Q32E64 的计数、边界与稳定性细则见 [窗口策略](window-policy.md)。
 

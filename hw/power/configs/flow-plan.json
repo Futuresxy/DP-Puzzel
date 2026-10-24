@@ -28,7 +28,7 @@
   "windows": {
     "task_complete": "hw/power/configs/windows/task-complete-v1.json",
     "steady_state": "hw/power/configs/windows/steady-state-v1.json",
-    "dp_fixed_macs": "hw/power/configs/windows/dp-fixed-macs-v1.json",
+    "dp_fixed_macs": "hw/power/configs/windows/dp-fixed-macs-v2.json",
     "dp_microbenchmark_default": "dp_fixed_macs",
     "primary_task_metric": "task_complete",
     "idle": "hw/power/configs/windows/idle-v1.json"
