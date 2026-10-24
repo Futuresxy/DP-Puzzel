@@ -1,6 +1,6 @@
 # AI 负载数据采集定义
 
-状态：2026-10-24 用户确认 AI 负载部分的采集方案。本文记录数据来源、采集边界和跨精度复用原则；尚未执行本方案的数据采集。人工定向数据、随机分布和随机种子生成方案留待后续讨论，不在本次确认范围内。
+状态：2026-10-24 用户将中间层采集改为两个模型的第一层（索引 0），以减少下载。已在 [hw/test/data](../test/data/README.md) 完成首层采集、九种编码量化及 C=0 的 FP64 dot golden；结果和来源指纹见 [摘要](../test/data/ai-first-layer-summary.json)。这里只形成软件数据证据，未运行 RTL 验证或 PPA。人工定向数据、随机分布和随机种子生成方案留待后续讨论。
 
 ## 两组真实负载
 
@@ -8,12 +8,12 @@
 
 | 数据源 | 采集算子，层号从 0 开始 | 激活 A | 权重 W |
 | --- | --- | --- | --- |
-| Qwen/Qwen2.5-3B | `model.layers.18.self_attn.q_proj`，共 36 层的中间层 | 实际送入 Q 投影线性层的输入，即 input RMSNorm 之后的值 | 对应 `q_proj.weight`，原矩阵 `[2048, 2048]` |
-| Qwen/Qwen1.5-MoE-A2.7B | `model.layers.12.mlp.experts[e].down_proj`，共 24 层的中间层 | 真实路由到专家 e、经过该专家 gate/up 和非线性之后的 down 投影输入 | 对应专家 `down_proj.weight`，原矩阵 `[2048, 1408]` |
+| Qwen/Qwen2.5-3B | `model.layers.0.self_attn.q_proj`，第一层 | 实际送入 Q 投影线性层的输入，即 input RMSNorm 之后的值 | 对应 `q_proj.weight`，原矩阵 `[2048, 2048]` |
+| Qwen/Qwen1.5-MoE-A2.7B | `model.layers.0.mlp.experts[3].down_proj`，第一层，实际选中专家 3 | 真实路由到该专家、经过该专家 gate/up 和非线性之后的 down 投影输入 | 对应专家 `down_proj.weight`，原矩阵 `[2048, 1408]` |
 
 Qwen2.5-3B 是 dense 模型，因此 MoE 专家来自第二个模型，两个来源分别命名、分别报告。模型结构依据 [Qwen2.5 官方配置](https://huggingface.co/Qwen/Qwen2.5-3B/raw/main/config.json) 和 [Qwen1.5-MoE 官方配置](https://huggingface.co/Qwen/Qwen1.5-MoE-A2.7B/raw/main/config.json)。
 
-专家选择：先固定采集文本池，再统计第 12 层各 routed expert 的命中 token 数，从至少有 4 个不同 token 的专家中选择命中数接近中位数的一个。按固定规则处理并列，记录最终 expert ID 和路由统计，在查看量化误差及功耗结果之前冻结选择。只使用真实命中该专家的激活，不向未被选中的专家强行输入 token。
+专家选择：先固定采集文本池，再统计第 0 层各 routed expert 的命中 token 数，从至少有 4 个候选 token 的专家中按 `(命中数, expert ID)` 排序选择下中位数。最终实际选中专家 3，选择和路由统计记录在数据产物中，在查看量化误差及功耗结果之前冻结。只使用真实命中该专家的激活，不向未被选中的专家强行输入 token。
 
 Q 投影的 bias、MoE 的 routing probability 独立记录，不折入权重或激活。当前数据块描述线性算子的点积部分，C/bias、路由加权及跨事务累加如何进入测试由后续 golden/回放合同明确。
 
@@ -33,7 +33,7 @@ K768 可被当前目标原生 K16/32/48/64/96/128/192/256 整除；每组对应 
 
 权重保留 checkpoint 的原始位模式，激活保留实际前向所得的位模式及 dtype；另存数值无损的可分析视图。BF16 可无损转 FP32/FP64，不能把转为 FP64 称为恢复了原本不存在的精度。记录前向运算 dtype、设备和软件版本，不能将 FP32 前向采集描述成原生 BF16 前向。
 
-从同一份未量化数据独立生成 BF16、FP16、MXFP8、MXFP6、MXFP4、NVFP4 和 HiF4；不经由某个低精度版本再量化其他版本。基础量化采用确定性 RNE，饱和/下溢等处理随量化语义记录；首轮不叠加 SmoothQuant、GPTQ 或 Hadamard 变换。生成规则的具体软件实现仍属于后续工作。
+从同一份未量化数据独立生成 BF16、FP16、MXFP8、MXFP6、MXFP4、NVFP4 和 HiF4；不经由某个低精度版本再量化其他版本。基础量化采用确定性 RNE，饱和/下溢等处理随量化语义记录；首轮不叠加 SmoothQuant、GPTQ 或 Hadamard 变换。具体实现和文件合同见 [数据工具说明](../test/data/README.md)，FP8/FP6 各含两种编码，共九种编码结果。
 
 | 格式 | 元素编码 | 沿每行 K 的缩放元数据 |
 | --- | --- | --- |
@@ -44,7 +44,7 @@ K768 可被当前目标原生 K16/32/48/64/96/128/192/256 整除；每组对应 
 | NVFP4 | E2M1 | 每 16 元素一个正 E4M3，另保留母张量 FP32 global scale |
 | HiF4 | S1P2 | 每 64 元素一个 E6M2；每 4 元素一个 g0 bit，每 8 元素一个 g1 bit |
 
-A/W 各自量化、各自保存 scale。先按原张量的格式 block 确定元素和 scale，再为不同 PE 生成映射；不能随 PE/profile 或事务边界重新求 scale，否则比较的数据已发生变化。元数据随元素保存，testbench 后续从文件读取，不把输入值嵌入 testbench 源码。文件容器、位打包和 schema 在后续步骤确定。
+A/W 各自量化、各自保存 scale。先按原张量的格式 block 确定元素和 scale，再为不同 PE 生成映射；不能随 PE/profile 或事务边界重新求 scale，否则比较的数据已发生变化。元数据随元素保存，testbench 后续从文件读取，不把输入值嵌入 testbench 源码。当前定义了行优先 `.mem`、W16 打包、scale/微指数独立文件和 manifest；实际 DUT 握手及物理 scale 槽映射留待 testbench 阶段。
 
 MX 以 [OCP MX v1.0](https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final-pdf) 为格式依据。NVFP4 采用适配本 PE 的一维 K16 block；[Transformer Engine 格式说明](https://docs.nvidia.com/deeplearning/transformer-engine/features/low_precision_training/nvfp4/nvfp4.html) 中的 global scale 单独保留。当前 PE 不实现该全局因子，后续 golden 必须区分 PE 内部缩放域和原始张量域；不能在已有 C 的整个输出上直接乘 global scale，冒充完整 NVFP4 累加。
 
@@ -68,7 +68,7 @@ m[i] ∈ {0, …, 7}; g0/g1 ∈ {0, 1}; S 为 E6M2
 
 ## 可追溯性和双重用途
 
-采集实施前固定模型与数据集 revision、匹配的 tokenizer、文本拼接/窗口/token 选择规则、采集池和软件环境。产物记录算子路径、层号、expert ID、原矩阵形状、token/通道/K 坐标、原始与量化 dtype、量化语义版本及文件 SHA-256。MoE 的固定 checkpoint commit 和最终样本索引尚未产生，不能以浮动 main 作为正式采集来源。
+模型与数据集 revision、匹配的 tokenizer、文本拼接/token 选择规则和采集池固定在 [sources.json](../test/data/sources.json)。MoE checkpoint 为 `1a758c50ecb6350748b9ce0a99d2352fd9fc11c9`，Qwen2.5 为 `3aab1f1954e9cc14eb9509a215f9e5ca08227a9b`；产物记录算子路径、层号、expert ID、原矩阵形状、token/通道/K 坐标、dtype、软件版本、量化语义版本及文件 SHA-256，不使用浮动 main 作为正式采集来源。
 
 同时保留 RMS、绝对值最大值、分位数、零比例、通道峰值和 block 动态范围等统计，用实际捕获数据描述范围，不先假设 AI 数值落在某个固定区间。真实负载不主动注入 NaN/Inf 或人工极值。
 
@@ -76,4 +76,4 @@ m[i] ∈ {0, …, 7}; g0/g1 ∈ {0, 1}; S 为 E6M2
 
 ## 后续讨论边界
 
-下一步仍由用户分层推进：人工定向与随机数据生成方案；软件 golden 的数值域和 C/累加语义；数据文件组织；文件驱动 testbench；输出比较及通过门槛。本次只确认 AI 负载方案，不把此前的测试脚本草稿或试跑当作这些步骤已经验收。
+下一步仍由用户分层推进人工定向与随机数据生成、C/累加反馈与舍入验收、文件驱动 testbench、输出比较和通过门槛。当前生成的 golden 仅覆盖明确标注的独立 dot+C0，保留未舍入 FP64；不把数据准备、此前脚本草稿或有限试跑当作 RTL 精度验收。

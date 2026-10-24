@@ -41,6 +41,6 @@
 
 ## 测试数据方案的分步确认
 
-2026-10-24 用户确认 [AI 负载采集方案](../hw/spec/ai-workload-data.md)：首轮仅用 WikiText-2 test，采集 Qwen2.5-3B 第 18 层 q_proj 和 Qwen1.5-MoE-A2.7B 第 12 层一个真实命中专家的 down_proj；每个来源采用 A[4,768] / W[16,768]，各 49,152 MAC，两组合计 98,304 MAC，保持量化 block 和真实复用关系，用于数值验证与功耗回放。这里只完成方案确认，未执行数据采集。
+2026-10-24 用户将采集改为两个模型第一层（索引 0），已完成 [AI 负载采集和数据准备](../hw/test/data/README.md)：仅用 WikiText-2 test，Qwen2.5-3B q_proj 和 Qwen1.5-MoE-A2.7B 专家 3 的 down_proj；每个来源 A[4,768] / W[16,768]，各 49,152 MAC，合计 98,304 MAC/格式。保存九种编码量化和独立 dot+C0 的 FP64 golden，来源/数据 hash 与软件检查见 [摘要](../hw/test/data/ai-first-layer-summary.json)。权重按字节读取约 57.8 MiB，完整数据保留在 `hw/test/data/artifacts/`，未执行 RTL/PPA。
 
-人工定向与固定种子随机数据的生成方案留待用户后续讨论。随后依次明确软件 golden、数据文件组织、文件驱动 SV testbench、输出对比与验收门槛；当前不展开完整测试工程。MoE checkpoint 固定版本、采集池及最终 token/通道/K 索引须在采集实施时记录，C/反馈和 NVFP4 global scale 的比较数值域须在 golden 步骤明确。
+人工定向与固定种子随机数据的生成方案留待用户后续讨论。当前 `.mem`/manifest 已定义，golden 明确处于 PE 局部缩放域；后续优先明确 C/反馈、舍入与误差验收，然后实现文件驱动 SV testbench 和输出报告。完整 checkpoint 版本、采集池与 token/通道/K 索引已保存；数据准备的软件检查不能替代 RTL 验收。
