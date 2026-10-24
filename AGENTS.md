@@ -12,6 +12,8 @@
 
 Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研](hw/spec/ascend-cube-scheduling-research.md)。不能把其FP16基本K16误当作指令K上限；原生K指令和可变K矩阵指令属于不同候选边界，等待用户讨论确定。
 
+厂商指令边界应从官方仓库的固定版本源码出发，追到编译器 intrinsic 和可获得的 IR/汇编/机器码；不能用一次 API 调用代替一条机器指令。参数可编码范围、L0/布局约束与真实芯片验收分别记录。官方 Ascend C v9.1.0 的编译核验见 [ISA 分析](hw/spec/ascend-official-mmad-isa-analysis.md)。
+
 先阅读 `README.md`、`CONTEXT.md` 和 `docs/architecture.md`。`hw` 只负责单阵列/单核心；`ratio_dse` 负责多核心、多阵列芯片级建模。未定案事项记录在 `docs/roadmap.md`，不能用 INT4/INT8 示例代替目标浮点格式。
 
 ## 1. 目录与职责

@@ -10,6 +10,8 @@
 
 进一步的 [OS 内部调度调研](hw/spec/os-array-scheduling-research.md) 聚焦一条指令如何拆成物理 tile，比较 L0C 反馈与 group 本地累加，并给出论文、逆向研究和公开 RTL 的依据。
 
+[官方 Ascend C → MMAD ISA 分析](hw/spec/ascend-official-mmad-isa-analysis.md) 从官方 v9.1.0 样例追到实际编译的 IR、后端汇编和机器指令字，并结合 L0 容量推导 FP16 指令的 M/N/K 边界；这属于外部 ISA 编译研究，尚无芯片执行或数值验证。
+
 ## 两个核心部分
 
 | 部分 | 范围 | 对外输出 |
