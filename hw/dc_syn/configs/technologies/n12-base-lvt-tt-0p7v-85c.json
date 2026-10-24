@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+  "process": "TSMC CLN12FFCLL",
+  "pvt": {"corner": "TT", "voltage_v": 0.7, "temperature_c": 85},
+  "target_libraries": ["tcbn12ffcllbwp6t16p96cpdtt0p7v85c", "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"],
+  "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+  "operating_condition": "tt0p7v85c",
+  "wire_load_model": "ZeroWireload",
+  "area_unit": "um2",
+  "multi_vt": {"base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c", "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c", "max_lvt_percent": 20.0},
+  "reference_dc_version": "X-2025.06"
+}

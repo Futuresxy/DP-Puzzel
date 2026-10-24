@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-定义边界、职责、数据契约和工作流；不编写硬件、模型、构建或 EDA 脚本。按用户追加要求准备 paper 模板与写作 skill，不代写研究结果。现有 .codex/.agents 等保持不变，新项目 skill 统一放 .skill/<name>/SKILL.md。
+定义边界、职责、数据契约和工作流，不编写硬件/模型。按用户追加授权准备 paper 模板/写作 skill，以及 DC 自动化/统一 RTL 门禁/项目 skill；仅做软件检查，不启动综合或仿真、不代写研究结果。现有 .codex/.agents 等保持不变，新 skill 统一放 .skill/<name>/SKILL.md。
 
 ## Git 与 PR
 
