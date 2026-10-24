@@ -20,3 +20,5 @@
 每份通过证据绑定 export ID、RTL 文件 hash、参考语义版本、testbench/向量 hash、工具版本和随机种子；失败、未执行或证据过期均不能进入 PPA。真实负载回放还需核对结果、周期、tile 分配与活动窗口。
 
 设计 RTL 不复制到 test 目录。失效生成 RTL、无用波形、临时 testbench 和仿真可执行文件按引用关系清理，保留必要失败日志和最小复现。当前完整格式回归尚未实现。新增scripts/check_pe_export.py --smoke只对指定基础PE导出做单位scale、−1/0/+1输入的结果坐标与11级valid定向检查；源TB由脚本按确定随机种子生成，run绑定export/RTL/hash/checker/TB指纹。有限通过不标记manifest passed，不允许PPA。
+
+PE代码归属重构另用`python scripts/check_pe_refactor.py <baseline-export-id> <candidate-export-id>`分别编译新旧RTL，比较同一确定seed产生的逐拍输出/控制，并独立检查基础PE 11级、K/MN 18级valid/last及在途复位。基线只用于检验重构保持行为，不是独立数值参考；它不会继承旧RTL的精度通过状态。精简摘要在[regressions/pe-code-locality-summary.json](regressions/pe-code-locality-summary.json)，范围和限制见[检查记录](../spec/pe-code-locality-checks.md)。

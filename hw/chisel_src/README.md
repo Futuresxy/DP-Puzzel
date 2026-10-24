@@ -2,6 +2,8 @@
 
 当前唯一实现分为H/Q/E/HQE/QE五族，原MidGroup称PE。HQE/QE/E保留分级复用，H/Q采用16/32路全局对齐。PE_E一个源码导出g2/g4；六种PE输出F与周期一致，参数化K_PE/MN_PE共享C/D。不含阵列实现。
 
+读代码从各族`PE_XXX.scala`开始：H/Q单文件直接展示S01输入/格式转换、S02乘法、S03–S09全K对齐与累加；HQE/QE/E保留SubPE/PG，PE文件直接展示输入/scale分发与S07–S11跨PG规约。仅通用MAX、移位、CSA及两级PENormalizeExact等继续复用，不再通过Utils包装完整PE通路。H/Q的g4仅是兼容布局名。
+
 入口：[设计与参数合同](../spec/six-pe-design.md)、[检查记录](../spec/six-pe-checks.md)、[配置](../configs/README.md)。
 
 | Scala | spec |
@@ -17,16 +19,12 @@
 | [Utils/LeadingZeroCounter.scala](Utils/LeadingZeroCounter.scala) | [LeadingZeroCounter](../spec/Utils/LeadingZeroCounter.md) |
 | [Utils/LzdNormalize.scala](Utils/LzdNormalize.scala) | [LzdNormalize](../spec/Utils/LzdNormalize.md) |
 | [Utils/MaxLaneAlign.scala](Utils/MaxLaneAlign.scala) | [MaxLaneAlign](../spec/Utils/MaxLaneAlign.md) |
-| [Utils/PEAlignNormalize.scala](Utils/PEAlignNormalize.scala) | [PEAlignNormalize](../spec/Utils/PEAlignNormalize.md) |
 | [Utils/PEFactory.scala](Utils/PEFactory.scala) | [PEFactory](../spec/Utils/PEFactory.md) |
-| [Utils/PEGlobalAlignNormalize.scala](Utils/PEGlobalAlignNormalize.scala) | [PEGlobalAlignNormalize](../spec/Utils/PEGlobalAlignNormalize.md) |
 | [Utils/PEGroupContract.scala](Utils/PEGroupContract.scala) | [PEGroupContract](../spec/Utils/PEGroupContract.md) |
 | [Utils/PEGroupInterfaces.scala](Utils/PEGroupInterfaces.scala) | [PEGroupInterfaces](../spec/Utils/PEGroupInterfaces.md) |
 | [Utils/PEGroupMath.scala](Utils/PEGroupMath.scala) | [PEGroupMath](../spec/Utils/PEGroupMath.md) |
 | [Utils/PEInterfaces.scala](Utils/PEInterfaces.scala) | [PEInterfaces](../spec/Utils/PEInterfaces.md) |
 | [Utils/PENormalizeExact.scala](Utils/PENormalizeExact.scala) | [PENormalizeExact](../spec/Utils/PENormalizeExact.md) |
-| [Utils/PEWiring.scala](Utils/PEWiring.scala) | [PEWiring](../spec/Utils/PEWiring.md) |
-| [Utils/RawProductInterfaces.scala](Utils/RawProductInterfaces.scala) | [RawProductInterfaces](../spec/Utils/RawProductInterfaces.md) |
 | [Utils/RoundIncrement.scala](Utils/RoundIncrement.scala) | [RoundIncrement](../spec/Utils/RoundIncrement.md) |
 | [Utils/RoundPack.scala](Utils/RoundPack.scala) | [RoundPack](../spec/Utils/RoundPack.md) |
 | [Utils/SignedShift.scala](Utils/SignedShift.scala) | [SignedShift](../spec/Utils/SignedShift.md) |
@@ -42,18 +40,12 @@
 | [pe/PE_E/PEGroup_E.scala](pe/PE_E/PEGroup_E.scala) | [PEGroup_E](../spec/pe/PE_E/PEGroup_E.md) |
 | [pe/PE_E/PE_E.scala](pe/PE_E/PE_E.scala) | [PE_E](../spec/pe/PE_E/PE_E.md) |
 | [pe/PE_E/SubPE_E.scala](pe/PE_E/SubPE_E.scala) | [SubPE_E](../spec/pe/PE_E/SubPE_E.md) |
-| [pe/PE_H/DataUnpack_H.scala](pe/PE_H/DataUnpack_H.scala) | [DataUnpack_H](../spec/pe/PE_H/DataUnpack_H.md) |
-| [pe/PE_H/PEGroup_H.scala](pe/PE_H/PEGroup_H.scala) | [PEGroup_H](../spec/pe/PE_H/PEGroup_H.md) |
 | [pe/PE_H/PE_H.scala](pe/PE_H/PE_H.scala) | [PE_H](../spec/pe/PE_H/PE_H.md) |
-| [pe/PE_H/SubPE_H.scala](pe/PE_H/SubPE_H.scala) | [SubPE_H](../spec/pe/PE_H/SubPE_H.md) |
 | [pe/PE_HQE/DataUnpack_HQE.scala](pe/PE_HQE/DataUnpack_HQE.scala) | [DataUnpack_HQE](../spec/pe/PE_HQE/DataUnpack_HQE.md) |
 | [pe/PE_HQE/PEGroup_HQE.scala](pe/PE_HQE/PEGroup_HQE.scala) | [PEGroup_HQE](../spec/pe/PE_HQE/PEGroup_HQE.md) |
 | [pe/PE_HQE/PE_HQE.scala](pe/PE_HQE/PE_HQE.scala) | [PE_HQE](../spec/pe/PE_HQE/PE_HQE.md) |
 | [pe/PE_HQE/SubPE_HQE.scala](pe/PE_HQE/SubPE_HQE.scala) | [SubPE_HQE](../spec/pe/PE_HQE/SubPE_HQE.md) |
-| [pe/PE_Q/DataUnpack_Q.scala](pe/PE_Q/DataUnpack_Q.scala) | [DataUnpack_Q](../spec/pe/PE_Q/DataUnpack_Q.md) |
-| [pe/PE_Q/PEGroup_Q.scala](pe/PE_Q/PEGroup_Q.scala) | [PEGroup_Q](../spec/pe/PE_Q/PEGroup_Q.md) |
 | [pe/PE_Q/PE_Q.scala](pe/PE_Q/PE_Q.scala) | [PE_Q](../spec/pe/PE_Q/PE_Q.md) |
-| [pe/PE_Q/SubPE_Q.scala](pe/PE_Q/SubPE_Q.scala) | [SubPE_Q](../spec/pe/PE_Q/SubPE_Q.md) |
 | [pe/PE_QE/DataUnpack_QE.scala](pe/PE_QE/DataUnpack_QE.scala) | [DataUnpack_QE](../spec/pe/PE_QE/DataUnpack_QE.md) |
 | [pe/PE_QE/PEGroup_QE.scala](pe/PE_QE/PEGroup_QE.scala) | [PEGroup_QE](../spec/pe/PE_QE/PEGroup_QE.md) |
 | [pe/PE_QE/PE_QE.scala](pe/PE_QE/PE_QE.scala) | [PE_QE](../spec/pe/PE_QE/PE_QE.md) |
