@@ -2,7 +2,7 @@
 
 这组工具只检查官方 Ascend C `Mmad` 的参数如何进入设备机器码，不实现本项目阵列，也不运行 GEMM。探针的 L0 输入未初始化，禁止执行其 kernel。
 
-输入版本与官方下载地址见 [依赖记录](../../dependencies/ascend-research.json)，分析见 [官方源码与 ISA 报告](../../hw/spec/ascend-official-mmad-isa-analysis.md)，精简结果见 [编译摘要](../../docs/research/ascend-mmad-isa/compile-summary.json)。
+输入版本与官方下载地址见 [依赖记录](../../dependencies/ascend-research.json)，分析见 [官方源码与 ISA 报告](../../hw/spec/array_ref/ascend-official-mmad-isa-analysis.md)，精简结果见 [编译摘要](../../docs/research/ascend-mmad-isa/compile-summary.json)。
 
 准备官方 BiSheng 编译器和匹配的 Ascend C 头文件。本轮从官方 CANN 9.1.0 Toolkit 仅提取 `cann-bisheng-compiler` 与 `cann-asc-devkit` 子包，校验子包 SHA-256 及其内置 payload SHA-256，解包到 `.deps/`，不运行安装器。官方Git标签v9.1.0用于样例/源码定位，官方9.1.0 release头文件用于编译；三个关键实现文件已与Git标签逐字节核对，hash见依赖记录。master的新类型与9.1.0编译器不兼容，不能替换这组固定输入。
 

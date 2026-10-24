@@ -5,7 +5,7 @@
 ## 1. 先说明本次实际完成了什么
 
 - 直接克隆 `https://gitcode.com/cann/asc-devkit.git`，固定官方标签 `v9.1.0`、commit `e5451c7feba11f9e259f4fbc19c4bf82f8c0496c`，阅读其矩阵乘样例、Basic/C API 实现、参数和存储约束。
-- 从官方 CANN 9.1.0 Toolkit 流式提取 BiSheng 编译器与 Ascend C 组件，不运行安装器、不安装驱动；组件保存在被忽略的 `.deps/`。版本和 hash 见 [依赖记录](../../dependencies/ascend-research.json)。
+- 从官方 CANN 9.1.0 Toolkit 流式提取 BiSheng 编译器与 Ascend C 组件，不运行安装器、不安装驱动；组件保存在被忽略的 `.deps/`。版本和 hash 见 [依赖记录](../../../dependencies/ascend-research.json)。
 - 用官方 Basic API 编译16个 FP16 形状探针，检查 LLVM IR、设备 ELF `.text` 的机器指令字和后端汇编。源码调用次数与机器指令次数分别核对。
 - **没有运行这些设备 kernel、数值仿真或真实芯片实验。**探针没有初始化 L0，不能执行，更不能用其结果声称数值正确或测得硬件时延。
 
@@ -57,7 +57,7 @@ flowchart LR
 
 ## 4. 真正编译：API → LLVM IR → MMAD 机器码
 
-最小探针保留官方 Basic API 的 LocalTensor 和 Mmad 路径，只删除 GM 搬运、host 启动等无关部分。它不是完整 GEMM kernel；目的是隔离一个给定形状的矩阵计算调用，检查是否被拆为多条 Cube 指令。可复现源码为 [ascend_mmad_probe.cpp](../../scripts/research/ascend_mmad_probe.cpp)，检查入口为 [inspect_ascend_mmad.py](../../scripts/research/inspect_ascend_mmad.py)。
+最小探针保留官方 Basic API 的 LocalTensor 和 Mmad 路径，只删除 GM 搬运、host 启动等无关部分。它不是完整 GEMM kernel；目的是隔离一个给定形状的矩阵计算调用，检查是否被拆为多条 Cube 指令。可复现源码为 [ascend_mmad_probe.cpp](../../../scripts/research/ascend_mmad_probe.cpp)，检查入口为 [inspect_ascend_mmad.py](../../../scripts/research/inspect_ascend_mmad.py)。
 
 实际编译使用官方 CANN9.1.0 配套 release 头文件，`Mmad`、`MmadImpl`、C220 `MmadCal` 三个关键实现文件与官方 v9.1.0 标签逐字节相同，SHA-256 记录在依赖清单。另尝试将同一探针用于官方 master `4b40fcab44231e32d565adafdf8efbc41b603914`，但9.1.0编译器不能识别其新增 FP4/FP8 类型，编译失败；未改写第三方头文件来绕过。故不能宣称最新 master 已用旧工具链构建通过，下面的机器码结论限定于已固定的官方9.1.0组合。
 
@@ -127,7 +127,7 @@ MMAD.f162f32    [X1], [X1], [X1], X0
 - K4096 超出12-bit合同，本次编译器仍接受，实际编码的K变成0。该对照直接说明仅统计一次机器指令也不够，还必须检查操作数字段。
 - M16N16K2048 和176³各生成一次 MMAD，并满足这里检查的容量/尺寸条件；它们尚不是实机验收结果。
 
-每个可编译案例同时记录机器字、IR配置、汇编行、文件hash、容量判断，以及后端和原始 `.text` 是否一致。见[16个编译探针摘要](../../docs/research/ascend-mmad-isa/compile-summary.json)和[复现说明](../../scripts/research/README.md)。实际参与编译的官方9.1.0 release中，三个关键实现文件已与官方Git标签v9.1.0做逐字节和SHA-256核对。所有越界探针只编译，不执行。
+每个可编译案例同时记录机器字、IR配置、汇编行、文件hash、容量判断，以及后端和原始 `.text` 是否一致。见[16个编译探针摘要](../../../docs/research/ascend-mmad-isa/compile-summary.json)和[复现说明](../../../scripts/research/README.md)。实际参与编译的官方9.1.0 release中，三个关键实现文件已与官方Git标签v9.1.0做逐字节和SHA-256核对。所有越界探针只编译，不执行。
 
 ## 7. 对本项目的含义与尚未揭示的硬件
 

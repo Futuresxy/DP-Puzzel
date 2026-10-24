@@ -21,4 +21,4 @@ description: 在 DP-Puzzel 中迁移、审查五族六种基础PE及K/MN编排�
 - 说明 ready/valid 的真实语义。没有反压的流水使用 Valid，不能把忽略 ready 的路径伪装为 Decoupled；运行格式若按事务采样，则控制必须和数据同步流水。
 - Scala 编译/CHIRRTL 展开只确认结构可生成。没有 SV testbench 对对应导出 RTL 的精度/周期验证，不标记 passed、不进入 DC/power、不继承参考项目的通过状态。源码审查阶段不擅自扩展到实验或性能结论。
 
-当前基线与待验收边界见 [六种PE设计](../../hw/spec/six-pe-design.md)；[旧迁移说明](../../hw/spec/pe-migration.md) 仅用于历史对照。未来流水或位宽发生变化时，先同步规格和验收计划，再决定需要的验证。
+当前基线与待验收边界见 [六种PE设计](../../hw/spec/six-pe-design.md) 和 [检查记录](../../hw/spec/six-pe-checks.md)。旧迁移过程从 Git 历史查阅。未来流水或位宽发生变化时，先同步规格和验收计划，再决定需要的验证。

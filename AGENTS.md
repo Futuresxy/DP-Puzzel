@@ -4,15 +4,15 @@
 
 **当前阶段按用户批准方案实现五族目录与六种基础PE：PE_HQE_g4、PE_QE_g4、PE_H_g4、PE_Q_g4、PE_E_g4、PE_E_g2。** 原MidGroup改称PE；SubPE/PEGroup/PE层级保留。HQE/QE/E保留原分级复用组织；H/Q专用路径采用16/32路全局对齐和流水自然位宽累加。Utils维护公共接口/算术/C-D；K_PE/MN_PE编排基础PE，不写阵列代码。统一PE输出F=pe_align_width、11级，g2规范化后精确补一个低零对齐g4；K/MN总18级。完整RTL精度/周期回归与EDA仍在后续阶段，不能将有限定向检查称为完整精度验证通过。
 
-**阵列扩展当前仅获授权调研和方案讨论，用户审核确定方案前不写阵列代码。** 已确认采用 2×2 group 组内广播、组间脉动；M8N32 是逻辑指令输出块，物理阵列参数化；FP4 目标 K64/96/128/192/256，FP8 目标 K32/64/96/128。控制、L0 和 layout 候选见 [讨论稿](hw/spec/array-design-discussion.md)，其中建议不等于已批准的实现合同。
+**阵列扩展当前仅获授权调研和方案讨论，用户审核确定方案前不写阵列代码。** 已确认采用 2×2 group 组内广播、组间脉动；M8N32 是逻辑指令输出块，物理阵列参数化；FP4 目标 K64/96/128/192/256，FP8 目标 K32/64/96/128。控制、L0 和 layout 候选见 [讨论稿](hw/spec/array_ref/array-design-discussion.md)，其中建议不等于已批准的实现合同。
 
-阵列调研须覆盖逻辑指令以下的物理 tile 切分、preload/compute/drain、本地 accumulator 与累加 RAW。区分 L0 层输出驻留和 PE/group 内 OS；文献已实现机制、逆向推断与本项目建议分别标记。当前候选与证据见 [OS 调度调研](hw/spec/os-array-scheduling-research.md)。
+阵列调研须覆盖逻辑指令以下的物理 tile 切分、preload/compute/drain、本地 accumulator 与累加 RAW。区分 L0 层输出驻留和 PE/group 内 OS；文献已实现机制、逆向推断与本项目建议分别标记。当前候选与证据见 [OS 调度调研](hw/spec/array_ref/os-array-scheduling-research.md)。
 
 当前讨论方向为 `K_inst = K_native(mode, config)`：指令内只调度 M/N 输出子块；更长 GEMM 的 K 由软件组织多条原生指令，K-PE 内部空间规约保留。不得继续将 E64 分三轮执行 K192 作为单条原生指令的默认方案，也不得由固定 PTX K 推断 NVIDIA 内部没有时分计算。跨指令 C/D 依赖及驻留合同仍需审核；本方向不构成阵列代码实施授权。
 
-Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研](hw/spec/ascend-cube-scheduling-research.md)。不能把其FP16基本K16误当作指令K上限；原生K指令和可变K矩阵指令属于不同候选边界，等待用户讨论确定。
+Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研](hw/spec/array_ref/ascend-cube-scheduling-research.md)。不能把其FP16基本K16误当作指令K上限；原生K指令和可变K矩阵指令属于不同候选边界，等待用户讨论确定。
 
-厂商指令边界应从官方仓库的固定版本源码出发，追到编译器 intrinsic 和可获得的 IR/汇编/机器码；不能用一次 API 调用代替一条机器指令。参数可编码范围、L0/布局约束与真实芯片验收分别记录。官方 Ascend C v9.1.0 的编译核验见 [ISA 分析](hw/spec/ascend-official-mmad-isa-analysis.md)。
+厂商指令边界应从官方仓库的固定版本源码出发，追到编译器 intrinsic 和可获得的 IR/汇编/机器码；不能用一次 API 调用代替一条机器指令。参数可编码范围、L0/布局约束与真实芯片验收分别记录。官方 Ascend C v9.1.0 的编译核验见 [ISA 分析](hw/spec/array_ref/ascend-official-mmad-isa-analysis.md)。
 
 先阅读 `README.md`、`CONTEXT.md` 和 `docs/architecture.md`。`hw` 只负责单阵列/单核心；`ratio_dse` 负责多核心、多阵列芯片级建模。未定案事项记录在 `docs/roadmap.md`，不能用 INT4/INT8 示例代替目标浮点格式。
 

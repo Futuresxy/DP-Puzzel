@@ -1,6 +1,6 @@
 # 目标精度与数值语义
 
-目标族为 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4。这里建立规格职责，不定义尚未决定的 RTL 实现。
+目标族为 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4。本页汇总格式来源及待核验的数值语义；当前硬件组织以[六种 PE 设计](six-pe-design.md)为准，编码、配对和解包行为见[格式配对](config/FormatCompat.md)与[原子解码](Utils/DecodePrimitives.md)。已实现迁移通路不代表已完成对外部格式规范的完整一致性验证。
 
 | 格式 | 需要独立定义的内容 |
 | --- | --- |
