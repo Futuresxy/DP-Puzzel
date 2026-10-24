@@ -38,3 +38,9 @@
 - 以独立 reference 验证 H/Q 全局 RTZ 与 HQE/QE/E 分级 RTZ，覆盖一般尾数/指数、scale、特殊值、严重抵消和参数边界，分别记录误差。
 - 完成 K/MN 的 C/D 数值与完整 batch 握手、排空、气泡和复位回归。当前[有限定向检查](../hw/spec/six-pe-checks.md)不能替代这些验收。
 - 完成 export/hash 验证门禁后，再接入挂载 EDA 的 DC 与真实负载 power；位宽、流水和后续阵列优化另列可验证合同。
+
+## 测试数据方案的分步确认
+
+2026-10-24 用户将采集改为两个模型第一层（索引 0），已完成 [AI 负载采集和数据准备](../hw/test/data/README.md)：仅用 WikiText-2 test，Qwen2.5-3B q_proj 和 Qwen1.5-MoE-A2.7B 专家 3 的 down_proj；每个来源 A[4,768] / W[16,768]，各 49,152 MAC，合计 98,304 MAC/格式。保存九种编码量化和独立 dot+C0 的 FP64 golden，来源/数据 hash 与软件检查见 [摘要](../hw/test/data/ai-first-layer-summary.json)。权重按字节读取约 57.8 MiB，完整数据保留在 `hw/test/data/artifacts/`，未执行 RTL/PPA。
+
+人工定向与固定种子随机数据的生成方案留待用户后续讨论。当前 `.mem`/manifest 已定义，golden 明确处于 PE 局部缩放域；后续优先明确 C/反馈、舍入与误差验收，然后实现文件驱动 SV testbench 和输出报告。完整 checkpoint 版本、采集池与 token/通道/K 索引已保存；数据准备的软件检查不能替代 RTL 验收。

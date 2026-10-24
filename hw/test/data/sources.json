@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "dataset": {
+    "repo": "Salesforce/wikitext",
+    "revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+    "config": "wikitext-2-raw-v1",
+    "split": "test",
+    "file": "wikitext-2-raw-v1/test-00000-of-00001.parquet"
+  },
+  "capture": {
+    "sequence_length": 256,
+    "minimum_token_position": 32,
+    "m": 4,
+    "n": 16,
+    "k": 768,
+    "k_start": 0,
+    "dtype": "bfloat16",
+    "text_join": "nonempty records in dataset order, joined by two LF characters",
+    "attention": "eager causal attention; no KV cache; eval mode"
+  },
+  "models": {
+    "qwen_qproj": {
+      "repo": "Qwen/Qwen2.5-3B",
+      "revision": "3aab1f1954e9cc14eb9509a215f9e5ca08227a9b",
+      "cache_name": "qwen2.5-3b",
+      "layer": 0,
+      "operator": "self_attn.q_proj"
+    },
+    "moe_downproj": {
+      "repo": "Qwen/Qwen1.5-MoE-A2.7B",
+      "revision": "1a758c50ecb6350748b9ce0a99d2352fd9fc11c9",
+      "cache_name": "qwen1.5-moe",
+      "layer": 0,
+      "operator": "mlp.experts.<selected>.down_proj"
+    }
+  }
+}

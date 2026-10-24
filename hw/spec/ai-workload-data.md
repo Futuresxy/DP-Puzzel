@@ -1,0 +1,79 @@
+# AI 负载数据采集定义
+
+状态：2026-10-24 用户将中间层采集改为两个模型的第一层（索引 0），以减少下载。已在 [hw/test/data](../test/data/README.md) 完成首层采集、九种编码量化及 C=0 的 FP64 dot golden；结果和来源指纹见 [摘要](../test/data/ai-first-layer-summary.json)。这里只形成软件数据证据，未运行 RTL 验证或 PPA。人工定向数据、随机分布和随机种子生成方案留待后续讨论。
+
+## 两组真实负载
+
+首轮语料统一采用 `Salesforce/wikitext` 的 `wikitext-2-raw-v1/test`，不加入 C4。两个模型读取同一批原始文本，各自使用与 checkpoint 同版本的 tokenizer；token 编号和位置分别记录，不要求两个 tokenizer 产生相同的 token 序列。
+
+| 数据源 | 采集算子，层号从 0 开始 | 激活 A | 权重 W |
+| --- | --- | --- | --- |
+| Qwen/Qwen2.5-3B | `model.layers.0.self_attn.q_proj`，第一层 | 实际送入 Q 投影线性层的输入，即 input RMSNorm 之后的值 | 对应 `q_proj.weight`，原矩阵 `[2048, 2048]` |
+| Qwen/Qwen1.5-MoE-A2.7B | `model.layers.0.mlp.experts[3].down_proj`，第一层，实际选中专家 3 | 真实路由到该专家、经过该专家 gate/up 和非线性之后的 down 投影输入 | 对应专家 `down_proj.weight`，原矩阵 `[2048, 1408]` |
+
+Qwen2.5-3B 是 dense 模型，因此 MoE 专家来自第二个模型，两个来源分别命名、分别报告。模型结构依据 [Qwen2.5 官方配置](https://huggingface.co/Qwen/Qwen2.5-3B/raw/main/config.json) 和 [Qwen1.5-MoE 官方配置](https://huggingface.co/Qwen/Qwen1.5-MoE-A2.7B/raw/main/config.json)。
+
+专家选择：先固定采集文本池，再统计第 0 层各 routed expert 的命中 token 数，从至少有 4 个候选 token 的专家中按 `(命中数, expert ID)` 排序选择下中位数。最终实际选中专家 3，选择和路由统计记录在数据产物中，在查看量化误差及功耗结果之前冻结。只使用真实命中该专家的激活，不向未被选中的专家强行输入 token。
+
+Q 投影的 bias、MoE 的 routing probability 独立记录，不折入权重或激活。当前数据块描述线性算子的点积部分，C/bias、路由加权及跨事务累加如何进入测试由后续 golden/回放合同明确。
+
+## 每个来源的采样规模
+
+两个来源合计 98,304 MAC，平均分配。每个来源保留一个逻辑子 GEMM：`A[4, 768] × W[16, 768]^T → Y[4, 16]`。
+
+- A 的 4 行来自真实的 4 个不同 token；W 的 16 行来自同一算子的 16 个输出通道。
+- Q 投影按 16 个 attention head 分层选择输出通道；专家 down 投影按输出通道区间分层选择。记录精确通道索引，不依据误差挑选通道。
+- A/W 采用相同的连续 K 区间，长度 768，原张量中的起点按 64 元素对齐；行内 K 连续。4 个 token 和 16 个输出通道使用同一 K 区间。
+- 一组有 `4 × 16 × 768 = 49,152` 对乘法操作数，即 49,152 MAC，按 2 OP/MAC 为 98,304 OP；两组分别测试，合计 98,304 MAC / 196,608 OP。每组对应 `512 × 96`、两组合计 `1024 × 96` 的工作量；这些仅为事务视图，不定义原始张量行或 scale block 边界。
+- 每组原始唯一元素数为 A 的 3,072 个和 W 的 12,288 个。49,152 是考虑 M/N 复用后的 A/B 配对数，不要求在原始数据文件中重复保存复用元素。
+
+K768 可被当前目标原生 K16/32/48/64/96/128/192/256 整除；每组对应 3072/1536/1024/768/512/384/256/192 次点积事务，两组合计 6144/3072/2048/1536/1024/768/512/384 次。该性质不代表任意未来 K 配置都自动整除；每个回放配置仍需核对 K 和 block 布局。
+
+## 同源多格式数据
+
+权重保留 checkpoint 的原始位模式，激活保留实际前向所得的位模式及 dtype；另存数值无损的可分析视图。BF16 可无损转 FP32/FP64，不能把转为 FP64 称为恢复了原本不存在的精度。记录前向运算 dtype、设备和软件版本，不能将 FP32 前向采集描述成原生 BF16 前向。
+
+从同一份未量化数据独立生成 BF16、FP16、MXFP8、MXFP6、MXFP4、NVFP4 和 HiF4；不经由某个低精度版本再量化其他版本。基础量化采用确定性 RNE，饱和/下溢等处理随量化语义记录；首轮不叠加 SmoothQuant、GPTQ 或 Hadamard 变换。具体实现和文件合同见 [数据工具说明](../test/data/README.md)，FP8/FP6 各含两种编码，共九种编码结果。
+
+| 格式 | 元素编码 | 沿每行 K 的缩放元数据 |
+| --- | --- | --- |
+| BF16 / FP16 | 各自 16 bit 编码 | 无实际共享 scale |
+| MXFP8 | E4M3 / E5M2 | 每 32 元素一个 E8M0 |
+| MXFP6 | E3M2 / E2M3 | 每 32 元素一个 E8M0 |
+| MXFP4 | E2M1 | 每 32 元素一个 E8M0 |
+| NVFP4 | E2M1 | 每 16 元素一个正 E4M3，另保留母张量 FP32 global scale |
+| HiF4 | S1P2 | 每 64 元素一个 E6M2；每 4 元素一个 g0 bit，每 8 元素一个 g1 bit |
+
+A/W 各自量化、各自保存 scale。先按原张量的格式 block 确定元素和 scale，再为不同 PE 生成映射；不能随 PE/profile 或事务边界重新求 scale，否则比较的数据已发生变化。元数据随元素保存，testbench 后续从文件读取，不把输入值嵌入 testbench 源码。当前定义了行优先 `.mem`、W16 打包、scale/微指数独立文件和 manifest；实际 DUT 握手及物理 scale 槽映射留待 testbench 阶段。
+
+MX 以 [OCP MX v1.0](https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final-pdf) 为格式依据。NVFP4 采用适配本 PE 的一维 K16 block；[Transformer Engine 格式说明](https://docs.nvidia.com/deeplearning/transformer-engine/features/low_precision_training/nvfp4/nvfp4.html) 中的 global scale 单独保留。当前 PE 不实现该全局因子，后续 golden 必须区分 PE 内部缩放域和原始张量域；不能在已有 C 的整个输出上直接乘 global scale，冒充完整 NVFP4 累加。
+
+HiF4 依据 [论文 v2，式 (2)](https://arxiv.org/html/2602.11287v2)，本项目字段对应为 `g0 = E1_16`、`g1 = E1_8`。每行 K 从 0 计数时：
+
+```text
+x[i] = (-1)^sign[i] × (m[i]/4)
+       × 2^(g0[i//4] + g1[i//8]) × S[i//64]
+m[i] ∈ {0, …, 7}; g0/g1 ∈ {0, 1}; S 为 E6M2
+```
+
+微指数 bit 0 和 1 分别对应乘数 1 和 2。每个 64 元素 block 有 16 个 g0、8 个 g1；不能把微指数当成 scale 的有效位或零标记。量化器需明确实现的是数值转换还是逐步模拟论文的 BF16 指令舍入，不能仅凭格式相同宣称两种量化器逐位一致。
+
+### HiF4 K96 的映射约束
+
+当前 K96 可由 PE64 和 PE32 拼接；PE64 的 64 元素共享一个 HiF4 主 scale。连续切 96 元素会使后续 PE64 跨越两个独立 64 元素母 block，不能直接这样打包。
+
+按已经确认的方案，对三个连续母 block B0/B1/B2 组织两笔事务：事务 0 的 PE64 接 B0，PE32 接 B1 前半；事务 1 的 PE64 接 B2，PE32 接 B1 后半。A/W 使用相同的 K 索引映射，复制所属主 scale，并切取对应 g0/g1。映射只发生在同一个输出的 K768 内，不跨 token 或输出通道；原始文件仍保留行内连续 K 和母 block 身份。
+
+这保持元素和 scale 不变，但会改变部分和分组。不同 K/分组的有限精度结果不应直接要求逐位相同，验收依据由后续 golden 和误差合同定义；本次不修改硬件接口或编写阵列。
+
+## 可追溯性和双重用途
+
+模型与数据集 revision、匹配的 tokenizer、文本拼接/token 选择规则和采集池固定在 [sources.json](../test/data/sources.json)。MoE checkpoint 为 `1a758c50ecb6350748b9ce0a99d2352fd9fc11c9`，Qwen2.5 为 `3aab1f1954e9cc14eb9509a215f9e5ca08227a9b`；产物记录算子路径、层号、expert ID、原矩阵形状、token/通道/K 坐标、dtype、软件版本、量化语义版本及文件 SHA-256，不使用浮动 main 作为正式采集来源。
+
+同时保留 RMS、绝对值最大值、分位数、零比例、通道峰值和 block 动态范围等统计，用实际捕获数据描述范围，不先假设 AI 数值落在某个固定区间。真实负载不主动注入 NaN/Inf 或人工极值。
+
+两组数据均用于数值验证和后续功耗回放；功耗回放保留原操作数的 M/N 复用和映射顺序，不打散成无关联随机配对。两个负载分别报告，记录原生 K、有效事务、气泡及活动窗口。同一输入数据不自动代表所有单元有相同切换率；后续 C/反馈语义、RTL 验证及活动映射成立后，才能用于正式功耗证据。
+
+## 后续讨论边界
+
+下一步仍由用户分层推进人工定向与随机数据生成、C/累加反馈与舍入验收、文件驱动 testbench、输出比较和通过门槛。当前生成的 golden 仅覆盖明确标注的独立 dot+C0，保留未舍入 FP64；不把数据准备、此前脚本草稿或有限试跑当作 RTL 精度验收。
