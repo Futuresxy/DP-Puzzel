@@ -5,9 +5,5 @@
   "format": "BF16",
   "parameters": {},
   "source_template": "hw/dc_syn/examples/bf16_sign_pipe/Bf16SignPipe.sv.in",
-  "spec": "hw/spec/bf16_sign_pipe_example.md",
-  "testbench": "hw/test/tb/Bf16SignPipeTb.sv",
-  "reference": "hw/test/reference/bf16_sign_pipe.py",
-  "seed": 20261024,
-  "random_cycles": 1024
+  "spec": "hw/spec/bf16_sign_pipe_example.md"
 }

@@ -9,13 +9,19 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "scripts"))
-from rtl_gate import sha256
 
 NUMBER = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
 
 
 def read(path):
     return path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""
+
+
+def project_path(path):
+    try:
+        return Path(path).relative_to(ROOT).as_posix()
+    except ValueError:
+        return str(path)
 
 
 def timing(qor, detail, hold=False):
@@ -67,6 +73,8 @@ def analyze(run, resolved):
                  "reference.rpt", "cell_usage.tsv"):
         if not read(reports / name).strip():
             errors.append("Missing required report: " + name)
+    if resolved["constraints"]["clock_gating"] and not read(reports / "clock_gating.rpt").strip():
+        errors.append("Missing clock-gating report")
     logs = read(run / "logs/dc.stdout.log") + "\n" + read(run / "logs/dc.stderr.log")
     fatal = re.findall(r"^\s*(?:Error:|Fatal:|DP_DC_FATAL:).*$", logs, re.M | re.I)
     if fatal:
@@ -79,7 +87,7 @@ def analyze(run, resolved):
         errors.append("DC process did not exit successfully")
     if read(run / "DC_COMPLETE").strip() != "DP_DC_V1_EXPORTS_COMPLETE":
         errors.append("Missing complete-export marker")
-    artifacts = {}
+    artifacts = []
     names = [resolved["gate"]["top"] + suffix for suffix in ("_mapped.v", ".sdc", ".ddc")]
     if resolved["constraints"]["write_sdf"]:
         names.append(resolved["gate"]["top"] + ".sdf")
@@ -88,24 +96,43 @@ def analyze(run, resolved):
         if not path.is_file() or not path.stat().st_size:
             errors.append("Missing export: " + name)
         else:
-            artifacts["netlist/" + name] = sha256(path)
+            artifacts.append("netlist/" + name)
     setup = timing(qor, read(reports / "timing_setup.rpt"))
     hold = timing(qor, read(reports / "timing_hold.rpt"), True)
     timing_status = "FAIL" if "FAIL" in (setup["status"], hold["status"]) else (
         "PASS" if coverage and setup["status"] == hold["status"] == "PASS" else "UNKNOWN")
     valid = not errors
-    return {"schema_version": 1, "run_id": run.name, "export_id": resolved["gate"]["export_id"],
-            "verification_id": resolved["gate"]["verification_id"], "status": "measured" if valid else "invalid",
+    return {"schema_version": 2, "run_id": run.name, "purpose": resolved.get("purpose", "RTL 综合面积与时序检查"),
+            "time": resolved["created_at"], "top": resolved["gate"]["top"],
+            "source_files": [project_path(p) for p in resolved["gate"]["sources"]],
+            "rtl_fingerprint": resolved["gate"]["rtl_fingerprint"],
+            "export_id": resolved["gate"]["export_id"],
+            "status": "measured" if valid else "invalid",
             "synthesis_valid": valid, "timing_pass": valid and timing_status == "PASS",
             "timing_status": timing_status if valid else "UNKNOWN", "errors": errors, "warnings": warnings,
             "area_source": "dc_standard_cell_synthesis", "area_unit": "um2", "area": area,
             "setup": setup, "hold": hold, "unconstrained_endpoints_status": "checked_clean" if coverage else "unknown",
-            "dc_version": version.group(1) if version else None, "technology": resolved["technology"],
-            "constraints": resolved["constraints"], "frequency_mhz": 1000.0 / resolved["constraints"]["period_ns"],
-            "source": resolved["source"], "netlist_artifacts": artifacts,
-            "power": None, "netlist_equivalence": "not_run", "power_ready": False,
-            "limitations": ["Pre-layout; no CTS or extracted parasitics", "No workload power measurement",
-                            "Power requires separate RTL/netlist consistency and activity checks"]}
+            "dc_version": version.group(1) if version else None,
+            "technology": {"process": resolved["technology"]["process"], "pvt": resolved["technology"]["pvt"]},
+            "clock_period_ns": resolved["constraints"]["period_ns"],
+            "clock_gating": resolved["constraints"]["clock_gating"],
+            "hierarchy": resolved["constraints"]["hierarchy"],
+            "frequency_mhz": 1000.0 / resolved["constraints"]["period_ns"],
+            "netlist_files": artifacts, "power_ready": False}
+
+
+def compact_record(summary):
+    return {"purpose": summary["purpose"], "time": summary["time"], "technology": summary["technology"],
+            "source_files": summary["source_files"], "run": "hw/dc_syn/runs/" + summary["run_id"],
+            "dc_version": summary["dc_version"], "frequency_mhz": summary["frequency_mhz"],
+            "clock_gating": summary["clock_gating"],
+            "result": {"synthesis_valid": summary["synthesis_valid"],
+                       "total_area_um2": summary["area"]["total_cell_area_um2"],
+                       "combinational_area_um2": summary["area"]["combinational_area_um2"],
+                       "sequential_area_um2": summary["area"]["sequential_area_um2"],
+                       "setup": summary["setup"]["status"], "hold": summary["hold"]["status"],
+                       "setup_slack_ns": summary["setup"]["worst_reported_slack_ns"],
+                       "hold_slack_ns": summary["hold"]["worst_reported_slack_ns"]}}
 
 
 def write_summary(run, summary):
@@ -113,7 +140,7 @@ def write_summary(run, summary):
     row = {"run_id": summary["run_id"], "export_id": summary["export_id"],
            "status": summary["status"], "timing_status": summary["timing_status"],
            "timing_pass": summary["timing_pass"], "dc_version": summary["dc_version"],
-           "technology_id": summary["technology"]["technology_id"]}
+           "time": summary["time"], "purpose": summary["purpose"], "process": summary["technology"]["process"]}
     row.update(summary["area"])
     for kind in ("setup", "hold"):
         row.update({kind + "_" + k: v for k, v in summary[kind].items()})
@@ -126,8 +153,11 @@ def write_summary(run, summary):
                "comb_area": summary["area"]["combinational_area_um2"],
                "seq_area": summary["area"]["sequential_area_um2"],
                "errors": "; ".join(summary["errors"]) or "无", "dc": summary["dc_version"],
-               "technology": summary["technology"]["technology_id"],
-               "period": summary["constraints"]["period_ns"]}
+               "technology": summary["technology"]["process"], "pvt": summary["technology"]["pvt"],
+               "time": summary["time"], "purpose": summary["purpose"],
+               "sources": ", ".join(summary["source_files"]),
+               "clock_gating": summary["clock_gating"], "hierarchy": summary["hierarchy"],
+               "period": summary["clock_period_ns"]}
     for kind in ("setup", "hold"):
         context.update({kind + "_" + k: v for k, v in summary[kind].items()})
     context = {k: "unknown" if v is None else v for k, v in context.items()}

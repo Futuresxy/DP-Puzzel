@@ -1,18 +1,18 @@
 # 数据契约与可追溯性
 
-本文定义文件的数据职责。DC 基础设施已实现 [RTL/验证输入 v1 契约](../hw/dc_syn/input-contract.md) 与 synthesis summary JSON/CSV，其余机器格式随实施确定；标识、单位和来源不能由隐式约定代替。已有 BF16 符号流水级示例的真实 RTL 验证及 DC 测量，尚无阵列/核心 characterization 或 workload power 数据。
+本文定义文件的数据职责。DC 基础设施已实现 [RTL/验证输入 v2 契约](../hw/dc_syn/input-contract.md) 与 synthesis summary JSON/CSV，其余机器格式随实施确定；标识、单位和来源不能由隐式约定代替。已有 BF16 符号流水级示例的真实 RTL 验证及 DC 测量，尚无阵列/核心 characterization 或 workload power 数据。
 
 ## 通用记录
 
-持久结果包含 schema/version、稳定 ID、时间、生产者/命令、源码 commit 和未提交差异指纹（如允许）、输入 ID/hash、工具/依赖版本、状态、单位、适用范围及归档 URI/hash。输入修改形成新版本；已引用结果不能静默替换。
+持久结果记录目的、时间、工艺、源码路径、输入 ID、工具版本、状态、单位和核心结果，详细参数/命令在对应 run。硬件链只保留一个 RTL 目录指纹，验证和综合引用同一值，不再为每份文件列指纹。输入修改形成新版本，已引用结果不能静默替换。
 
 | 数据对象 | 生产方 → 消费方 | 核心字段与约束 |
 | --- | --- | --- |
 | FormatSpec | hw/spec → 实现、参考模型、DSE | format_id、来源版本、元素编码、block shape/scale 编码、累加/输出格式、舍入、特殊值、转换规则 |
 | HardwareConfig | hw/configs → Chisel、characterization | hardware_id、scope、参数、支持模式、资源共享、接口、目标时序；不含整芯片实例配比 |
-| RTLExport | 导出流程 → RTL 仿真、EDA | export_id、module↔Chisel 来源映射、files.f、逐文件 SHA-256、配置/源码/工具指纹、README |
-| RTLVerification | SV testbench → EDA 门禁 | export/hash、testbench/参考/向量版本、精度判据、配置矩阵、周期检查、日志、状态 |
-| SynthesisResult | DC → profile、power | export/验证 ID、库/PVT、约束、面积、时序、未约束路径状态、netlist/SDC hash |
+| RTLExport | 导出流程 → RTL 仿真、EDA | export_id、来源映射、files.f、单个 RTL 目录指纹、README |
+| RTLVerification | SV testbench → EDA 门禁 | export/目录指纹、testbench/参考/向量路径与版本、精度/周期判据、日志、状态 |
+| SynthesisResult | DC → profile、power | 短 run 名、目的、时间、源码路径、工艺/PVT、面积/时序、门控与层级策略、网表路径 |
 | WorkloadActivity | trace 回放 → 功耗、校准 | workload/format/mapping、输入 hash、reset/warmup/active/stall/idle 窗口、层次、timescale、VCD/SAIF hash |
 | PowerResult | EDA power → profile | export/netlist/activity、库/PVT、频率、annotation coverage、internal/switching/leakage/total、窗口与方法 |
 | HardwareProfile | hw/characterization → DSE | scope、included_components、支持模式、吞吐/周期、面积与活动成本、证据/工况、适用区间与误差 |
@@ -48,7 +48,7 @@
 
 ## 必须保持的关联
 
-1. PPA 使用的 RTL 必须就是通过 testbench 的文件 hash 集合；参考语义变化后重新核验验证证据。
+1. PPA 使用的 RTL 必须与通过 testbench 的 RTL 目录指纹一致；参考语义变化后重新核验验证证据。
 2. 功耗窗口的 trace、映射、netlist、频率与数值模式保持一致；活动缺失不能当成零切换。
 3. DSE 候选的硬件 profile、存储模型和 workload 可追溯到配置与预算，不跨工艺/电压/精度盲用测量。
 
