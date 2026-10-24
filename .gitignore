@@ -13,7 +13,8 @@ hw/project/project/
 hw/rtl/*/
 hw/test/runs/
 hw/dc_syn/runs/
-hw/power/runs/
+hw/power/runs/*
+!hw/power/runs/README.md
 ratio_dse/results/*
 !ratio_dse/results/README.md
 !ratio_dse/results/summaries/

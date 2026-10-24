@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "status": "unconfigured_example",
+  "source_dc_machine_file": null,
+  "source_synthesis_run_id": null,
+  "power_compiler_dc_shell": null,
+  "approved_setup_script": null,
+  "simulator": {
+    "executable": null,
+    "version": null,
+    "saif_capture_method": null,
+    "cell_models": []
+  },
+  "vcd_to_saif_converter": null,
+  "binding_policy": "reuse_synthesis_db_and_constraints_bind_matching_models_and_tools_explicitly",
+  "license_policy": "provided_by_approved_external_environment_never_stored_here"
+}

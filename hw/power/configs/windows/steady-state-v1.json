@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "policy_id": "steady-state-v1",
+  "status": "planned",
+  "kind": "steady_state",
+  "interval": "half_open",
+  "phase": "explicit_non_racing_phase_from_verified_testbench",
+  "warmup": {
+    "minimum_cycles": 64,
+    "pipeline_guard_cycles": 2,
+    "state_settle_cycles": null,
+    "state_settle_source": "spec_and_observed_legal_state_events",
+    "rule": "max(minimum_cycles, pipeline_latency_cycles + pipeline_guard_cycles, state_settle_cycles)",
+    "requires_legal_initialization": true
+  },
+  "candidate_cycles": [1024, 2048, 4096, 8192, 16384],
+  "convergence": {
+    "total_relative_change_max": 0.02,
+    "dynamic_relative_change_max": 0.05,
+    "dynamic_definition": "internal_plus_switching",
+    "required_consecutive_growth_passes": 2,
+    "same_start_prefix_comparison": true,
+    "equal_half_window_comparison": true,
+    "relative_denominator": "absolute_previous_value_or_first_half_value",
+    "both_zero": "pass_if_validated_zero",
+    "one_zero_one_nonzero": "fail",
+    "stop_rule": "shortest_candidate_with_two_consecutive_growth_and_half_window_passes"
+  },
+  "sampling": {
+    "target_independent_source_segments": 3,
+    "report_between_segment_variation": true,
+    "require_between_segment_equal_power": false,
+    "preserve_original_transaction_order": true,
+    "implicit_repetition_allowed": false,
+    "explicit_cyclic_microbenchmark": "separate_scope_and_repetition_disclosure"
+  },
+  "insufficient_trace_status": "insufficient_trace",
+  "insufficient_segments_status": "coverage_limited",
+  "unconverged_at_budget_status": "not_converged",
+  "accuracy_claim": "window_stability_only_not_silicon_error_or_statistical_confidence"
+}

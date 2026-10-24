@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "policy_id": "task-complete-v1",
+  "status": "planned",
+  "kind": "task_complete",
+  "interval": "half_open",
+  "start": "before_first_required_operation_at_declared_task_boundary",
+  "end": "after_last_output_completion_required_drain_idle_and_event_settlement",
+  "event_definitions_source": "verified_test_workload_manifest_and_interface_spec",
+  "duration_cycles": null,
+  "fixed_cycle_padding_allowed": false,
+  "implicit_repetition_allowed": false,
+  "preserve_original_transaction_order": true,
+  "include_within_declared_boundary": ["configuration", "fill", "compute", "stall", "mode_switch", "drain", "format_conversion"],
+  "reset_and_initialization": "include_if_required_by_declared_task_initial_state",
+  "warm_start": "explicit_state_and_excluded_preparation_cost_required",
+  "convergence_status": "not_applicable_for_finite_task",
+  "primary_metrics": ["average_power_w", "energy_j", "task_latency_s", "useful_macs"],
+  "instantaneous_peak_power_w": null
+}

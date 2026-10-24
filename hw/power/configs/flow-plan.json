@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "kind": "power_flow_plan",
+  "status": "planned",
+  "executable": false,
+  "backend": "dc_power_compiler",
+  "hardware_scope": ["array", "core"],
+  "technology_selection": {
+    "preferred_dc_profile": "hw/dc_syn/configs/technologies/n22-tt-0p9v-85c.json",
+    "alternative_dc_profile": "hw/dc_syn/configs/technologies/n12-base-lvt-tt-0p7v-85c.json",
+    "alternative_activation": "explicit_task_selection_with_new_matching_synthesis_run",
+    "automatic_fallback": false
+  },
+  "design_source": {
+    "export_directory_template": "hw/rtl/<export-id>/",
+    "manifest": "manifest.json",
+    "file_list": "files.f"
+  },
+  "synthesis_source": "hw/dc_syn/runs/<synthesis-run-id>/summary.json",
+  "workload_source": "rtl_verification_bound_real_workload_manifest",
+  "activity": {
+    "primary": "gate_simulator_direct_saif",
+    "alternative": "validated_gate_vcd_to_saif",
+    "opensta_required": false,
+    "default_simulation_timing": "zero_delay_functional",
+    "scope": "explicit_testbench_and_dut_instance"
+  },
+  "windows": {
+    "task_complete": "hw/power/configs/windows/task-complete-v1.json",
+    "steady_state": "hw/power/configs/windows/steady-state-v1.json",
+    "primary_task_metric": "task_complete",
+    "idle": "hw/power/configs/windows/idle-v1.json"
+  },
+  "formal_result_gates": {
+    "rtl_verification_pass": true,
+    "synthesis_valid": true,
+    "timing_pass": true,
+    "workload_rtl_gate_comparison_pass": true,
+    "activity_and_effective_activity_audit_pass": true,
+    "minimum_observable_leaf_power_pin_coverage": 0.99,
+    "critical_clock_enable_sequential_pin_coverage": "complete_with_proven_exceptions"
+  },
+  "physical_stage": "post_synthesis_pre_layout",
+  "clock_and_load_policy": "inherit_frozen_synthesis_constraints",
+  "parasitics": "inherit_synthesis_assumption_no_extracted_spef_in_v1",
+  "glitch_model": "no_claim_of_physical_glitch_accuracy",
+  "power_unit": "W",
+  "instantaneous_peak_power_w": null
+}
