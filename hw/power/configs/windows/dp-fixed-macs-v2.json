@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "policy_id": "dp-fixed-macs-v2",
+  "supersedes_policy_id": "dp-fixed-macs-v1",
+  "status": "planned",
+  "kind": "fixed_useful_macs",
+  "scope": "dp_compute_microbenchmark",
+  "target_organizations": ["k-pe", "mn-pe"],
+  "budget_scope": "whole_selected_dut_not_independently_per_parallel_lane",
+  "workload_unit": "valid_scalar_A_B_operand_pair",
+  "target_operand_pairs": 98304,
+  "target_useful_macs": 98304,
+  "source_expression": "96 * 1024 scalar operand pairs",
+  "operations_per_mac": 2,
+  "equivalent_arithmetic_ops": 196608,
+  "counting": {
+    "one_operand_pair": "one_valid_scalar_A_B_pair_consumed_by_one_useful_mac",
+    "per_accepted_pe_call": "sum_verified_valid_logical_scalar_pairs_across_all_selected_active_dp_outputs",
+    "acceptance": "interface_handshake_or_spec_defined_accept_event_not_testbench_function_calls",
+    "call_capacity_source": "verified_k_pe_or_mn_pe_profile_and_rtl_test_metadata",
+    "job_dot_k_source": "verified_workload_manifest_separate_from_call_capacity",
+    "hqe_label_scale_factor": 1,
+    "count_padding_or_invalid_lanes": false,
+    "count_final_C_add_as_extra_mac": false
+  },
+  "full_call_divisibility": {
+    "required": true,
+    "rule": "target_operand_pairs modulo whole_dut_useful_macs_per_full_call equals zero",
+    "call_count_rule": "target_operand_pairs divided_by whole_dut_useful_macs_per_full_call",
+    "full_call_required_for_selected_active_resources": true,
+    "nondivisible_policy": "reject_plan_no_rounding_padding_or_partial_tail",
+    "reference_full_call_capacities_not_exhaustive": [16, 32, 48, 64, 96, 128],
+    "actual_profile_must_be_checked": true
+  },
+  "mode_capacity": {
+    "source": "user_confirmed_H16_Q32_E64_dp_definition",
+    "role": "H16_Q32_E64_reference_case_not_all_k_pe_or_mn_pe_implementations",
+    "format_binding": "each_supported_format_verified_separately",
+    "H": {
+      "useful_macs_per_full_pe_call": 16,
+      "steady_macs_per_cycle_at_ii_1": 16,
+      "required_full_pe_calls": 6144
+    },
+    "Q": {
+      "useful_macs_per_full_pe_call": 32,
+      "steady_macs_per_cycle_at_ii_1": 32,
+      "required_full_pe_calls": 3072
+    },
+    "E": {
+      "useful_macs_per_full_pe_call": 64,
+      "steady_macs_per_cycle_at_ii_1": 64,
+      "required_full_pe_calls": 1536
+    }
+  },
+  "test_bindings": {
+    "owner_root": "hw/test",
+    "status": "pending_user_test_locations",
+    "dataset_manifest": null,
+    "rtl_testbench": null,
+    "require_bound_and_verified_before_execution": true
+  },
+  "gate_replay": {
+    "design_basis": "test_bindings.rtl_testbench",
+    "reuse": ["stimulus_and_driver", "clock_and_handshake", "transaction_order", "golden_and_scoreboard", "initialization_and_completion_events"],
+    "gate_dut": "explicit_frozen_dc_mapped_verilog_and_matching_standard_cell_models",
+    "activity_capture": "windowed_direct_saif_or_verified_gate_vcd_to_saif",
+    "changes_to_design_rtl_or_canonical_test_data": false
+  },
+  "measurement": {
+    "boundary": "warm_start_complete_counted_burst",
+    "start": "before_first_counted_call_with_empty_pipeline",
+    "end": "after_all_counted_outputs_complete_and_required_drain",
+    "include": ["fill", "counted_compute", "stall", "drain"],
+    "initialization_and_warmup": "legal_outside_budget_then_drain_before_counted_burst",
+    "report_warm_start_state_and_excluded_cost": true,
+    "duration_cycles": null,
+    "cycle_count_source": "actual_II_handshake_pipeline_and_stalls",
+    "require_accepted_completed_operand_pair_and_mac_equality": true
+  },
+  "sampling": {
+    "source": "verified_real_rtl_test_dataset",
+    "preserve_logical_operand_order_and_accumulation_semantics": true,
+    "implicit_repetition_allowed": false,
+    "insufficient_data_status": "insufficient_trace"
+  },
+  "stability": {
+    "fixed_mac_count_proves_steady_state": false,
+    "default_steady_state_status": "not_assessed",
+    "automatic_budget_extension": false,
+    "separate_steady_state_policy": "hw/power/configs/windows/steady-state-v1.json"
+  },
+  "primary_metrics": ["average_burst_power_w", "burst_energy_j", "burst_duration_s", "completed_operand_pairs", "completed_useful_macs", "energy_per_mac_pj"],
+  "instantaneous_peak_power_w": null
+}

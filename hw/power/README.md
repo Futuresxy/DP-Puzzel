@@ -1,22 +1,51 @@
-# 单阵列 / 单核心真实负载功耗
+# DP / 单阵列 / 单核心：DC + Power Compiler 负载功耗
 
-必须在当前机器挂载的 EDA 环境内执行。当前只定义真实硬件和真实负载的分析链，不运行商业工具，不生成或虚构功耗结果。
+**已选定路线：RTL 测试中的真实负载 → 同源门级仿真 → SAIF → Power Compiler 平均功耗。** 面积和时序由 `hw/dc_syn` 产生；本目录接收其冻结网表、约束和证据，输出同一工况下的负载功耗，交给 `hw/characterization`。
 
-| 后续位置 | 职责 |
+当前交付为流程、目录、数据契约、计划配置和 [power-analysis skill](../../.skill/power-analysis/SKILL.md)。**尚无功耗 runner、testbench 生成器或 Tcl 实现，没有执行仿真、综合或功耗分析。** JSON 中的 `planned` 和阈值不能当作已验收配置或测量证据。OpenSTA 仅保留为历史调研对照，不是本流程依赖或自动替代后端。
+
+## 导航与边界
+
+| 文件 / 目录 | 职责 |
 | --- | --- |
-| workloads/ | 真实负载/trace 的来源、精度、映射与采样元数据 |
-| activity/ | VCD/SAIF 生成与转换规则；大波形不提交 |
-| scripts/ | 工具驱动、活动覆盖检查和报告提取 |
-| configs/ | 工况和窗口；私有库/挂载路径独立配置 |
-| runs/ | 完整活动/功耗结果与临时文件，默认不提交 |
+| [flow.md](flow.md) | 端到端步骤、工艺选择、许可、活动与功耗验收 |
+| [paths.md](paths.md) | 全项目 RTL 单一来源、DC 交接、power run 文件树和保留策略 |
+| [input-contract.md](input-contract.md) | RTL 测试真实数据、现有 DC v1 交接字段、活动和功耗回执 |
+| [window-policy.md](window-policy.md) | 窗口起止、预热、长度增长、收敛与短 trace；含调研来源 |
+| [VALIDATION.md](VALIDATION.md) | 文档/配置/skill 检查、当前 DC 接口快照和未执行项 |
+| [configs/](configs/README.md) | N22 优先 / N12 备选策略、窗口计划、本机绑定示例 |
+| [workloads/](workloads/README.md) | 引用 RTL 测试数据和回执；不维护第二套输入/参考结果 |
+| [activity/](activity/README.md) | SAIF/VCD 采集、转换、统计和名称映射约定 |
+| [scripts/](scripts/README.md) / [templates/](templates/README.md) | 后续公共驱动与仿真/Power Compiler 模板职责，目前无实现 |
+| [runs/](runs/README.md) | 每个 run 独立保存活动、功能比对、PC 原始报告、摘要和指纹；除说明外忽略 |
+| [records/](records/README.md) | 经审查的小型长期记录和可恢复归档索引，目前无结果 |
 
-数据链：
+工艺默认策略为 **N22 BWP7T / 100d，TT 0.9 V、85°C**，复用 DC 的公开 profile；**N12 BWP6T / 120a Base+LVT，TT 0.7 V、85°C** 为显式备选。它们来自当前 DC 参考配置，不表示本项目已验收。N22 缺库/许可/时序条件时报告原因，不静默换 N12；切换工艺需新的匹配综合和功耗 run。
 
-1. 接收具体负载及 tile/精度配置，生成或读取可核验输入，记录 input hash。
-2. 在已验证的同一份 RTL 上重放，核对数值结果和周期，划分 reset、warmup、active、stall、idle、drain 窗口。
-3. 提取 VCD/SAIF，绑定 export、层次路径、timescale、时间窗口与数据分布。随机测试切换率不能冒充真实 workload 活动。
-4. 读取匹配的综合 netlist、约束和工艺库；先完成适用的 RTL/netlist 一致性验证。使用 SDF 或寄生信息时记录其来源。
-5. 在挂载 EDA 中分析 internal、switching、leakage 和 total；检查活动映射覆盖率及未注释节点。记录毛刺建模、寄生缺失等适用限制。
-6. 将不同格式、操作模式及 active/idle 状态的测量值交给 characterization；芯片模型依据调度活动加权，并另计共享存储/互连等成本。
+## 主要路径
 
-输出须带频率、电压、温度、工作负载、测量窗口和功耗边界。真实负载不同，不能直接复用一个“单核固定功耗”乘以核心数。未来功耗 skill 统一放根目录 .skill/。
+```mermaid
+flowchart LR
+    R[hw/rtl/export-id/src] --> T[hw/test RTL 验证]
+    R --> D[hw/dc_syn 指定综合 run]
+    T --> V[同一真实数据与事务时序]
+    D --> G[冻结 mapped.v 与 SDC / DB]
+    V --> S[门级回放和结果比对]
+    G --> S
+    S --> A[指定窗口 SAIF 与活动审计]
+    A --> P[Power Compiler]
+    G --> P
+    D --> Q[关联面积 / 时序 / 功耗证据]
+    P --> Q
+    Q --> C[hw/characterization]
+```
+
+设计 RTL 唯一保存在 `hw/rtl/<export-id>/src/`；DC 衍生网表唯一保存在 `hw/dc_syn/runs/<synthesis-run-id>/netlist/`。power 只读引用两者。真实数据及参考RTL testbench归`hw/test`维护，具体位置由用户后续明确，当前配置保留pending/null；不预填不存在的数据路径。后续参考选定testbench复用激励、协议和结果检查，接入冻结网表与单元模型进行门级回放并采集SAIF。
+
+完整任务窗口作为任务平均功耗口径，包含必要 fill/drain、stall 与模式切换。**K-PE/MN-PE的DP微基准默认采用 [96×1024对数据](configs/windows/dp-fixed-macs-v2.json)，即98304 MAC**。H16/Q32/E64每次完整有效调用分别处理16/32/64对，需6144/3072/1536次调用。各K-PE/MN-PE均按实际全DUT每次完整调用容量检查整除，禁止取整、padding或partial tail；II=1的有效输入周期与完整仿真总周期分开记录。初始化/预热在预算之外，排空后开始计数。
+
+稳定计算窗口另用于单元状态特征；计划从 1024 拍增长至 16384 拍检查收敛。固定 MAC 总量不等于固定调用次数、固定总拍数或已达到稳态；任务/burst 按完成事件确定，不凑拍数重复输入。H16Q32E64 的计数、边界与稳定性细则见 [窗口策略](window-policy.md)。
+
+当前机器只读核查发现 DC X-2025.06 的 SAIF/功耗命令接口；标准许可查询超时，**Power Compiler 可用授权仍待核验**。不能以手册存在代替成功许可或真实运行证据。
+
+历史来源保留：[无 PrimeTime 方法调研](no-primetime-methodology.md)、[参考项目与 skill 审计](reference-flow-audit.md)。当前执行方向以本页及上述流程文档为准，历史 OpenSTA 分支不改变用户已选择的后端。
