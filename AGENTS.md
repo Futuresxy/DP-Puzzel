@@ -8,6 +8,10 @@
 
 阵列调研须覆盖逻辑指令以下的物理 tile 切分、preload/compute/drain、本地 accumulator 与累加 RAW。区分 L0 层输出驻留和 PE/group 内 OS；文献已实现机制、逆向推断与本项目建议分别标记。当前候选与证据见 [OS 调度调研](hw/spec/os-array-scheduling-research.md)。
 
+当前讨论方向为 `K_inst = K_native(mode, config)`：指令内只调度 M/N 输出子块；更长 GEMM 的 K 由软件组织多条原生指令，K-PE 内部空间规约保留。不得继续将 E64 分三轮执行 K192 作为单条原生指令的默认方案，也不得由固定 PTX K 推断 NVIDIA 内部没有时分计算。跨指令 C/D 依赖及驻留合同仍需审核；本方向不构成阵列代码实施授权。
+
+Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研](hw/spec/ascend-cube-scheduling-research.md)。不能把其FP16基本K16误当作指令K上限；原生K指令和可变K矩阵指令属于不同候选边界，等待用户讨论确定。
+
 先阅读 `README.md`、`CONTEXT.md` 和 `docs/architecture.md`。`hw` 只负责单阵列/单核心；`ratio_dse` 负责多核心、多阵列芯片级建模。未定案事项记录在 `docs/roadmap.md`，不能用 INT4/INT8 示例代替目标浮点格式。
 
 ## 1. 目录与职责

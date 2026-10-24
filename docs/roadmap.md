@@ -4,7 +4,9 @@
 
 阵列扩展进入调研讨论阶段，见 [阵列方案](../hw/spec/array-design-discussion.md)。用户已确认逻辑 M8N32、物理阵列参数化，以及 FP4 K64/96/128/192/256、FP8 K32/64/96/128；L0 布局、调度、累加语义和首版配置待审核，当前不编写阵列代码。
 
-指令内部的物理 tile 切分与 OS 状态机另见 [深入调研](../hw/spec/os-array-scheduling-research.md)。优先审核累加驻留位置、反馈路径、context 数量与排出结构；每段 K 回写 L0C 只是对照基线，不预设为最终 OS 架构。
+指令内部的物理 tile 切分与 OS 状态机另见 [深入调研](../hw/spec/os-array-scheduling-research.md)。当前按用户提出的原生 K 方向讨论：`K_inst=K_native(mode, config)`，单条指令仅切 M/N，软件用多条原生指令完成完整 GEMM 的 K。优先审核跨指令累加驻留位置、依赖/反馈路径、context 数量与排出结构；不再要求较小 K 单元在同一条指令内循环补足较大 K。
+
+[Ascend 对照调研](../hw/spec/ascend-cube-scheduling-research.md) 补充另一种边界：16³ Cube 基本粒度之上，单条 MMAD 可描述更大的 K，软件仍可跨指令切 K。原生 K 绑定是本项目候选约束，不是厂商统一规律；最终指令接口须结合此次对照审核。
 
 | 阶段 | 交付 | 验收依据 |
 | --- | --- | --- |
