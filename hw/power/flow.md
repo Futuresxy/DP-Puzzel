@@ -4,7 +4,7 @@
 
 ## 1. 工艺、后端与分析边界
 
-使用 DC/Power Compiler，采用标准单元综合后的平均功耗口径，范围为一个阵列或核心。**N22 优先、N12 备选，不自动降级到 OpenSTA 或其他工艺。**公开选择见 [flow-plan.json](configs/flow-plan.json)。
+使用 DC/Power Compiler，采用标准单元综合后的平均功耗口径，支持单DP组件微基准或单阵列/核心。DP结果以组件记录保存，不直接冒充scope=array/core的完整profile。**N22 优先、N12 备选，不自动降级到 OpenSTA 或其他工艺。**公开选择见 [flow-plan.json](configs/flow-plan.json)。
 
 | 角色 | 复用 DC profile | 约束 |
 | --- | --- | --- |
@@ -26,7 +26,7 @@ ZeroWireload / ideal-clock 是第一阶段的已声明假设，没有 CTS/SPEF �
 | 同源回放 | 原 RTL 与冻结 mapped Verilog 用相同数据、事务、初始状态和时钟 | numerical/protocol 比对、accepted/completed/MAC、初始化与窗口事件 |
 | 活动 | 按窗口生成 gate SAIF；直接采集或经核验的 VCD 转换 | scope/timescale/duration/hash，逐信号统计、X/Z/映射检查 |
 | PC 会话 | 只读载入同一 mapped Verilog、DB 和 SDC；清除旧活动后注释 SAIF | 注释、missing、单位、功耗和关键功耗计算报告 |
-| 窗口验收 | steady-state 做长度/分段检查；task 检查完整事件边界 | convergence / task-completion 证据，不拿稳态替代整任务 |
+| 窗口验收 | DP 固定 MAC 检查实际完成计数；steady-state 做长度/分段检查；task 检查完整事件边界 | MAC / convergence / task-completion 各自证据，不混淆工作量、周期和稳态 |
 | 汇总 | 关联 DC 面积/时序与本 run 功耗，检查口径和适用范围 | summary、原始报告索引、输出 hash；独立交给 characterization |
 
 未来公共 runner 分离 `check`（只读输入）、`prepare`（快照计划）、`replay`（已授权仿真）、`analyze`（已授权 PC）、`report`（重新核验并汇总）。这些是**接口职责定义**，当前没有 `scripts/power.sh` 或上述可执行子命令；skill 不得把计划当作现成命令。
@@ -50,6 +50,8 @@ DC 原记录中的 `power_ready=false`、`netlist_equivalence=not_run` 是功耗
 数据集必须区分 `captured_model_trace`、`model_derived_local_samples`、`synthetic_validation`。前两者可在声明范围内用于真实数值比较；第三类用于验证/压力对照，不进入真实负载主结果。HiF4 等未确认的项目语义先解决规格，不能借用参考工程编码冒充已定案。
 
 稳定窗需要更长 trace 时，先通过 `hw/test` 的数据流程补充真实片段并重新验证；不能只在 power 悄悄循环。允许的显式 cyclic microbenchmark 单列 repetition_count 和 unique_source_transactions，停止将重复拍数当成独立样本。
+
+DP 微基准采用用户指定的 `64×1024×2 = 131072 MAC` 作为默认有效工作量，配置见 [dp-fixed-macs-v1.json](configs/windows/dp-fixed-macs-v1.json)。H16/Q32/E64 每次完整有效 PE 输入调用贡献16/32/64 MAC，需8192/4096/2048次调用；实际有效量由 packing/lane/握手核验。真实 II/流水/停顿决定时间，任务总K另行记录。初始化/预热先排空，正式窗从空流水起测完整计数 burst，含 fill/drain；接受与完成 MAC 都须等于预算。它不替代完整应用 task 或独立稳态检查。
 
 ## 5. SAIF 与 Power Compiler 接口
 

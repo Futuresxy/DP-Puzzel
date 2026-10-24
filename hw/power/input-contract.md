@@ -14,6 +14,7 @@
 | 来源 | 模型/checkpoint/tokenizer/语料/阶段或实际应用来源；模型派生局部样本须明确；seed、独立片段 ID、样本数量 |
 | 设计关联 | export_id、config_id、verification_id；证明这些 payload 已出现在回执 inputs 的 vectors 集合/其受验证清单中 |
 | 事务映射 | GEMM/tile/通道、A/B/C/scale 格式/布局/累加/舍入、初始状态、mode_id、每事务 MAC 数 |
+| DP 工作量 | target_useful_macs、physical word、每有效PE调用K_call、任务总K_job、packing/active lane、每调用有效 MAC、accepted/completed调用数、MAC/cycle、II与elapsed cycles分别记录；H16/Q32/E64容量为16/32/64，实际使用需验证 |
 | 时间与协议 | 时钟域、握手/气泡/停顿/切换顺序、稳定相位、task_start/task_done 事件定义 |
 | 负载文件 | 每个输入、参考输出、事务时序文件及元数据的路径/URI、字节数、hash |
 | 验证 | 独立参考语义和精度判据、覆盖矩阵、实际 RTL 结果与周期检查回执 |
@@ -52,6 +53,7 @@ machine 使用 [填写示例](configs/machines/machine.example.json) 的职责�
 | `comparison.json` | RTL/gate/golden 来源、仿真器/模型/hash、初始状态、实际周期、事务数、逐模式有效 MAC、数值/握手/延迟/last/idle/stall 判定；标记 workload-specific，不声称形式等价 |
 | `window.json` | policy ID/hash、scope、mode/segment/task ID、start/end 原始整数时间、timescale、半开区间、相位/边沿规则、measured_cycles、warmup/初始化区间和排除原因 |
 | 数据统计 | unique_source_transactions、repetition_count、来源切片与顺序、accepted/completed、actual simulated period、每事务有效 MAC；重复不作为独立样本 |
+| 固定 MAC 回执 | policy=dp-fixed-macs-v1 时 target=131072 MAC，记录实际 accepted/completed useful MAC、逐有效调用贡献/ID与尾块依据；两计数均应精确等于目标，准备调用独立统计，重试/stall不重复计数，计数达到不证明稳态 |
 | `activity/audit.json` | gate SAIF/可选 VCD hash、采集方法/转换器/配置、duration/TC/duty、T0/T1/TX/TZ 或版本等价字段、初始值、X/Z、名称映射、annotated/missing 和统计分母 |
 | PC 有效活动 | 独立活动计数与实际采用值的比对、关键 clock/ICG/CP/数据检查、逐项例外/边界容差和报告来源；证据不足为 unknown |
 | `convergence.json` | candidate_cycles、每次功耗/有效事务数、长度比较/相邻分段差、两个连续通过步、独立片段离散、选择理由或 not_converged；task 用 not_applicable |
@@ -73,3 +75,5 @@ machine 使用 [填写示例](configs/machines/machine.example.json) 的职责�
 | uncertainty | 片段离散/收敛与物理模型误差分别存；2% 收敛不等于 2% 硅片准确度 |
 
 功耗结果关联源 DC 的面积、setup/hold、频率和技术 ID，形成新的 PPA 关联记录；不改写 DC 文件。`measured` 按项目约定指有工具证据的测量，必须带 pre-layout/tool-estimate 方法，不能称为硅片实测；`calibrated` 还需要独立留出验证。缺功能、有效活动、窗口或时序证据时保留诊断/未知状态，不发布完整正式 PPA。
+
+DP 的 `fixed_work_burst` 保存scope=dot_product、原请求表达式、target_useful_macs=131072、actual_completed_useful_macs、每调用有效MAC与调用计数、burst_duration_s、average_burst_power_w、burst_energy_j 与 energy_per_mac_pj。完整有效调用的H/Q/E目标数为8192/4096/2048，实际每调用贡献须核对。计数相等后用 `burst_energy_j / actual_completed_useful_macs × 1e12` 归一，不能拿峰值 MAC/cycle 或预热计算量当分母。steady_state_status 独立保存，未检查时为 not_assessed。DP记录供后续组件校准，不自动发布为完整阵列/核心profile。

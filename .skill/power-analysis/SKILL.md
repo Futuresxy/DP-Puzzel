@@ -5,7 +5,7 @@ description: Define and audit DP-Puzzel workload power flows using verified RTL-
 
 # DP-Puzzel Power Compiler 功耗分析
 
-遵循根 AGENTS.md；硬件边界为单阵列/单核心。用户已选择 **真实 RTL 测试负载 → 门级仿真 → SAIF → Power Compiler**，N22 优先、N12 显式备选。不要自动换 OpenSTA、其他工艺或另一套输入数据。
+遵循根 AGENTS.md；支持单DP组件微基准及单阵列/单核心，DP记录不能冒充完整array/core profile。用户已选择 **真实 RTL 测试负载 → 门级仿真 → SAIF → Power Compiler**，N22 优先、N12 显式备选。不要自动换 OpenSTA、其他工艺或另一套输入数据。
 
 先读 [power 入口](../../hw/power/README.md) 和 [流程](../../hw/power/flow.md)。核对数据/综合输入时读 [输入契约](../../hw/power/input-contract.md)，窗口选择/长度问题读 [窗口策略](../../hw/power/window-policy.md)，维护产物时读 [路径契约](../../hw/power/paths.md)。按当前任务需要读取，不将历史 PETile 的路径、采样数、编码和通过结果当成本项目默认事实。
 
@@ -25,6 +25,8 @@ description: Define and audit DP-Puzzel workload power flows using verified RTL-
 ## 窗口与活动
 
 - 任务主指标用完整 `task_complete`；计入声明边界内的 fill/drain、stall、配置/切换和转换。短任务完整测量，不 padding 或重复；与 warm-start 成本边界分开。
+- DP 计算微基准默认使用 [dp-fixed-macs-v1](../../hw/power/configs/windows/dp-fixed-macs-v1.json) 的 **131072 MAC = 64×1024×2 MAC**。1 MAC=2 OP，目标对应262144 OP。用户确认H16/Q32/E64分别为16/32/64 MAC每有效周期，每次完整有效PE输入调用贡献相应16/32/64 MAC，故需8192/4096/2048次调用；不乘参考项目的16倍单位。每调用K_call、任务总K_job、II、调用数与elapsed cycles分开；实际贡献以验证元数据和有效lane/握手核验。
+- 初始化/预热后合法排空，正式测完整burst的fill/计算/stall/drain，接受与完成MAC均精确等于预算；无合法尾块且不整除时拒绝，缺数据不隐式循环。固定MAC时各模式调用数不同，不能同时强求等调用数/等总周期；未做稳态检查则steady_state_status=not_assessed。保留固定预算结果，稳态检查或更大MAC对照另配run，不为凑1024拍改变用户工作量。
 - 稳态使用已版本化 [steady-state-v1](../../hw/power/configs/windows/steady-state-v1.json)：合法初始化后，预热至少 max(64, pipeline latency+2, state settle)，同相位 `[start,end)`；1024→2048→4096→8192→16384 拍增长，total 2% / dynamic 5%，增长及两半比较连续两步通过。它是未校准起点，不是行业固定拍数或物理误差保证。
 - 目标为三个不同来源片段，各段内判断收敛；跨片段报告差异，不强求相等。不足为 insufficient_trace/coverage_limited，上限未稳定为 not_converged。显式循环只作单列 microbenchmark，重复不增加独立样本。
 - RTL/gate 用同源事务及初态，核对独立 golden 关联、数值、周期/计数/last/idle/stall；合法接口初始化非复位状态，不 force 内部零或忽略 X。
