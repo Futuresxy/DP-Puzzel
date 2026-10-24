@@ -112,12 +112,9 @@ abstract class SubPEBase(val cfg: SubPEConfig) extends Module {
 
 object SubPEConfig {
   def forFamily(family: String, alignment: AlignmentConfig): SubPEConfig = {
+    require(Set("HQE", "QE", "E")(family), "Dedicated H/Q arithmetic is implemented directly in PE_H/PE_Q")
     val capability = Precision.forFamily(family)
     family match {
-      case "H" => SubPEConfig(expWidth = 8, mantWidth = 12, signGroupWidth = 1,
-        subpeAnchorWidth = 9, outWidth = 23, fp8RetainWidth = alignment.qAlignWidth, precisionConfig = capability)
-      case "Q" => SubPEConfig(expWidth = 10, mantWidth = 12, signGroupWidth = 2,
-        subpeAnchorWidth = 6, outWidth = alignment.qAlignWidth + 1, fp8RetainWidth = alignment.qAlignWidth, precisionConfig = capability)
       case "E" => SubPEConfig(expWidth = 1, mantWidth = 16, signGroupWidth = 4,
         subpeAnchorWidth = 2, outWidth = 11, fp8RetainWidth = alignment.qAlignWidth, precisionConfig = capability)
       case "HQE" | "QE" => SubPEConfig(expWidth = 10, mantWidth = 16, signGroupWidth = 4,

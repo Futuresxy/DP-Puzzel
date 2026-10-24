@@ -6,10 +6,11 @@
 | --- | --- |
 | [六种 PE 设计](six-pe-design.md) | 当前层级、数值坐标、周期、参数与 K/MN 编排合同 |
 | [本轮检查记录](six-pe-checks.md) | 编译、展开与有限 RTL 定向检查的证据和限制 |
+| [PE代码归属重构检查](pe-code-locality-checks.md) | 当前单文件/分级边界、新旧RTL逐拍比较与11/18级周期检查 |
 | [当前迁移来源](six-pe-source.json) | 原工程固定 commit、文件指纹与迁移调整 |
 | [集中参数](config/Parameters.md) | 四个对齐参数、合法范围及 JSON/CLI 优先级 |
 | [目标格式与待核验项](precision-formats.md) | 外部格式来源、数值语义与尚未确定的规范 |
-| [逐文件索引](../chisel_src/README.md) | 52 组 Scala/spec 对应关系 |
+| [逐文件索引](../chisel_src/README.md) | 当前 Scala/spec 一一对应关系；H/Q单文件、HQE/QE/E保留分级模块 |
 | [模块规格模板](module_template.md) | 新增模块时填写的规格字段 |
 
 逐文件 spec 与源码保持同路径：`pe/PE_H`、`pe/PE_Q`、`pe/PE_E`、`pe/PE_HQE`、`pe/PE_QE` 为专用通路；`Utils` 为公共接口、算术与 C/D；`core` 为 K_PE/MN_PE；`config` 和 `elaborate` 为参数与生成工具。
