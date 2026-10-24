@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "kind": "mn",
+  "pes": [{"h": 16, "q": 32, "e": 64, "align_width": 40}]
+}

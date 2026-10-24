@@ -1,0 +1,759 @@
+{
+  "scope": "compile_only",
+  "target": "dav-c220-cube",
+  "compiler_version": "2026-07-30T20:53:21+08:00 clang version 15.0.5 (clang-5c68a1cb1231 flang-5c68a1cb1231)",
+  "probe_sha256": "cc6a8a5fd24f3d3962f17bf82feb9d4f02b8e15a23b6cab2c42fc69e9516af61",
+  "inspector_sha256": "1339977fd2195afc6d1205533d7e955b1f44741f84333a0467c435535d238a55",
+  "kernel_execution": "not_run",
+  "numerical_validation": "not_run",
+  "capacity_source": "official A2/A3 FP16-to-FP32 L0 contract",
+  "opcode_source": "Ascend/msopprof@a52c8694979016be703006ec242901519bef31d8",
+  "opcode_mask": "0xefc00001",
+  "opcode_key": "0xe0c00000",
+  "cases": [
+    {
+      "m": 128,
+      "n": 128,
+      "k": 16,
+      "l0a_bytes": 4096,
+      "l0b_bytes": 4096,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": true,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000080010080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 16,
+        "n": 128
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "06f7ad60f60bf8b9e650d8584e35a2a98d017285e4c349f8727c8923a7828a82",
+        "bc": "89c37b710ab934271198bb3383e1798f74f2a2dd39511662663a9be2090a97ec",
+        "ll": "cce3413beae0149ca605238409ca4580bdc612782050ef360def327bcded1eea",
+        "s": "f87cdd240abc9139fe709337bb08c211ffccf5b4139844b30e4ea151ac6fea65",
+        "cc1.o": "b1f4bc7c88aa17bf5d95d2423b17bc59fc22ccd43f635b605e89091202a8d00a"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #128",
+        "\tMOVK \t\tX0, #32769, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": true
+    },
+    {
+      "m": 128,
+      "n": 128,
+      "k": 32,
+      "l0a_bytes": 8192,
+      "l0b_bytes": 8192,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": true,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000080020080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 32,
+        "n": 128
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "b4cdd0c6bd1576cdf05953e68389ee8c98af95dc3eea3ae43483b0ae120c83c7",
+        "bc": "85d4e318498bb4d0f377ed1ebbac46b277ac036aad2b839f433bd4a07e945bcb",
+        "ll": "41d934e4e5ed5574a1ed35413ace262a8e50cc24241ae16f7a98f79f343d2d01",
+        "s": "1bd6b7675d4c1a0cad87adfb82aa75123e3ccc5555681ed452647d86e96b0f49",
+        "cc1.o": "41c8df27c31c0cbf7339fb5a0e467d2c56647cd0647e3c1df6f1a42e1c74476d"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #128",
+        "\tMOVK \t\tX0, #32770, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": true
+    },
+    {
+      "m": 128,
+      "n": 128,
+      "k": 64,
+      "l0a_bytes": 16384,
+      "l0b_bytes": 16384,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": true,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000080040080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 64,
+        "n": 128
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "5954c73cc46e4ab3aebae4a3aa0f44523ef7cdbbdfa7c5b6681a74446a81949e",
+        "bc": "6ad3bd85944a5eeeaca4f8daa842552336ba1f756223ac0e1c6d952f1752b55d",
+        "ll": "4a7d0d6b7a3e134b6ecdb0812a02579ea115631e944957eb9eaea3365505c2fd",
+        "s": "3b2e3a99fcef2eb9a49fab1ec2a7dbdf02c17aaefccff5c466ded26ccc7c2fb2",
+        "cc1.o": "6cc100b593117a3d1dca7db904f57459f03a5aa83ef373526281889becc8d775"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #128",
+        "\tMOVK \t\tX0, #32772, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": true
+    },
+    {
+      "m": 128,
+      "n": 128,
+      "k": 96,
+      "l0a_bytes": 24576,
+      "l0b_bytes": 24576,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": true,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000080060080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 96,
+        "n": 128
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "4b175554230480ffd18ad15bc327e2afa3b70f786cabdd0ba452a199c44cf8bd",
+        "bc": "81ac382ef55945ffaa21659b4d5ac27b4000ca550badf63643c834ab030d527b",
+        "ll": "61116eb781ee9b71452825afebec9d1abbf204f2c42f06dd488b2e000dc37faa",
+        "s": "f99601c986d1c4c6c3687970802556a566925dc08cd36724f24467e10f078a95",
+        "cc1.o": "dd7ed52fa7655527a0d7ae9aa18bb53d27f579f76dfd51df485422b27aade85e"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #128",
+        "\tMOVK \t\tX0, #32774, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": true
+    },
+    {
+      "m": 128,
+      "n": 128,
+      "k": 128,
+      "l0a_bytes": 32768,
+      "l0b_bytes": 32768,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": true,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000080080080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 128,
+        "n": 128
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "68738e5586af056c282848263ec815046f1c9f4cd7f764c3d422a18946255cbf",
+        "bc": "475b670cc7fb77653043729bddf41a4fdc950c663dfd6b4cb08e9c14d3b6df1f",
+        "ll": "ea37ee3b3a32dcd407a2faf6019f17d19530e9318226836a9533bfb9afb06df2",
+        "s": "09609c5348feeedab2310df79faad3b390dd7aca2ba135d9bc9fe189de55a324",
+        "cc1.o": "f753a9299b5aeccf8c84e130d2905041dae1a501e46f32c157536d608bb4f67d"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #128",
+        "\tMOVK \t\tX0, #32776, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": true
+    },
+    {
+      "m": 128,
+      "n": 128,
+      "k": 192,
+      "l0a_bytes": 49152,
+      "l0b_bytes": 49152,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": true,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x80000000800c0080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 192,
+        "n": 128
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "92716b64d9c54df005e5f758f6a0391de98e2bf2a124fd3e0cec2c7c4a305e16",
+        "bc": "083e46ec6e7d4c4f09186989366ba497af9021e1be3ff9e525d6d5f8ddf6e904",
+        "ll": "1c480bfcea3815ec0a38a464e23a4224473fada469f6841dbe9333f4b70144fa",
+        "s": "7a72b8a889f53896b42d43b30073d2d7c25943ea578bcbd7f0152d09247229a6",
+        "cc1.o": "a09a6f31e3d1fd5fea10ec2ee9f92dd5f82ae30f4abf836af22aba9c69465379"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #128",
+        "\tMOVK \t\tX0, #32780, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": true
+    },
+    {
+      "m": 128,
+      "n": 128,
+      "k": 256,
+      "l0a_bytes": 65536,
+      "l0b_bytes": 65536,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": true,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000080100080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 256,
+        "n": 128
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "89ccc696456385f919ef4ad24d4d69e0e88b23bba9c6895e5e7f75c687413f47",
+        "bc": "8ec2046234c9b3d6833956b9b71966c8930c6f6b562eb8d14d50fc8bf3a993e1",
+        "ll": "6d3dc1b249c7ff0db83b6576501f97ddfd12ca00b478926b26c51ee1cd21622a",
+        "s": "bb19330b69411ae749c140baca937e2f4e870efb48f28c037a53e4bc1dcb3297",
+        "cc1.o": "3c8eec82e64f68b749385d0934968847e392af5cdc96c1538956a3399f98e7cc"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #128",
+        "\tMOVK \t\tX0, #32784, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": true
+    },
+    {
+      "m": 128,
+      "n": 128,
+      "k": 257,
+      "l0a_bytes": 69632,
+      "l0b_bytes": 69632,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": false,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000080101080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 257,
+        "n": 128
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "5f7d0b5a07515ad0fec5aef8720a7f10f20cf9fed41432a97550370d598e4774",
+        "bc": "608e5b56bbefae5cf8d5cc54e7c6a925abee65f96a43d4b8b1c15d3fdd55e5c0",
+        "ll": "6529f0cd6ae58f4e4432df4d8daa4e87a58269c2a30e10b4b90b36265ab4e471",
+        "s": "5aba237fd0c07136abd609e0a9e674fd8a714d8cd803dde2fbcd9e106a929f47",
+        "cc1.o": "05024db2e5fcf19a419c5d0a90677746e396fb9dbfc815c7eeaf6f38569fefd5"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #4224",
+        "\tMOVK \t\tX0, #32784, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": false
+    },
+    {
+      "m": 128,
+      "n": 128,
+      "k": 512,
+      "l0a_bytes": 131072,
+      "l0b_bytes": 131072,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": false,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000080200080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 512,
+        "n": 128
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "1ba6ce424362b023a4ad15283f3d82caaa2275eae2d98f92decee34202965857",
+        "bc": "7f87d9975a4654b51f1895d41c0b0b7707fa5ef889138b581e55e29bef168d7f",
+        "ll": "fb38974bf49ba03690174ff7daf55e4821d92f4a0ba2609ef1f2d6583e8f703a",
+        "s": "fbbb340438fd321a761da88d778c8a4b5144a6c2914b2c623b151f5d30760263",
+        "cc1.o": "c92708ee8317fa4430416897b63c1982d9161c19653b3d26516cfa083d6659fe"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #128",
+        "\tMOVK \t\tX0, #32800, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": false
+    },
+    {
+      "m": 128,
+      "n": 128,
+      "k": 4095,
+      "l0a_bytes": 1048576,
+      "l0b_bytes": 1048576,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": false,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000080fff080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 4095,
+        "n": 128
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "9285172fae9e5d1e952cae52bb61f1ada3c5cb232cd7bb22fb818643fd798208",
+        "bc": "fbe0387826915d9a9687ba22d74f3d787e33888500de060c5791c11f063914f5",
+        "ll": "c054514ddb92f9bcd28fbc8d037500254f25b263d754dc72bc0d5e50b1498879",
+        "s": "b93dd8a222aa8e159db658e314b1711449c37a51cac85a42fb1186db1174da96",
+        "cc1.o": "6e7188771f51f9e722d855daf7eed1b801fb334c89349e2fcdc1ea221cd6d1fd"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #61568",
+        "\tMOVK \t\tX0, #33023, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": false
+    },
+    {
+      "m": 128,
+      "n": 128,
+      "k": 4096,
+      "l0a_bytes": 1048576,
+      "l0b_bytes": 1048576,
+      "l0c_bytes": 65536,
+      "within_dimension_contract": false,
+      "fits_l0_capacity": false,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000080000080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 0,
+        "n": 128
+      },
+      "shape_matches_encoding": false,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "0e398d512f58f355b1e2046103140ffc5e6dc98a5eb21a40c2366511e61eb227",
+        "bc": "03392a0e8059873641f5481664a2f8352063f2331c80402515ea0d34f1a66319",
+        "ll": "7909579f34730d476dc5cae2e75ea94ad368004ad078e54ca9c3940a5bbd32c8",
+        "s": "39bfe48906c127b0bfbfde3638020b69030d2f62ffaf237a4b7c5d41f48b4223",
+        "cc1.o": "cdec5bc0736e4596525adccff701ca00e7c73ea4da2c02d8c13fe96dbf41b7ec"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #128",
+        "\tMOVK \t\tX0, #32768, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": false
+    },
+    {
+      "m": 16,
+      "n": 16,
+      "k": 2048,
+      "l0a_bytes": 65536,
+      "l0b_bytes": 65536,
+      "l0c_bytes": 1024,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": true,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000010800010",
+      "encoded_shape": {
+        "m": 16,
+        "k": 2048,
+        "n": 16
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "3e0a53342f46aaf48adebd520d24c17c39b4b2739234d9a7588556f45850fd6d",
+        "bc": "b7c06fc82419d7619a2a82f4a8cca57078cf134920b82260fa1097f78d49a3e2",
+        "ll": "50e4773dd71f133daf030a7d6ac50869b29b021685444fe9c53125afe9274a8c",
+        "s": "61d68c0dad132fbdf578aad1f49ed117617f4819bd8e78ac1d3e6ad93560a32f",
+        "cc1.o": "21e41f7ab759f9cbc985276761b1055e1f2138b7b066cb4a60a3c30bbf3dbf31"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #16",
+        "\tMOVK \t\tX0, #4224, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": true
+    },
+    {
+      "m": 16,
+      "n": 16,
+      "k": 2049,
+      "l0a_bytes": 66048,
+      "l0b_bytes": 66048,
+      "l0c_bytes": 1024,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": false,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000010801010",
+      "encoded_shape": {
+        "m": 16,
+        "k": 2049,
+        "n": 16
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "e53d39d31aaf955685154bacbda6177235a994ccac55f0691c6745ca016923f0",
+        "bc": "35864af58c3f839f03b6241462ec6fb7040e239c958e1e5bbe17f1d1553a4f8b",
+        "ll": "9f979c4d7fb182b28c1475004ac73ef28b76ee2bf71e66678115630005e6475b",
+        "s": "cb64e4770d86ae44fd71ec1dde56cf840dacbfc780bfac6a3cd6575bbc296917",
+        "cc1.o": "b284a26c933a852cc22c2a7a14f3770aac5d026f5417ea12fe9954a7f63f16aa"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #4112",
+        "\tMOVK \t\tX0, #4224, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": false
+    },
+    {
+      "m": 128,
+      "n": 256,
+      "k": 64,
+      "l0a_bytes": 16384,
+      "l0b_bytes": 32768,
+      "l0c_bytes": 131072,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": true,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 64,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x8000000100040080",
+      "encoded_shape": {
+        "m": 128,
+        "k": 64,
+        "n": 256
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "72531e2709f141e44906a27cd1ab8f2aa6da27930883e8cf01c0ee5b0697e283",
+        "bc": "8b1298b829d506c9652584d6e2efc81435b1a461225ef0094a69c9ecb915dbd4",
+        "ll": "f946f1de5925a44452a08b847cafed31288f6caeeb5fcb4df0c159ab098f901f",
+        "s": "7d6a5f0a07bbb3fd4e756d2d195a3e49d431ddc3e8d5e29b31abbbf1735fce0d",
+        "cc1.o": "62cba4027f27b6bf5c3965e515d5842d9b3cdc4f48ed5c5008c0dd8e1e333e08"
+      },
+      "assembly_excerpt": [
+        "\tMOVK \t\tX0, #4, #1",
+        "\tMOVK \t\tX0, #1, #2",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": true
+    },
+    {
+      "m": 176,
+      "n": 176,
+      "k": 176,
+      "l0a_bytes": 61952,
+      "l0b_bytes": 61952,
+      "l0c_bytes": 123904,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": true,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x80000000b00b00b0",
+      "encoded_shape": {
+        "m": 176,
+        "k": 176,
+        "n": 176
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "25b6d78307afed8ce8f07310c643a38541e87c5835c63b2ad93f158073b55f73",
+        "bc": "4e2b2e298f3143eae65688288d2664242ccd3a3a73e5070b15ac57a1303832e4",
+        "ll": "94cc1964d0cbe03fbe0f50fd0d0eb6d512b12b166df17f7b95dd1141cf55a854",
+        "s": "b45a66317de82b33d5c556623f1add90a3246cf1f61ce9df9c409b12408c16d0",
+        "cc1.o": "1c576ac5f8fd79c5d20cae94d4cef4f240acab38fdcefe0442803476c913852d"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #176",
+        "\tMOVK \t\tX0, #45067, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": true
+    },
+    {
+      "m": 192,
+      "n": 192,
+      "k": 192,
+      "l0a_bytes": 73728,
+      "l0b_bytes": 73728,
+      "l0c_bytes": 147456,
+      "within_dimension_contract": true,
+      "fits_l0_capacity": false,
+      "compile_exit_code": 0,
+      "mmad_machine_words": [
+        {
+          "offset": 60,
+          "word": "0xf0c21080"
+        }
+      ],
+      "machine_mmad_count": 1,
+      "cc1_text_matches_driver_object": true,
+      "config_u64": "0x80000000c00c00c0",
+      "encoded_shape": {
+        "m": 192,
+        "k": 192,
+        "n": 192
+      },
+      "shape_matches_encoding": true,
+      "assembly_mmad_lines": [
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "sha256": {
+        "o": "4b1a71530849dc71292d9f45cc1393ff779da76498a0d665d69535f60af42fb1",
+        "bc": "ccf4e7662549b2f60a4c1d62633f9dd6de6e313b61084a850545de0df7dfd8b5",
+        "ll": "d979e4d516a4b88c4916a7488f8bf44d3990e8bedc22b6bc1e167aa29dbd534c",
+        "s": "62a43184a82fffc7b25f1c7034363448b38a89a33095081b4a96b63498205bdb",
+        "cc1.o": "86922e09b38e249c7352a3ce5931126d2e96e14207248bf15950de8acfd25ad8"
+      },
+      "assembly_excerpt": [
+        "\tMOV \t\tX0, #192",
+        "\tMOVK \t\tX0, #49164, #1",
+        "\tMOVK \t\tX0, #32768, #3",
+        "\tMOV \t\tX1, #0",
+        "\tMOV \t\tX15, #0",
+        "\tMMAD.f162f32\t[X1], [X1], [X1], X0"
+      ],
+      "checked_constraints_satisfied": false
+    }
+  ],
+  "header_source": {
+    "kind": "official_cann_release",
+    "version": "9.1.0",
+    "component_sha256": "4b07f896da2df9d2bf2da332face40ca992be257dbe2515fccd6c73fd8d06f0e",
+    "matching_official_git_commit": "e5451c7feba11f9e259f4fbc19c4bf82f8c0496c",
+    "verified_key_files": [
+      {
+        "path": "impl/basic_api/dav_c220/kernel_operator_mm_impl.h",
+        "matches_official_release": true,
+        "sha256": "d8adf0bc52f62cc9ff91d8584c488d72547939b1f37cdae4c59343283b0a4945"
+      },
+      {
+        "path": "impl/basic_api/kernel_operator_mm_base_impl.h",
+        "matches_official_release": true,
+        "sha256": "d9772dd5cd23eed0d63d4f2eafc65b913bbaf1503bd018e03517cdc1b0b609a0"
+      },
+      {
+        "path": "impl/basic_api/kernel_operator_mm_intf_impl.h",
+        "matches_official_release": true,
+        "sha256": "98a2ad8196c005ce7906064b1024f391def4060c79b0c0ba5c542d75b5b219e7"
+      }
+    ]
+  },
+  "run_date": "2026-10-24"
+}
