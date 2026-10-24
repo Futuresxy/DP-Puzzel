@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "technology_id": "n22-bwp7t-100d-tt-0p9v-85c",
+  "process": "TSMC CLN22ULP",
+  "pvt": {"corner": "TT", "voltage_v": 0.9, "temperature_c": 85},
+  "target_libraries": ["tcbn22ulpbwp7t30p140tt0p9v85c"],
+  "operating_library": "tcbn22ulpbwp7t30p140tt0p9v85c",
+  "operating_condition": "tt0p9v85c",
+  "wire_load_model": "ZeroWireload",
+  "area_unit": "um2",
+  "multi_vt": null,
+  "reference_dc_version": "X-2025.06"
+}
