@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "dc_shell": "/ABSOLUTE/PATH/TO/dc_shell",
+  "setup_script": "/ABSOLUTE/PATH/TO/approved-eda-environment.sh",
+  "libraries": {
+    "tcbn22ulpbwp7t30p140tt0p9v85c": "/ABSOLUTE/PDK/N22/tcbn22ulpbwp7t30p140tt0p9v85c.db",
+    "tcbn12ffcllbwp6t16p96cpdtt0p7v85c": "/ABSOLUTE/PDK/N12/tcbn12ffcllbwp6t16p96cpdtt0p7v85c.db",
+    "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c": "/ABSOLUTE/PDK/N12/tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c.db"
+  }
+}

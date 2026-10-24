@@ -14,6 +14,8 @@
 
 这是未来产物契约，目前未生成上述文件。测试、DC、功耗均显式引用 export ID 与同一份清单，不复制设计 RTL，不在导出后手工修补。参数特化和工具辅助模块须列明与 Chisel 源的对应关系。
 
+已实现只读的 [统一证据门禁](../../scripts/rtl_gate.py)，输入字段见 [v1 契约](../dc_syn/input-contract.md)。它不导出 RTL、不生成或升级 PASS；未来 exporter 与真实 SV 回归入口应生产匹配的 manifest/verification 回执。DC 仅接受 status=passed 的 export。
+
 状态流：generated → RTL-verified → 可被综合/功耗引用。失败标记 failed；源码、参数或工具变化形成新导出；RTL hash 不符阻止分析，验证代码变化需要重测。分析 run 自身具有独立状态。
 
 README 每次记录时间、目的、参数、版本、命令、文件映射和状态。失效且无引用的 RTL 可删除，但保留原因与最小复现信息。被论文/characterization 引用的 RTL 应保留一份可核验的归档，不能因清理破坏复现链。
