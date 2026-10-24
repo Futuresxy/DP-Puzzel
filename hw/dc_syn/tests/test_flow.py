@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -14,6 +16,7 @@ sys.path.insert(0, str(ROOT / "hw/dc_syn/scripts"))
 from rtl_gate import sha256, verify_export
 from report_dc import timing
 from run_dc import tcl_string
+import dc_example
 
 EXPORT = "Fixture__test__20261024T010203000000Z__0123456789ab"
 
@@ -168,6 +171,46 @@ class FlowTests(unittest.TestCase):
         (self.root / self.inputs[0]["path"]).write_text("changed testbench")
         with self.assertRaisesRegex(ValueError, "Stale verification"):
             verify_export(EXPORT, self.root)
+
+    def test_handwritten_sv_requires_real_byte_identical_source(self):
+        source = self.root / "example.sv.in"
+        source.write_bytes((self.export / "src/Fixture.sv").read_bytes())
+        mapping = {"source_language": "systemverilog", "chisel_class": None,
+                   "source_file": "example.sv.in", "source_sha256": sha256(source),
+                   "rtl_file": "src/Fixture.sv"}
+        self.manifest["module_map"] = {"Fixture": mapping}
+        self.refresh_receipt()
+        result = verify_export(EXPORT, self.root)
+        self.assertIn(str(source), result["tracked"])
+        source.write_text("different source bytes")
+        with self.assertRaisesRegex(ValueError, "Stale SystemVerilog source"):
+            verify_export(EXPORT, self.root)
+        mapping["source_sha256"] = sha256(source)
+        self.refresh_receipt()
+        with self.assertRaisesRegex(ValueError, "byte-for-byte"):
+            verify_export(EXPORT, self.root)
+
+    def test_unknown_source_language_is_rejected(self):
+        self.manifest["module_map"]["Fixture"]["source_language"] = "unknown"
+        self.refresh_receipt()
+        with self.assertRaisesRegex(ValueError, "module/source mapping"):
+            verify_export(EXPORT, self.root)
+
+    def test_example_failed_prepare_never_reuses_an_old_area(self):
+        evidence_dir = self.root / "hw/test/runs/example"
+        evidence_dir.mkdir(parents=True)
+        dump(self.dc / "runs/old-run/summary.json", {"status": "measured", "timing_status": "PASS",
+             "export_id": "different-export", "run_id": "old-run", "area": {"total_cell_area_um2": 999},
+             "setup": {"status": "PASS"}, "hold": {"status": "PASS"}})
+        args = SimpleNamespace(run_id="old-run", technology=self.tech_path,
+                               constraints=self.constraints, machine=self.machine)
+        with patch.object(dc_example, "ROOT", self.root), patch.object(dc_example, "export_example", return_value=EXPORT), \
+             patch.object(dc_example, "verify_example", return_value=evidence_dir), \
+             patch.object(dc_example, "logged", side_effect=[0, 2]), patch("builtins.print"):
+            self.assertEqual(dc_example.run_example(args), 2)
+        flow = json.loads((evidence_dir / "flow.json").read_text())
+        self.assertEqual(flow["dc_status"], "blocked_prepare")
+        self.assertIsNone(flow["area_um2"])
 
     def test_missing_protocol_evidence_and_generated_status_rejected(self):
         self.evidence["protocol_pass"] = False

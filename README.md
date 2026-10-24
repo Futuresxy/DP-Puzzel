@@ -4,7 +4,7 @@
 
 系统应支持两类设计决策：在已有架构的面积余量内增配计算资源，以及在下一代芯片的面积/功耗预算内重新分配张量计算资源。结果应给出可行配置、成本与收益分解及 Pareto 前沿，而不是预设一种“最佳比例”。
 
-**当前状态：项目定义、论文准备及 DC 自动化基础设施。没有硬件/芯片模型实现或实验结果。** 已搭建 [DC 综合入口](hw/dc_syn/README.md) 和 [项目 skill](.skill/dc-synthesis/SKILL.md)，仅完成软件检查；真实 DC 和功耗分析须在获准的本机挂载 EDA 环境验收，本次未执行。已准备 [paper 入口](paper/README.md)、IEEEtran 模板及学术润色 skill。
+**当前状态：项目定义、论文准备及 DC 自动化基础设施；尚无浮点 MAC、计算阵列/核心或芯片模型。** 用户单独授权的 [BF16 符号流水级示例](hw/dc_syn/examples/bf16_sign_pipe/README.md) 已完成真实 SV 回归及 N22 DC 面积/时序验收，精简结果见 [记录](hw/dc_syn/records/bf16_sign_pipe_smoke_20261024.json)。该示例只验证工具链，不是 DSE 硬件成本基线。已有 [DC 入口](hw/dc_syn/README.md)、[项目 skill](.skill/dc-synthesis/SKILL.md) 和 [paper 资产](paper/README.md)；尚未执行真实负载功耗。
 
 ## 两个核心部分
 

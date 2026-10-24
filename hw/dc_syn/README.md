@@ -2,9 +2,11 @@
 
 接收 `hw/rtl/<export-id>/` 的已验证 RTL，以明确的工艺库和时序约束综合单阵列/单核心，输出面积、setup/hold 是否通过及功耗所需网表。不复制或修改设计 RTL。
 
-**本次仅搭建自动化基础设施，没有执行 DC、RTL 仿真或生成本项目 PPA 数字。** Python 3.6+，仅标准库。新 Tcl 的真实兼容性、库和许可证连通性仍需在获准的挂载 EDA 环境验收。
+Python 3.6+，仅标准库。基础设施最初仅做软件检查；现已在用户授权的 BF16 最小例子上完成真实 SV 回归与 N22 DC 验收，结果见 [精简记录](records/bf16_sign_pipe_smoke_20261024.json)。这不替代后续研究硬件逐配置验收，也不代表已测 workload power。
 
 完整目录与路径基准见 [paths.md](paths.md)。共享配置分为 configs/technologies（工艺）、configs/machines（本机绑定）和 constraints（时序/综合策略）；模板、驱动、测试和记录分别维护。
+
+已有用户单独授权的 [BF16 最小 RTL 验收示例](examples/bf16_sign_pipe/README.md)，用 scripts/dc_example.py 导出手写符号流水级、执行真实 SV 回归并调用此公共 DC 流程。实际验收状态单独记录在 records，不以历史软件假工具测试代替。
 
 ## 输入和命令
 
@@ -98,4 +100,4 @@ python3 -m unittest discover -s hw/dc_syn/tests -v
 bash -n scripts/dc_syn.sh
 ```
 
-测试在临时目录使用明确标注的假工具/报告，只验证软件流程、门禁、解析和清理，不运行 DC/硬件仿真。首次真实验收需选择已有通过的 RTL，核对命令支持、库/PVT/单位、完整约束、setup/hold 和网表，再补真实验收记录。本次不触发该验收。
+上述 unittest 在临时目录使用明确标注的假工具/报告，只验证软件行为。真实 SV/DC 例子通过独立的 scripts/dc_example.py run 执行，实际命令、回执、原始报告及精简记录分别保存；不能把这两种测试混淆。

@@ -1,6 +1,6 @@
 # DC / 统一 RTL 门禁 v1
 
-由 `scripts/rtl_gate.py` 与 DC 驱动执行；尚无 RTL exporter 或验证回执生产器。未来验证入口在真实 SV testbench 成功后写回执再关联 manifest，不能人工填写 PASS。hash 为文件原始字节 SHA-256。
+由 `scripts/rtl_gate.py` 与 DC 驱动执行。已有 scripts/dc_example.py 为 BF16 最小手写例子生产 export 和真实 SV 回执；完整 Chisel exporter/通用验证入口仍待实施。只有真实 testbench 成功后才能写 passed，不能人工填写。hash 为文件原始字节 SHA-256。
 
 ## RTLExport
 
@@ -26,6 +26,8 @@
 files.f 每行一个相对 export 的 source 路径，与 files 中 source 顺序完全一致。不接受 glob、绝对路径、编译选项、重复源或嵌套清单。header 不独立编译，但纳入 manifest 和验证 hash。src 内所有文件必须列入 manifest；include 必须是 export 内唯一可解析的字面量路径，不支持外部/宏生成 include。
 
 exporter 仍需保证完整模块映射；门禁检查 top 映射和来源字段，不解析 Verilog 语义。源码、硬件参数、生成工具版本与 source-sha 生成规则由未来 exporter 补充，本次不声称实现了完整导出链。
+
+用户授权的手写 RTL 示例可使用显式映射扩展：source_language=systemverilog、chisel_class=null、source_file 为仓库内源模板、source_sha256 为模板摘要、rtl_file 为对应 source 清单路径。门禁要求模板 hash 未变且等于导出 RTL hash，即逐字节导出；不填虚构 Chisel 类。不指定 source_language 的旧映射仍按 Chisel 验证。示例入口为 scripts/dc_example.py，不是通用 Chisel exporter。
 
 ## RTLVerification
 

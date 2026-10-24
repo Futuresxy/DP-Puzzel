@@ -12,7 +12,7 @@
 | src/<Module>.sv | 一个 module 一个独立同名文件 |
 | export.log / test.log | 最小必要日志；大型产物在各 run 目录 |
 
-这是未来产物契约，目前未生成上述文件。测试、DC、功耗均显式引用 export ID 与同一份清单，不复制设计 RTL，不在导出后手工修补。参数特化和工具辅助模块须列明与 Chisel 源的对应关系。
+该契约已由用户授权的 Bf16SignPipe 手写示例形成实际 export；完整 Chisel exporter 仍待实施。测试、DC、功耗显式引用 export ID 和同一清单，不复制或手改导出 RTL。Chisel 模块记录类/参数来源；手写示例记录 systemverilog 类型及逐字节源模板摘要，不虚构 Chisel 类。
 
 已实现只读的 [统一证据门禁](../../scripts/rtl_gate.py)，输入字段见 [v1 契约](../dc_syn/input-contract.md)。它不导出 RTL、不生成或升级 PASS；未来 exporter 与真实 SV 回归入口应生产匹配的 manifest/verification 回执。DC 仅接受 status=passed 的 export。
 

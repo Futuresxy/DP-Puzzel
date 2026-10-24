@@ -54,7 +54,9 @@ def verify_export(export_id, root=ROOT):
     require(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_$]*", top), "Invalid top module")
     mapping = manifest.get("module_map", {})
     require(top in mapping and all(isinstance(v, dict) and v.get("source_file") and
-            v.get("chisel_class") for v in mapping.values()), "Missing module/source mapping")
+            ((v.get("source_language", "chisel") == "chisel" and v.get("chisel_class")) or
+             (v.get("source_language") == "systemverilog" and v.get("chisel_class") is None))
+            for v in mapping.values()), "Missing module/source mapping")
     contained(export, "README.md")
     filelist = contained(export, "files.f")
     entries = manifest.get("files", [])
@@ -77,6 +79,16 @@ def verify_export(export_id, root=ROOT):
     listed = [line.strip() for line in filelist.read_text(encoding="utf-8").splitlines()
               if line.strip() and not line.lstrip().startswith(("#", "//"))]
     require(listed == sources and sources, "files.f must exactly match ordered source entries")
+    # Handwritten SV is an explicit, byte-identical source type, never a fake
+    # Chisel class. Its source is also an input to every downstream analysis.
+    for item in mapping.values():
+        if item.get("source_language") == "systemverilog":
+            source = contained(root, item["source_file"])
+            source_hash = sha256(source)
+            require(source_hash == item.get("source_sha256"), "Stale SystemVerilog source")
+            require(item.get("rtl_file") in sources and payload[item["rtl_file"]] == source_hash,
+                    "Handwritten SystemVerilog must be exported byte-for-byte")
+            tracked.append(source)
     # Prevent analysis of an untracked include; v1 supports self-contained exports only.
     actual = {p.relative_to(export).as_posix() for p in (export / "src").rglob("*") if p.is_file()}
     require(actual == set(payload), "Unlisted or missing files under src/")

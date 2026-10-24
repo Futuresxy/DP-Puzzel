@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "record_id": "bf16-sign-pipe-smoke-20261024",
+  "date": "2026-10-24",
+  "scope": "minimal_workflow_example",
+  "not_a_characterization_profile": true,
+  "top": "Bf16SignPipe",
+  "export_id": "Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b",
+  "verification_id": "rtl-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b",
+  "run_id": "dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b",
+  "status": "measured",
+  "synthesis_valid": true,
+  "timing_status": "PASS",
+  "timing_pass": true,
+  "area_source": "dc_standard_cell_synthesis",
+  "area_unit": "um2",
+  "area": {
+    "total_cell_area_um2": 42.63,
+    "combinational_area_um2": 13.916,
+    "sequential_area_um2": 28.714
+  },
+  "cell_counts": {
+    "cells": 36,
+    "combinational": 19,
+    "sequential": 17
+  },
+  "setup": {
+    "status": "PASS",
+    "wns_ns": 0.0,
+    "tns_ns": 0.0,
+    "violating_paths": 0,
+    "worst_reported_slack_ns": 0.252183408
+  },
+  "hold": {
+    "status": "PASS",
+    "wns_ns": 0.0,
+    "tns_ns": 0.0,
+    "violating_paths": 0,
+    "worst_reported_slack_ns": 0.001825884
+  },
+  "unconstrained_endpoints_status": "checked_clean",
+  "technology": {
+    "schema_version": 1,
+    "technology_id": "n22-bwp7t-100d-tt-0p9v-85c",
+    "process": "TSMC CLN22ULP",
+    "pvt": {
+      "corner": "TT",
+      "voltage_v": 0.9,
+      "temperature_c": 85
+    },
+    "target_libraries": [
+      "tcbn22ulpbwp7t30p140tt0p9v85c"
+    ],
+    "operating_library": "tcbn22ulpbwp7t30p140tt0p9v85c",
+    "operating_condition": "tt0p9v85c",
+    "wire_load_model": "ZeroWireload",
+    "area_unit": "um2",
+    "multi_vt": null,
+    "reference_dc_version": "X-2025.06"
+  },
+  "constraints": {
+    "schema_version": 1,
+    "constraint_id": "reference-1410mhz-io0p20-min0",
+    "purpose": "Reference project setup budget; min IO delays explicitly set to 0 ns. Review for each interface before use.",
+    "clock_port": "clock",
+    "period_ns": 0.7092198581560284,
+    "clock_latency_ns": 0.1,
+    "setup_uncertainty_ns": 0.1,
+    "hold_uncertainty_ns": 0.03,
+    "clock_transition_ns": 0.1,
+    "input_delay_max_ns": 0.2,
+    "input_delay_min_ns": 0.0,
+    "output_delay_max_ns": 0.2,
+    "output_delay_min_ns": 0.0,
+    "input_transition_ns": 0.1,
+    "output_load_pf": 0.01,
+    "timing_max_paths": 50,
+    "clock_gating": false,
+    "clock_gating_min_bitwidth": 4,
+    "optimize_area": true,
+    "hold_fix": true,
+    "preserve_hierarchy": true,
+    "write_sdf": false
+  },
+  "frequency_mhz": 1410.0,
+  "dc_version": "X-2025.06",
+  "rtl_verification": {
+    "status": "passed",
+    "method": "systemverilog_testbench",
+    "simulator": {
+      "name": "Icarus Verilog",
+      "version": "Icarus Verilog version 14.0 (devel) (35a809d)",
+      "runtime_version": "Icarus Verilog runtime version 14.0 (devel) (35a809d)",
+      "compiler_sha256": "94542c21b7a4bd74cff14c37930bbb6c70485274c871b8177b14db54bceba8e3",
+      "runtime_sha256": "caefeba3cebd446ac57ce3a028ebdb8f2c1df31a4863f9e4915879c862a089c3"
+    },
+    "seeds": [
+      20261024
+    ],
+    "counts": {
+      "cycles": 132423,
+      "valid": 131867,
+      "bubbles": 548,
+      "resets": 8
+    },
+    "exhaustive_bit_patterns": 65536,
+    "exhaustive_negate_modes": 2
+  },
+  "source": {
+    "base_commit": "dd36a95735b2217a9baaead1fdeb43a87dad6b74",
+    "source_was_uncommitted": true,
+    "fingerprint_sha256": "b7efaa553d2b0724c19c43c2b574213eaece23828afa5d28d065ed35ac8589d2",
+    "inputs": {
+      "hw/configs/bf16_sign_pipe_example.json": "f608d7d94fbbb3a08796e8b8c9f5a7449f782aedea5b7831296ba056c717459a",
+      "hw/dc_syn/examples/bf16_sign_pipe/Bf16SignPipe.sv.in": "00d9d2fdc3864b3c3520b0d399539876156bf9e29f656207b81e2c43b527e06c",
+      "hw/spec/bf16_sign_pipe_example.md": "0eb21baf1f97410dd22f7585cd97c28ffd97bc5729305c825ec2514b38b1cba0",
+      "hw/test/tb/Bf16SignPipeTb.sv": "37e2cf8282ff382878b80e6a8f875982791ff743b723e0db1a2c2599605f2386",
+      "hw/test/reference/bf16_sign_pipe.py": "654f4220f42997f8112fe65dd5e56cca45b7240bf662ac798b18627a9442d739",
+      "scripts/dc_example.py": "24c47badb094a38a4a0081704f4f0ffde3698102fc2708a78be1843a36be35a2",
+      "scripts/rtl_gate.py": "df1d4bdd91da35a13d7ba6991c149128f70b29cc930ab7a692d2631c65333e17"
+    }
+  },
+  "library_sha256": {
+    "tcbn22ulpbwp7t30p140tt0p9v85c.db": "7b67dc42c75d20d000089a0bcefb492ec8098beed2d4f2ddabe48bf5fba1c987"
+  },
+  "artifact_sha256": {
+    "hw/test/runs/rtl-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/verification.json": "5475798f76791f1863c46da2e367248874efc4b3adc234d327989530356d653c",
+    "hw/rtl/Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/manifest.json": "b9426de85a972e479b92c9a8b2384141d4831b25ec475457f4f5c30d4c5625e9",
+    "hw/rtl/Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/files.f": "eeb5993b70fa460f0cdff72a569ca4c3d8cd798d5e0fab624caf080d6ded8b6e",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/summary.json": "902ff882a65f795a578115a96179bff04b2be7b84c0cd0eca1efc0ecf560f620",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/outputs.sha256.json": "3426be23f35378a523dc57a38bbb8a67091f7d1bcebfc4984d842be995805081",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/check_design.rpt": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/check_timing.rpt": "fdabfdc38c74797dcc2c614e02ff6ca41cf1b8c8363169e8de8057dad9c0ddac",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/units.rpt": "7abf01cda6c708936194029c1a632263b670663795af8bf2989f9e0c083bfb99",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/area.rpt": "1da844e0e08b17e75f13547567e7f11d7f81507e826918242745bf5315f5540f",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/area_hierarchy.rpt": "802f1775a2c9fb3df4c9625ce8b45db9a17bd5d6210e279717be5c2c9b744de9",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/qor.rpt": "832e27f4d6c8d0d4bd53531844a80850dc9477cec3b365c19c6f53197cb66525",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/timing_setup.rpt": "c834d99e5b72737158d45a9f80b49b2e45dc3668b28ff5d2f4e580e73ee04bfe",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/timing_hold.rpt": "6cfb3e6920c3855f55b6a470f7212201a8d67b028613a5663d2c8dfb58ffbce9",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/constraints.rpt": "22132668991e6cc877a2144822faf17960ecb86d20ec8a13422c402697346296",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/reference.rpt": "3d3c834e979de352f1b583715c758b8d7e93b0d0ed5a397ca71b72f2cce220d5",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/cell_usage.tsv": "a337c8ebe793ce810a0248e049b484c30f74d8cc6c40060a55c33ca03193892e",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/reports/quality.tsv": "d849375b6531d17ed95bdadd6c2c01f175f01ddbf841776121fce37150b5acab",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/netlist/Bf16SignPipe_mapped.v": "a330d5b7b64bce09844e91ce088c3d1691d882df5a7e4a33148c63e92c7ce771",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/netlist/Bf16SignPipe.ddc": "0a1e64fe10564ab1cd250e8290703f058a2c43d6ae5b75a358ba5e8a680a1c56",
+    "hw/dc_syn/runs/dc-Bf16SignPipe__bf16-sign-smoke-v1__20261024T100117641331Z__b7efaa553d2b/netlist/Bf16SignPipe.sdc": "63a114c5db9f5a3de22a1b45404777b645c58832545b842ba4ba0044a2efc16c"
+  },
+  "archive_uri": null,
+  "archive_status": "project_local_artifacts_retained",
+  "cleanup": {
+    "utc": "20261024T100345192146Z",
+    "deleted": [
+      "work/"
+    ],
+    "bytes": 4833144
+  },
+  "post_cleanup_integrity": "passed",
+  "software_regression": {
+    "tests": 16,
+    "python_versions": [
+      "3.6.8",
+      "3.11"
+    ],
+    "status": "passed"
+  },
+  "tool_warnings": {
+    "UISN-40": "DesignWare synthetic library automatically added; no unresolved leaf cells"
+  },
+  "power": null,
+  "netlist_equivalence": "not_run",
+  "power_ready": false,
+  "reproduce": [
+    "python3 scripts/dc_example.py run --technology hw/dc_syn/configs/technologies/n22-tt-0p9v-85c.json --constraints hw/dc_syn/constraints/reference-1410mhz.json --machine hw/dc_syn/configs/machines/machine.local.json"
+  ],
+  "limitations": [
+    "BF16 sign control only; no floating-point arithmetic or MAC throughput characterization",
+    "Pre-layout ZeroWireload; no CTS or extracted parasitics",
+    "No workload power or RTL/netlist equivalence measurement",
+    "PDK mount access required user-authorized Kerberos refresh; no credentials retained in repository"
+  ]
+}

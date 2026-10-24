@@ -28,6 +28,8 @@ bash scripts/dc_syn.sh report --run-id "$run_id"
 
 唯一 runner 为 hw/dc_syn/scripts/run_dc.py，DC 模板为 hw/dc_syn/templates/DC.tcl。维护公共脚本，不新增绑定 top/日期/私有路径的一次性脚本。输入变化创建新 run，不编辑快照继续启动。
 
+需要最小真实验收且已获任务授权时，使用 [BF16 示例](../../hw/dc_syn/examples/bf16_sign_pipe/README.md) 的 scripts/dc_example.py run。它先执行独立参考 + SV testbench，再由统一 gate 放行 DC；模板逐字节导出，来源明确为 systemverilog，不虚构 Chisel 类。PDK 的 Key has expired 先报告挂载凭据问题，只有用户授权并提供认证方式后刷新 kinit；不把密码写入脚本/配置。
+
 ## 判定与交付
 
 - 综合完成、面积有效、setup/hold 通过分别判断。退出 0 才是完整证据下 timing PASS；2 无效、3 有效测量但 timing FAIL、4 UNKNOWN。不能用进程返回 0、COMPLETE 或非零面积替代时序验收。

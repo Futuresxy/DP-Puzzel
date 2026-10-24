@@ -16,6 +16,6 @@
 
 每份通过证据绑定 export ID、RTL 文件 hash、参考语义版本、testbench/向量 hash、工具版本和随机种子；失败、未执行或证据过期均不能进入 PPA。真实负载回放还需核对结果、周期、tile 分配与活动窗口。
 
-设计 RTL 不复制到 test 目录。失效生成 RTL、无用波形、临时 testbench 和仿真可执行文件按引用关系清理，保留必要失败日志和最小复现。当前无测试实现或通过记录。
+设计 RTL 不复制到 test 目录。失效生成 RTL、无用波形、临时 testbench 和仿真可执行文件按引用关系清理，保留必要失败日志和最小复现。已有用户授权的 Bf16SignPipe 例子：tb/Bf16SignPipeTb.sv、reference/bf16_sign_pipe.py，真实回执写入被忽略的 runs；它不是完整研究硬件回归入口。
 
-已实现 [统一证据门禁](../../scripts/rtl_gate.py) 和 [回执 v1 契约](../dc_syn/input-contract.md)，仅核验现有 RTL/验证输入/日志的指纹及精度/周期状态。它不是仿真入口，也不生产通过记录；后续真实回归入口按该契约写证据。
+已实现 [统一证据门禁](../../scripts/rtl_gate.py) 和 [回执 v1 契约](../dc_syn/input-contract.md)，门禁只核验指纹及精度/周期状态。例子专用的 scripts/dc_example.py 在真实 SV testbench 通过后生产证据；门禁本身不生产 PASS。

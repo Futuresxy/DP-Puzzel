@@ -1,6 +1,6 @@
 # 数据契约与可追溯性
 
-本文定义文件的数据职责。DC 基础设施已实现 [RTL/验证输入 v1 契约](../hw/dc_syn/input-contract.md) 与 synthesis summary JSON/CSV，其余机器格式随实施确定；标识、单位和来源不能由隐式约定代替。尚无实际 RTL 验证或 EDA 测量数据。
+本文定义文件的数据职责。DC 基础设施已实现 [RTL/验证输入 v1 契约](../hw/dc_syn/input-contract.md) 与 synthesis summary JSON/CSV，其余机器格式随实施确定；标识、单位和来源不能由隐式约定代替。已有 BF16 符号流水级示例的真实 RTL 验证及 DC 测量，尚无阵列/核心 characterization 或 workload power 数据。
 
 ## 通用记录
 

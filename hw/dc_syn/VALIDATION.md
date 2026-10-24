@@ -2,6 +2,8 @@
 
 日期：2026-10-24。范围是 DC 自动化软件和项目 skill；没有调用 DC、RTL 仿真、EDA 环境 setup 或功耗工具。
 
+以下为基础设施初版的历史软件检查记录。后续同日用户另行授权的 BF16 示例真实验收见 [例子](examples/bf16_sign_pipe/README.md) 和 [精简记录](records/bf16_sign_pipe_smoke_20261024.json)，不与本节初版检查混用。
+
 ## 软件检查
 
 - Python 3.6.8 与 Python 3.11：`python3 -m unittest discover -s hw/dc_syn/tests -v`，13 项测试通过。新增状态异常场景在一项测试中分别覆盖。

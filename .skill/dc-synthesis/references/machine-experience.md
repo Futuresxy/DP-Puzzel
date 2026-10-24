@@ -42,4 +42,6 @@
 
 只读核对本机 X-2025.06 官方命令手册：安装目录 doc/syn/man 下 dc_shell、check_timing、set_units、report_qor、report_constraint、set_svf，确认相关启动选项、ns/pF、QoR 精度与检查列表。手册/Tcl 完整性核对不等于真实 EDA 兼容验收。
 
-本次只做软件回归与静态检查，未运行 DC、仿真、环境 setup 或 PPA。首次真实 run 应补可追溯验收记录，不能移用参考项目的历史通过记录。
+上述来源整理阶段只做软件回归与静态检查，未运行 DC、仿真或 PPA。后续同日用户单独授权 Bf16SignPipe 最小例子的真实回归/DC，已形成 [本项目验收记录](../../../hw/dc_syn/records/bf16_sign_pipe_smoke_20261024.json)，不是移用参考项目的历史通过记录。
+
+该验收实际遇到 NFS PDK 的 Key has expired；用户授权 kinit 后恢复可读，随后按相同 N22 profile 和 1410 MHz 约束完成综合。保留真实来源，不在脚本存 Kerberos 密码。工具只发出 DesignWare 自动加入库的 UISN-40 提示，check_timing 无警告、最终 leaf 全部解析到 N22 target。此通过证据只覆盖例子与该工况，其他格式/设计/工艺仍需逐配置验证。
