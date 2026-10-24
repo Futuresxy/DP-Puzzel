@@ -1,8 +1,12 @@
 # 全项目唯一 RTL 来源
 
-后续每次导出使用以下目录名：
+使用 [Generate](../spec/elaborate/Generate.md) 从版本化 JSON 参数导出，每次使用以下目录名：
 
-    <Top>__<config-id>__<YYYYMMDDTHHMMSSffffffZ>__<source-sha12>/
+    K-PE_H16Q32E96_10241548/
+    MN-PE_H0Q32E0_10241548/
+    PE_E_g2_10241548/
+
+后缀为新加坡时区的月日时分（`MMddHHmm`）。K/MN目录显示H/Q/E容量，基础PE目录显示profile。目录不带hash或位宽后缀；完整配置、源码hash、年份和UTC时间保存在manifest。同名时拒绝覆盖，下一分钟再导出。旧格式导出仍通过其显式ID读取。
 
 | 文件 | 责任 |
 | --- | --- |
@@ -12,9 +16,9 @@
 | src/<Module>.sv | 一个 module 一个独立同名文件 |
 | export.log / test.log | 最小必要日志；大型产物在各 run 目录 |
 
-这是未来产物契约，目前未生成上述文件。测试、DC、功耗均显式引用 export ID 与同一份清单，不复制设计 RTL，不在导出后手工修补。参数特化和工具辅助模块须列明与 Chisel 源的对应关系。
+生成入口已实现；生成成功只标记 generated，RTL 精度回归与 PPA 门禁仍在后续阶段。测试、DC、功耗均须显式引用 export ID 与同一份清单，不复制设计 RTL，不在导出后手工修补。参数特化和工具辅助模块列明与 Chisel 源的对应关系。
 
-状态流：generated → RTL-verified → 可被综合/功耗引用。失败标记 failed；源码、参数或工具变化形成新导出；RTL hash 不符阻止分析，验证代码变化需要重测。分析 run 自身具有独立状态。
+状态流：generated → passed（对应 RTL-verified）→ 可被综合/功耗引用。失败标记 failed；源码、参数或工具变化形成新导出；RTL hash 不符阻止分析，验证代码变化需要重测。分析 run 自身具有独立状态。当前生成器不实现验证升级，不能手改 manifest 冒充 passed。
 
 README 每次记录时间、目的、参数、版本、命令、文件映射和状态。失效且无引用的 RTL 可删除，但保留原因与最小复现信息。被论文/characterization 引用的 RTL 应保留一份可核验的归档，不能因清理破坏复现链。
 

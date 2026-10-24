@@ -16,4 +16,4 @@
 
 每份通过证据绑定 export ID、RTL 文件 hash、参考语义版本、testbench/向量 hash、工具版本和随机种子；失败、未执行或证据过期均不能进入 PPA。真实负载回放还需核对结果、周期、tile 分配与活动窗口。
 
-设计 RTL 不复制到 test 目录。失效生成 RTL、无用波形、临时 testbench 和仿真可执行文件按引用关系清理，保留必要失败日志和最小复现。当前无测试实现或通过记录。
+设计 RTL 不复制到 test 目录。失效生成 RTL、无用波形、临时 testbench 和仿真可执行文件按引用关系清理，保留必要失败日志和最小复现。当前完整格式回归尚未实现。新增scripts/check_pe_export.py --smoke只对指定基础PE导出做单位scale、−1/0/+1输入的结果坐标与11级valid定向检查；源TB由脚本按确定随机种子生成，run绑定export/RTL/hash/checker/TB指纹。有限通过不标记manifest passed，不允许PPA。

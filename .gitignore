@@ -9,6 +9,8 @@ __pycache__/
 target/
 .bsp/
 .metals/
+hw/out/
+hw/.bloop/
 hw/project/project/
 hw/rtl/*/
 hw/test/runs/

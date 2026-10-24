@@ -1,0 +1,193 @@
+{
+  "source_project": "Quant_LLM_Chip_Codesign",
+  "source_commit": "0ddc5f7c21082dbce73d992a4d33a5a331f1e0bc",
+  "source_path": "HW/PE",
+  "source_worktree_clean_at_inspection": true,
+  "purpose": "Read-only source inventory for architecture/numerical-contract migration; old hierarchy and systolic arrays are not copied.",
+  "files": [
+    {
+      "path": "HW/PE/Include/FormatCompat.scala",
+      "sha256": "ba0199c15ee0889ae2b0f268e750a4b40858817f53cd364006d8158f9ae580b9"
+    },
+    {
+      "path": "HW/PE/Include/PEGroupKind.scala",
+      "sha256": "6d438226a18e85d3c980226f076106b1f3fb320d11895759c73db2235b0151b6"
+    },
+    {
+      "path": "HW/PE/Include/PEPrecisionConfig.scala",
+      "sha256": "98f3d57040a883d5d1005454dcb0171cba72925d513d401aa703cc59c4ff68e7"
+    },
+    {
+      "path": "HW/PE/Include/PETileCatalog.scala",
+      "sha256": "372d9706eaa57814c184b3a2c955821b386f02a0737c6d0257f033f2d3a6f380"
+    },
+    {
+      "path": "HW/PE/Include/param.scala",
+      "sha256": "db32346de5789d2bde4365203a9473d6128bd48b87f9521019299f3e014dd24d"
+    },
+    {
+      "path": "HW/PE/MidGroup/MidGroup.scala",
+      "sha256": "11951b92ed39b3f0a99f9d4fae30149f5fb1f919cb15681624fe4367c97c4303"
+    },
+    {
+      "path": "HW/PE/MidGroup/MidGroupAlignNormalize.scala",
+      "sha256": "6a9e53e01807fb0469ed9db8552559bc887153832106523bc6c79af76eaef6ac"
+    },
+    {
+      "path": "HW/PE/MidGroup/MidGroupBF16.scala",
+      "sha256": "9063ffac356c8eae678b7c3911633fc0bdf452ce5da9b8a61a03dab4acc5f819"
+    },
+    {
+      "path": "HW/PE/MidGroup/MidGroupFP4.scala",
+      "sha256": "3d178533f90ea18362c701023105e7dd7da2b5d81523d1ad22d5a15f3a813735"
+    },
+    {
+      "path": "HW/PE/MidGroup/MidGroupFP8FP6.scala",
+      "sha256": "979b6886ac32f9a11dfe9bbb4c5bc7fad834c8cd25c667c6bb4d28cb840cc1f8"
+    },
+    {
+      "path": "HW/PE/MidGroup/MidGroupFull.scala",
+      "sha256": "87197e5fdf29b5b809c075244f2df254a0ba1ed48194a070fcd4c6736b6321b9"
+    },
+    {
+      "path": "HW/PE/MidGroup/MidGroupLow.scala",
+      "sha256": "413c5ad06bf464e85e0246568b0bb92600fc104cc55dd1da7cd3755c476c35ac"
+    },
+    {
+      "path": "HW/PE/MidGroup/MidGroupNormalizeExact.scala",
+      "sha256": "2b32acb0c1293e5aa3c6195d45bceeb6643796689224f5931921fca960d72d7d"
+    },
+    {
+      "path": "HW/PE/PEGroup/DataUnpack.scala",
+      "sha256": "c540e020efb1825f72b2fb95f4c11e4893a4eb160c85c2645497bcb39a620bcc"
+    },
+    {
+      "path": "HW/PE/PEGroup/FixedPointMeta.scala",
+      "sha256": "a171600bf142b3e21ddddab5e6748f438feaa6de248dd737c5768064894ca330"
+    },
+    {
+      "path": "HW/PE/PEGroup/PEGroup.scala",
+      "sha256": "2e11e1da36cd5b3edfcf1e6be258f37423ab12514cd9aad6a1c337b6e8af2b4a"
+    },
+    {
+      "path": "HW/PE/PEGroup/PEGroupBF16.scala",
+      "sha256": "564cab8c1ee5cdc86c80d48739af127727763e53d8479ab238c8e3c826bd0b16"
+    },
+    {
+      "path": "HW/PE/PEGroup/PEGroupContract.scala",
+      "sha256": "52446c031fc97d38e82d8bef2b88ba07fdbe47b8f2566a778971171577de25ad"
+    },
+    {
+      "path": "HW/PE/PEGroup/PEGroupFP4.scala",
+      "sha256": "0e99fa2f2e832b74b0991f2f59b8b264af32584c4456dc6f5b2dcfff49fa3d7e"
+    },
+    {
+      "path": "HW/PE/PEGroup/PEGroupFP8FP6.scala",
+      "sha256": "0ebbb3ec3c9d380a55a83b78b541d66510f26d8bb3d19b098f29be6241e5de5b"
+    },
+    {
+      "path": "HW/PE/PEGroup/PEGroupFull.scala",
+      "sha256": "cd1cfae4a537700c8ae937b93bce286a73d1494b1eb7d498645dc21bc5411a98"
+    },
+    {
+      "path": "HW/PE/PEGroup/PEGroupLow.scala",
+      "sha256": "eb950612a5a6f523bd1a62bd38e29ee0f05ab960fdfe169dca773291be01dee4"
+    },
+    {
+      "path": "HW/PE/PEGroup/PEGroupMath.scala",
+      "sha256": "76ccd535705ea91bffc38452d9f79088c9f06c0d8a7528a08d772c92ee7f4e80"
+    },
+    {
+      "path": "HW/PE/PETile/C_Unpacker.scala",
+      "sha256": "3b2bd3e610741b1711828123199108a486eebbf349d02edc2ad7c4500bd7db6e"
+    },
+    {
+      "path": "HW/PE/PETile/LZD_Normalize.scala",
+      "sha256": "4d9bfbf19019564bacd5ffd98ca337d7e9360e84a3df80b0e8b894c9cfbbbf3e"
+    },
+    {
+      "path": "HW/PE/PETile/PETile.scala",
+      "sha256": "3c1dc8cb9ff5b330692abf242b3332cc5dc7518d9b8cb19e507178636d94d85f"
+    },
+    {
+      "path": "HW/PE/PETile/PETileK16.scala",
+      "sha256": "6ee9228925173eee3f5a091be66a50955e77cf61cf429ef4df0e290994fcfc25"
+    },
+    {
+      "path": "HW/PE/PETile/PETileSynthTop.scala",
+      "sha256": "f7376b8be9f76ab2f5aecb06bc5409c886248d8b1f1fd6cc2cbc1f7d2892e516"
+    },
+    {
+      "path": "HW/PE/PETile/RoundPack.scala",
+      "sha256": "98b37ba5ad4acef78d3a13c44713e7116bc1e02abe9142bac925515d3a2ff79f"
+    },
+    {
+      "path": "HW/PE/SubPE/SubPE.scala",
+      "sha256": "511f020fcfde5147dd7e40613f2e2dca98d88464b6bf0f246ca8fdb63dca7b86"
+    },
+    {
+      "path": "HW/PE/SubPE/SubPEBF16.scala",
+      "sha256": "0f7e1ec810aab3dff8515711bd3a9d13598c8d34d32a014a133b2f293d3c298e"
+    },
+    {
+      "path": "HW/PE/SubPE/SubPEFP4.scala",
+      "sha256": "f70e8f37aa567c47802bc7494643153c0b6bea61de1d1d5fcbd9f5a063e3ca20"
+    },
+    {
+      "path": "HW/PE/SubPE/SubPEFP8FP6.scala",
+      "sha256": "66547d2925db3e16efa0c947c0b8f217133fa2edfdf6fa19de751cccfa9a32e2"
+    },
+    {
+      "path": "HW/PE/SubPE/SubPELow.scala",
+      "sha256": "601c7874fc0af4e4b1faaa65c3e63e2ec5f9b881636a9d66e75ca33d114be201"
+    },
+    {
+      "path": "HW/PE/SubPE/simple_subpe.scala",
+      "sha256": "c82bc66544e45f7093fac88e3673d6f79820dcd6106a20ac02c34691f2d02000"
+    },
+    {
+      "path": "HW/PE/SystolicArray/PETileArrayGroup2x2.scala",
+      "sha256": "3c4abd0d3da6b1bf8b134542968ffbf5fd5a519e143a223cc066e4c902e58e63"
+    },
+    {
+      "path": "HW/PE/SystolicArray/PETileGroupedSystolicArray.scala",
+      "sha256": "ca8a9618310a4617981809fd88a680d7d2ad7998034e643ac3da41a57e2f7ead"
+    },
+    {
+      "path": "HW/PE/SystolicArray/PETileMixedSystolicArray.scala",
+      "sha256": "f2a42f7d149dae85b465b41f3db2f2f6a0a1956a9dd66ae9c58a33393d3dbb48"
+    },
+    {
+      "path": "HW/PE/SystolicArray/PETileRatioSystolicArraySynthTops.scala",
+      "sha256": "a58264ef6aac6e4104530e385f1e597fa3a75eed4a38c873e3e0441890eaac93"
+    },
+    {
+      "path": "HW/PE/SystolicArray/PETileSystolicArray4x4.scala",
+      "sha256": "532ce2b492826ba7a10da6d94f0807f4f8679603dfde4f71431280bab8cd1138"
+    },
+    {
+      "path": "HW/PE/SystolicArray/PETileSystolicArray4x4SynthTop.scala",
+      "sha256": "953b2f824c54d558b3755007fc8e3e2c19ec65ac66061e47aba87f1162441424"
+    },
+    {
+      "path": "HW/PE/Utils/BalancedLeadingZero.scala",
+      "sha256": "7af7ca0e9bbe138eea8874f65e68beb7d9588a269fd8eefb0d90a709849cc05e"
+    },
+    {
+      "path": "HW/PE/Utils/CarrySave.scala",
+      "sha256": "cf4ff164fce3abca9204b6516117afc2c49e9bad460ec73b2005bdcad50d17d6"
+    },
+    {
+      "path": "HW/PE/Utils/MaxLaneAlign.scala",
+      "sha256": "a11d7eca5f8060b0e3a5e2788fbb4fd6fb56696f6c676af79d32e7b6421ccd97"
+    },
+    {
+      "path": "HW/PE/Utils/RoundedShift.scala",
+      "sha256": "990c8fc2335ba281eb44300cecbd2f7f97b487958cd3290ea56595d481933598"
+    },
+    {
+      "path": "HW/PE/Utils/SignedShift.scala",
+      "sha256": "eac07d69309ad58e31b2b907052bacfb767c7962f1d1d06267dfb56b8977ac45"
+    }
+  ]
+}

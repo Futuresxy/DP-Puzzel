@@ -1,0 +1,138 @@
+{
+  "source_project": "Quant_LLM_Chip_Codesign",
+  "source_commit": "0ddc5f7c21082dbce73d992a4d33a5a331f1e0bc",
+  "source_worktree_clean_at_inspection": true,
+  "implementation": "full_reuse_four_level",
+  "transformations": [
+    "namespace and signal/type style",
+    "Full-only PETile composition; 1..4 MidGroups",
+    "explicit alignment width; no circuit-selection environment variables",
+    "internal forward-only Decoupled changed to Valid",
+    "FuDian round increment replaced by local primitive; requires RTL numerical verification"
+  ],
+  "files": [
+    {
+      "source": "HW/PE/Include/param.scala",
+      "sha256": "db32346de5789d2bde4365203a9473d6128bd48b87f9521019299f3e014dd24d",
+      "destination": "hw/chisel_src/config/Parameters.scala",
+      "note": "ParamEnv/catalog removed; fixed contracts only. Tunable shape/window use shared DesignConfig."
+    },
+    {
+      "source": "HW/PE/Include/FormatCompat.scala",
+      "sha256": "ba0199c15ee0889ae2b0f268e750a4b40858817f53cd364006d8158f9ae580b9",
+      "destination": "hw/chisel_src/config/FormatCompat.scala"
+    },
+    {
+      "source": "HW/PE/Include/PEPrecisionConfig.scala",
+      "sha256": "98f3d57040a883d5d1005454dcb0171cba72925d513d401aa703cc59c4ff68e7",
+      "destination": "hw/chisel_src/config/PrecisionConfig.scala"
+    },
+    {
+      "source": "HW/PE/Utils/BalancedLeadingZero.scala",
+      "sha256": "7af7ca0e9bbe138eea8874f65e68beb7d9588a269fd8eefb0d90a709849cc05e",
+      "destination": "hw/chisel_src/common/BalancedLeadingZero.scala"
+    },
+    {
+      "source": "HW/PE/Utils/CarrySave.scala",
+      "sha256": "cf4ff164fce3abca9204b6516117afc2c49e9bad460ec73b2005bdcad50d17d6",
+      "destination": "hw/chisel_src/common/CarrySave.scala"
+    },
+    {
+      "source": "HW/PE/Utils/MaxLaneAlign.scala",
+      "sha256": "a11d7eca5f8060b0e3a5e2788fbb4fd6fb56696f6c676af79d32e7b6421ccd97",
+      "destination": "hw/chisel_src/common/MaxLaneAlign.scala"
+    },
+    {
+      "source": "HW/PE/Utils/SignedShift.scala",
+      "sha256": "eac07d69309ad58e31b2b907052bacfb767c7962f1d1d06267dfb56b8977ac45",
+      "destination": "hw/chisel_src/common/SignedShift.scala"
+    },
+    {
+      "source": "HW/PE/SubPE/SubPE.scala",
+      "sha256": "511f020fcfde5147dd7e40613f2e2dca98d88464b6bf0f246ca8fdb63dca7b86",
+      "destination": "hw/chisel_src/pe/SubPE.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/PEGroup.scala",
+      "sha256": "2e11e1da36cd5b3edfcf1e6be258f37423ab12514cd9aad6a1c337b6e8af2b4a",
+      "destination": "hw/chisel_src/pe/PEGroupInterfaces.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/PEGroupContract.scala",
+      "sha256": "52446c031fc97d38e82d8bef2b88ba07fdbe47b8f2566a778971171577de25ad",
+      "destination": "hw/chisel_src/pe/PEGroupContract.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/PEGroupMath.scala",
+      "sha256": "76ccd535705ea91bffc38452d9f79088c9f06c0d8a7528a08d772c92ee7f4e80",
+      "destination": "hw/chisel_src/pe/PEGroupMath.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/PEGroupFull.scala",
+      "sha256": "cd1cfae4a537700c8ae937b93bce286a73d1494b1eb7d498645dc21bc5411a98",
+      "destination": "hw/chisel_src/pe/PEGroupFull.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/DataUnpack.scala",
+      "sha256": "c540e020efb1825f72b2fb95f4c11e4893a4eb160c85c2645497bcb39a620bcc",
+      "destination": "hw/chisel_src/pe/DataUnpack.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/FixedPointMeta.scala",
+      "sha256": "a171600bf142b3e21ddddab5e6748f438feaa6de248dd737c5768064894ca330",
+      "destination": "hw/chisel_src/pe/FixedPointMeta.scala"
+    },
+    {
+      "source": "HW/PE/MidGroup/MidGroup.scala",
+      "sha256": "11951b92ed39b3f0a99f9d4fae30149f5fb1f919cb15681624fe4367c97c4303",
+      "destination": "hw/chisel_src/core/MidGroupInterfaces.scala"
+    },
+    {
+      "source": "HW/PE/MidGroup/MidGroupFull.scala",
+      "sha256": "87197e5fdf29b5b809c075244f2df254a0ba1ed48194a070fcd4c6736b6321b9",
+      "destination": "hw/chisel_src/core/MidGroupFull.scala"
+    },
+    {
+      "source": "HW/PE/MidGroup/MidGroupAlignNormalize.scala",
+      "sha256": "6a9e53e01807fb0469ed9db8552559bc887153832106523bc6c79af76eaef6ac",
+      "destination": "hw/chisel_src/core/MidGroupAlignNormalize.scala"
+    },
+    {
+      "source": "HW/PE/MidGroup/MidGroupNormalizeExact.scala",
+      "sha256": "2b32acb0c1293e5aa3c6195d45bceeb6643796689224f5931921fca960d72d7d",
+      "destination": "hw/chisel_src/core/MidGroupNormalizeExact.scala"
+    },
+    {
+      "source": "HW/PE/PETile/PETile.scala",
+      "sha256": "3c1dc8cb9ff5b330692abf242b3332cc5dc7518d9b8cb19e507178636d94d85f",
+      "destination": "hw/chisel_src/core/PETile.scala",
+      "additional_destinations": [
+        "hw/chisel_src/core/Interfaces.scala"
+      ]
+    },
+    {
+      "source": "HW/PE/PETile/C_Unpacker.scala",
+      "sha256": "3b2bd3e610741b1711828123199108a486eebbf349d02edc2ad7c4500bd7db6e",
+      "destination": "hw/chisel_src/core/CUnpacker.scala"
+    },
+    {
+      "source": "HW/PE/PETile/LZD_Normalize.scala",
+      "sha256": "4d9bfbf19019564bacd5ffd98ca337d7e9360e84a3df80b0e8b894c9cfbbbf3e",
+      "destination": "hw/chisel_src/core/LzdNormalize.scala",
+      "additional_destinations": [
+        "hw/chisel_src/core/LeadingZeroCounter.scala"
+      ]
+    },
+    {
+      "source": "HW/PE/PETile/RoundPack.scala",
+      "sha256": "98b37ba5ad4acef78d3a13c44713e7116bc1e02abe9142bac925515d3a2ff79f",
+      "destination": "hw/chisel_src/core/RoundPack.scala"
+    }
+  ],
+  "locally_authored": [
+    {
+      "path": "hw/chisel_src/core/RoundIncrement.scala",
+      "purpose": "Elementary rounding primitive replacing FuDian API; no third-party tree copied; RTL validation pending."
+    }
+  ]
+}

@@ -4,7 +4,13 @@
 
 系统应支持两类设计决策：在已有架构的面积余量内增配计算资源，以及在下一代芯片的面积/功耗预算内重新分配张量计算资源。结果应给出可行配置、成本与收益分解及 Pareto 前沿，而不是预设一种“最佳比例”。
 
-**当前状态：项目定义、文档骨架和论文写作准备。没有 Chisel/Python/RTL 实现、可执行硬件构建入口或实验结果。** DC 综合和功耗分析需要在本机挂载的 EDA 环境中执行，当前会话不能直接运行。已准备 [paper 入口](paper/README.md)、IEEEtran 模板及学术润色 skill。
+**当前状态：五族六种基础PE及参数化K/MN编排。** H/Q专用路径改为16/32路统一对齐，HQE/QE/E保留分级复用；PE_E_g2/g4输出坐标对齐。详见 [六种PE设计](hw/spec/six-pe-design.md)、[配置](hw/configs/README.md) 和 [源码导航](hw/chisel_src/README.md)。编译/结构及有限定向检查不等于完整RTL精度验证；尚无PPA或ratio_dse实现。
+
+阵列扩展目前只做 [调研与方案讨论](hw/spec/array-design-discussion.md)：2×2 group 组内广播/组间脉动、L0 A/B/C、逻辑 M8N32 指令及 GEMM 调度。物理阵列规模参数化；方案待用户审核，尚未新增阵列代码。
+
+进一步的 [OS 内部调度调研](hw/spec/os-array-scheduling-research.md) 聚焦一条指令如何拆成物理 tile，比较 L0C 反馈与 group 本地累加，并给出论文、逆向研究和公开 RTL 的依据。
+
+[官方 Ascend C → MMAD ISA 分析](hw/spec/ascend-official-mmad-isa-analysis.md) 从官方 v9.1.0 样例追到实际编译的 IR、后端汇编和机器指令字，并结合 L0 容量推导 FP16 指令的 M/N/K 边界；这属于外部 ISA 编译研究，尚无芯片执行或数值验证。
 
 ## 两个核心部分
 
@@ -28,8 +34,8 @@
     │   └── roadmap.md         实施顺序与待定事项
     ├── hw/
     │   ├── spec/              数值语义、接口、周期、验收标准
-    │   ├── configs/           后续硬件参数集
-    │   ├── chisel_src/        后续单阵列/单核硬件
+    │   ├── configs/           PE 与 MN/K 顶层参数文件
+    │   ├── chisel_src/        单阵列/单核硬件，当前为 PE 迁移源码
     │   ├── rtl/               唯一生成 RTL 存储位置
     │   ├── test/              Verilog/SystemVerilog 验证职责
     │   ├── dc_syn/            挂载 EDA 中的面积、时序分析

@@ -1,0 +1,103 @@
+{
+  "source_project": "Quant_LLM_Chip_Codesign",
+  "source_commit": "0ddc5f7c21082dbce73d992a4d33a5a331f1e0bc",
+  "source_worktree_clean_at_inspection": true,
+  "files": [
+    {
+      "source": "HW/PE/SubPE/SubPE.scala",
+      "sha256": "511f020fcfde5147dd7e40613f2e2dca98d88464b6bf0f246ca8fdb63dca7b86",
+      "destination": "hw/chisel_src/pe/PE_HQE/SubPE_HQE.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/PEGroupFull.scala",
+      "sha256": "cd1cfae4a537700c8ae937b93bce286a73d1494b1eb7d498645dc21bc5411a98",
+      "destination": "hw/chisel_src/pe/PE_HQE/PEGroup_HQE.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/DataUnpack.scala",
+      "sha256": "c540e020efb1825f72b2fb95f4c11e4893a4eb160c85c2645497bcb39a620bcc",
+      "destination": "hw/chisel_src/pe/PE_HQE/DataUnpack_HQE.scala",
+      "note": "Own specialization and fixed decode register position; atomic functions shared in Utils."
+    },
+    {
+      "source": "HW/PE/SubPE/SubPEBF16.scala",
+      "sha256": "0f7e1ec810aab3dff8515711bd3a9d13598c8d34d32a014a133b2f293d3c298e",
+      "destination": "hw/chisel_src/pe/PE_H/SubPE_H.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/PEGroupBF16.scala",
+      "sha256": "564cab8c1ee5cdc86c80d48739af127727763e53d8479ab238c8e3c826bd0b16",
+      "destination": "hw/chisel_src/pe/PE_H/PEGroup_H.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/DataUnpack.scala",
+      "sha256": "c540e020efb1825f72b2fb95f4c11e4893a4eb160c85c2645497bcb39a620bcc",
+      "destination": "hw/chisel_src/pe/PE_H/DataUnpack_H.scala",
+      "note": "Own specialization and fixed decode register position; atomic functions shared in Utils."
+    },
+    {
+      "source": "HW/PE/SubPE/SubPEFP8FP6.scala",
+      "sha256": "66547d2925db3e16efa0c947c0b8f217133fa2edfdf6fa19de751cccfa9a32e2",
+      "destination": "hw/chisel_src/pe/PE_Q/SubPE_Q.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/PEGroupFP8FP6.scala",
+      "sha256": "0ebbb3ec3c9d380a55a83b78b541d66510f26d8bb3d19b098f29be6241e5de5b",
+      "destination": "hw/chisel_src/pe/PE_Q/PEGroup_Q.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/DataUnpack.scala",
+      "sha256": "c540e020efb1825f72b2fb95f4c11e4893a4eb160c85c2645497bcb39a620bcc",
+      "destination": "hw/chisel_src/pe/PE_Q/DataUnpack_Q.scala",
+      "note": "Own specialization and fixed decode register position; atomic functions shared in Utils."
+    },
+    {
+      "source": "HW/PE/SubPE/SubPEFP4.scala",
+      "sha256": "f70e8f37aa567c47802bc7494643153c0b6bea61de1d1d5fcbd9f5a063e3ca20",
+      "destination": "hw/chisel_src/pe/PE_E/SubPE_E.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/PEGroupFP4.scala",
+      "sha256": "0e99fa2f2e832b74b0991f2f59b8b264af32584c4456dc6f5b2dcfff49fa3d7e",
+      "destination": "hw/chisel_src/pe/PE_E/PEGroup_E.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/DataUnpack.scala",
+      "sha256": "c540e020efb1825f72b2fb95f4c11e4893a4eb160c85c2645497bcb39a620bcc",
+      "destination": "hw/chisel_src/pe/PE_E/DataUnpack_E.scala",
+      "note": "Own specialization and fixed decode register position; atomic functions shared in Utils."
+    },
+    {
+      "source": "HW/PE/SubPE/SubPELow.scala",
+      "sha256": "601c7874fc0af4e4b1faaa65c3e63e2ec5f9b881636a9d66e75ca33d114be201",
+      "destination": "hw/chisel_src/pe/PE_QE/SubPE_QE.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/PEGroupLow.scala",
+      "sha256": "eb950612a5a6f523bd1a62bd38e29ee0f05ab960fdfe169dca773291be01dee4",
+      "destination": "hw/chisel_src/pe/PE_QE/PEGroup_QE.scala"
+    },
+    {
+      "source": "HW/PE/PEGroup/DataUnpack.scala",
+      "sha256": "c540e020efb1825f72b2fb95f4c11e4893a4eb160c85c2645497bcb39a620bcc",
+      "destination": "hw/chisel_src/pe/PE_QE/DataUnpack_QE.scala",
+      "note": "Own specialization and fixed decode register position; atomic functions shared in Utils."
+    }
+  ],
+  "changes": [
+    "HQE/QE/E arithmetic organization migrated; source names, ports, widths and packages adapted.",
+    "H/Q product primitives migrated; PG-local/word-local alignment removed. A new global 16/32-lane alignment and pipelined natural-width tree is implemented.",
+    "All six PE outputs share F=pe_align_width and S11; g2 pads its normalized magnitude by one exact low zero.",
+    "Global H/Q sums grow by 4/5 bits, then normalized magnitude is explicitly RTZ by 2/3 bits to the shared output window.",
+    "E8M0 Q block exponent is hoisted once per PE; dedicated H/Q unpack paths omit scale-tail multiplication.",
+    "No original verification/PPA status is inherited."
+  ],
+  "locally_authored": [
+    "Utils/PEGlobalAlignNormalize.scala",
+    "Utils/RawProductInterfaces.scala",
+    "Utils/PEWiring.scala",
+    "Utils/PEFactory.scala",
+    "core/K_PE.scala",
+    "core/MN_PE.scala"
+  ]
+}
