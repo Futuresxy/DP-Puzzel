@@ -1,17 +1,7 @@
-# 硬件规格职责
+# 硬件规格
 
-先确定数值语义和接口，再设计结构。每个 `hw/chisel_src/<relative>.scala` 对应本目录下 `<relative>.md`，包括参数、Bundle、辅助函数和展开/生成入口。新文件可从 [module_template.md](module_template.md) 开始。
+当前入口：[六种PE设计](six-pe-design.md)、[检查记录](six-pe-checks.md)、[固定版本来源](six-pe-source.json)、[集中参数](config/Parameters.md)。
 
-| 文件 | 职责 |
-| --- | --- |
-| precision-formats.md | 目标格式清单、来源与需要明确的精度语义 |
-| module_template.md | 单模块接口、数值、时序和验证规格模板 |
-| [full-reuse-migration.md](full-reuse-migration.md) | 当前四层 full 复用迁移、来源与待验收边界 |
-| [full-reuse-checks.md](full-reuse-checks.md) | 本轮编译、展开与导出结构证据 |
-| [pe-migration.md](pe-migration.md) | 历史扁平方案，证据不适用于当前 full 基线 |
-| [config/Parameters.md](config/Parameters.md) | 集中式生成参数与合法范围 |
-| [array-design-discussion.md](array-design-discussion.md) | 待审查的 2×2 分组阵列、M8N32 指令切分、L0 layout 和 GEMM 调度；尚无阵列代码 |
-| [os-array-scheduling-research.md](os-array-scheduling-research.md) | 指令内部 OS 调度：论文/逆向/公开 RTL 证据，本地累加、context 交错、preload/compute/drain 和反馈结构候选 |
-| config/、common/、pe/、core/、elaborate/ | 与 Chisel 源码目录镜像的逐文件架构说明；完整索引见 [源码导航](../chisel_src/README.md) |
+五族逐文件spec在pe/PE_H、PE_Q、PE_E、PE_HQE、PE_QE；公共算术/接口/C-D在Utils；core为K_PE/MN_PE；elaborate为统一检查/生成。每个Scala都有镜像spec，包含数值坐标、资源、周期和验收边界。完整索引见 [源码导航](../chisel_src/README.md)。
 
-规格必须区分物理实现、支持的数值模式与运行模式；BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 不能仅以输入位宽代替完整定义。当前 PE 的参数、流水和数值合同已写入对应 spec，但不表示 RTL 验证/PPA 已通过。
+full-reuse-*、pe-migration/migration-checks是此前历史迁移记录，不能混作当前验证证据。阵列只调研讨论，无实现。完整SV数值回归、EDA与characterization未完成。

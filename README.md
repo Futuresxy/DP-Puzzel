@@ -4,7 +4,7 @@
 
 系统应支持两类设计决策：在已有架构的面积余量内增配计算资源，以及在下一代芯片的面积/功耗预算内重新分配张量计算资源。结果应给出可行配置、成本与收益分解及 Pareto 前沿，而不是预设一种“最佳比例”。
 
-**当前状态：迁移保留 SubPE → PEGroupFull → MidGroupFull → PETile 的 full 复用四层结构，统一风格、集中参数和逐文件 spec，待用户审查。尚未完成 RTL 数值验证、PPA 或 ratio_dse 实现。** 从 [full 迁移说明](hw/spec/full-reuse-migration.md)、[参数配置](hw/configs/README.md)、[源码导航](hw/chisel_src/README.md) 开始。此前扁平 PE/MN-PE/K-PE 已移出工作树，可从 Git 历史追溯。DC/功耗需要挂载 EDA 环境，当前不运行。论文模板和写作 skill 保留在 [paper](paper/README.md)。
+**当前状态：五族六种基础PE及参数化K/MN编排。** H/Q专用路径改为16/32路统一对齐，HQE/QE/E保留分级复用；PE_E_g2/g4输出坐标对齐。详见 [六种PE设计](hw/spec/six-pe-design.md)、[配置](hw/configs/README.md) 和 [源码导航](hw/chisel_src/README.md)。编译/结构及有限定向检查不等于完整RTL精度验证；尚无PPA或ratio_dse实现。
 
 阵列扩展目前只做 [调研与方案讨论](hw/spec/array-design-discussion.md)：2×2 group 组内广播/组间脉动、L0 A/B/C、逻辑 M8N32 指令及 GEMM 调度。物理阵列规模参数化；方案待用户审核，尚未新增阵列代码。
 

@@ -2,7 +2,11 @@
 
 使用 [Generate](../spec/elaborate/Generate.md) 从版本化 JSON 参数导出，每次使用以下目录名：
 
-    <Top>__<config-id>__<YYYYMMDDTHHMMSSffffffZ>__<source-sha12>/
+    K-PE_H16Q32E96_10241548/
+    MN-PE_H0Q32E0_10241548/
+    PE_E_g2_10241548/
+
+后缀为新加坡时区的月日时分（`MMddHHmm`）。K/MN目录显示H/Q/E容量，基础PE目录显示profile。目录不带hash或位宽后缀；完整配置、源码hash、年份和UTC时间保存在manifest。同名时拒绝覆盖，下一分钟再导出。旧格式导出仍通过其显式ID读取。
 
 | 文件 | 责任 |
 | --- | --- |

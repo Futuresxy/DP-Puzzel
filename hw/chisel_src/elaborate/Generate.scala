@@ -3,7 +3,7 @@ package dp.elaborate
 import circt.stage.ChiselStage
 import dp.config.DesignConfig
 import java.security.MessageDigest
-import java.time.{Instant, ZoneOffset}
+import java.time.{Instant, ZoneId}
 import java.time.format.DateTimeFormatter
 
 /** Parameter-file driven canonical RTL export; never declares verification passed. */
@@ -13,10 +13,10 @@ object Generate {
   private def hashText(text: String): String = sha256(text.getBytes("UTF-8"))
 
   def main(args: Array[String]): Unit = {
-    require(args.length == 2, "Usage: pe.runMain dp.elaborate.Generate <config.json> <export-reason>")
+    require(args.length >= 2, "Usage: pe.runMain dp.elaborate.Generate <config.json> <export-reason> [--pe-align-width N ...]")
     val hw = os.pwd
     require(os.isDir(hw / "chisel_src") && os.isFile(hw / "build.sc"), "Run from the hw directory")
-    val config = DesignConfig.load(os.Path(args(0), hw))
+    val config = DesignConfig.overrides(DesignConfig.load(os.Path(args(0), hw)), args.drop(2).toSeq)
     require(args(1).trim.nonEmpty, "Every export requires a reason")
     val firtoolDir = sys.env.getOrElse("CHISEL_FIRTOOL_PATH",
       throw new IllegalArgumentException("Set CHISEL_FIRTOOL_PATH to the directory containing firtool 1.62.0"))
@@ -32,19 +32,24 @@ object Generate {
     val sourceFiles = sources
     val sourceHash = hashText(sourceFiles.map { case (path, hash) => s"$path $hash" }.mkString("\n"))
     val configText = ujson.write(config.json)
-    val configId = s"full-${hashText(configText).take(12)}"
+    val configId = s"${config.top}-${hashText(configText).take(12)}"
     val now = Instant.now()
-    val stamp = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmssSSSSSS'Z'").withZone(ZoneOffset.UTC).format(now)
-    val exportId = s"${config.topName}__${configId}__${stamp}__${sourceHash.take(12)}"
+    val exportZone = ZoneId.of("Asia/Singapore")
+    val stamp = DateTimeFormatter.ofPattern("MMddHHmm").withZone(exportZone).format(now)
+    val exportStem = if (config.top == "pe") config.layout.head.profile
+      else s"${config.top.toUpperCase}-PE_${config.capacity}"
+    val exportId = s"${exportStem}_${stamp}"
     val directory = hw / "rtl" / exportId
-    require(!os.exists(directory), "Refusing to overwrite an existing RTL export")
+    require(!os.exists(directory),
+      s"RTL export $exportId already exists; retry in a later minute. Existing exports are never overwritten.")
     val gitCommit = os.proc("git", "rev-parse", "HEAD").call(cwd = hw).out.text().trim
     val dirty = os.proc("git", "status", "--porcelain").call(cwd = hw).out.text().nonEmpty
-    val command = Seq("mill", "-i", "pe.runMain", "dp.elaborate.Generate", args(0), args(1))
-    val flags = Array("--disable-all-randomization", "--strip-debug-info")
+    val command = Seq("mill", "-i", "pe.runMain", "dp.elaborate.Generate") ++ args.toSeq
+    val flags = Array("--disable-all-randomization", "--strip-debug-info", "--lowering-options=disallowLocalVariables")
     val manifest = ujson.Obj(
       "schema_version" -> 1, "export_id" -> exportId, "top" -> config.topName,
       "created_utc" -> now.toString, "reason" -> args(1), "state" -> "generating",
+      "name_timezone" -> exportZone.toString,
       "config_id" -> configId, "parameters" -> config.json, "git_commit" -> gitCommit,
       "git_dirty" -> dirty, "source_sha256" -> sourceHash,
       "sources" -> ujson.Arr.from(sourceFiles.map { case (path, hash) => ujson.Obj("path" -> path, "sha256" -> hash) }),
@@ -76,33 +81,36 @@ object Generate {
         require(names.size == 1 && path.last == s"${names.head}.sv",
           s"Expected one same-named module in ${path.last}; found ${names.mkString(",")}")
         val name = names.head
-        val fullSources = Map(
-          "PETile_" -> "core/PETile.scala",
-          "MidGroupFull_" -> "core/MidGroupFull.scala",
-          "PEGroupFull_" -> "pe/PEGroupFull.scala",
-          "SubPE_" -> "pe/SubPE.scala",
-          "DataUnpack" -> "pe/DataUnpack.scala",
-          "MidGroupAlignNormalize" -> "core/MidGroupAlignNormalize.scala",
-          "MidGroupNormalizeExact" -> "core/MidGroupNormalizeExact.scala",
-          "CUnpacker" -> "core/CUnpacker.scala",
-          "LzdNormalize" -> "core/LzdNormalize.scala",
-          "LeadingZeroCounter" -> "core/LeadingZeroCounter.scala",
-          "RoundPack" -> "core/RoundPack.scala",
-          "RoundIncrement" -> "core/RoundIncrement.scala")
-        val source = fullSources.collectFirst {
-          case (prefix, source) if name.startsWith(prefix) => source
-        }.getOrElse(throw new IllegalArgumentException(s"Unmapped Full module $name"))
+        val stem = name.takeWhile(_ != '$').split("_Aq")(0)
+        val familySources = Seq("HQE", "QE", "H", "Q", "E").flatMap { family =>
+          Seq("SubPE", "PEGroup", "DataUnpack", "PE").map { role =>
+            val key = s"${role}_${family}"
+            key -> s"pe/PE_${family}/${role}_${family}.scala"
+          }
+        }.toMap
+        val familyKey = familySources.keys.toSeq.sortBy(-_.length).find(key => stem == key || stem.startsWith(key + "_g"))
+        val source = familyKey.map(familySources).getOrElse {
+          if (name.startsWith("K_PE_")) "core/K_PE.scala"
+          else if (name.startsWith("MN_PE_")) "core/MN_PE.scala"
+          else if (stem.startsWith("PEGlobalAlignNormalize_")) "Utils/PEGlobalAlignNormalize.scala"
+          else {
+            val helper = stem.replaceAll("_[0-9]+$", "")
+            s"Utils/${helper}.scala"
+          }
+        }
+        require(os.isFile(hw / "chisel_src" / os.RelPath(source)), s"Unmapped module $name -> $source")
+        val className = if (source.startsWith("pe/")) {
+          val family = source.split("/")(1).stripPrefix("PE_").toLowerCase
+          s"dp.pe.$family.${source.split("/").last.stripSuffix(".scala")}"
+        } else if (source.startsWith("Utils/")) s"dp.utils.${source.split("/").last.stripSuffix(".scala")}"
+          else s"dp.core.${source.split("/").last.stripSuffix(".scala")}"
 
         ujson.Obj("module" -> name, "chisel_source" -> s"hw/chisel_src/$source",
-          "chisel_class" -> s"dp.${source.stripSuffix(".scala").replace('/', '.')}",
+          "chisel_class" -> className,
           "parameters" -> config.json,
           "path" -> path.relativeTo(directory).toString, "sha256" -> sha256(os.read.bytes(path)))
       }
       require(modules.exists(_("module").str == config.topName), "Configured top is missing")
-      Seq("SubPE_", "PEGroupFull_", "MidGroupFull_", "PETile_").foreach { prefix =>
-        require(modules.exists(_("module").str.startsWith(prefix)),
-          s"Missing preserved Full hierarchy in exported RTL: $prefix")
-      }
       // Drop only compiler intermediates inside this new export; keep headers/auxiliary inputs.
       os.walk(directory / "src").filter(p => os.isFile(p) &&
         (p.ext == "fir" || p.last.endsWith(".anno.json") || p.last == "filelist.f")).foreach(os.remove(_))

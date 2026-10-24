@@ -2,53 +2,54 @@ package dp.elaborate
 
 import chisel3._
 import circt.stage.ChiselStage
-import dp.config.DesignConfig
-import dp.core.PETile
+import dp.config._
+import dp.core._
+import dp.utils.PEFactory
 
-/** In-memory structure checks only; no DUT simulation or numerical evidence. */
+/** Structure checks only; no numerical regression or PPA evidence. */
 object Elaborate {
-  def module(config: DesignConfig): RawModule =
-    new PETile(dimk = config.wordCount, alignWidth = config.alignWidth)
-
-  private def check(config: DesignConfig): Unit = {
+  def module(config: DesignConfig): RawModule = config.top match {
+    case "pe" => PEFactory.generator(config.layout.head, config.alignment)
+    case "mn" => new MN_PE(config.layout.head, config.alignment)
+    case "k" => new K_PE(config.layout, config.alignment)
+  }
+  def check(config: DesignConfig): Unit = {
     val circuit = ChiselStage.emitCHIRRTL(module(config),
       Array("--throw-on-first-error", "--warnings-as-errors"))
     val modules = "(?m)^  module ([^ :]+)".r.findAllMatchIn(circuit).map(_.group(1)).toVector
-    val expected = Seq("PETile_" -> 1, "MidGroupFull_" -> config.midGroups,
-      "PEGroupFull_" -> (4 * config.midGroups), "SubPE_" -> (16 * config.midGroups))
-    expected.foreach { case (prefix, count) =>
-      require(modules.count(_.startsWith(prefix)) == count, s"Missing Full hierarchy: $prefix/$count")
-    }
-    println(s"elaborated ${config.topName}: ${modules.size} module definitions; " +
-      expected.map { case (prefix, count) => s"$prefix=$count" }.mkString(", "))
+    require(modules.count(_.startsWith("PEGroup_")) == config.layout.map(_.groupCount).sum)
+    require(modules.count(_.startsWith("SubPE_")) == config.layout.map(_.wordCount).sum)
+    println(s"elaborated ${config.topName}: ${modules.size} definitions, " +
+      s"${config.layout.map(_.groupCount).sum} PEGroups, ${config.wordCount} SubPEs; ${config.alignment.json}")
   }
-
   def main(args: Array[String]): Unit = {
-    require(args.nonEmpty, "Usage: Elaborate review | config <file.json>")
+    require(args.nonEmpty, "Elaborate review | config <JSON> [--pe-align-width N ...]")
     args.head match {
-      case "review" | "full-review" =>
-        require(args.length == 1)
-        (1 to 4).foreach(count => check(DesignConfig(midGroups = count)))
-        check(DesignConfig(alignWidth = 64))
-        val invalidConfigs: Seq[(String, () => Any)] = Seq(
-          "zero MidGroups" -> (() => DesignConfig(midGroups = 0)),
-          "five MidGroups" -> (() => DesignConfig(midGroups = 5)),
-          "window 39" -> (() => DesignConfig(alignWidth = 39)),
-          "window 65" -> (() => DesignConfig(alignWidth = 65)),
-          "fractional count" -> (() => DesignConfig.fromJson(ujson.Obj(
-            "schema_version" -> 1, "mid_groups" -> 1.5, "align_width" -> 40))),
-          "unknown field" -> (() => DesignConfig.fromJson(ujson.Obj(
-            "schema_version" -> 1, "mid_groups" -> 1, "align_width" -> 40, "extra" -> 0))),
-          "retired kind/pes schema" -> (() => DesignConfig.fromJson(ujson.Obj(
-            "schema_version" -> 1, "kind" -> "mn", "pes" -> ujson.Arr()))))
-        invalidConfigs.foreach { case (label, build) =>
+      case "review" =>
+        PEConfig.all.foreach(p => check(DesignConfig("pe", Seq(p))))
+        PEConfig.all.foreach(p => check(DesignConfig("mn", Seq(p))))
+        Seq(
+          Seq("PE_HQE_g4", "PE_E_g2"), Seq("PE_HQE_g4", "PE_E_g4"),
+          Seq("PE_HQE_g4", "PE_QE_g4"), Seq("PE_H_g4", "PE_Q_g4", "PE_E_g4")
+        ).foreach(names => check(DesignConfig("k", names.map(PEConfig(_)))))
+        for (a <- Seq(AlignmentConfig(26, 2, 38, 38), AlignmentConfig(30, 4, 48, 48), AlignmentConfig(28, 2, 40, 44));
+             p <- PEConfig.all) check(DesignConfig("pe", Seq(p), a))
+        check(DesignConfig("k", Seq(PEConfig("PE_HQE_g4"), PEConfig("PE_E_g2")), AlignmentConfig(30, 4, 48, 48)))
+        val invalid: Seq[() => Any] = Seq(
+          () => AlignmentConfig(qAlignWidth = 25), () => AlignmentConfig(qAlignWidth = 31),
+          () => AlignmentConfig(groupGuardBits = 1), () => AlignmentConfig(groupGuardBits = 5),
+          () => AlignmentConfig(peAlignWidth = 37), () => AlignmentConfig(peAlignWidth = 49),
+          () => AlignmentConfig(topAlignWidth = 37), () => AlignmentConfig(topAlignWidth = 49),
+          () => AlignmentConfig(peAlignWidth = 44, topAlignWidth = 40),
+          () => PEConfig("PE_HQE_g2"), () => DesignConfig("mn", PEConfig.all.take(2)))
+        invalid.foreach { build =>
           val rejected = try { build(); false } catch { case _: IllegalArgumentException => true }
-          require(rejected, s"Invalid Full configuration accepted: $label")
-          println(s"rejected invalid config: $label")
+          require(rejected, "Illegal configuration accepted")
         }
+        println(s"rejected ${invalid.size} illegal configurations")
       case "config" =>
-        require(args.length == 2)
-        check(DesignConfig.load(os.Path(args(1), os.pwd)))
+        require(args.length >= 2)
+        check(DesignConfig.overrides(DesignConfig.load(os.Path(args(1), os.pwd)), args.drop(2).toSeq))
       case other => throw new IllegalArgumentException(s"Unknown command: $other")
     }
   }

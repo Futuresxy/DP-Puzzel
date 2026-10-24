@@ -1,15 +1,7 @@
-# Elaborate.scala：四层 full 结构检查
+# 参数与结构展开入口
 
-对应源码：[Elaborate.scala](../../chisel_src/elaborate/Elaborate.scala)。Host-side main，不是硬件Module；检查与Generate共用 `module(DesignConfig)`，只构造当前唯一的PETile。
+对应源码：[Elaborate.scala](../../chisel_src/elaborate/Elaborate.scala)。
 
-```sh
-cd hw
-mill -i pe.runMain dp.elaborate.Elaborate review
-mill -i pe.runMain dp.elaborate.Elaborate config configs/full_h16q32e64.json
-```
+module构造PE/MN/K，统一传入AlignmentConfig。review覆盖六种PE及各自MN、4种K布局、三组窗口/guard边界以及K高宽度，总35种结构；检查实际PG/SubPE数量。11类非法参数/shape在构造阶段拒绝。config <JSON>支持四个--width覆盖，真实调用解析器与Generate相同。
 
-Chisel6.4.0在内存生成CHIRRTL，开启throw-on-first-error/warnings-as-errors，不写RTL文件。review与full-review为同义入口，覆盖mid_groups1/2/3/4、默认W40和N1/W64；检查每份实际展开的PETile/MidGroup/PEGroup/SubPE数量为1/N/4N/16N。N3覆盖非二次幂规约。
-
-构造/JSON拒绝检查覆盖mid_groups0/5、window39/65、非整数数量、未知字段和旧kind/pes schema。旧pe/mn/k命令已经移除，不能默默生成其他实现。
-
-CHIRRTL的同构实例在去重前可能各有带数字后缀的module定义；真正split RTL的定义去重与物理实例数量不同，需结合 [导出检查](Generate.md) 核对。结构展开没有执行DUT，不证明数值、运行协议、时序或功耗，不会生成passed状态，也不替代后续SV回归。
+仅emitCHIRRTL，warnings-as-errors，不执行DUT。结构成功不代表精度、周期协议或PPA通过；定向RTL检查另由显式export脚本运行。输出摘要不保存临时RTL。

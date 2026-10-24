@@ -1,8 +1,10 @@
 # Full 复用基线检查记录
 
+> 历史Full迁移记录，当前基线见 [六种PE设计](six-pe-design.md)。本页证据不适用于新H/Q全局路径或新参数。
+
 日期：2026-10-24（Asia/Singapore）。分支 `fix/full-reuse-hierarchy-migration`。这是源码/参数/RTL导出结构证据，**不是 RTL 数值或运行周期验收**。
 
-当前 `hw/chisel_src/` 只有 full 四层实现及配置/生成工具，无 reuse 隔离目录、旧 PE/MN/K 源码或配置；Scala 与镜像 spec 共27对。来源 commit 与文件hash见 [full-reuse-source.json](full-reuse-source.json)，原工程只读文件指纹已重新核对一致。
+当前 `hw/chisel_src/` 只有 full 四层实现及配置/生成工具，无 reuse 隔离目录、旧 PE/MN/K 源码或配置；Scala 与镜像 spec 共27对。来源 commit 与文件hash见 [full-reuse-source.json](https://github.com/Futuresxy/DP-Puzzel/blob/6522618cb78dac9bc2f64c11e00365e730435b95/hw/spec/full-reuse-source.json)，原工程只读文件指纹已重新核对一致。
 
 | 检查 | 结果与范围 |
 | --- | --- |

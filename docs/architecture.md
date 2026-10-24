@@ -71,6 +71,6 @@ L2、NoC、SIMT、控制器、HBM PHY 等按实验声明为显式模型、固定
 - 块缩放格式的位宽不等于有效存储成本或算术吞吐，转换、缩放与累加实现都需要证据。
 - 本项目不自动假设所有 GEMM 都可改成最低精度；精度可行性由负载规范或外部质量验证提供。
 
-本文描述目标系统架构。当前 hw 优先保留原工程 [full 四层复用通路](../hw/spec/full-reuse-migration.md)：SubPE → PEGroupFull → MidGroupFull → PETile，逐文件 spec 和集中配置供用户审查。此前扁平方案已移出工作树，Git 历史可追溯。当前只有源码/结构证据，尚无 RTL 数值验证、PPA 或 ratio_dse 实现。构建工具版本已固定，工艺、频率与芯片核心数仍待定。
+本文描述目标系统架构。当前hw实现 [五族六种PE](../hw/spec/six-pe-design.md)：SubPE_X → PEGroup_X → PE_X_gN → K_PE/MN_PE。HQE/QE/E保留原分级复用，H/Q专用16/32路一次全局对齐；六种PE统一S11输出坐标，K/MN公共C/D总18级，四个对齐参数显式传递。完整RTL格式/scale精度回归、PPA与ratio_dse尚未完成；有限定向坐标/valid检查不能替代最终验收。
 
 阵列方向已确定为 2×2 group 组内广播、组间脉动，物理规模参数化；M8N32 是逻辑指令块。L0 与状态机的 [调研讨论稿](../hw/spec/array-design-discussion.md) 区分已实现传输层、外部公开机制和本项目设计建议，审核前不进入阵列实现。

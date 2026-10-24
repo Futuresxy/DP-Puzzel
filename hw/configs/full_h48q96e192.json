@@ -1,5 +1,15 @@
 {
-  "schema_version": 1,
-  "mid_groups": 3,
-  "align_width": 40
+  "schema_version": 2,
+  "top": "k",
+  "layout": [
+    "PE_HQE_g4",
+    "PE_HQE_g4",
+    "PE_HQE_g4"
+  ],
+  "alignment": {
+    "q_align_width": 28,
+    "group_guard_bits": 2,
+    "pe_align_width": 40,
+    "top_align_width": 40
+  }
 }

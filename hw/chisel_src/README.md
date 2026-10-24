@@ -1,55 +1,70 @@
-# Chisel 源码：Full 复用四层实现
+# 五族六种基础 PE
 
-`hw/chisel_src/` 只保留 SubPE → PEGroupFull → MidGroupFull → PETile 这一实现，以及必要的配置和生成工具。没有 reuse 隔离目录，也不再并存扁平 PE/MN-PE/K-PE。来源与接口调整见 [迁移说明](../spec/full-reuse-migration.md)，结构检查见 [检查记录](../spec/full-reuse-checks.md)。
+当前唯一实现分为H/Q/E/HQE/QE五族，原MidGroup称PE。HQE/QE/E保留分级复用，H/Q采用16/32路全局对齐。PE_E一个源码导出g2/g4；六种PE输出F与周期一致，参数化K_PE/MN_PE共享C/D。不含阵列实现。
 
-```text
-config/       dp.config：唯一集中参数、格式与能力集合
-common/       dp.common：移位、MAX、CSA、LZD 组合工具
-pe/           dp.pe：SubPE、PEGroupFull、解包与固定点合同
-core/         dp.core：MidGroupFull、PETile、共享C/D和规格化/舍入
-elaborate/    dp.elaborate：结构检查与唯一split RTL导出
-```
+入口：[设计与参数合同](../spec/six-pe-design.md)、[检查记录](../spec/six-pe-checks.md)、[配置](../configs/README.md)。
 
-每个具体Module独立同名文件；每个Scala文件有镜像spec，Bundle/辅助object也包含在内。
-
-| Scala 文件 | 对应 spec |
+| Scala | spec |
 | --- | --- |
-| [common/BalancedLeadingZero.scala](common/BalancedLeadingZero.scala) | [BalancedLeadingZero](../spec/common/BalancedLeadingZero.md) |
-| [common/CarrySave.scala](common/CarrySave.scala) | [CarrySave](../spec/common/CarrySave.md) |
-| [common/MaxLaneAlign.scala](common/MaxLaneAlign.scala) | [MaxLaneAlign](../spec/common/MaxLaneAlign.md) |
-| [common/SignedShift.scala](common/SignedShift.scala) | [SignedShift](../spec/common/SignedShift.md) |
+| [Utils/BalancedLeadingZero.scala](Utils/BalancedLeadingZero.scala) | [BalancedLeadingZero](../spec/Utils/BalancedLeadingZero.md) |
+| [Utils/CUnpacker.scala](Utils/CUnpacker.scala) | [CUnpacker](../spec/Utils/CUnpacker.md) |
+| [Utils/CarrySave.scala](Utils/CarrySave.scala) | [CarrySave](../spec/Utils/CarrySave.md) |
+| [Utils/DecodeInterfaces.scala](Utils/DecodeInterfaces.scala) | [DecodeInterfaces](../spec/Utils/DecodeInterfaces.md) |
+| [Utils/DecodePrimitives.scala](Utils/DecodePrimitives.scala) | [DecodePrimitives](../spec/Utils/DecodePrimitives.md) |
+| [Utils/DotUnit.scala](Utils/DotUnit.scala) | [DotUnit](../spec/Utils/DotUnit.md) |
+| [Utils/FixedPointMeta.scala](Utils/FixedPointMeta.scala) | [FixedPointMeta](../spec/Utils/FixedPointMeta.md) |
+| [Utils/Interfaces.scala](Utils/Interfaces.scala) | [Interfaces](../spec/Utils/Interfaces.md) |
+| [Utils/LeadingZeroCounter.scala](Utils/LeadingZeroCounter.scala) | [LeadingZeroCounter](../spec/Utils/LeadingZeroCounter.md) |
+| [Utils/LzdNormalize.scala](Utils/LzdNormalize.scala) | [LzdNormalize](../spec/Utils/LzdNormalize.md) |
+| [Utils/MaxLaneAlign.scala](Utils/MaxLaneAlign.scala) | [MaxLaneAlign](../spec/Utils/MaxLaneAlign.md) |
+| [Utils/PEAlignNormalize.scala](Utils/PEAlignNormalize.scala) | [PEAlignNormalize](../spec/Utils/PEAlignNormalize.md) |
+| [Utils/PEFactory.scala](Utils/PEFactory.scala) | [PEFactory](../spec/Utils/PEFactory.md) |
+| [Utils/PEGlobalAlignNormalize.scala](Utils/PEGlobalAlignNormalize.scala) | [PEGlobalAlignNormalize](../spec/Utils/PEGlobalAlignNormalize.md) |
+| [Utils/PEGroupContract.scala](Utils/PEGroupContract.scala) | [PEGroupContract](../spec/Utils/PEGroupContract.md) |
+| [Utils/PEGroupInterfaces.scala](Utils/PEGroupInterfaces.scala) | [PEGroupInterfaces](../spec/Utils/PEGroupInterfaces.md) |
+| [Utils/PEGroupMath.scala](Utils/PEGroupMath.scala) | [PEGroupMath](../spec/Utils/PEGroupMath.md) |
+| [Utils/PEInterfaces.scala](Utils/PEInterfaces.scala) | [PEInterfaces](../spec/Utils/PEInterfaces.md) |
+| [Utils/PENormalizeExact.scala](Utils/PENormalizeExact.scala) | [PENormalizeExact](../spec/Utils/PENormalizeExact.md) |
+| [Utils/PEWiring.scala](Utils/PEWiring.scala) | [PEWiring](../spec/Utils/PEWiring.md) |
+| [Utils/RawProductInterfaces.scala](Utils/RawProductInterfaces.scala) | [RawProductInterfaces](../spec/Utils/RawProductInterfaces.md) |
+| [Utils/RoundIncrement.scala](Utils/RoundIncrement.scala) | [RoundIncrement](../spec/Utils/RoundIncrement.md) |
+| [Utils/RoundPack.scala](Utils/RoundPack.scala) | [RoundPack](../spec/Utils/RoundPack.md) |
+| [Utils/SignedShift.scala](Utils/SignedShift.scala) | [SignedShift](../spec/Utils/SignedShift.md) |
+| [Utils/SubPEInterfaces.scala](Utils/SubPEInterfaces.scala) | [SubPEInterfaces](../spec/Utils/SubPEInterfaces.md) |
 | [config/FormatCompat.scala](config/FormatCompat.scala) | [FormatCompat](../spec/config/FormatCompat.md) |
 | [config/Parameters.scala](config/Parameters.scala) | [Parameters](../spec/config/Parameters.md) |
 | [config/PrecisionConfig.scala](config/PrecisionConfig.scala) | [PrecisionConfig](../spec/config/PrecisionConfig.md) |
-| [core/CUnpacker.scala](core/CUnpacker.scala) | [CUnpacker](../spec/core/CUnpacker.md) |
-| [core/Interfaces.scala](core/Interfaces.scala) | [Interfaces](../spec/core/Interfaces.md) |
-| [core/LeadingZeroCounter.scala](core/LeadingZeroCounter.scala) | [LeadingZeroCounter](../spec/core/LeadingZeroCounter.md) |
-| [core/LzdNormalize.scala](core/LzdNormalize.scala) | [LzdNormalize](../spec/core/LzdNormalize.md) |
-| [core/MidGroupAlignNormalize.scala](core/MidGroupAlignNormalize.scala) | [MidGroupAlignNormalize](../spec/core/MidGroupAlignNormalize.md) |
-| [core/MidGroupFull.scala](core/MidGroupFull.scala) | [MidGroupFull](../spec/core/MidGroupFull.md) |
-| [core/MidGroupInterfaces.scala](core/MidGroupInterfaces.scala) | [MidGroupInterfaces](../spec/core/MidGroupInterfaces.md) |
-| [core/MidGroupNormalizeExact.scala](core/MidGroupNormalizeExact.scala) | [MidGroupNormalizeExact](../spec/core/MidGroupNormalizeExact.md) |
-| [core/PETile.scala](core/PETile.scala) | [PETile](../spec/core/PETile.md) |
-| [core/RoundIncrement.scala](core/RoundIncrement.scala) | [RoundIncrement](../spec/core/RoundIncrement.md) |
-| [core/RoundPack.scala](core/RoundPack.scala) | [RoundPack](../spec/core/RoundPack.md) |
+| [core/K_PE.scala](core/K_PE.scala) | [K_PE](../spec/core/K_PE.md) |
+| [core/MN_PE.scala](core/MN_PE.scala) | [MN_PE](../spec/core/MN_PE.md) |
 | [elaborate/Elaborate.scala](elaborate/Elaborate.scala) | [Elaborate](../spec/elaborate/Elaborate.md) |
 | [elaborate/Generate.scala](elaborate/Generate.scala) | [Generate](../spec/elaborate/Generate.md) |
-| [pe/DataUnpack.scala](pe/DataUnpack.scala) | [DataUnpack](../spec/pe/DataUnpack.md) |
-| [pe/FixedPointMeta.scala](pe/FixedPointMeta.scala) | [FixedPointMeta](../spec/pe/FixedPointMeta.md) |
-| [pe/PEGroupContract.scala](pe/PEGroupContract.scala) | [PEGroupContract](../spec/pe/PEGroupContract.md) |
-| [pe/PEGroupFull.scala](pe/PEGroupFull.scala) | [PEGroupFull](../spec/pe/PEGroupFull.md) |
-| [pe/PEGroupInterfaces.scala](pe/PEGroupInterfaces.scala) | [PEGroupInterfaces](../spec/pe/PEGroupInterfaces.md) |
-| [pe/PEGroupMath.scala](pe/PEGroupMath.scala) | [PEGroupMath](../spec/pe/PEGroupMath.md) |
-| [pe/SubPE.scala](pe/SubPE.scala) | [SubPE](../spec/pe/SubPE.md) |
+| [pe/PE_E/DataUnpack_E.scala](pe/PE_E/DataUnpack_E.scala) | [DataUnpack_E](../spec/pe/PE_E/DataUnpack_E.md) |
+| [pe/PE_E/PEGroup_E.scala](pe/PE_E/PEGroup_E.scala) | [PEGroup_E](../spec/pe/PE_E/PEGroup_E.md) |
+| [pe/PE_E/PE_E.scala](pe/PE_E/PE_E.scala) | [PE_E](../spec/pe/PE_E/PE_E.md) |
+| [pe/PE_E/SubPE_E.scala](pe/PE_E/SubPE_E.scala) | [SubPE_E](../spec/pe/PE_E/SubPE_E.md) |
+| [pe/PE_H/DataUnpack_H.scala](pe/PE_H/DataUnpack_H.scala) | [DataUnpack_H](../spec/pe/PE_H/DataUnpack_H.md) |
+| [pe/PE_H/PEGroup_H.scala](pe/PE_H/PEGroup_H.scala) | [PEGroup_H](../spec/pe/PE_H/PEGroup_H.md) |
+| [pe/PE_H/PE_H.scala](pe/PE_H/PE_H.scala) | [PE_H](../spec/pe/PE_H/PE_H.md) |
+| [pe/PE_H/SubPE_H.scala](pe/PE_H/SubPE_H.scala) | [SubPE_H](../spec/pe/PE_H/SubPE_H.md) |
+| [pe/PE_HQE/DataUnpack_HQE.scala](pe/PE_HQE/DataUnpack_HQE.scala) | [DataUnpack_HQE](../spec/pe/PE_HQE/DataUnpack_HQE.md) |
+| [pe/PE_HQE/PEGroup_HQE.scala](pe/PE_HQE/PEGroup_HQE.scala) | [PEGroup_HQE](../spec/pe/PE_HQE/PEGroup_HQE.md) |
+| [pe/PE_HQE/PE_HQE.scala](pe/PE_HQE/PE_HQE.scala) | [PE_HQE](../spec/pe/PE_HQE/PE_HQE.md) |
+| [pe/PE_HQE/SubPE_HQE.scala](pe/PE_HQE/SubPE_HQE.scala) | [SubPE_HQE](../spec/pe/PE_HQE/SubPE_HQE.md) |
+| [pe/PE_Q/DataUnpack_Q.scala](pe/PE_Q/DataUnpack_Q.scala) | [DataUnpack_Q](../spec/pe/PE_Q/DataUnpack_Q.md) |
+| [pe/PE_Q/PEGroup_Q.scala](pe/PE_Q/PEGroup_Q.scala) | [PEGroup_Q](../spec/pe/PE_Q/PEGroup_Q.md) |
+| [pe/PE_Q/PE_Q.scala](pe/PE_Q/PE_Q.scala) | [PE_Q](../spec/pe/PE_Q/PE_Q.md) |
+| [pe/PE_Q/SubPE_Q.scala](pe/PE_Q/SubPE_Q.scala) | [SubPE_Q](../spec/pe/PE_Q/SubPE_Q.md) |
+| [pe/PE_QE/DataUnpack_QE.scala](pe/PE_QE/DataUnpack_QE.scala) | [DataUnpack_QE](../spec/pe/PE_QE/DataUnpack_QE.md) |
+| [pe/PE_QE/PEGroup_QE.scala](pe/PE_QE/PEGroup_QE.scala) | [PEGroup_QE](../spec/pe/PE_QE/PEGroup_QE.md) |
+| [pe/PE_QE/PE_QE.scala](pe/PE_QE/PE_QE.scala) | [PE_QE](../spec/pe/PE_QE/PE_QE.md) |
+| [pe/PE_QE/SubPE_QE.scala](pe/PE_QE/SubPE_QE.scala) | [SubPE_QE](../spec/pe/PE_QE/SubPE_QE.md) |
 
 ```sh
 cd hw
 mill -i pe.compile
 mill -i pe.runMain dp.elaborate.Elaborate review
-mill -i pe.runMain dp.elaborate.Elaborate config configs/full_h48q96e192.json
-CHISEL_FIRTOOL_PATH=/path/to/firtool-1.62.0/bin mill -i pe.runMain dp.elaborate.Generate configs/full_h16q32e64.json "full reuse review"
+mill -i pe.runMain dp.elaborate.Elaborate config configs/pe_e_g2.json --pe-align-width 44 --top-align-width 44
+CHISEL_FIRTOOL_PATH=/path/to/firtool-1.62.0/bin mill -i pe.runMain dp.elaborate.Generate configs/k_1_2_6.json "six PE review"
 ```
 
-工具固定为Mill0.11.8、Scala2.13.12、Chisel6.4.0、firtool1.62.0，定义在 [build.sc](../build.sc)。配置只开放完整MidGroup数和对齐窗口，详见 [configs](../configs/README.md)。生成RTL统一进入hw/rtl的独立导出目录。
-
-当前只有编译/展开/导出结构证据，没有RTL数值通过记录、DC或power。原工程只读，未迁移阵列、旧RTL、专用精度variant、旧testbench/PPA或第三方FPU源码树。
+工具固定Mill0.11.8、Scala2.13.12、Chisel6.4.0、firtool1.62.0。参数在生成时特化，导出RTL不能任意再override未知SV parameter；选择新参数后重新导出。当前未完成全格式数值回归或PPA。

@@ -52,6 +52,20 @@ case class PEPrecisionConfig(
   }
 }
 
-object PEPrecisionConfigs {
-  val fullSupport = PEPrecisionConfig(name = "full_support")
+object Precision {
+  val h = PEPrecisionConfig("H", supportsFP8 = false, supportsFP6 = false,
+    supportsE2M1 = false, supportsNVFP4 = false, supportsHiF4 = false)
+  val q = PEPrecisionConfig("Q", supportsFP16 = false, supportsBF16 = false,
+    supportsE2M1 = false, supportsNVFP4 = false, supportsHiF4 = false)
+  val e = PEPrecisionConfig("E", supportsFP16 = false, supportsBF16 = false,
+    supportsFP8 = false, supportsFP6 = false)
+  val hqe = PEPrecisionConfig("HQE")
+  val qe = PEPrecisionConfig("QE", supportsFP16 = false, supportsBF16 = false)
+  def forFamily(family: String): PEPrecisionConfig = family match {
+    case "H" => h
+    case "Q" => q
+    case "E" => e
+    case "HQE" => hqe
+    case "QE" => qe
+  }
 }

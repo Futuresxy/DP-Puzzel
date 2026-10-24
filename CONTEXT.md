@@ -11,17 +11,15 @@ _Avoid_: 以“4 bit”“低精度”代替完整格式
 
 **H/Q/E 容量（HQE Capacity）**：H=half、Q=quarter、E=eighth 家族每次接收可处理的实际 K 元素数，例如 H16Q32E64。Q 包含 FP8/FP6，E 包含 MX/NV/HiF4；共享模式的三项容量不能同时相加。
 
-**Full 复用基线（Full Reuse Baseline）**：当前按原工程保留的四层硬件组织：SubPE → PEGroupFull → MidGroupFull → PETile。每个 SubPE 的部分乘法器随模式复用；上层依次共享scale、规约和C/D。不是阵列层级，也不隐含跨事务累加。
+**基础PE**：原MidGroup边界。五族H/Q/E/HQE/QE共六profile，g表示PEGroup数；H/Q/HQE/QE为g4，E为g4/g2。H16/Q32采用一次全局对齐，HQE/QE/E保留分级组织。六种PE均输出扩展精度sign/magnitude/anchor结果，S11、F=pe_align_width。
 
-**SubPE**：处理一对已解码 packed word 的 H1/Q2/E4 共享算术模块，结果3拍、早anchor1拍。
+**PEGroup / SubPE**：基础PE内的实际模块。HQE/QE/E执行原局部算术；H/Q的PG仅组织产品，不再局部对齐。每PG四SubPE，H每SubPE一个产品、Q两个、E四个。
 
-**PEGroupFull**：四个SubPE及独立解包、局部对齐/规约和scale路径，H4/Q8/E16，anchor S06、data S07。
+**K-PE**：1–4个基础PE沿K空间规约，共享一个C/D，模式native K为活动实例容量之和；输入物理槽不隐式压缩。
 
-**MidGroupFull**：四个PEGroupFull形成H16/Q32/E64完整点积，S11输出无损规格化后的有限窗口结果。
+**MN-PE**：一个基础PE及独立C/D，代表一个M/N输出位置；当前不包含阵列。K/MN均18级、batch固定模式。
 
-**PETile**：1–4个完整MidGroupFull沿K空间规约，共享一个C/D路径，S18输出FP32；格式在batch cfg锁定。
-
-**历史 PE / MN-PE / K-PE**：此前扁平方案的名称。PE是完整带scale点积；MN-PE是一个PE+C/D；K-PE是1–4个PE共享C/D。源码已移出工作树，可从Git历史追溯；旧接口和验收记录不适用于full基线。
+**对齐窗口**：生成时参数，默认Q字内28、PG guard2、PE40、PE+C40；公开范围和传递以config/Parameters.scala为准。乘加自然增长，统一输出坐标不等于不同RTZ组织的误差相同。
 
 **指令 K（Instruction K）**：一条 MMA 指令在语义上覆盖的归约长度；不同于完整 GEMM 的 K，也不单独规定物理执行周期。
 

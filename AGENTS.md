@@ -2,7 +2,7 @@
 
 本文件适用于整个仓库。目标是构建面向 AI 芯片张量计算的多精度算力配比 DSE 系统，对 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 等设计选择的面积、功耗和负载延迟进行成本收益权衡。
 
-**当前优先工作按用户最新要求改为保留 full 复用四层结构的迁移：SubPE → PEGroupFull → MidGroupFull → PETile，统一代码风格和逐文件 spec 后再讨论微架构简化。** `hw/chisel_src/` 只保留这一实现及配置/生成工具；此前扁平 PE/MN-PE/K-PE 已移出工作树，可从 Git 历史追溯，不能混用旧接口或检查证据。可做 Scala 编译、Chisel elaboration 和导出结构检查；Verilog/SystemVerilog 数值 testbench 和 EDA 在后续阶段完善。不得把本轮源码审查/展开检查称为 RTL 精度验证通过。ratio_dse 仍处于定义阶段，paper 保持模板与写作准备。
+**当前阶段按用户批准方案实现五族目录与六种基础PE：PE_HQE_g4、PE_QE_g4、PE_H_g4、PE_Q_g4、PE_E_g4、PE_E_g2。** 原MidGroup改称PE；SubPE/PEGroup/PE层级保留。HQE/QE/E保留原分级复用组织；H/Q专用路径采用16/32路全局对齐和流水自然位宽累加。Utils维护公共接口/算术/C-D；K_PE/MN_PE编排基础PE，不写阵列代码。统一PE输出F=pe_align_width、11级，g2规范化后精确补一个低零对齐g4；K/MN总18级。完整RTL精度/周期回归与EDA仍在后续阶段，不能将有限定向检查称为完整精度验证通过。
 
 **阵列扩展当前仅获授权调研和方案讨论，用户审核确定方案前不写阵列代码。** 已确认采用 2×2 group 组内广播、组间脉动；M8N32 是逻辑指令输出块，物理阵列参数化；FP4 目标 K64/96/128/192/256，FP8 目标 K32/64/96/128。控制、L0 和 layout 候选见 [讨论稿](hw/spec/array-design-discussion.md)，其中建议不等于已批准的实现合同。
 
@@ -20,7 +20,7 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 
 - `hw/spec/`：接口、数值语义、参数约束、数据流、流水级、周期定义和验收标准。
 - `hw/chisel_src/`：可综合 Chisel，按 package 组织；一个硬件 Module 一个同名 Scala 文件。
-  目录按 `config/`、`common/`、`pe/`、`core/`、`elaborate/` 划分，package 为 `dp.*`，full 复用通路是一等且唯一实现。`hw/spec/` 镜像全部路径。
+  目录为config/、Utils/、pe/PE_H/、pe/PE_Q/、pe/PE_E/、pe/PE_HQE/、pe/PE_QE/、core/、elaborate/。五族目录按用户命名，Scala package保持小写dp.pe.h/q/e/hqe/qe；Utils为dp.utils。`hw/spec/` 镜像全部路径。
 - `hw/configs/`：可复现的硬件参数配置。
 - `hw/rtl/`：全仓库唯一的生成 RTL 存储位置。
 - `hw/test/`：参考模型、测试驱动、回归；禁止在此保留另一份设计 RTL。
@@ -38,17 +38,17 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 ## 2. Chisel 风格与命名
 
 1. 简约、直观、可审查；优先清晰的硬件结构，避免为少量逻辑引入复杂继承、泛型框架和隐式转换。
-2. Scala 使用两空格缩进、UTF-8、LF；Module/Bundle/参数类型用 `UpperCamelCase`，参数字段与 Scala 辅助方法用 `lowerCamelCase`，package 小写。
+2. Scala 使用两空格缩进、UTF-8、LF；Module/Bundle/参数类型用 `UpperCamelCase`（用户指定的SubPE_H、PEGroup_HQE、PE_E等族名例外），参数字段与 Scala 辅助方法用 `lowerCamelCase`，package 小写。
 3. 硬件端口、寄存器、连线用 `lower_snake_case`。端口用 `in_`、`out_` 前缀，寄存器用 `_q`，组合下一状态用 `_d`，使能用 `_en`，低有效信号用 `_n`。时钟/复位保留 Chisel 默认 `clock`/`reset`；异步复位必须由 spec 明确要求。
 4. 实例名表达功能，例如 `dot_product`、`input_buffer`；避免 `tmp1`、`data2` 等无语义名称。顶层 `desiredName` 稳定，与导出映射一致。
 5. 使用不可变 `case class` 集中参数化，使用 `require` 检查合法范围、整除关系和位宽约束。不得把测试配置写死在设计里，不增加尚无需求的参数。
-   当前集中入口为 `hw/chisel_src/config/Parameters.scala`，可调参数由 `hw/configs/*.json` 传入，运行生成命令时选择配置即可改变结构。固定流水/位宽合同与可调参数明确分开，禁止通过隐式环境变量改变电路。
+   当前集中入口为 `hw/chisel_src/config/Parameters.scala`，可调参数由 `hw/configs/*.json` 传入，运行生成命令时选择配置即可改变结构。固定流水/位宽合同与可调参数明确分开，禁止通过隐式环境变量改变电路。AlignmentConfig公开q_align_width=26..30、group_guard_bits=2..4、pe_align_width=38..48、top_align_width=38..48且不小于PE窗口，默认28/2/40/40。构造期用require检查范围；硬件运行期用assert。默认<JSON<CLI，完整有效参数进入manifest；RTL为已elaboration特化结果。乘/加按自然位宽增长，不另开输出宽度旋钮。
 6. 位宽、signed/unsigned、扩展、截断、舍入、饱和和溢出行为必须显式定义。乘法/累加保留所需精度，禁止依赖隐式截断获得“正确结果”。单元素和非二次幂参数必须有明确行为。
 7. 每个 Module 注释说明功能、接口协议、延迟、吞吐、复位和数值语义；关键逻辑注释说明设计理由、位宽推导或时序取舍，不逐句翻译代码。
 8. 组合逻辑完整赋值，避免锁存器、组合环和多驱动；禁止以 `DontCare` 掩盖未实现功能。提交的模块必须具备完整可运行实现，未实现方案只放在 spec。
 9. 修改 Chisel 前读取 [.skill/chisel-design/SKILL.md](.skill/chisel-design/SKILL.md)。每个 `hw/chisel_src/<relative>.scala` 必须对应 `hw/spec/<relative>.md`，包括参数、Bundle、算术辅助和展开入口；源码与 spec 在同一 PR 更新。spec 解释架构、设计理由、位宽/二进制小数点、共享资源、接口、周期、限制和待验收内容，不能只有文件名或函数列表。
-10. 当前 full 复用基线保留实际 Module 层级：一个 SubPE 处理 H1/Q2/E4；四个 SubPE 构成 PEGroupFull；四个 PEGroupFull 构成 MidGroupFull；1–4 个完整 MidGroupFull 沿 K 规约到 PETile 的共享 C/D。不得在此次迁移中再把这些模块内联成两层。抽象 IO 外壳不是新增硬件层；阵列 2×2 group 属于外部连接层。后续简化须先审查 spec 和数值/周期合同。
-11. H/Q/E 分别代表 half、quarter、eighth 家族，数字为实际 K 元素数，例如 `H16Q32E64`；Q 包含 8/6-bit，E 包含 MX/NV/HiF4。full RTL 使用 `SubPE_H1Q2E4`、`PEGroupFull_H4Q8E16`、`MidGroupFull_H16Q32E64_W…`、`PETile_H…Q…E…`。不再生成历史 MN/K 顶层。完整布局、窗口和实现族必须记录，不能只由总容量认定架构相同。
+10. 层级为SubPE_X → PEGroup_X → PE_X_gN → K_PE/MN_PE。X仅H/Q/E/HQE/QE；g4为4个PG，只有E另有g2。H/Q的PG是产品簇，不做局部对齐或和；全局PE内可流水拆分，不能强迫其恢复复用路径。HQE/QE/E本轮保留原组织。
+11. H/Q/E为half/quarter/eighth支持族，容量根据PG数派生。基础RTL名为PE_HQE_g4等六个profile，子模块SubPE_H、PEGroup_QE等；非默认对齐附参数后缀。K/MN以合计H/Q/E命名，完整有序布局仍须记录。统一输出layout不代表全局/分级RTZ有相同误差，精度与PPA比较分别保留证据。
 
 ## 3. 面积、时序与功耗
 
@@ -62,7 +62,7 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 ## 4. RTL 单一来源与导出
 
 1. 后续实现统一 RTL 导出入口，参数来自已版本化的 `hw/configs/`。每次导出创建独立目录：
-   `hw/rtl/<Top>__<config-id>__<YYYYMMDDTHHMMSSffffffZ>__<source-sha12>/`。
+   `hw/rtl/K-PE_HxQxEx_<MMddHHmm>/`、`MN-PE_HxQxEx_<MMddHHmm>/`；基础PE为`<PE-profile>_<MMddHHmm>/`。时间使用Asia/Singapore。完整参数、源码/config hash和UTC时间存manifest，不拼入目录；同名拒绝覆盖，稍后一分钟重试。
 2. 每个目录必须有 `README.md`、`manifest.json`、`files.f`、`src/`。README 每次记录时间、原因、源码指纹/Git commit（可用时）、参数、工具版本、模块映射、命令和验证状态。不能静默覆盖旧导出。
 3. 使用编译工具的 split Verilog 能力导出；每个生成 module 独立保存为同名 `.sv`，记录对应的 Chisel 类/文件和参数特化。共享 module 定义只保存一次；不得随意 flatten/inline 破坏映射。工具辅助 module、blackbox、头文件也必须进入清单并说明来源。新增层级时同时更新映射和检查。
 4. `files.f` 使用相对导出目录的路径；仿真、DC、功耗流程用显式 export ID 解析该清单并核对 SHA-256。禁止复制到各自目录、手工修补 `.sv`、用模糊 glob 或“最新文件”作为分析输入。
