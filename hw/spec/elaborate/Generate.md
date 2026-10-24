@@ -1,26 +1,20 @@
-# Generate.scala：参数驱动的唯一 RTL 导出
+# Generate.scala：唯一 full RTL 导出
 
-对应源码：[Generate.scala](../../chisel_src/elaborate/Generate.scala)。Host-side 生成入口，不是硬件 Module。使用 [Parameters](../config/Parameters.md) 中的 DesignConfig 读取 JSON 后构造 MNPE 或 KPE。
+对应源码：[Generate.scala](../../chisel_src/elaborate/Generate.scala)。Host-side main，读取 [DesignConfig](../config/Parameters.md)，通过共用Elaborate.module构造当前唯一PETile。参数只有mid_groups与align_width，不再支持旧kind/pes或mn/k顶层。
 
 ```sh
 cd hw
-export CHISEL_FIRTOOL_PATH=/path/to/firtool-1.62.0/bin
-mill -i pe.runMain dp.elaborate.Generate configs/mn_h0q0e32.json "source review export"
+CHISEL_FIRTOOL_PATH=/path/to/firtool-1.62.0/bin mill -i pe.runMain dp.elaborate.Generate configs/full_h16q32e64.json "full source review"
 ```
 
-调整 h/q/e、align_width、kind 或有序 pes 列表，只改配置文件，不改 PE 电路源码。配置 schema 严格检查，MN 只能一个 PE，K 为 1–4 个；改变参数会在 elaboration 时改变资源、接口宽度和 top 名。非法配置在创建导出目录前拒绝。
+配置非法或reason为空，在创建导出目录前拒绝。工具固定Mill0.11.8、Scala2.13.12、Chisel6.4.0和firtool1.62.0；CHISEL_FIRTOOL_PATH只指定工具位置，不改变电路参数。读取实际tool --version核对，不记录私有工具路径。
 
-导出位置固定为 `hw/rtl/<Top>__<config-id>__<UTC时间>__<source-sha12>/`，同名目录拒绝覆盖。config-id 是规范化有效参数 JSON 的 SHA-256 前缀，完整参数仍保存；source-sha 是 Scala 源文件、build.sc 和 .mill-version 的内容清单指纹，另外记录 Git commit 和 dirty 状态，避免未提交源码被误标为 commit 内容。
+导出固定为 `hw/rtl/<Top>__<config-id>__<UTC微秒时间>__<source-sha12>/`，重复目录拒绝覆盖。config-id来自规范化有效JSON；source hash来自排序后的全部Scala/build.sc/.mill-version路径与SHA-256清单，同时记录Git commit与dirty。导出前后比较源码，防止修改过程中产生混合指纹。
 
-工具固定 Mill 0.11.8、Scala 2.13.12、Chisel 6.4.0、firtool 1.62.0；显式设置本机 firtool 目录，读取真实 --version，不记录机器私有路径。使用工具 split-verilog，检查每个 .sv 只有一个同名 module；将 PE、MNPE、KPE、Fp32Pack 的 RTL 定义映射到对应 Scala 文件。公共内联函数的逻辑属于调用模块，辅助源文件同样列入源码指纹。
+split-verilog由编译器生成，每个.sv必须恰好一个同名module。全部12类具体模块映射到dp.config/common/pe/core下相应源码类（实际Module在pe/core），保留SubPE/PEGroupFull/MidGroupFull/PETile四层模块名检查。每项module记录Chisel类、源码路径、完整顶层参数和RTL hash；局部固定参数由对应spec及source指纹界定。
 
-每次导出生成：
+每个export含README、manifest.json、files.f和src。manifest记录工具/命令/参数/源码/module/输入文件hash；files.f为相对路径并记录自身hash。共享module定义只保留一次，但物理实例不因定义去重而共享。工具中间FIRRTL/anno可在本次目录清理，保留必要RTL/辅助输入。
 
-- README：时间、原因、来源、状态和 manifest 导航；不能覆盖历史导出。
-- manifest.json：有效参数、配置/源码 hash、工具版本、命令、模块映射、所有生成输入的路径和 hash。
-- files.f：相对导出目录的 RTL 路径和 src include 搜索路径，自身也有 hash。
-- src：每 module 一份 .sv；保留所需头文件，移除本次导出的 FIRRTL/注解中间文件。
+异常时删本次src/files.f，保留failed README/manifest和错误，不改旧导出。成功仅为generated，rtl_test=not_run、ppa_eligible=false；不能因结构生成成功写passed。
 
-状态从 generating 到 generated；`rtl_test=not_run`、`ppa_eligible=false`，没有任何接口把结构展开设为 passed。后续 SV/DC/power 必须从该目录读取，不复制设计 RTL，不使用“最新文件”隐式选择。
-
-生成异常时删除本次 export 的 src/files.f，保留 failed manifest 和 README 供复现；不影响历史有效导出。导出前后重新核对源码指纹，防止边修改边生成导致来源不一致。后续验证门禁尚未实现，此文件不是 DC/power 调用入口。
+从仓库根执行 `python scripts/check_full_reuse_export.py <export-id>`，只检查显式指定导出的hash、清单、单module文件和实际1/N/4N/16N层级。该工具不执行DUT或改变验证状态，不是SV精度或PPA门禁。后续SV/DC/power必须继续解析同一export清单，不复制RTL或隐式选择最新文件。

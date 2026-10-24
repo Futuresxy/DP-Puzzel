@@ -2,50 +2,54 @@ package dp.elaborate
 
 import chisel3._
 import circt.stage.ChiselStage
-import dp.config._
-import dp.core._
-import dp.pe.PE
+import dp.config.DesignConfig
+import dp.core.PETile
 
-/** Review-only elaboration entry. It emits no RTL files and runs no numerical tests.
-  * RTL export is a separate future step with manifest and SV validation gates.
-  */
+/** In-memory structure checks only; no DUT simulation or numerical evidence. */
 object Elaborate {
   def module(config: DesignConfig): RawModule =
-    if (config.kind == "mn") new MNPE(config.pes.head) else new KPE(config.pes)
+    new PETile(dimk = config.wordCount, alignWidth = config.alignWidth)
+
+  private def check(config: DesignConfig): Unit = {
+    val circuit = ChiselStage.emitCHIRRTL(module(config),
+      Array("--throw-on-first-error", "--warnings-as-errors"))
+    val modules = "(?m)^  module ([^ :]+)".r.findAllMatchIn(circuit).map(_.group(1)).toVector
+    val expected = Seq("PETile_" -> 1, "MidGroupFull_" -> config.midGroups,
+      "PEGroupFull_" -> (4 * config.midGroups), "SubPE_" -> (16 * config.midGroups))
+    expected.foreach { case (prefix, count) =>
+      require(modules.count(_.startsWith(prefix)) == count, s"Missing Full hierarchy: $prefix/$count")
+    }
+    println(s"elaborated ${config.topName}: ${modules.size} module definitions; " +
+      expected.map { case (prefix, count) => s"$prefix=$count" }.mkString(", "))
+  }
 
   def main(args: Array[String]): Unit = {
-    require(args.nonEmpty, "Usage: pe.runMain dp.elaborate.Elaborate review | config <file.json> | pe|mn|k <HQE> ...")
-    def check(label: String, generator: => RawModule): Unit = {
-      val circuit = ChiselStage.emitCHIRRTL(generator, Array("--throw-on-first-error", "--warnings-as-errors"))
-      val modules = "(?m)^  module ([^ :]+)".r.findAllMatchIn(circuit).map(_.group(1)).toVector
-      require(!modules.exists(n => n.startsWith("SubPE") || n.startsWith("PEGroup") || n.startsWith("MidGroup")))
-      println(s"elaborated $label: ${modules.mkString(", ")}")
-    }
-    if (args.head == "review") {
-      require(args.length == 1)
-      PEConfig.reviewVariants.foreach { p =>
-        check(s"pe/${p.tag}", new PE(p))
-        check(s"mn/${p.tag}", new MNPE(p))
-      }
-      for (count <- 1 to 4) check(s"k/full/$count", new KPE(Seq.fill(count)(PEConfig.full)))
-      check("k/full+quarter+eighth+eighthHalf", new KPE(Seq(
-        PEConfig.full, PEConfig.quarter, PEConfig.eighth, PEConfig.eighthHalf)))
-      check("k/quarter+eighthHalf", new KPE(Seq(PEConfig.quarter, PEConfig.eighthHalf)))
-      check("pe/W64", new PE(PEConfig.full.copy(alignWidth = 64)))
-      check("mn/W64", new MNPE(PEConfig.eighthHalf.copy(alignWidth = 64)))
-    } else if (args.head == "config") {
-      require(args.length == 2)
-      val config = DesignConfig.load(os.Path(args(1), os.pwd))
-      check(config.topName, module(config))
-    } else {
-      val layout = args.tail.map(PEConfig.parse).toSeq
-      require(layout.nonEmpty)
-      args.head match {
-        case "pe" => require(layout.size == 1); check("pe", new PE(layout.head))
-        case "mn" => require(layout.size == 1); check("mn", new MNPE(layout.head))
-        case "k" => check("k", new KPE(layout))
-        case other => throw new IllegalArgumentException(s"Unknown top kind: $other")
-      }
+    require(args.nonEmpty, "Usage: Elaborate review | config <file.json>")
+    args.head match {
+      case "review" | "full-review" =>
+        require(args.length == 1)
+        (1 to 4).foreach(count => check(DesignConfig(midGroups = count)))
+        check(DesignConfig(alignWidth = 64))
+        val invalidConfigs: Seq[(String, () => Any)] = Seq(
+          "zero MidGroups" -> (() => DesignConfig(midGroups = 0)),
+          "five MidGroups" -> (() => DesignConfig(midGroups = 5)),
+          "window 39" -> (() => DesignConfig(alignWidth = 39)),
+          "window 65" -> (() => DesignConfig(alignWidth = 65)),
+          "fractional count" -> (() => DesignConfig.fromJson(ujson.Obj(
+            "schema_version" -> 1, "mid_groups" -> 1.5, "align_width" -> 40))),
+          "unknown field" -> (() => DesignConfig.fromJson(ujson.Obj(
+            "schema_version" -> 1, "mid_groups" -> 1, "align_width" -> 40, "extra" -> 0))),
+          "retired kind/pes schema" -> (() => DesignConfig.fromJson(ujson.Obj(
+            "schema_version" -> 1, "kind" -> "mn", "pes" -> ujson.Arr()))))
+        invalidConfigs.foreach { case (label, build) =>
+          val rejected = try { build(); false } catch { case _: IllegalArgumentException => true }
+          require(rejected, s"Invalid Full configuration accepted: $label")
+          println(s"rejected invalid config: $label")
+        }
+      case "config" =>
+        require(args.length == 2)
+        check(DesignConfig.load(os.Path(args(1), os.pwd)))
+      case other => throw new IllegalArgumentException(s"Unknown command: $other")
     }
   }
 }

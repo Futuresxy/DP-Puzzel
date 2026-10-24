@@ -17,4 +17,4 @@
 
 单核 profile 必须列明是否包含 L0、阵列、缩放/转换、控制等，供芯片模型避免重复计费。阵列共享多个数值模式时，物理实现只计一次面积，每种模式分别测量性能和活动成本。
 
-当前已迁移 PE、MN-PE 和 K-PE 源码，见 [逐文件导航](chisel_src/README.md) 和 [架构迁移](spec/pe-migration.md)。通过 [集中参数与配置](configs/README.md) 改变生成结构。Scala/Chisel/导出工具版本已固定；源代码仍待用户审查，没有 RTL 数值通过证据或测量数据。阵列组织、工艺和目标频率后续确定。
+当前优先迁移 full 四层复用基线 `SubPE → PEGroupFull → MidGroupFull → PETile`，见 [逐文件导航](chisel_src/README.md) 和 [full 迁移](spec/full-reuse-migration.md)。通过 [集中配置](configs/README.md) 的 mid_groups/align_width 改变完整 MidGroup 数和对齐窗口。此前扁平 PE/MN-PE/K-PE 已移出工作树，可从 Git 历史追溯。Scala/Chisel/导出工具版本固定；没有 RTL 数值通过证据或测量数据。阵列组织、工艺和目标频率后续确定。

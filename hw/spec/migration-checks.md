@@ -1,5 +1,7 @@
 # 迁移结构检查记录
 
+> 历史扁平方案记录。本轮当前基线为 [full 四层复用迁移](full-reuse-migration.md)，此处接口与证据不适用于该基线。
+
 记录日期：2026-10-24（Asia/Singapore）。这是源码/参数/生成流程检查，不是 RTL 数值验收。
 
 | 项目 | 结果 | 范围 |
@@ -23,4 +25,4 @@
 
 两份 manifest 均为 `state=generated`、`rtl_test=not_run`、`ppa_eligible=false`。调试导出入口产生的失败批次已自动删除 src/files.f，仅保留最小 failed manifest/README，不把失效 RTL 留给后续调用。
 
-复现命令见 [源码导航](../chisel_src/README.md) 和 [生成规格](elaborate/Generate.md)。本地检查日志位于忽略的 `.cache/pe-elaborate-review.log` 与 `.cache/pe-invalid-config-check.log`。实际导出状态不能因本记录写了“检查通过”而升级为 RTL 验证通过。
+复现命令见 [源码导航](https://github.com/Futuresxy/DP-Puzzel/blob/09b6657f26a0bf12aadc0051614db023a96850fa/hw/spec/../chisel_src/README.md) 和 [生成规格](https://github.com/Futuresxy/DP-Puzzel/blob/09b6657f26a0bf12aadc0051614db023a96850fa/hw/spec/elaborate/Generate.md)。本地检查日志位于忽略的 `.cache/pe-elaborate-review.log` 与 `.cache/pe-invalid-config-check.log`。实际导出状态不能因本记录写了“检查通过”而升级为 RTL 验证通过。

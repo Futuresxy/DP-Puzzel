@@ -1,28 +1,19 @@
-# Parameters.scala：集中式设计参数
+# Parameters.scala：固定编码、位宽与周期
 
-对应源码：[Parameters.scala](../../chisel_src/config/Parameters.scala)。包含 Parameters 固定合同、PEConfig 容量参数和 DesignConfig 顶层配置，不生成独立硬件 Module。
+对应源码：[Parameters.scala](../../chisel_src/config/Parameters.scala)。源文件、固定 commit、迁移调整见 [迁移说明](../full-reuse-migration.md) 和 [指纹清单](../full-reuse-source.json)。
 
-`PEConfig(h,q,e,alignWidth=40)` 直接描述一个 PE 每次接收的 H/Q/E 标量乘积数，避免从 family 字符串、全局环境变量、Group 数量反推能力。H/Q/E 分别是 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 的共享运行模式，不能把三者相加作为同拍吞吐。
+`Resource` 固定一组四 word、一个 MidGroup 十六 word。真正可调的顶层由本文件的 DesignConfig 从 JSON 读取，不使用 CFG_* 环境变量决定电路。`Design` 固定 exp/mant/sign=10/16/4、SubPE W29、Q retain W28、组内 pad2、anchor W11、最终 mantissa W26，默认跨组窗口 W40。窗口的实际值通过 PETile/MidGroup 构造参数传递，不能改默认常量冒充配置。
 
-| 参数 | 合法范围 | 结构依据 |
-| --- | --- | --- |
-| h | 0 或 16 | H 模式每 packed word 一个元素 |
-| q | 0 或 32 | Q 模式每 word 两个元素，32 元素共一个 MX scale block |
-| e | 0、32 或 64 | E 模式每 word 四个元素；E32 只允许 H=Q=0 |
-| alignWidth | 40–64 | 跨 scale 块固定点对齐窗口；默认保持源设计 W40 |
+格式 W4 编码沿用源工程：NVFP4=0、E2M1=1、HiF4=2、E2M3=3、E3M2=4、E4M3=5、E5M2=6、BF16=7、FP16=8。9..14 为保留旧编码，当前 full 不支持整数/FP32/TF32 A/B。C W2 编码 FP32=0、FP16=1、BF16=2。Scale W2：NONE=0、E4M3=1、E8M0=2、E6M2=3。
 
-至少启用一个家族。允许 H+Q、H+E 等裁剪组合；E32 不与 H/Q 共用，是 8 个打包字的半尺寸 E-only PE。当前不假装支持任意 K；更大容量由 KPE 组合 1–4 个 PE，或后续另行设计。
+bias：FP32/BF16/E8=127，FP16/E5=15，E4=7、E3=3、E2=1；源 HiF4 scale E6 bias=48。FPMAX 为全一指数码界限，不代表所有格式都把该指数视为 Inf。特殊值规则由解包决定。
 
-派生关系：`words=max(h,q/2,e/4)` 为 8 或 16；`groups=words/4` 为 2 或 4。没有 H/Q 的 E-only 使用字级 W11、scale 后组级 W22；其他路径字级 W29、组级 W33。公共输出逻辑位宽 `resultWidth=alignWidth+2`，其中 magnitude 为 W−1 位、sign 单独一位。
+`PETilePipeline` 约束 SubPE3、PG anchor/data 间距1、PG7、Mid11、C unpack2、raw C延迟9、最终18。它们是固定合同而非 sweep 参数。该文件只创建 Scala 常量和 Chisel 字面量，无独立 Module、寄存器、延迟或复位。待验证编码与每个使用点保持一致，修改固定合同需重新做位宽审查和 RTL 验收。
 
-`tag` 只表达容量；`subTag`、`groupTag` 表达 PE 内一个字、四个字的计算范围，不是模块层级。非默认对齐窗口增加 `_W<alignWidth>` 名称后缀，防止不同精度窗口被混认。
+## 唯一可调配置
 
-静态 `require` 对非法配置立即报错；没有复位、时钟、运行状态。需要审查的关键点是家族裁剪是否真正删除不需要的乘法器/对齐器，以及 E32 的 scale 调度是否与上游块划分一致。数值/面积验证待后续 SV/EDA 阶段。
+`DesignConfig(midGroups=1,alignWidth=40)` 为不可变case class。mid_groups=1..4，align_width=40..64；wordCount=16*midGroups，H/Q/E容量自动推导为wordCount/2wordCount/4wordCount。非法范围由require拒绝，默认W40不加后缀，其余加_W…。
 
-## 生成时的配置入口
+JSON只允许schema_version=1、mid_groups、align_width三个字段，值必须是Int范围内的整数。fromJson/load拒绝未知字段、旧kind/pes schema和非整数。配置不含运行模式，模式来自batch cfg；同一窗口用于全部MidGroup与C/D。旧PEConfig及mn/k配置已移除。
 
-`DesignConfig(kind,pes)` 表达整个导出顶层。kind=mn 时 pes 只能有一个元素；kind=k 时有 1–4 个元素，所有 PE 对齐窗口一致。`topName` 自动由容量合计生成；完整有序布局保存在 JSON，避免名称相同而内部结构不同的配置碰撞。
-
-`DesignConfig.load` 从版本化 JSON 读取参数，拒绝未知字段、非整数和非法组合。修改 [configs](../../configs/README.md) 中的文件，或运行时选择另一个文件即可生成新结构，无需改 PE.scala。参数在 elaboration 时生效，不是运行时寄存器；格式选择是另一个独立的事务控制。
-
-`Parameters` 集中列出固定的 word/scale/anchor 位宽、保留位数和 11/18 拍流水合同。这些常量不是独立 DSE 旋钮，修改它们必须更新位宽证明、流水和 spec，不能像 h/q/e 一样任意扫描。
+这些参数在elaboration时决定电路；数值编码、局部W29/W33、anchor和流水不是独立调参项。此文件无独立Module或复位状态。

@@ -1,6 +1,6 @@
 # 后续实施路线
 
-当前已完成定义/论文准备，并按用户授权迁移 PE、MN-PE、K-PE 源码、逐文件 spec 和参数化导出入口。源码处于审查阶段；RTL 数值 testbench、EDA 和芯片模型在后续阶段推进。
+当前已完成定义/论文准备。按用户最新要求，优先恢复 full 复用四层 Module 基线（SubPE、PEGroupFull、MidGroupFull、PETile），先迁移、统一代码风格和逐文件 spec，再审查参数、模式和微架构简化。集中配置与导出入口复用现有工具；此前扁平 PE/MN-PE/K-PE 已移出工作树，可从 Git 历史追溯。RTL 数值 testbench、验证门禁、EDA 和芯片模型仍在后续阶段。
 
 阵列扩展进入调研讨论阶段，见 [阵列方案](../hw/spec/array-design-discussion.md)。用户已确认逻辑 M8N32、物理阵列参数化，以及 FP4 K64/96/128/192/256、FP8 K32/64/96/128；L0 布局、调度、累加语义和首版配置待审核，当前不编写阵列代码。
 
@@ -30,4 +30,10 @@
 7. CACTI 等依赖来源、固定版本、适用范围与校准方法。
 8. 大型证据归档与保留策略、论文复现方式。
 
-PE 的迁移合同和默认参数已在 [迁移说明](../hw/spec/pe-migration.md) 与 [参数 spec](../hw/spec/config/Parameters.md) 明确，后续优先完成用户源码审查及 SV RTL 验收。其余系统/实验参数不填任意默认值。论文投稿日期与规则仍在 paper/submission 中维护。
+当前 full 迁移合同和默认参数已在 [迁移说明](../hw/spec/full-reuse-migration.md) 与 [参数 spec](../hw/spec/config/Parameters.md) 明确，后续优先完成用户源码审查及 SV RTL 验收。其余系统/实验参数不填任意默认值。论文投稿日期与规则仍在 paper/submission 中维护。
+
+## Full 基线审查后再推进
+
+- 确认完整 MidGroup 数、W40–64 窗口和 batch 固定格式合同；审查每层 S/I/F、scale block 与18级周期口径。
+- 决定是否删减重复格式字段、抽象外壳和解包开关；CSA 树、位宽、流水等优化必须另列可验证合同，迁移本身不宣称优化收益。
+- 完成独立 reference、SV 数值/周期回归、export/hash 验证门禁；再接入挂载 EDA 的 DC 与真实负载 power。

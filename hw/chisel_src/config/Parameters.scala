@@ -1,106 +1,118 @@
 package dp.config
 
-/** One location for tunable defaults and fixed numerical/pipeline contracts.
-  * Fixed contracts are not sweep knobs: changing one requires a new width proof/spec.
-  */
-object Parameters {
-  val defaultAlignWidth = 40
-  val minAlignWidth = 40
-  val maxAlignWidth = 64
-  val maxKPEs = 4
-  val wordBits = 16
-  val wordsPerGroup = 4
-  val fullWordWidth = 29
-  val eighthWordWidth = 11
-  val eighthGroupWidth = 22
-  val localAlignBits = 2
-  val qProductWidth = 9
-  val qRetainWidth = 28
-  val qGuardBits = qRetainWidth - qProductWidth
-  val halfProductWidth = 23
-  val scaleFractionBits = 3
-  val anchorWidth = 11
-  val peLatency = 11
-  val resultLatency = 18
-}
+import chisel3._
 
-/** Physical capacity of one PE; H/Q/E are scalar products per accepted cycle.
-  * Modes share multipliers, so their capacities must never be added together.
-  * See hw/spec/config/Parameters.md for the supported structures and width derivation.
-  */
-case class PEConfig(h: Int, q: Int, e: Int, alignWidth: Int = Parameters.defaultAlignWidth) {
-  require(Set(0, 16).contains(h), "H is 0 or 16")
-  require(Set(0, 32).contains(q), "Q is 0 or 32")
-  require(Set(0, 32, 64).contains(e), "E is 0, 32 or 64")
-  require(h + q + e > 0, "At least one precision family is required")
-  require(e != 32 || (h == 0 && q == 0), "E32 is a standalone half-size PE")
-  require(alignWidth >= Parameters.minAlignWidth && alignWidth <= Parameters.maxAlignWidth,
-    s"PE alignment window must be ${Parameters.minAlignWidth}..${Parameters.maxAlignWidth} bits")
-
-  val hasH: Boolean = h != 0
-  val hasQ: Boolean = q != 0
-  val hasE: Boolean = e != 0
-  val onlyE: Boolean = !hasH && !hasQ
-  val words: Int = Seq(h, q / 2, e / 4).max
-  val groups: Int = words / Parameters.wordsPerGroup
-  val wordWidth: Int = if (onlyE) Parameters.eighthWordWidth else Parameters.fullWordWidth
-  val groupWidth: Int = if (onlyE) Parameters.eighthGroupWidth
-    else wordWidth + Parameters.localAlignBits + 2
-  val resultWidth: Int = alignWidth + 2
-  val exponentWidth: Int = if (hasQ) 10 else if (hasH) 8 else 1
-  val tag: String = s"H${h}Q${q}E${e}"
-  val widthSuffix: String = if (alignWidth == Parameters.defaultAlignWidth) "" else s"_W${alignWidth}"
-  val subTag: String = s"sub_H${if (hasH) 1 else 0}Q${if (hasQ) 2 else 0}E${if (hasE) 4 else 0}"
-  val groupTag: String = s"group_H${if (hasH) 4 else 0}Q${if (hasQ) 8 else 0}E${if (hasE) 16 else 0}"
-}
-
-/** Top-level generation parameters; every selected PE remains explicitly visible. */
-case class DesignConfig(kind: String, pes: Seq[PEConfig]) {
-  require(kind == "mn" || kind == "k", "kind must be mn or k")
-  require(pes.nonEmpty && pes.size <= Parameters.maxKPEs, "A design contains 1..4 PEs")
-  require(kind != "mn" || pes.size == 1, "MN-PE contains exactly one PE")
-  require(pes.map(_.alignWidth).distinct.size == 1, "K-PE alignment widths must match")
-  val capacity: String = s"H${pes.map(_.h).sum}Q${pes.map(_.q).sum}E${pes.map(_.e).sum}"
-  val topName: String = s"${kind.toUpperCase}_PE_${capacity}${pes.head.widthSuffix}"
-  def json: ujson.Value = ujson.Obj("schema_version" -> 1, "kind" -> kind,
-    "pes" -> ujson.Arr.from(pes.map(p => ujson.Obj("h" -> p.h, "q" -> p.q,
-      "e" -> p.e, "align_width" -> p.alignWidth))))
+/** Only tunable full-baseline parameters. All numerical widths below are fixed. */
+case class DesignConfig(midGroups: Int = 1, alignWidth: Int = 40) {
+  require(midGroups >= 1 && midGroups <= 4, "PETile contains 1..4 complete Full MidGroups")
+  require(alignWidth >= 40 && alignWidth <= 64, "Full alignment window must be 40..64 bits")
+  val wordCount: Int = midGroups * 16
+  val capacity: String = s"H${wordCount}Q${wordCount * 2}E${wordCount * 4}"
+  val widthSuffix: String = if (alignWidth == 40) "" else s"_W${alignWidth}"
+  val topName: String = s"PETile_${capacity}${widthSuffix}"
+  def json: ujson.Value = ujson.Obj("schema_version" -> 1,
+    "mid_groups" -> midGroups, "align_width" -> alignWidth)
 }
 
 object DesignConfig {
-  /** Strict JSON loading: reject unknown fields and fractional numeric parameters. */
-  def load(path: os.Path): DesignConfig = {
-    val root = ujson.read(os.read(path))
-    require(root.obj.keySet == Set("schema_version", "kind", "pes"), "Expected schema_version, kind and pes")
+  def fromJson(root: ujson.Value): DesignConfig = {
+    require(root.obj.keySet == Set("schema_version", "mid_groups", "align_width"),
+      "Expected exactly schema_version, mid_groups and align_width")
     def integer(value: ujson.Value): Int = {
       val number = value.num
-      require(number.isWhole && number >= Int.MinValue && number <= Int.MaxValue, "Parameters must be integers")
+      require(number.isWhole && number >= Int.MinValue && number <= Int.MaxValue,
+        "Parameters must be integers")
       number.toInt
     }
     require(integer(root("schema_version")) == 1, "Unsupported config schema version")
-    val pes = root("pes").arr.map { entry =>
-      require(entry.obj.keySet == Set("h", "q", "e", "align_width"), "Expected h, q, e and align_width for each PE")
-      PEConfig(integer(entry("h")), integer(entry("q")), integer(entry("e")), integer(entry("align_width")))
-    }.toSeq
-    DesignConfig(root("kind").str, pes)
+    DesignConfig(integer(root("mid_groups")), integer(root("align_width")))
   }
+  def load(path: os.Path): DesignConfig = fromJson(ujson.read(os.read(path)))
 }
 
-object PEConfig {
-  val full: PEConfig = PEConfig(16, 32, 64)
-  val half: PEConfig = PEConfig(16, 0, 0)
-  val quarter: PEConfig = PEConfig(0, 32, 0)
-  val low: PEConfig = PEConfig(0, 32, 64)
-  val eighth: PEConfig = PEConfig(0, 0, 64)
-  val eighthHalf: PEConfig = PEConfig(0, 0, 32)
-  val reviewVariants: Seq[PEConfig] = Seq(full, half, quarter, low, eighth, eighthHalf,
-    PEConfig(16, 32, 0), PEConfig(16, 0, 64))
+object Resource {
+  val dimK = 16
+  val groupDimK = 4
+}
 
-  def parse(tag: String): PEConfig = {
-    val pattern = "H([0-9]+)Q([0-9]+)E([0-9]+)".r
-    tag match {
-      case pattern(h, q, e) => PEConfig(h.toInt, q.toInt, e.toInt)
-      case _ => throw new IllegalArgumentException(s"Expected H<number>Q<number>E<number>, got $tag")
-    }
-  }
+object FPBias {
+  val fp32Bias = 127
+  val e8Bias = 127
+  val e6Bias = 48 // HiF4
+  val fp16Bias = 15
+  val bf16Bias = 127
+  val e4Bias = 7
+  val e5Bias = 15
+  val e3Bias = 3
+  val e2Bias = 1
+}
+
+object FPMAX {
+  val e6Max = 63
+  val e5Max = 31
+  val e4Max = 15
+  val e3Max = 7
+  val e2Max = 3
+  val e8Max = 255
+}
+
+/** Runtime encoding shared by the unpackers and precision selectors. */
+object DataType {
+  val len = 4
+
+  val fp32 = 12.U(len.W)
+  val int32 = 13.U(len.W)
+  val tf32 = 14.U(len.W)
+  val mxint8 = 9.U(len.W)
+  val mxint6 = 10.U(len.W)
+  val mxint4 = 11.U(len.W)
+  val fp16 = 8.U(len.W)
+  val bf16 = 7.U(len.W)
+  val e5_m2 = 6.U(len.W)
+  val e4_m3 = 5.U(len.W)
+  val e3_m2 = 4.U(len.W)
+  val e2_m3 = 3.U(len.W)
+  val hi_f4 = 2.U(len.W)
+  val e2_m1 = 1.U(len.W)
+  val nvfp4 = 0.U(len.W)
+}
+
+object CDataType {
+  val len = 2
+  val fp32 = 0.U(len.W)
+  val fp16 = 1.U(len.W)
+  val bf16 = 2.U(len.W)
+}
+
+object MX {
+  val scaleTypeWidth = 2
+  val none = 0.U(scaleTypeWidth.W)
+  val e4_m3 = 1.U(scaleTypeWidth.W)
+  val e8_m0 = 2.U(scaleTypeWidth.W)
+  val e6_m2 = 3.U(scaleTypeWidth.W)
+}
+
+object Design {
+  val unpackExpWidth = 10
+  val unpackMantWidth = 16
+  val unpackSignWidth = 4
+  val lzdExpWidth = 11
+  val roundExpWidth = lzdExpWidth
+  val roundMantWidth = 26
+  val subpeOutWidth = 29
+  val subpeFP8RetainWidth = 28
+  val dotCAddWidth = 40
+  val pegroupAlignPadWidth = 2
+  val petileMidGroupSize = 4
+}
+
+/** Fixed register schedule; no in-flight backpressure. */
+object PETilePipeline {
+  val subpeLatency = 3
+  val pegroupAnchorToData = 1
+  val pegroupOutputCycle = 7
+  val midgroupOutputCycle = 11
+  val cUnpackLatency = 2
+  val cRawDelay = midgroupOutputCycle - cUnpackLatency
+  val resultCycle = 18
 }

@@ -1,21 +1,15 @@
-# Elaborate.scala：源码审查展开入口
+# Elaborate.scala：四层 full 结构检查
 
-对应源码：[Elaborate.scala](../../chisel_src/elaborate/Elaborate.scala)。Host-side Scala main，不是可综合硬件，不导出 RTL 文件。
-
-固定使用 Chisel 6.4.0 `ChiselStage.emitCHIRRTL`，生成内存中的 CHIRRTL 以检查参数合法性、Bundle 连接、已知位宽及层级。开启首错退出和 warnings-as-errors，防止把动态索引宽度等结构警告留到 EDA 阶段。`module(config)` 是检查和导出共用的顶层构造函数，使 config 包只保存数据/合法性而不依赖 core 电路类。
-
-在 `hw/` 下调用：
+对应源码：[Elaborate.scala](../../chisel_src/elaborate/Elaborate.scala)。Host-side main，不是硬件Module；检查与Generate共用 `module(DesignConfig)`，只构造当前唯一的PETile。
 
 ```sh
+cd hw
 mill -i pe.runMain dp.elaborate.Elaborate review
-mill -i pe.runMain dp.elaborate.Elaborate config configs/mn_h16q32e64.json
-mill -i pe.runMain dp.elaborate.Elaborate pe H0Q32E0
-mill -i pe.runMain dp.elaborate.Elaborate mn H0Q0E32
-mill -i pe.runMain dp.elaborate.Elaborate k H16Q32E64 H0Q0E32
+mill -i pe.runMain dp.elaborate.Elaborate config configs/full_h16q32e64.json
 ```
 
-review 覆盖八种合法基本 PE 组合及相应 MNPE、KPE 的 1–4 个 Full、两个异构布局、W64 结构边界；列出展开模块并禁止旧 SubPE/PEGroup/MidGroup 层级。CHIRRTL 中同构 PE 可能带工具生成的数字后缀，后续 firtool 可以去重，实际 RTL 映射以导出 manifest 为准。
+Chisel6.4.0在内存生成CHIRRTL，开启throw-on-first-error/warnings-as-errors，不写RTL文件。review与full-review为同义入口，覆盖mid_groups1/2/3/4、默认W40和N1/W64；检查每份实际展开的PETile/MidGroup/PEGroup/SubPE数量为1/N/4N/16N。N3覆盖非二次幂规约。
 
-结构展开不是逻辑仿真，不验证数值正确、协议运行、综合时序或功耗，也不生成 passed 状态。它不能替代未来 SystemVerilog testbench 的 RTL 验收。
+构造/JSON拒绝检查覆盖mid_groups0/5、window39/65、非整数数量、未知字段和旧kind/pes schema。旧pe/mn/k命令已经移除，不能默默生成其他实现。
 
-参数化 RTL 导出由独立 [Generate](Generate.md) 入口负责，避免把检查模式的临时文件误作正式导出。工具缓存位于忽略的 hw/out，不在源码或 spec 中保存编译器中间产物。
+CHIRRTL的同构实例在去重前可能各有带数字后缀的module定义；真正split RTL的定义去重与物理实例数量不同，需结合 [导出检查](Generate.md) 核对。结构展开没有执行DUT，不证明数值、运行协议、时序或功耗，不会生成passed状态，也不替代后续SV回归。

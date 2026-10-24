@@ -11,11 +11,17 @@ _Avoid_: 以“4 bit”“低精度”代替完整格式
 
 **H/Q/E 容量（HQE Capacity）**：H=half、Q=quarter、E=eighth 家族每次接收可处理的实际 K 元素数，例如 H16Q32E64。Q 包含 FP8/FP6，E 包含 MX/NV/HiF4；共享模式的三项容量不能同时相加。
 
-**PE（Scaled Dot-Product PE）**：完成带 scale 的多维 A·B 并输出未舍入 dot 的计算单元。旧 SubPE/PEGroup 在其内部展开，不再作为计算层级。
+**Full 复用基线（Full Reuse Baseline）**：当前按原工程保留的四层硬件组织：SubPE → PEGroupFull → MidGroupFull → PETile。每个 SubPE 的部分乘法器随模式复用；上层依次共享scale、规约和C/D。不是阵列层级，也不隐含跨事务累加。
 
-**MN-PE（Independent Output PE）**：一个 PE 加独立 C 累加、规格化/舍入和 FP32 D 输出；M/N 方向的实例复制属于阵列。
+**SubPE**：处理一对已解码 packed word 的 H1/Q2/E4 共享算术模块，结果3拍、早anchor1拍。
 
-**K-PE（K-Reduction PE）**：内部 1–4 个 PE 在 K 方向规约，共享一个 C 和最终 D 处理；HQE 名称为对应模式的 K 容量合计，完整物理布局另记录。
+**PEGroupFull**：四个SubPE及独立解包、局部对齐/规约和scale路径，H4/Q8/E16，anchor S06、data S07。
+
+**MidGroupFull**：四个PEGroupFull形成H16/Q32/E64完整点积，S11输出无损规格化后的有限窗口结果。
+
+**PETile**：1–4个完整MidGroupFull沿K空间规约，共享一个C/D路径，S18输出FP32；格式在batch cfg锁定。
+
+**历史 PE / MN-PE / K-PE**：此前扁平方案的名称。PE是完整带scale点积；MN-PE是一个PE+C/D；K-PE是1–4个PE共享C/D。源码已移出工作树，可从Git历史追溯；旧接口和验收记录不适用于full基线。
 
 **指令 K（Instruction K）**：一条 MMA 指令在语义上覆盖的归约长度；不同于完整 GEMM 的 K，也不单独规定物理执行周期。
 

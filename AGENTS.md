@@ -2,7 +2,7 @@
 
 本文件适用于整个仓库。目标是构建面向 AI 芯片张量计算的多精度算力配比 DSE 系统，对 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 等设计选择的面积、功耗和负载延迟进行成本收益权衡。
 
-**当前阶段已获授权迁移并重构 PE 的 Chisel 源码及逐文件 spec，供用户审查，并提供集中参数和配置驱动的 RTL 生成。** 可做 Scala 编译、Chisel elaboration 和导出结构检查；Verilog/SystemVerilog 数值 testbench 和 EDA 在后续阶段完善。不得把本轮源码审查/展开检查称为 RTL 精度验证通过。ratio_dse 仍处于定义阶段，paper 保持模板与写作准备。
+**当前优先工作按用户最新要求改为保留 full 复用四层结构的迁移：SubPE → PEGroupFull → MidGroupFull → PETile，统一代码风格和逐文件 spec 后再讨论微架构简化。** `hw/chisel_src/` 只保留这一实现及配置/生成工具；此前扁平 PE/MN-PE/K-PE 已移出工作树，可从 Git 历史追溯，不能混用旧接口或检查证据。可做 Scala 编译、Chisel elaboration 和导出结构检查；Verilog/SystemVerilog 数值 testbench 和 EDA 在后续阶段完善。不得把本轮源码审查/展开检查称为 RTL 精度验证通过。ratio_dse 仍处于定义阶段，paper 保持模板与写作准备。
 
 **阵列扩展当前仅获授权调研和方案讨论，用户审核确定方案前不写阵列代码。** 已确认采用 2×2 group 组内广播、组间脉动；M8N32 是逻辑指令输出块，物理阵列参数化；FP4 目标 K64/96/128/192/256，FP8 目标 K32/64/96/128。控制、L0 和 layout 候选见 [讨论稿](hw/spec/array-design-discussion.md)，其中建议不等于已批准的实现合同。
 
@@ -20,7 +20,7 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 
 - `hw/spec/`：接口、数值语义、参数约束、数据流、流水级、周期定义和验收标准。
 - `hw/chisel_src/`：可综合 Chisel，按 package 组织；一个硬件 Module 一个同名 Scala 文件。
-  子目录为 `config/`、`common/`、`pe/`、`core/`、`elaborate/`，分别对应参数、基础算术/接口、PE、MN/K 顶层、生成工具；`hw/spec/` 镜像这些路径。
+  目录按 `config/`、`common/`、`pe/`、`core/`、`elaborate/` 划分，package 为 `dp.*`，full 复用通路是一等且唯一实现。`hw/spec/` 镜像全部路径。
 - `hw/configs/`：可复现的硬件参数配置。
 - `hw/rtl/`：全仓库唯一的生成 RTL 存储位置。
 - `hw/test/`：参考模型、测试驱动、回归；禁止在此保留另一份设计 RTL。
@@ -47,8 +47,8 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 7. 每个 Module 注释说明功能、接口协议、延迟、吞吐、复位和数值语义；关键逻辑注释说明设计理由、位宽推导或时序取舍，不逐句翻译代码。
 8. 组合逻辑完整赋值，避免锁存器、组合环和多驱动；禁止以 `DontCare` 掩盖未实现功能。提交的模块必须具备完整可运行实现，未实现方案只放在 spec。
 9. 修改 Chisel 前读取 [.skill/chisel-design/SKILL.md](.skill/chisel-design/SKILL.md)。每个 `hw/chisel_src/<relative>.scala` 必须对应 `hw/spec/<relative>.md`，包括参数、Bundle、算术辅助和展开入口；源码与 spec 在同一 PR 更新。spec 解释架构、设计理由、位宽/二进制小数点、共享资源、接口、周期、限制和待验收内容，不能只有文件名或函数列表。
-10. 点积计算架构只有 PE 与 MN-PE/K-PE 两层：PE 完成带 scale 的向量 A·B；MN-PE 是一个 PE 加独立 C/D 路径；K-PE 在内部组合 1–4 个 PE，共享一次 C 累加和 D 处理。旧 SubPE/PEGroup 仅可作为 PE 内联算术区域，不能恢复为计算层级。外部阵列的 2×2 group 是多个完整输出计算单元的连接层，不受此内部两层约束禁止。
-11. H/Q/E 分别代表 half、quarter、eighth 家族，数字为该模式实际 K 元素数。例如 `H16Q32E64`；Q 包含 8/6-bit，E 包含 MX/NV/HiF4。RTL 合法名称使用 `MN_PE_H…Q…E…`、`K_PE_H…Q…E…`，K 顶层数字为内部各 PE 对应容量之和；MN 顶层只有一个 PE，不加并行 PE 数后缀。内部标签使用 `sub_H…Q…E…`、`group_H…Q…E…`。完整实例布局仍需记录，单凭总容量无法唯一还原架构。
+10. 当前 full 复用基线保留实际 Module 层级：一个 SubPE 处理 H1/Q2/E4；四个 SubPE 构成 PEGroupFull；四个 PEGroupFull 构成 MidGroupFull；1–4 个完整 MidGroupFull 沿 K 规约到 PETile 的共享 C/D。不得在此次迁移中再把这些模块内联成两层。抽象 IO 外壳不是新增硬件层；阵列 2×2 group 属于外部连接层。后续简化须先审查 spec 和数值/周期合同。
+11. H/Q/E 分别代表 half、quarter、eighth 家族，数字为实际 K 元素数，例如 `H16Q32E64`；Q 包含 8/6-bit，E 包含 MX/NV/HiF4。full RTL 使用 `SubPE_H1Q2E4`、`PEGroupFull_H4Q8E16`、`MidGroupFull_H16Q32E64_W…`、`PETile_H…Q…E…`。不再生成历史 MN/K 顶层。完整布局、窗口和实现族必须记录，不能只由总容量认定架构相同。
 
 ## 3. 面积、时序与功耗
 

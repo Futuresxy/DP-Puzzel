@@ -6,7 +6,9 @@
 | --- | --- |
 | precision-formats.md | 目标格式清单、来源与需要明确的精度语义 |
 | module_template.md | 单模块接口、数值、时序和验证规格模板 |
-| [pe-migration.md](pe-migration.md) | 本轮两层 PE 架构迁移、来源与待验收边界 |
+| [full-reuse-migration.md](full-reuse-migration.md) | 当前四层 full 复用迁移、来源与待验收边界 |
+| [full-reuse-checks.md](full-reuse-checks.md) | 本轮编译、展开与导出结构证据 |
+| [pe-migration.md](pe-migration.md) | 历史扁平方案，证据不适用于当前 full 基线 |
 | [config/Parameters.md](config/Parameters.md) | 集中式生成参数与合法范围 |
 | [array-design-discussion.md](array-design-discussion.md) | 待审查的 2×2 分组阵列、M8N32 指令切分、L0 layout 和 GEMM 调度；尚无阵列代码 |
 | [os-array-scheduling-research.md](os-array-scheduling-research.md) | 指令内部 OS 调度：论文/逆向/公开 RTL 证据，本地累加、context 交错、preload/compute/drain 和反馈结构候选 |

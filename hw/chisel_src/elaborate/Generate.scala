@@ -32,7 +32,7 @@ object Generate {
     val sourceFiles = sources
     val sourceHash = hashText(sourceFiles.map { case (path, hash) => s"$path $hash" }.mkString("\n"))
     val configText = ujson.write(config.json)
-    val configId = s"${config.kind}-${hashText(configText).take(12)}"
+    val configId = s"full-${hashText(configText).take(12)}"
     val now = Instant.now()
     val stamp = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmssSSSSSS'Z'").withZone(ZoneOffset.UTC).format(now)
     val exportId = s"${config.topName}__${configId}__${stamp}__${sourceHash.take(12)}"
@@ -76,15 +76,33 @@ object Generate {
         require(names.size == 1 && path.last == s"${names.head}.sv",
           s"Expected one same-named module in ${path.last}; found ${names.mkString(",")}")
         val name = names.head
-        val source = if (name.startsWith("K_PE_")) "core/KPE.scala"
-          else if (name.startsWith("MN_PE_")) "core/MNPE.scala"
-          else if (name.startsWith("PE_")) "pe/PE.scala"
-          else if (name == "Fp32Pack") "common/Fp32Pack.scala"
-          else throw new IllegalArgumentException(s"Unmapped generated module $name")
+        val fullSources = Map(
+          "PETile_" -> "core/PETile.scala",
+          "MidGroupFull_" -> "core/MidGroupFull.scala",
+          "PEGroupFull_" -> "pe/PEGroupFull.scala",
+          "SubPE_" -> "pe/SubPE.scala",
+          "DataUnpack" -> "pe/DataUnpack.scala",
+          "MidGroupAlignNormalize" -> "core/MidGroupAlignNormalize.scala",
+          "MidGroupNormalizeExact" -> "core/MidGroupNormalizeExact.scala",
+          "CUnpacker" -> "core/CUnpacker.scala",
+          "LzdNormalize" -> "core/LzdNormalize.scala",
+          "LeadingZeroCounter" -> "core/LeadingZeroCounter.scala",
+          "RoundPack" -> "core/RoundPack.scala",
+          "RoundIncrement" -> "core/RoundIncrement.scala")
+        val source = fullSources.collectFirst {
+          case (prefix, source) if name.startsWith(prefix) => source
+        }.getOrElse(throw new IllegalArgumentException(s"Unmapped Full module $name"))
+
         ujson.Obj("module" -> name, "chisel_source" -> s"hw/chisel_src/$source",
+          "chisel_class" -> s"dp.${source.stripSuffix(".scala").replace('/', '.')}",
+          "parameters" -> config.json,
           "path" -> path.relativeTo(directory).toString, "sha256" -> sha256(os.read.bytes(path)))
       }
       require(modules.exists(_("module").str == config.topName), "Configured top is missing")
+      Seq("SubPE_", "PEGroupFull_", "MidGroupFull_", "PETile_").foreach { prefix =>
+        require(modules.exists(_("module").str.startsWith(prefix)),
+          s"Missing preserved Full hierarchy in exported RTL: $prefix")
+      }
       // Drop only compiler intermediates inside this new export; keep headers/auxiliary inputs.
       os.walk(directory / "src").filter(p => os.isFile(p) &&
         (p.ext == "fir" || p.last.endsWith(".anno.json") || p.last == "filelist.f")).foreach(os.remove(_))

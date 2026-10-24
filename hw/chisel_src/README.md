@@ -1,45 +1,55 @@
-# Chisel 源码
+# Chisel 源码：Full 复用四层实现
 
-当前实现迁移后的 PE、MN-PE 和 K-PE。源码按职责分目录、package 与目录对应；每个 Scala 文件对应 `hw/spec/` 下同路径、同名 Markdown。代码属于待审查版本，尚未进行 RTL 数值验证或 PPA 分析。
+`hw/chisel_src/` 只保留 SubPE → PEGroupFull → MidGroupFull → PETile 这一实现，以及必要的配置和生成工具。没有 reuse 隔离目录，也不再并存扁平 PE/MN-PE/K-PE。来源与接口调整见 [迁移说明](../spec/full-reuse-migration.md)，结构检查见 [检查记录](../spec/full-reuse-checks.md)。
 
 ```text
-chisel_src/
-├── config/       dp.config：集中参数、格式选择与配置读取
-├── common/       dp.common：接口、解码、移位/规约/LZD、FP32 基础单元
-├── pe/           dp.pe：扁平的 PE 点积设计
-├── core/         dp.core：MN-PE、K-PE 与共享 C/D 通路
-└── elaborate/    dp.elaborate：检查、配置驱动生成、导出记录
+config/       dp.config：唯一集中参数、格式与能力集合
+common/       dp.common：移位、MAX、CSA、LZD 组合工具
+pe/           dp.pe：SubPE、PEGroupFull、解包与固定点合同
+core/         dp.core：MidGroupFull、PETile、共享C/D和规格化/舍入
+elaborate/    dp.elaborate：结构检查与唯一split RTL导出
 ```
 
-目录是源码职责划分；硬件计算层级仍为 PE → MN/K-PE。common 中的 object 函数在调用位置展开，不重新引入 SubPE/PEGroup 层级。
+每个具体Module独立同名文件；每个Scala文件有镜像spec，Bundle/辅助object也包含在内。
 
-| Scala 文件 | 对应 spec | 职责 |
-| --- | --- | --- |
-| [config/Parameters.scala](config/Parameters.scala) | [Parameters](../spec/config/Parameters.md) | 集中参数、实际 H/Q/E 容量和 JSON 顶层配置 |
-| [config/Formats.scala](config/Formats.scala) | [Formats](../spec/config/Formats.md) | 格式编码、支持范围、A/B 兼容规则 |
-| [common/Interfaces.scala](common/Interfaces.scala) | [Interfaces](../spec/common/Interfaces.md) | 数据、scale、特殊值、dot/C/D Bundle |
-| [common/Decode.scala](common/Decode.scala) | [Decode](../spec/common/Decode.md) | 元素/scale/C 解码与特殊值分类 |
-| [common/Arithmetic.scala](common/Arithmetic.scala) | [Arithmetic](../spec/common/Arithmetic.md) | 内联 MAX、移位、CSA、LZD、流水工具 |
-| [pe/PE.scala](pe/PE.scala) | [PE](../spec/pe/PE.md) | 扁平的多格式共享点积与 scale 路径 |
-| [common/Normalize.scala](common/Normalize.scala) | [Normalize](../spec/common/Normalize.md) | PE 无损规格化、FP32 舍入准备 |
-| [core/Accumulate.scala](core/Accumulate.scala) | [Accumulate](../spec/core/Accumulate.md) | 顶层内联 C 加法及 D 公共数据通路 |
-| [common/Fp32Pack.scala](common/Fp32Pack.scala) | [Fp32Pack](../spec/common/Fp32Pack.md) | 独立 FP32 舍入/打包基础模块 |
-| [core/MNPE.scala](core/MNPE.scala) | [MNPE](../spec/core/MNPE.md) | 一个 PE 加 C，产生一个 D |
-| [core/KPE.scala](core/KPE.scala) | [KPE](../spec/core/KPE.md) | 1–4 个 PE 在 K 方向规约，共享 C/D |
-| [elaborate/Elaborate.scala](elaborate/Elaborate.scala) | [Elaborate](../spec/elaborate/Elaborate.md) | 仅供审查的结构展开入口 |
-| [elaborate/Generate.scala](elaborate/Generate.scala) | [Generate](../spec/elaborate/Generate.md) | JSON 参数驱动的唯一 split RTL 导出入口 |
-
-从 [迁移说明](../spec/pe-migration.md) 开始审查。旧参考工程只读保留；没有迁移旧 testbench、SystolicArray、环境变量配置、第三方 FPU 或已有 RTL/PPA 结果。
-
-工具固定为 Mill 0.11.8、Scala 2.13.12、Chisel/plugin 6.4.0，定义在 [build.sc](../build.sc)。在 `hw/` 下使用已安装的 Mill 0.11.8：
+| Scala 文件 | 对应 spec |
+| --- | --- |
+| [common/BalancedLeadingZero.scala](common/BalancedLeadingZero.scala) | [BalancedLeadingZero](../spec/common/BalancedLeadingZero.md) |
+| [common/CarrySave.scala](common/CarrySave.scala) | [CarrySave](../spec/common/CarrySave.md) |
+| [common/MaxLaneAlign.scala](common/MaxLaneAlign.scala) | [MaxLaneAlign](../spec/common/MaxLaneAlign.md) |
+| [common/SignedShift.scala](common/SignedShift.scala) | [SignedShift](../spec/common/SignedShift.md) |
+| [config/FormatCompat.scala](config/FormatCompat.scala) | [FormatCompat](../spec/config/FormatCompat.md) |
+| [config/Parameters.scala](config/Parameters.scala) | [Parameters](../spec/config/Parameters.md) |
+| [config/PrecisionConfig.scala](config/PrecisionConfig.scala) | [PrecisionConfig](../spec/config/PrecisionConfig.md) |
+| [core/CUnpacker.scala](core/CUnpacker.scala) | [CUnpacker](../spec/core/CUnpacker.md) |
+| [core/Interfaces.scala](core/Interfaces.scala) | [Interfaces](../spec/core/Interfaces.md) |
+| [core/LeadingZeroCounter.scala](core/LeadingZeroCounter.scala) | [LeadingZeroCounter](../spec/core/LeadingZeroCounter.md) |
+| [core/LzdNormalize.scala](core/LzdNormalize.scala) | [LzdNormalize](../spec/core/LzdNormalize.md) |
+| [core/MidGroupAlignNormalize.scala](core/MidGroupAlignNormalize.scala) | [MidGroupAlignNormalize](../spec/core/MidGroupAlignNormalize.md) |
+| [core/MidGroupFull.scala](core/MidGroupFull.scala) | [MidGroupFull](../spec/core/MidGroupFull.md) |
+| [core/MidGroupInterfaces.scala](core/MidGroupInterfaces.scala) | [MidGroupInterfaces](../spec/core/MidGroupInterfaces.md) |
+| [core/MidGroupNormalizeExact.scala](core/MidGroupNormalizeExact.scala) | [MidGroupNormalizeExact](../spec/core/MidGroupNormalizeExact.md) |
+| [core/PETile.scala](core/PETile.scala) | [PETile](../spec/core/PETile.md) |
+| [core/RoundIncrement.scala](core/RoundIncrement.scala) | [RoundIncrement](../spec/core/RoundIncrement.md) |
+| [core/RoundPack.scala](core/RoundPack.scala) | [RoundPack](../spec/core/RoundPack.md) |
+| [elaborate/Elaborate.scala](elaborate/Elaborate.scala) | [Elaborate](../spec/elaborate/Elaborate.md) |
+| [elaborate/Generate.scala](elaborate/Generate.scala) | [Generate](../spec/elaborate/Generate.md) |
+| [pe/DataUnpack.scala](pe/DataUnpack.scala) | [DataUnpack](../spec/pe/DataUnpack.md) |
+| [pe/FixedPointMeta.scala](pe/FixedPointMeta.scala) | [FixedPointMeta](../spec/pe/FixedPointMeta.md) |
+| [pe/PEGroupContract.scala](pe/PEGroupContract.scala) | [PEGroupContract](../spec/pe/PEGroupContract.md) |
+| [pe/PEGroupFull.scala](pe/PEGroupFull.scala) | [PEGroupFull](../spec/pe/PEGroupFull.md) |
+| [pe/PEGroupInterfaces.scala](pe/PEGroupInterfaces.scala) | [PEGroupInterfaces](../spec/pe/PEGroupInterfaces.md) |
+| [pe/PEGroupMath.scala](pe/PEGroupMath.scala) | [PEGroupMath](../spec/pe/PEGroupMath.md) |
+| [pe/SubPE.scala](pe/SubPE.scala) | [SubPE](../spec/pe/SubPE.md) |
 
 ```sh
+cd hw
 mill -i pe.compile
 mill -i pe.runMain dp.elaborate.Elaborate review
-mill -i pe.runMain dp.elaborate.Elaborate mn H0Q0E32
-mill -i pe.runMain dp.elaborate.Elaborate k H16Q32E64 H0Q32E0 H0Q0E64
-mill -i pe.runMain dp.elaborate.Elaborate config configs/mn_h0q0e32.json
-CHISEL_FIRTOOL_PATH=/path/to/firtool-1.62.0/bin mill -i pe.runMain dp.elaborate.Generate configs/mn_h0q0e32.json "review E32"
+mill -i pe.runMain dp.elaborate.Elaborate config configs/full_h48q96e192.json
+CHISEL_FIRTOOL_PATH=/path/to/firtool-1.62.0/bin mill -i pe.runMain dp.elaborate.Generate configs/full_h16q32e64.json "full reuse review"
 ```
 
-当前机器也可用 `/home/songxy/.cache/mill/download/0.11.8` 代替 `mill`；该机器路径不参与构建配置。`review` 在内存生成 CHIRRTL 并列出模块，无 RTL 落盘、无数值仿真。`Generate` 根据参数将一 module 一文件的 RTL 存入唯一 [RTL 目录](../rtl/README.md)，记录 manifest/README/files.f；生成状态为 generated，不能进入 PPA。
+工具固定为Mill0.11.8、Scala2.13.12、Chisel6.4.0、firtool1.62.0，定义在 [build.sc](../build.sc)。配置只开放完整MidGroup数和对齐窗口，详见 [configs](../configs/README.md)。生成RTL统一进入hw/rtl的独立导出目录。
+
+当前只有编译/展开/导出结构证据，没有RTL数值通过记录、DC或power。原工程只读，未迁移阵列、旧RTL、专用精度variant、旧testbench/PPA或第三方FPU源码树。

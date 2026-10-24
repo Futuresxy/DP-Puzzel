@@ -191,7 +191,7 @@ flowchart TD
 | B：group 本地 context | 本地 FP32 RF/小 SRAM | 保留完整 MN/K-PE 数值路径，外加本地反馈 | 中间结果不回 L0C，但仍有至少 18 拍核心反馈；靠交错隐藏 |
 | C：本地 context，延后读取 C | 本地 FP32 RF/小 SRAM | 调整 C 接入流水的时机及控制对齐 | 点积先进入流水，在实际相加前读最新 C，缩短依赖环；需重新验证 |
 
-从当前 [Accumulate.scala](../chisel_src/core/Accumulate.scala) 可见，C 在入口被取样后先原样延迟 9 拍，S10 解码、S11 对齐到 dot，再到 S18 输出。这意味着总 A/B→D 延迟与真正 C→D 算术路径不必相等。
+从该调研时的 [Accumulate.scala](https://github.com/Futuresxy/DP-Puzzel/blob/09b6657f26a0bf12aadc0051614db023a96850fa/hw/chisel_src/core/Accumulate.scala) 可见（此历史扁平源码现已由full四层基线替换），C 在入口被取样后先原样延迟 9 拍，S10 解码、S11 对齐到 dot，再到 S18 输出。这意味着总 A/B→D 延迟与真正 C→D 算术路径不必相等。
 
 候选 C 可研究将本地 C 读取移到原 S9 接口附近：AB 点积及 context tag 先行，随后读取该 context 的最新 FP32 值进入 C 解码。单看当前级数，后半段 C 算术约为 9 拍，实际 L_rec 还需加 RF 读写、旁路与调度余量。**这是重定时方向，不是已经成立的 9 拍新硬件合同。** 相邻同一 context 的读要晚于前一写可用；需要 scoreboard 或固定时隙证明，且 dot 到达后不能因 C 冲突而丢失。
 

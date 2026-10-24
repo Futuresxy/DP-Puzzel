@@ -1,6 +1,8 @@
 # PE 架构迁移与审查入口
 
-来源为用户指定的 `Quant_LLM_Chip_Codesign/HW/PE`，源仓库 commit `0ddc5f7c21082dbce73d992a4d33a5a331f1e0bc`。读取时该目录无工作区修改；逐文件指纹见 [migration-source.json](migration-source.json)。原工程保留不动；当前代码是理解数值合同后重写，不保持原接口或文件层级兼容。
+> 历史扁平方案记录。本轮当前基线为 [full 四层复用迁移](full-reuse-migration.md)，此处接口与证据不适用于该基线。
+
+来源为用户指定的 `Quant_LLM_Chip_Codesign/HW/PE`，源仓库 commit `0ddc5f7c21082dbce73d992a4d33a5a331f1e0bc`。读取时该目录无工作区修改；逐文件指纹见 [migration-source.json](https://github.com/Futuresxy/DP-Puzzel/blob/09b6657f26a0bf12aadc0051614db023a96850fa/hw/spec/migration-source.json)。原工程保留不动；当前代码是理解数值合同后重写，不保持原接口或文件层级兼容。
 
 ## 两层计算架构
 
@@ -52,8 +54,8 @@ MN 顶层如 `MN_PE_H16Q32E64`，内部只有一个 PE。K 顶层合计对应家
 
 当前合同为有限位宽点积：Q 字内、组内、跨组和 dot+C 存在明确 RTZ 对齐。PE 规格化无损，但不能恢复前面丢失的低位；D 的 RNE 等模式只对已形成的有限窗口结果舍入，不能宣称等价于无限精度 FMA/正确舍入点积。以后 SV golden 必须同时验证硬件数值合同与相对高精度参考的误差，特别是严重抵消和大指数差。
 
-MX/NV/HiF4 的块与 scale 语义见 [Decode](common/Decode.md)。HiF4 暂保留源工程实验性编码，不宣称符合外部标准。NVFP4 此接口只处理 block scale，张量级额外 scale 的施加位置属于上游/下游合同，未隐式增加 FP32 全局乘法器。
+MX/NV/HiF4 的块与 scale 语义见 [Decode](https://github.com/Futuresxy/DP-Puzzel/blob/09b6657f26a0bf12aadc0051614db023a96850fa/hw/spec/common/Decode.md)。HiF4 暂保留源工程实验性编码，不宣称符合外部标准。NVFP4 此接口只处理 block scale，张量级额外 scale 的施加位置属于上游/下游合同，未隐式增加 FP32 全局乘法器。
 
-本轮完成源码、Scala 编译/CHIRRTL 结构展开，并按用户追加要求提供 [集中参数](config/Parameters.md)、[JSON 配置](../configs/README.md) 及 [唯一 RTL 导出入口](elaborate/Generate.md)。参数导出检查只生成未验证 RTL，用户代码审查后再完成独立参考模型与 SV 精度/周期 testbench；没有测试通过的 RTL，不允许进入 DC/power 或发布 characterization。旧工程的验证/PPA 证据不能自动继承。
+本轮完成源码、Scala 编译/CHIRRTL 结构展开，并按用户追加要求提供 [集中参数](https://github.com/Futuresxy/DP-Puzzel/blob/09b6657f26a0bf12aadc0051614db023a96850fa/hw/spec/config/Parameters.md)、[JSON 配置](https://github.com/Futuresxy/DP-Puzzel/blob/09b6657f26a0bf12aadc0051614db023a96850fa/hw/spec/../configs/README.md) 及 [唯一 RTL 导出入口](https://github.com/Futuresxy/DP-Puzzel/blob/09b6657f26a0bf12aadc0051614db023a96850fa/hw/spec/elaborate/Generate.md)。参数导出检查只生成未验证 RTL，用户代码审查后再完成独立参考模型与 SV 精度/周期 testbench；没有测试通过的 RTL，不允许进入 DC/power 或发布 characterization。旧工程的验证/PPA 证据不能自动继承。
 
-本轮具体检查及导出指纹见 [migration-checks.md](migration-checks.md)。
+本轮具体检查及导出指纹见 [migration-checks.md](https://github.com/Futuresxy/DP-Puzzel/blob/09b6657f26a0bf12aadc0051614db023a96850fa/hw/spec/migration-checks.md)。
