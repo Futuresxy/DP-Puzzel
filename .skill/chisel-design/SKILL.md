@@ -8,9 +8,9 @@ description: 在 DP-Puzzel 中迁移、审查五族六种基础PE及K/MN编排�
 先读取根目录 [AGENTS.md](../../AGENTS.md)、[源码导航](../../hw/chisel_src/README.md) 和目标文件对应的 spec；当前可执行范围以用户本轮授权为准。
 
 - `hw/chisel_src/<relative>.scala` 必须一一对应 `hw/spec/<relative>.md`，辅助 object、Bundle、参数和生成/展开入口也不例外。新增、重命名、删除、修改必须同步维护两者及导航。
-- 五族目录为pe/PE_H、PE_Q、PE_E、PE_HQE、PE_QE，每族独立SubPE/PEGroup/DataUnpack/PE；公共接口/算术/C-D放Utils，Scala package小写。用户指定的下划线族名优先于原通用UpperCamelCase习惯。
-- 仅六个合法profile：H/Q/HQE/QE的g4，E的g4/g2。原MidGroup叫PE，g表示PG数量；保留实际实例边界。
-- HQE/QE/E保留源分级组织；H/Q使用16/32路产品统一对齐、流水自然位宽加法树，PG不做局部和。H/Q最终规范化后明确RTZ到公共F，不能宣称与分级路径bit-exact。
+- 五族目录为pe/PE_H、PE_Q、PE_E、PE_HQE、PE_QE。用户已明确H/Q完整展开在各自PE文件，不保留SubPE/PEGroup/DataUnpack模块；HQE/QE/E保留这三个模块。公共接口、通用算术、C/D放Utils，Scala package小写。
+- 仅六个合法profile：H/Q/HQE/QE的g4，E的g4/g2。原MidGroup叫PE；H/Q的g4是兼容输入布局名，不代表仍实例化PG。
+- HQE/QE/E保留源分级组织，但PE专属输入/scale分发、组间MAX/对齐/求和与valid流水直接写在各PE文件，不再藏在Utils的PEWiring/PEAlignNormalize中。H/Q在PE文件直接实现16/32路产品统一对齐和自然位宽加法树；最终规范化后明确RTZ到公共F，不能宣称与分级路径bit-exact。通用MAX、移位、CSA、LZD与规范化可复用。
 - 统一PE结果为sign/magnitude/top_anchor/zero/special，F=pe_align_width，11级；g2规范化magnitude末尾补一个低0保持anchor，精确对齐g4。K/MN公共C-D总18级；不写阵列。
 - AlignmentConfig默认28/2/40/40，公开Q字内窗口26..30、PG guard2..4、PE窗口38..48、top窗口38..48且≥PE。默认<JSON<CLI，静态非法值require拒绝；运行硬件约束assert。乘法/加法按自然增长，无任意乘/加输出位宽旋钮。
 - spec必须记录S/I/F、anchor含义、scale、资源、各级周期、valid/复位、截断位置与状态。H/Q删掉的字内/PG参数不应重新生成电路；输出layout和保留位数相同只是公平比较条件之一。

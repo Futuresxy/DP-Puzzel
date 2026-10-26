@@ -18,3 +18,5 @@
 单核 profile 必须列明是否包含 L0、阵列、缩放/转换、控制等，供芯片模型避免重复计费。阵列共享多个数值模式时，物理实现只计一次面积，每种模式分别测量性能和活动成本。
 
 当前实现五族六种基础PE及参数化K/MN单输出编排，见 [源码导航](chisel_src/README.md)、[设计](spec/six-pe-design.md)、[配置](configs/README.md)。H/Q采用16/32路全局对齐，HQE/QE/E保留分级复用，E_g2/g4输出小数点统一。四个对齐参数由集中默认、JSON和CLI传入。原Full迁移为历史记录；本轮只有结构和有限定向证据，没有完整RTL精度验证、DC、功耗或特征数据。
+
+当前H/Q所有计算直接位于各自PE文件，不实例化SubPE/PEGroup；HQE/QE/E保留分级模块，PE文件直接展示其输入/scale分配与跨PG流水。通用PENormalizeExact等算术可复用，Utils不再隐藏PE专属数据通路。42个Scala文件均有同路径spec。

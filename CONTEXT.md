@@ -13,7 +13,7 @@ _Avoid_: 以“4 bit”“低精度”代替完整格式
 
 **基础PE**：原MidGroup边界。五族H/Q/E/HQE/QE共六profile，g表示PEGroup数；H/Q/HQE/QE为g4，E为g4/g2。H16/Q32采用一次全局对齐，HQE/QE/E保留分级组织。六种PE均输出扩展精度sign/magnitude/anchor结果，S11、F=pe_align_width。
 
-**PEGroup / SubPE**：基础PE内的实际模块。HQE/QE/E执行原局部算术；H/Q的PG仅组织产品，不再局部对齐。每PG四SubPE，H每SubPE一个产品、Q两个、E四个。
+**PEGroup / SubPE**：HQE/QE/E基础PE内保留的实际模块，每PG四SubPE；HQE/QE按模式分别处理每word一个H、两个Q或四个E元素。H/Q专用PE已经取消这些模块，16/32路解包、乘法、全K对齐和累加直接展开在PE_H.scala/PE_Q.scala。其g4名称只保留输入布局兼容性。
 
 **K-PE**：1–4个基础PE沿K空间规约，共享一个C/D，模式native K为活动实例容量之和；输入物理槽不隐式压缩。
 

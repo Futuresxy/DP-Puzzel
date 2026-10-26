@@ -83,7 +83,8 @@ object Generate {
         val name = names.head
         val stem = name.takeWhile(_ != '$').split("_Aq")(0)
         val familySources = Seq("HQE", "QE", "H", "Q", "E").flatMap { family =>
-          Seq("SubPE", "PEGroup", "DataUnpack", "PE").map { role =>
+          val roles = if (Set("H", "Q")(family)) Seq("PE") else Seq("SubPE", "PEGroup", "DataUnpack", "PE")
+          roles.map { role =>
             val key = s"${role}_${family}"
             key -> s"pe/PE_${family}/${role}_${family}.scala"
           }
@@ -92,7 +93,6 @@ object Generate {
         val source = familyKey.map(familySources).getOrElse {
           if (name.startsWith("K_PE_")) "core/K_PE.scala"
           else if (name.startsWith("MN_PE_")) "core/MN_PE.scala"
-          else if (stem.startsWith("PEGlobalAlignNormalize_")) "Utils/PEGlobalAlignNormalize.scala"
           else {
             val helper = stem.replaceAll("_[0-9]+$", "")
             s"Utils/${helper}.scala"

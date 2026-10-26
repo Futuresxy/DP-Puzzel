@@ -1,0 +1,851 @@
+{
+  "scope": "sampled_refactor_equivalence_and_fixed_latency",
+  "created_utc": "2026-10-24T12:33:02.659087+00:00",
+  "all_checks": "passed_for_declared_scope",
+  "full_format_accuracy": "not_run",
+  "ppa_eligible": false,
+  "simulator": "Icarus Verilog version 12.0 (stable) ()",
+  "elaboration": {
+    "legal_configurations": 35,
+    "illegal_configurations_rejected": 11,
+    "scala_spec_pairs": 42
+  },
+  "total_cycles": 10346,
+  "total_valid_results": 4455,
+  "directed_smoke_comparisons": 448,
+  "exports": [
+    {
+      "seed": "0x5eed27",
+      "samples_per_pair": 64,
+      "format_pairs": [
+        [
+          8,
+          8
+        ],
+        [
+          7,
+          7
+        ]
+      ],
+      "cycles": 205,
+      "valid_results": 88,
+      "latency": 11,
+      "result": "passed",
+      "stimulus_sha256": "934713b83499bc15f3adb7b114df9e09f29b5cda6410df5f66faa18c5590f7f7",
+      "testbench_sha256": "879f87637790cdc6e9e16c14f9a2d48af2cf6883773e224b47779a450771b766",
+      "checker_sha256": "52df502c8b8bfe38fa10837eb6dbc1bbe19e4b9c92cabb1b4f75e95b3c825add",
+      "trace_sha256": "c176f642c415cfb70622813f2808ec86a1c51799f023209c71c1c7c5490687de",
+      "config": "hw/configs/pe_h_g4.json",
+      "baseline": {
+        "export_id": "PE_H_g4_10242019",
+        "manifest_sha256": "1c4ccdf8c1490f59df469a84e487faedcdc346f1ff1e5a55871013196d882bee",
+        "filelist_sha256": "c0ba93c2a5b26aca6e10b4489b190ce889186c6129b62c369da828e482977084",
+        "source_sha256": "265509a97285a1b3f78df33fa4ed119437e9fc8a392e4f010187a6334b6e92a4"
+      },
+      "candidate": {
+        "export_id": "PE_H_g4_10242029",
+        "manifest_sha256": "713e27e461e79ee2b346ab07cbc1f55ffb173f2880074d76918660c968c45c76",
+        "filelist_sha256": "3252130c21fa45befc0c721c487aa714ccf33b5149953fc093261ab8667869d1",
+        "source_sha256": "a7e47e9b933181e3127c938990bc8ef12fcd757b347bee75df9fe054bacc5926"
+      },
+      "report_path": "hw/test/runs/pe-locality-PE_H_g4_10242019-vs-PE_H_g4_10242029/report.json",
+      "report_sha256": "945b84aa6056038e34dac61a733513c4e7120e3b6e479c1261933faf5d51d5c5",
+      "physical_instances": {
+        "PE": 1,
+        "PEGroup": 0,
+        "SubPE": 0
+      },
+      "module_definitions": 2,
+      "directed_smoke": {
+        "kind": "directed_unit_values_layout_and_11_stage_valid",
+        "checks": 32,
+        "seed": "0x5eed",
+        "full_format_accuracy": "not_run",
+        "ppa_eligible": false,
+        "testbench_sha256": "c5d7f1375d8753e5f2e099093dddf68d070cc8aa6b7545f06b590c34c3ae6046",
+        "checker_sha256": "d2ed83497cc4115a3149ffdb25ca3247bf2d02cb7fd99dc4578415f219a7ca81"
+      },
+      "command": [
+        "python",
+        "scripts/check_pe_refactor.py",
+        "PE_H_g4_10242019",
+        "PE_H_g4_10242029"
+      ]
+    },
+    {
+      "seed": "0x5eed27",
+      "samples_per_pair": 64,
+      "format_pairs": [
+        [
+          6,
+          6
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          5,
+          6
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          3
+        ]
+      ],
+      "cycles": 1465,
+      "valid_results": 704,
+      "latency": 11,
+      "result": "passed",
+      "stimulus_sha256": "c11f712372c99f09778a23a3dabdf1c774daf492d2b8851038026cd296fadacc",
+      "testbench_sha256": "8867a879412280c2e79e4b4a7bf6051f07fe717a9db353845895bd8f4ba50c19",
+      "checker_sha256": "52df502c8b8bfe38fa10837eb6dbc1bbe19e4b9c92cabb1b4f75e95b3c825add",
+      "trace_sha256": "0f722489c48dca7b6f50cc434cf4decaa4bf22da51d6a3ecc15ee93eab550d1d",
+      "config": "hw/configs/pe_q_g4.json",
+      "baseline": {
+        "export_id": "PE_Q_g4_10242019",
+        "manifest_sha256": "a1a7339360d737238de44b864f7fe45abd5846c8a6dded65213e0e5be9f0f7fe",
+        "filelist_sha256": "403b5194ead11bb88d61f226e55e70d24ff3288d42f29322194ad5a8f153b047",
+        "source_sha256": "265509a97285a1b3f78df33fa4ed119437e9fc8a392e4f010187a6334b6e92a4"
+      },
+      "candidate": {
+        "export_id": "PE_Q_g4_10242030",
+        "manifest_sha256": "10f72c6d3e19dcec348d63cae8353ac98b3601263b9b08ea88d47d6749639a0e",
+        "filelist_sha256": "ff937238ce7d31b768ed275f0126b5c5cbda2ee1caed2f88e01e34dcc89fec6f",
+        "source_sha256": "a7e47e9b933181e3127c938990bc8ef12fcd757b347bee75df9fe054bacc5926"
+      },
+      "report_path": "hw/test/runs/pe-locality-PE_Q_g4_10242019-vs-PE_Q_g4_10242030/report.json",
+      "report_sha256": "469f616e018c42eef4448f4379892ca642258f6b0c09eba17451c30c709d5681",
+      "physical_instances": {
+        "PE": 1,
+        "PEGroup": 0,
+        "SubPE": 0
+      },
+      "module_definitions": 2,
+      "directed_smoke": {
+        "kind": "directed_unit_values_layout_and_11_stage_valid",
+        "checks": 64,
+        "seed": "0x5eed",
+        "full_format_accuracy": "not_run",
+        "ppa_eligible": false,
+        "testbench_sha256": "47643c0ded0d829887c67083641ec9c6ebb61f9b62b6146c2a65889fedfc7077",
+        "checker_sha256": "d2ed83497cc4115a3149ffdb25ca3247bf2d02cb7fd99dc4578415f219a7ca81"
+      },
+      "command": [
+        "python",
+        "scripts/check_pe_refactor.py",
+        "PE_Q_g4_10242019",
+        "PE_Q_g4_10242030"
+      ]
+    },
+    {
+      "seed": "0x5eed27",
+      "samples_per_pair": 64,
+      "format_pairs": [
+        [
+          8,
+          8
+        ],
+        [
+          7,
+          7
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          5,
+          6
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "cycles": 2095,
+      "valid_results": 1012,
+      "latency": 11,
+      "result": "passed",
+      "stimulus_sha256": "41df783df93b9b4f733985cab9b296c2eec926ba10360c830b6913e5a9496696",
+      "testbench_sha256": "bec0b36693a566761c70d484299dbbf3665b560a9ec1d1207a018469425ace9e",
+      "checker_sha256": "52df502c8b8bfe38fa10837eb6dbc1bbe19e4b9c92cabb1b4f75e95b3c825add",
+      "trace_sha256": "72781004311dae20f327fcc79ee979a8d90693f38004a4a5984505f535d73005",
+      "config": "hw/configs/pe_hqe_g4.json",
+      "baseline": {
+        "export_id": "PE_HQE_g4_10242019",
+        "manifest_sha256": "a115a0e5e2ebafcc5a3dfc4575313b4bf15b329962f2d5d62c8ab53be1ed3042",
+        "filelist_sha256": "91c0273703e01c020adafadb477f32c3981509299da7fd34b95b450b8675cb00",
+        "source_sha256": "265509a97285a1b3f78df33fa4ed119437e9fc8a392e4f010187a6334b6e92a4"
+      },
+      "candidate": {
+        "export_id": "PE_HQE_g4_10242030",
+        "manifest_sha256": "20732f8be698560f4bd9bdf0279858beb9ce62a2f1913d81b3df8def5c99c392",
+        "filelist_sha256": "618ca0060f7c1ff92cf66527c6e7579548f9e7cf8f3d5ad7f960a04cdd1819f3",
+        "source_sha256": "a7e47e9b933181e3127c938990bc8ef12fcd757b347bee75df9fe054bacc5926"
+      },
+      "report_path": "hw/test/runs/pe-locality-PE_HQE_g4_10242019-vs-PE_HQE_g4_10242030/report.json",
+      "report_sha256": "fe93e141e283635c54ed1aa36eeb680128c6ac9dbf40f57d3286db55f44fc607",
+      "physical_instances": {
+        "PE": 1,
+        "PEGroup": 4,
+        "SubPE": 16
+      },
+      "module_definitions": 5,
+      "directed_smoke": {
+        "kind": "directed_unit_values_layout_and_11_stage_valid",
+        "checks": 144,
+        "seed": "0x5eed",
+        "full_format_accuracy": "not_run",
+        "ppa_eligible": false,
+        "testbench_sha256": "823ceff1870ba0d05b0bcdbd2a3888ad8bca0a08b61438751106c7227f6654c2",
+        "checker_sha256": "d2ed83497cc4115a3149ffdb25ca3247bf2d02cb7fd99dc4578415f219a7ca81"
+      },
+      "command": [
+        "python",
+        "scripts/check_pe_refactor.py",
+        "PE_HQE_g4_10242019",
+        "PE_HQE_g4_10242030"
+      ]
+    },
+    {
+      "seed": "0x5eed27",
+      "samples_per_pair": 64,
+      "format_pairs": [
+        [
+          6,
+          6
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          5,
+          6
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "cycles": 1915,
+      "valid_results": 924,
+      "latency": 11,
+      "result": "passed",
+      "stimulus_sha256": "0f5f125571282da5fa7b34b079ee053cc9da7efc72045203a7d91a881b4c46e4",
+      "testbench_sha256": "3ddabf2100645ea25ed8dfcd714fa20ae13d949fbcc67f248b051c43cc28cabc",
+      "checker_sha256": "52df502c8b8bfe38fa10837eb6dbc1bbe19e4b9c92cabb1b4f75e95b3c825add",
+      "trace_sha256": "d545c1db6f1e6151c177665824d021036ed7f1ec7fd0bbefcd1797a7908ee164",
+      "config": "hw/configs/pe_qe_g4.json",
+      "baseline": {
+        "export_id": "PE_QE_g4_10242019",
+        "manifest_sha256": "7d2856ba869f47fe151479c7a386cacace2a6c33442aa9c894754c9f80f30b8d",
+        "filelist_sha256": "9ed717edbd8d9bd35074b8bcbf5ef3a93ec75999b11fc561e223ab89723cfc82",
+        "source_sha256": "265509a97285a1b3f78df33fa4ed119437e9fc8a392e4f010187a6334b6e92a4"
+      },
+      "candidate": {
+        "export_id": "PE_QE_g4_10242030",
+        "manifest_sha256": "73a4254edd165359e5963721328f2de8ef8f7bd5f7d220052a3e509bfeb7a713",
+        "filelist_sha256": "c77d5fa100400996f6aa90a2daeb0d8978a9c960451569967869287a27f70300",
+        "source_sha256": "a7e47e9b933181e3127c938990bc8ef12fcd757b347bee75df9fe054bacc5926"
+      },
+      "report_path": "hw/test/runs/pe-locality-PE_QE_g4_10242019-vs-PE_QE_g4_10242030/report.json",
+      "report_sha256": "e1d47165a24bc2525a1e6ca525d0c28dfcfdfdce7c66d40d00122a7a01fc0a4a",
+      "physical_instances": {
+        "PE": 1,
+        "PEGroup": 4,
+        "SubPE": 16
+      },
+      "module_definitions": 5,
+      "directed_smoke": {
+        "kind": "directed_unit_values_layout_and_11_stage_valid",
+        "checks": 112,
+        "seed": "0x5eed",
+        "full_format_accuracy": "not_run",
+        "ppa_eligible": false,
+        "testbench_sha256": "54616fe475916f1e811a1d9bb6a3b7de08faaf8cb3ff43dc06472d7132091bc5",
+        "checker_sha256": "d2ed83497cc4115a3149ffdb25ca3247bf2d02cb7fd99dc4578415f219a7ca81"
+      },
+      "command": [
+        "python",
+        "scripts/check_pe_refactor.py",
+        "PE_QE_g4_10242019",
+        "PE_QE_g4_10242030"
+      ]
+    },
+    {
+      "seed": "0x5eed27",
+      "samples_per_pair": 64,
+      "format_pairs": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "cycles": 475,
+      "valid_results": 220,
+      "latency": 11,
+      "result": "passed",
+      "stimulus_sha256": "713550087db0512c0671918c07a15094628159a2d08dd897a2edcc4d7cb46ff9",
+      "testbench_sha256": "995632ee6ac1dcd96c37dfc9436792a6784d0c1f0f99168b2a59fdcfd02fb9e4",
+      "checker_sha256": "52df502c8b8bfe38fa10837eb6dbc1bbe19e4b9c92cabb1b4f75e95b3c825add",
+      "trace_sha256": "d472ddda8027c2a699d86da7398a75e9ef162d57bfdf2bab53f586876d46168d",
+      "config": "hw/configs/pe_e_g4.json",
+      "baseline": {
+        "export_id": "PE_E_g4_10242019",
+        "manifest_sha256": "5ed2de8b293de6ddef872080725c1526ad714c2003bde160f72f29eae0cb0515",
+        "filelist_sha256": "64edac7d5b756625007987d97382bc866823e79c1e597a8a4855a4aae5aa825b",
+        "source_sha256": "265509a97285a1b3f78df33fa4ed119437e9fc8a392e4f010187a6334b6e92a4"
+      },
+      "candidate": {
+        "export_id": "PE_E_g4_10242030",
+        "manifest_sha256": "d69453db84ea2d48858e126b72f39afb933168cc3554e29e8f2871cf837ee430",
+        "filelist_sha256": "fb1578b53d69e4298ec763e92fd16780aa550831f38c4eba9dee1e1355330f3f",
+        "source_sha256": "a7e47e9b933181e3127c938990bc8ef12fcd757b347bee75df9fe054bacc5926"
+      },
+      "report_path": "hw/test/runs/pe-locality-PE_E_g4_10242019-vs-PE_E_g4_10242030/report.json",
+      "report_sha256": "92b478e5177d351894ef33cd3b57a053d90d5caa0f70ee646319f4cfe81b3423",
+      "physical_instances": {
+        "PE": 1,
+        "PEGroup": 4,
+        "SubPE": 16
+      },
+      "module_definitions": 5,
+      "directed_smoke": {
+        "kind": "directed_unit_values_layout_and_11_stage_valid",
+        "checks": 48,
+        "seed": "0x5eed",
+        "full_format_accuracy": "not_run",
+        "ppa_eligible": false,
+        "testbench_sha256": "51d912beaf31c26b5a6fc289ebcb4bc69c56e5e2009eeafc6bc984ad206d6b70",
+        "checker_sha256": "d2ed83497cc4115a3149ffdb25ca3247bf2d02cb7fd99dc4578415f219a7ca81"
+      },
+      "command": [
+        "python",
+        "scripts/check_pe_refactor.py",
+        "PE_E_g4_10242019",
+        "PE_E_g4_10242030"
+      ]
+    },
+    {
+      "seed": "0x5eed27",
+      "samples_per_pair": 64,
+      "format_pairs": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "cycles": 475,
+      "valid_results": 220,
+      "latency": 11,
+      "result": "passed",
+      "stimulus_sha256": "0804c6bc0111a17b779eb9a6c9df917a5001870d72a69baa269c50c6fb913ed2",
+      "testbench_sha256": "b87226071f1dc0adbd0c264826a7aff9c0cc6803f7bb1d1bf4d9936220e25353",
+      "checker_sha256": "52df502c8b8bfe38fa10837eb6dbc1bbe19e4b9c92cabb1b4f75e95b3c825add",
+      "trace_sha256": "8e8e6daccf9ab28f5ba2819bb82561bded8f03ae21a694954ee20a3ae9fb8269",
+      "config": "hw/configs/pe_e_g2.json",
+      "baseline": {
+        "export_id": "PE_E_g2_10242019",
+        "manifest_sha256": "f306df33d60bb573e9bc79e1755a83a25d6d4fc28fd5a909083373f5ca3e423a",
+        "filelist_sha256": "82e19c04233e9c975a9323c7d5e6aa6c37ccfb2f5225159ba849bb57f69fab8b",
+        "source_sha256": "265509a97285a1b3f78df33fa4ed119437e9fc8a392e4f010187a6334b6e92a4"
+      },
+      "candidate": {
+        "export_id": "PE_E_g2_10242030",
+        "manifest_sha256": "1f3d778c32baf32c93760f1df99ba2f385f35cb23de37b3839c9835c00ca7600",
+        "filelist_sha256": "6ddcec9ba2b0587fefc07f2844e1a4a1a2c43c3c9d89486e71c0c480c623b293",
+        "source_sha256": "a7e47e9b933181e3127c938990bc8ef12fcd757b347bee75df9fe054bacc5926"
+      },
+      "report_path": "hw/test/runs/pe-locality-PE_E_g2_10242019-vs-PE_E_g2_10242030/report.json",
+      "report_sha256": "1fcee9c0a12b54b7821e616d33a810977316dec790b5616d2257ab360e23e25a",
+      "physical_instances": {
+        "PE": 1,
+        "PEGroup": 2,
+        "SubPE": 8
+      },
+      "module_definitions": 5,
+      "directed_smoke": {
+        "kind": "directed_unit_values_layout_and_11_stage_valid",
+        "checks": 48,
+        "seed": "0x5eed",
+        "full_format_accuracy": "not_run",
+        "ppa_eligible": false,
+        "testbench_sha256": "05412df43e43bc298281d33aecc63df71a44ebd345d87b121dfda16bda758d0c",
+        "checker_sha256": "d2ed83497cc4115a3149ffdb25ca3247bf2d02cb7fd99dc4578415f219a7ca81"
+      },
+      "command": [
+        "python",
+        "scripts/check_pe_refactor.py",
+        "PE_E_g2_10242019",
+        "PE_E_g2_10242030"
+      ]
+    },
+    {
+      "seed": "0x5eed27",
+      "samples_per_pair": 64,
+      "format_pairs": [
+        [
+          6,
+          6
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          5,
+          6
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          3
+        ]
+      ],
+      "cycles": 1529,
+      "valid_results": 528,
+      "latency": 18,
+      "result": "passed",
+      "stimulus_sha256": "8e727464f3275c3630cac9e3bd6290a2d9a6bafcc96239ab29306cb2522d3262",
+      "testbench_sha256": "faadcc3eb990bca48f11133317d60c77db8bce34e10bd03df4aad53fb883edfe",
+      "checker_sha256": "52df502c8b8bfe38fa10837eb6dbc1bbe19e4b9c92cabb1b4f75e95b3c825add",
+      "trace_sha256": "ead84a83984236b0be32619523325e2e7dc562e2f7fb7e76b194724b7067eaf8",
+      "config": "hw/configs/mn_q_g4.json",
+      "baseline": {
+        "export_id": "MN-PE_H0Q32E0_10242019",
+        "manifest_sha256": "07a3592b1f4117eb7d510a06e727e50cbdb9f2dc91f696875f21cc087241261a",
+        "filelist_sha256": "40e6d2512d3abd445494666eb786d72031ccb33a192c639154ef9a6c36839383",
+        "source_sha256": "265509a97285a1b3f78df33fa4ed119437e9fc8a392e4f010187a6334b6e92a4"
+      },
+      "candidate": {
+        "export_id": "MN-PE_H0Q32E0_10242030",
+        "manifest_sha256": "f33b8c5837af5ae248edd108af4b1b41c9b793217d25c2d752f0612f01eabd5d",
+        "filelist_sha256": "450154dbe24374c57578eec5c219dea8b6dc68c8e722ca1aeb61d959d606f904",
+        "source_sha256": "a7e47e9b933181e3127c938990bc8ef12fcd757b347bee75df9fe054bacc5926"
+      },
+      "report_path": "hw/test/runs/pe-locality-MN-PE_H0Q32E0_10242019-vs-MN-PE_H0Q32E0_10242030/report.json",
+      "report_sha256": "8c97aaaabcbd2e92358a21c6ce9a14a980c468f0db151ff651af4af4f27cec6f",
+      "physical_instances": {
+        "PE": 1,
+        "PEGroup": 0,
+        "SubPE": 0
+      },
+      "module_definitions": 8,
+      "directed_smoke": null,
+      "command": [
+        "python",
+        "scripts/check_pe_refactor.py",
+        "MN-PE_H0Q32E0_10242019",
+        "MN-PE_H0Q32E0_10242030"
+      ]
+    },
+    {
+      "seed": "0x5eed27",
+      "samples_per_pair": 64,
+      "format_pairs": [
+        [
+          8,
+          8
+        ],
+        [
+          7,
+          7
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          5,
+          6
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          4,
+          6
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          4,
+          3
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "cycles": 2187,
+      "valid_results": 759,
+      "latency": 18,
+      "result": "passed",
+      "stimulus_sha256": "3eaab896a7f462f82aebda4821a9d96028fe4d6ff95aa04c1b7be00afea74c25",
+      "testbench_sha256": "bf22ca8b80ca9798ec5b5da0cc010d53292c8271482716b8f4690be06a756a05",
+      "checker_sha256": "52df502c8b8bfe38fa10837eb6dbc1bbe19e4b9c92cabb1b4f75e95b3c825add",
+      "trace_sha256": "79f3acd3e77bcd0e84fce929e110feb41f394a93cf13ad8271c91792ce22d478",
+      "config": "hw/configs/k_1_2_6.json",
+      "baseline": {
+        "export_id": "K-PE_H16Q32E96_10242019",
+        "manifest_sha256": "0de587c624bd94a7c2667b59f72aa3599ef54b67157a3f8ffb5a97acbf818c5c",
+        "filelist_sha256": "56f02ef782b372849139ac2b593efb72b10d505d30e63d85ca86d462a8214d41",
+        "source_sha256": "265509a97285a1b3f78df33fa4ed119437e9fc8a392e4f010187a6334b6e92a4"
+      },
+      "candidate": {
+        "export_id": "K-PE_H16Q32E96_10242030",
+        "manifest_sha256": "5d6eae12147ec9d24d05146c8613d5eca269d64eada927495b8bf9764d18d406",
+        "filelist_sha256": "131461cf6607f7898b1e9a2924fc79723f46936adc62f3f80d230136ef16ea2a",
+        "source_sha256": "a7e47e9b933181e3127c938990bc8ef12fcd757b347bee75df9fe054bacc5926"
+      },
+      "report_path": "hw/test/runs/pe-locality-K-PE_H16Q32E96_10242019-vs-K-PE_H16Q32E96_10242030/report.json",
+      "report_sha256": "66c1f2ba5a0b8875092dae6c4fac885eb16b1af696f72d67fec5eb65b15becae",
+      "physical_instances": {
+        "PE": 2,
+        "PEGroup": 6,
+        "SubPE": 24
+      },
+      "module_definitions": 16,
+      "directed_smoke": null,
+      "command": [
+        "python",
+        "scripts/check_pe_refactor.py",
+        "K-PE_H16Q32E96_10242019",
+        "K-PE_H16Q32E96_10242030"
+      ]
+    }
+  ],
+  "limitations": [
+    "Sampled equality against old RTL is not independent numerical accuracy verification.",
+    "All RTL simulations in this batch use the default 28/2/40/40 windows; other variants were elaborated only.",
+    "No DC timing, area, workload power, or PPA qualification was performed."
+  ]
+}

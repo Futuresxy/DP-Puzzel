@@ -17,10 +17,13 @@ object Elaborate {
     val circuit = ChiselStage.emitCHIRRTL(module(config),
       Array("--throw-on-first-error", "--warnings-as-errors"))
     val modules = "(?m)^  module ([^ :]+)".r.findAllMatchIn(circuit).map(_.group(1)).toVector
-    require(modules.count(_.startsWith("PEGroup_")) == config.layout.map(_.groupCount).sum)
-    require(modules.count(_.startsWith("SubPE_")) == config.layout.map(_.wordCount).sum)
+    // H/Q own their complete arithmetic; only HQE/QE/E instantiate PG/SubPE.
+    val grouped = config.layout.filter(p => Set("HQE", "QE", "E")(p.family))
+    require(modules.count(_.startsWith("PEGroup_")) == grouped.map(_.groupCount).sum)
+    require(modules.count(_.startsWith("SubPE_")) == grouped.map(_.wordCount).sum)
+    require(!modules.exists(n => n.startsWith("PEAlignNormalize") || n.startsWith("PEGlobalAlignNormalize")))
     println(s"elaborated ${config.topName}: ${modules.size} definitions, " +
-      s"${config.layout.map(_.groupCount).sum} PEGroups, ${config.wordCount} SubPEs; ${config.alignment.json}")
+      s"${grouped.map(_.groupCount).sum} PEGroups, ${grouped.map(_.wordCount).sum} SubPEs; ${config.alignment.json}")
   }
   def main(args: Array[String]): Unit = {
     require(args.nonEmpty, "Elaborate review | config <JSON> [--pe-align-width N ...]")

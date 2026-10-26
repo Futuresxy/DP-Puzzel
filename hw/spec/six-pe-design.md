@@ -1,23 +1,23 @@
 # 五族六种基础 PE：设计与参数合同
 
-本轮在当前修复分支实现用户指定的五族目录、六个合法profile。原MidGroup重命名为PE，下面保留实际PEGroup/SubPE模块；上层提供单输出K_PE、MN_PE，不写阵列代码。原工程只读，固定commit和文件hash见 [six-pe-source.json](six-pe-source.json)。
+当前实现用户指定的五族目录、六个合法profile。原MidGroup重命名为PE；HQE/QE/E保留实际PEGroup/SubPE模块，H/Q完整计算直接写在PE文件。上层提供单输出K_PE、MN_PE，不写阵列代码。原工程只读，最初迁移的固定commit和文件hash见 [six-pe-source.json](six-pe-source.json)；其中H/Q旧目标文件已内联到各自PE，当前模块映射以新导出manifest为准。
 
 | profile | 每个PE的PG数 | H/Q/E native K | 计算组织 |
 | --- | --- | --- | --- |
 | PE_HQE_g4 | 4 | 16/32/64 | 保留全格式部分乘法与分级RTZ复用 |
 | PE_QE_g4 | 4 | 0/32/64 | 保留Q/E小乘法和分级RTZ复用 |
-| PE_H_g4 | 4 | 16/0/0 | 16个高精度产品一次全局对齐 |
-| PE_Q_g4 | 4 | 0/32/0 | 32个FP8/6产品一次全局对齐 |
+| PE_H_g4 | 0（g4仅保留布局名） | 16/0/0 | 单文件展开16个高精度产品与一次全局对齐 |
+| PE_Q_g4 | 0（g4仅保留布局名） | 0/32/0 | 单文件展开32个FP8/6产品与一次全局对齐 |
 | PE_E_g4 | 4 | 0/0/64 | 保留窄FP4路径与分级规约 |
 | PE_E_g2 | 2 | 0/0/32 | 同一E源码的两组特化，末尾精确补零 |
 
-目录 `pe/PE_H/PE_Q/PE_E/PE_HQE/PE_QE` 各有独立SubPE、PEGroup、DataUnpack、PE文件，类名按用户指定使用下划线。Scala package为dp.pe.h/q/e/hqe/qe；公共接口/算术/连接放Utils，package为dp.utils。每个具体Module独立同名Scala文件，每个Scala有同路径spec。
+目录 `pe/PE_H`、`pe/PE_Q` 各只有完整PE计算文件；`pe/PE_E`、`pe/PE_HQE`、`pe/PE_QE` 保留SubPE、PEGroup、DataUnpack、PE文件。类名按用户指定使用下划线，Scala package为dp.pe.h/q/e/hqe/qe。所有PE级计算、输入分发和流水在对应PE文件；Utils仅保留通用算术、接口与C/D，不再包含PEWiring、PEAlignNormalize或PEGlobalAlignNormalize。每个具体Module独立同名Scala文件，每个Scala有同路径spec。
 
 ## H/Q 全局路径与原复用路径的边界
 
-HQE、QE、E保留原数值流程和资源组织，参数传递及代码风格适配不改变其计算拓扑。H/Q的四个PG只做解包/产品组织，删除字内/PG MAX与局部和。H单个11×11得到UQ2.20 W22产品；Q每word两个4×4得到UQ2.6 W8产品，高lane仍为nibble2/sign1，FP6按每byte低6bit存储。
+HQE、QE、E保留原数值流程、SubPE/PG和资源复用；PE文件直接展示S00输入/scale切片、S07 MAX、S08对齐、S09求和及S10/S11通用规格化连接。H/Q取消四个PG产品簇和SubPE模块，解包及乘法也在PE文件中直接可见。H单个11×11得到UQ2.20 W22产品；Q每word两个4×4得到UQ2.6 W8产品，FP6按每byte低6bit存储。Q直接逐lane布线，不再需要跨模块的nibble2尾数打包。
 
-Q只使用E8M0块scale。32元素的共同scale指数在PE层计算一次，在全局MAX之后附加；不需要scale尾数乘法。E4M3/E5M2等**元素**尾数乘法仍然需要。专用解包文件只保留所属格式，H硬连unit scale，Q仅实现E8M0 scale分类/指数。
+Q只使用E8M0块scale。32元素的共同scale指数在PE层计算一次，在全局MAX之后附加；不需要scale尾数乘法。E4M3/E5M2等**元素**尾数乘法仍然需要。H/Q解包已直接展开在PE文件，H硬连unit scale，Q仅实现E8M0 scale分类/指数。H的S01寄存解包结果；Q的S01保持原packed输入寄存，解包和乘法同在S02前完成。
 
 H/Q流水：S01解包，S02产品，S03平衡MAX，S04指数差，S05独立lane RTZ移位，S06–S09流水加法树，S10/S11规范化。所有加法+&自然增长，H全局和W=A+4、Q为A+5。之后magnitude明确RTZ掉2/3个最低位，输出W=A+2、F=A。没有为了统一结果宽而截断自然和的高位。
 
@@ -62,4 +62,4 @@ K_PE按有序profile列表沿K规约，共享一个C与FP32 D处理；MN_PE恰�
 
 ## 证据边界
 
-编译/CHIRRTL/split RTL及有限定向smoke见 [six-pe-checks.md](six-pe-checks.md)。定向smoke只检查单位scale、−1/0/+1产品的结果坐标与11级valid，不能代替全格式/scale/舍入/严重抵消/随机数值参考回归。导出保持generated、rtl_test=not_run、ppa_eligible=false；未运行DC/power，未生成面积功耗数字。
+最初迁移的编译/CHIRRTL/split RTL及有限定向smoke见 [six-pe-checks.md](six-pe-checks.md)，其中52文件和H/Q产品簇对应重构前版本。当前代码归属、42组源码/spec及抽样新旧RTL逐拍/周期检查见 [pe-code-locality-checks.md](pe-code-locality-checks.md)。单位值smoke和重构等价均不能代替独立全格式/scale/舍入/严重抵消/随机数值参考回归。导出保持generated、rtl_test=not_run、ppa_eligible=false；未运行DC/power，未生成面积功耗数字。

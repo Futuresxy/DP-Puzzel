@@ -2,7 +2,7 @@
 
 本文件适用于整个仓库。目标是构建面向 AI 芯片张量计算的多精度算力配比 DSE 系统，对 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 等设计选择的面积、功耗和负载延迟进行成本收益权衡。
 
-**当前阶段按用户批准方案实现五族目录与六种基础PE：PE_HQE_g4、PE_QE_g4、PE_H_g4、PE_Q_g4、PE_E_g4、PE_E_g2。** 原MidGroup改称PE；SubPE/PEGroup/PE层级保留。HQE/QE/E保留原分级复用组织；H/Q专用路径采用16/32路全局对齐和流水自然位宽累加。Utils维护公共接口/算术/C-D；K_PE/MN_PE编排基础PE，不写阵列代码。统一PE输出F=pe_align_width、11级，g2规范化后精确补一个低零对齐g4；K/MN总18级。完整RTL精度/周期回归与EDA仍在后续阶段，不能将有限定向检查称为完整精度验证通过。
+**当前阶段按用户批准方案实现五族目录与六种基础PE：PE_HQE_g4、PE_QE_g4、PE_H_g4、PE_Q_g4、PE_E_g4、PE_E_g2。** 原MidGroup改称PE。用户进一步明确：H/Q完整计算链路直接写在PE_H.scala/PE_Q.scala，取消其SubPE/PEGroup/DataUnpack模块；HQE/QE/E保留SubPE/PEGroup及分级复用，PE专属输入分发、组间对齐/求和与流水直接写在各自PE文件。Utils只维护通用算术、接口与C-D，不再隐藏完整PE计算路径。H/Q采用16/32路全局对齐和流水自然位宽累加；g4名称保留兼容输入布局，不表示H/Q仍有四个PG实例。K_PE/MN_PE编排基础PE，不写阵列代码。统一PE输出F=pe_align_width、11级，E_g2规范化后精确补一个低零对齐g4；K/MN总18级。完整RTL精度/周期回归与EDA仍在后续阶段，不能将有限定向检查称为完整精度验证通过。
 
 **阵列扩展当前仅获授权调研和方案讨论，用户审核确定方案前不写阵列代码。** 已确认采用 2×2 group 组内广播、组间脉动；M8N32 是逻辑指令输出块，物理阵列参数化；FP4 目标 K64/96/128/192/256，FP8 目标 K32/64/96/128。控制、L0 和 layout 候选见 [讨论稿](hw/spec/array_ref/array-design-discussion.md)，其中建议不等于已批准的实现合同。
 
@@ -47,8 +47,8 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 7. 每个 Module 注释说明功能、接口协议、延迟、吞吐、复位和数值语义；关键逻辑注释说明设计理由、位宽推导或时序取舍，不逐句翻译代码。
 8. 组合逻辑完整赋值，避免锁存器、组合环和多驱动；禁止以 `DontCare` 掩盖未实现功能。提交的模块必须具备完整可运行实现，未实现方案只放在 spec。
 9. 修改 Chisel 前读取 [.skill/chisel-design/SKILL.md](.skill/chisel-design/SKILL.md)。每个 `hw/chisel_src/<relative>.scala` 必须对应 `hw/spec/<relative>.md`，包括参数、Bundle、算术辅助和展开入口；源码与 spec 在同一 PR 更新。spec 解释架构、设计理由、位宽/二进制小数点、共享资源、接口、周期、限制和待验收内容，不能只有文件名或函数列表。
-10. 层级为SubPE_X → PEGroup_X → PE_X_gN → K_PE/MN_PE。X仅H/Q/E/HQE/QE；g4为4个PG，只有E另有g2。H/Q的PG是产品簇，不做局部对齐或和；全局PE内可流水拆分，不能强迫其恢复复用路径。HQE/QE/E本轮保留原组织。
-11. H/Q/E为half/quarter/eighth支持族，容量根据PG数派生。基础RTL名为PE_HQE_g4等六个profile，子模块SubPE_H、PEGroup_QE等；非默认对齐附参数后缀。K/MN以合计H/Q/E命名，完整有序布局仍须记录。统一输出layout不代表全局/分级RTZ有相同误差，精度与PPA比较分别保留证据。
+10. HQE/QE/E层级为SubPE_X → PEGroup_X → PE_X_gN → K_PE/MN_PE，g4为4个PG，只有E另有g2。H/Q取消SubPE/PEGroup模块，PE文件按S01–S11直接展开解包、乘法、全K对齐与累加。不得用新的Utils函数/Module重新封装整条PE数据通路。通用LZD、移位、MAX、CSA及规范化部件可复用；调用处须能直接看到位宽、连接与流水。
+11. H/Q/E为half/quarter/eighth支持族，容量根据profile的输入布局派生。基础RTL名保留PE_HQE_g4等六个profile；HQE/QE/E子模块为SubPE_HQE、PEGroup_QE等；非默认对齐附参数后缀。K/MN以合计H/Q/E命名，完整有序布局仍须记录。统一输出layout不代表全局/分级RTZ有相同误差，精度与PPA比较分别保留证据。
 
 ## 3. 面积、时序与功耗
 
