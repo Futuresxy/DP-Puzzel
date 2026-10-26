@@ -2,6 +2,8 @@
 
 当前已完成定义/论文准备，用户已授权五族六profile的基础PE迁移与H/Q专用全局对齐。详见 [设计](../hw/spec/six-pe-design.md)。HQE/QE/E保留分级组织，公共输出F和11级周期统一，K/MN总18级；AlignmentConfig暴露四个对齐参数。后续优先完成完整数值/协议回归、验证门禁和EDA；阵列仍只调研讨论。
 
+LAB1 已确定回到基础 PE（原 MidGroup）层组合，复用六种 profile，先完成 1:2:4 基线及 1:2:6、1:2:8、1:4:8 的 K/MN 比较流程。K 1:2:4 同时作为 MN 增配的共用基线，MN 只增加 E64 和 Q32E64 两种实验类型。当前不采用 PEGroup 层混合扩展，不改内部微架构；完整路线与参数构建示例见 [LAB1 实验说明](../hw/chisel_src/core/LAB1/four_ratio_design.md)。目标工艺/PVT/时钟、真实 workload 与 HiF4 规范版本仍待明确，完成 RTL 验证门禁后再进入 EDA。
+
 阵列扩展进入调研讨论阶段，见 [阵列方案](../hw/spec/array_ref/array-design-discussion.md)。用户已确认逻辑 M8N32、物理阵列参数化，以及 FP4 K64/96/128/192/256、FP8 K32/64/96/128；L0 布局、调度、累加语义和首版配置待审核，当前不编写阵列代码。
 
 指令内部的物理 tile 切分与 OS 状态机另见 [深入调研](../hw/spec/array_ref/os-array-scheduling-research.md)。当前按用户提出的原生 K 方向讨论：`K_inst=K_native(mode, config)`，单条指令仅切 M/N，软件用多条原生指令完成完整 GEMM 的 K。优先审核跨指令累加驻留位置、依赖/反馈路径、context 数量与排出结构；不再要求较小 K 单元在同一条指令内循环补足较大 K。
