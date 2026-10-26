@@ -28,4 +28,6 @@ CHISEL_FIRTOOL_PATH=/path/to/firtool-1.62.0/bin mill -i pe.runMain dp.elaborate.
 
 六个pe_*.json对应独立基础PE；k_1_2_6/k_1_2_8/k_1_4_8对应三种异构K布局；mn_q_g4展示专用Q单输出。原full_h16q32e64和full_h48q96e192文件名保留，但内容迁移为schema2的MN单HQE与K三HQE。
 
+LAB1 使用 [k_1_2_4.json](k_1_2_4.json) 作为 K/MN 共用的完整 H16Q32E64 基线，加上三种已有 K 扩展，以及仅两个 MN 补充配置 [mn_e_g4.json](mn_e_g4.json)、[mn_qe_g4.json](mn_qe_g4.json)。不重复建立单 HQE 的 MN 实验项；通用 MN_PE 能力和历史配置仍保留。配对数量、成本边界和基线生成过程见 [LAB1 实验说明](../chisel_src/core/LAB1/four_ratio_design.md)。
+
 导出为参数特化SV，修改配置必须重新生成；各export独立hash和验证。生成/有限smoke不能标记passed或进入PPA。
