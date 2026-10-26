@@ -2,6 +2,8 @@
 
 当前已完成定义/论文准备，用户已授权五族六profile的基础PE迁移与H/Q专用全局对齐。详见 [设计](../hw/spec/six-pe-design.md)。HQE/QE/E保留分级组织，公共输出F和11级周期统一，K/MN总18级；AlignmentConfig暴露四个对齐参数。后续优先完成完整数值/协议回归、验证门禁和EDA；阵列仍只调研讨论。
 
+PE代码归属已按用户补充要求重整：H/Q完整链路直接在PE文件，取消其SubPE/PG；HQE/QE/E保留分级模块，PE专属计算从Utils移回。抽样新旧RTL等价与固定周期检查见[记录](../hw/spec/pe-code-locality-checks.md)，不替代后续完整精度资格验证。
+
 阵列扩展进入调研讨论阶段，见 [阵列方案](../hw/spec/array_ref/array-design-discussion.md)。用户已确认逻辑 M8N32、物理阵列参数化，以及 FP4 K64/96/128/192/256、FP8 K32/64/96/128；L0 布局、调度、累加语义和首版配置待审核，当前不编写阵列代码。
 
 指令内部的物理 tile 切分与 OS 状态机另见 [深入调研](../hw/spec/array_ref/os-array-scheduling-research.md)。当前按用户提出的原生 K 方向讨论：`K_inst=K_native(mode, config)`，单条指令仅切 M/N，软件用多条原生指令完成完整 GEMM 的 K。优先审核跨指令累加驻留位置、依赖/反馈路径、context 数量与排出结构；不再要求较小 K 单元在同一条指令内循环补足较大 K。
@@ -38,3 +40,9 @@
 - 以独立 reference 验证 H/Q 全局 RTZ 与 HQE/QE/E 分级 RTZ，覆盖一般尾数/指数、scale、特殊值、严重抵消和参数边界，分别记录误差。
 - 完成 K/MN 的 C/D 数值与完整 batch 握手、排空、气泡和复位回归。当前[有限定向检查](../hw/spec/six-pe-checks.md)不能替代这些验收。
 - 完成 export/hash 验证门禁后，再接入挂载 EDA 的 DC 与真实负载 power；位宽、流水和后续阵列优化另列可验证合同。
+
+## 测试数据方案的分步确认
+
+2026-10-24 用户将采集改为两个模型第一层（索引 0），已完成 [AI 负载采集和数据准备](../hw/test/data/README.md)：仅用 WikiText-2 test，Qwen2.5-3B q_proj 和 Qwen1.5-MoE-A2.7B 专家 3 的 down_proj；每个来源 A[4,768] / W[16,768]，各 49,152 MAC，合计 98,304 MAC/格式。保存九种编码量化和独立 dot+C0 的 FP64 golden，来源/数据 hash 与软件检查见 [摘要](../hw/test/data/ai-first-layer-summary.json)。权重按字节读取约 57.8 MiB，完整数据保留在 `hw/test/data/artifacts/`，未执行 RTL/PPA。
+
+人工定向与固定种子随机数据的生成方案留待用户后续讨论。当前 `.mem`/manifest 已定义，golden 明确处于 PE 局部缩放域；后续优先明确 C/反馈、舍入与误差验收，然后实现文件驱动 SV testbench 和输出报告。完整 checkpoint 版本、采集池与 token/通道/K 索引已保存；数据准备的软件检查不能替代 RTL 验收。

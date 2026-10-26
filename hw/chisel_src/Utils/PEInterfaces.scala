@@ -26,7 +26,7 @@ class PEIO(wordCount: Int, groupCount: Int, resultWidth: Int) extends Bundle {
   val out_data = Valid(new PEDotResult(resultWidth))
 }
 
-/** IO-only base; each concrete family owns its PG instances and pipeline. */
+/** IO-only base; each PE owns its arithmetic/pipeline, optionally retaining PGs. */
 abstract class PEBase(val config: PEConfig, val alignment: AlignmentConfig) extends Module {
   val wordCount: Int = config.wordCount
   val groupCount: Int = config.groupCount
@@ -38,15 +38,5 @@ object PEMath {
     val out = Wire(SInt(width.W))
     out := (if (value.getWidth > width) value.asUInt(width - 1, 0).asSInt else value.pad(width))
     out
-  }
-  def placeAtAddTopExact(value: SInt, srcWidth: Int, dstWidth: Int): SInt = {
-    require(srcWidth <= dstWidth, "Exact placement must not narrow")
-    if (srcWidth == dstWidth) value else Cat(value.asUInt, 0.U((dstWidth - srcWidth).W)).asSInt
-  }
-  def localScaleIndex(groupIndex: Int, dataType: UInt, groupCount: Int): UInt = {
-    require(Set(2, 4)(groupCount) && groupIndex >= 0 && groupIndex < groupCount)
-    val width = log2Ceil(groupCount)
-    Mux(dataType === DataType.nvfp4, groupIndex.U(width.W),
-      Mux(dataType === DataType.e2_m1, (groupIndex / 2).U(width.W), 0.U(width.W)))
   }
 }

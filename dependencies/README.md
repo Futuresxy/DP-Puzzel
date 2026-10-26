@@ -11,3 +11,5 @@ CACTI 等项目作为依赖接入时，仓库只保存来源、固定版本、�
 Ascend ISA 调研使用直接克隆的官方 `cann/asc-devkit` 和官方 CANN 9.1.0 编译组件，固定来源、commit/release及校验和见 [ascend-research.json](ascend-research.json)。它们只用于外部 ISA 的源码分析与编译探针，不进入本项目 Chisel/RTL 构建或 characterization。完整第三方源码、二进制工具和编译产物分别保存在被忽略的 `.deps/`、`.cache/`。
 
 Chisel 构建使用 Maven 发布依赖，由 Mill/Coursier 获取并缓存，源码没有 vendoring：Mill 0.11.8、Scala 2.13.12、Chisel/plugin 6.4.0、os-lib 0.9.1、ujson 3.1.0，具体坐标在 [hw/build.sc](../hw/build.sc)；RTL 生成器要求 firtool 1.62.0。版本与有效工具字符串随导出 manifest 保存。本机已有缓存，不从旧工程复制构建产物或 FPU 依赖。
+
+AI 首层数据准备的模型、tokenizer 和 WikiText-2 test 固定来源统一在 [data/sources.json](../hw/test/data/sources.json)，用途、许可证和获取方式见 [数据说明](../hw/test/data/README.md)。工具使用安装的 Transformers 4.56.0 及其官方模块，Python 版本清单见 [requirements.txt](../hw/test/data/requirements.txt)；不复制第三方源码。模型元数据位于 `.deps/`，按字节读取的权重缓存、原始采集及量化产物位于被忽略的 `hw/test/data/cache/` 与 `artifacts/`。数据数值单位为各格式表示的实数，MAC 按一次乘加计数，2 OP/MAC；没有外部工具测量的 PPA 数据。

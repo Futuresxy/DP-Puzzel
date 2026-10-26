@@ -15,6 +15,6 @@ require检查范围及PE窗口能容纳最大PG载体。乘法/加法没有自�
 
 配置优先级：Parameters默认 < JSON显式字段 < CLI覆盖。导出保存完整有效JSON、命令与source hash。修改默认不会覆盖JSON里明确填写的值。RTL为elaboration后的参数特化结果；不承诺导出的SV再有可独立override的parameter，脚本改变参数后必须重新生成。
 
-`PEConfig`只接受PE_HQE_g4、PE_QE_g4、PE_H_g4、PE_Q_g4、PE_E_g4、PE_E_g2；wordCount=4*g，H/Q/E按支持族自动推导为wordCount/2wordCount/4wordCount，三模式互斥。DesignConfig.top=pe/mn/k，pe/mn布局长度1，k为1–4。保存有序layout，禁止只由总容量认定同一个实现。
+`PEConfig`只接受PE_HQE_g4、PE_QE_g4、PE_H_g4、PE_Q_g4、PE_E_g4、PE_E_g2；wordCount=4*g，H/Q/E按支持族自动推导为wordCount/2wordCount/4wordCount，三模式互斥。groupCount仍决定packed输入和scale槽布局；H/Q的g4是兼容布局名，实际没有PG/SubPE实例。DesignConfig.top=pe/mn/k，pe/mn布局长度1，k为1–4。保存有序layout，禁止只由总容量认定同一个实现。
 
 schema_version=2；top/layout必填，alignment可省略或部分填写，未知字段/非整数/重复CLI参数拒绝。无时钟或寄存器。固定格式码、bias、anchorW11、11/18级流水保持源合同；HiF4仍是待确认来源的实验编码。旧schema1不接受。

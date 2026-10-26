@@ -68,16 +68,18 @@ def inspect(export_id):
         require(match is not None, 'Unexpected PE type')
         family, count = match.group(1), int(match.group(2))
         groups = instances(pe_type, 'PEGroup_' + family)
-        require(len(groups) == count, 'PG instance count mismatch')
-        for group, _ in groups:
-            require(len(instances(group, 'SubPE_' + family)) == 4, 'SubPE count mismatch')
         if family in ('H', 'Q'):
-            require(len(instances(pe_type, 'PEGlobalAlignNormalize_' + family)) == 1, 'Missing global H/Q alignment')
-            require(not instances(pe_type, 'PEAlignNormalize'), 'H/Q still contains staged PG reduction')
+            require(not groups and not instances(pe_type, 'SubPE_'), 'H/Q must own their complete lane arithmetic')
+            require(not instances(pe_type, 'DataUnpack_'), 'H/Q decode must be visible in the PE')
         else:
-            require(len(instances(pe_type, 'PEAlignNormalize')) == 1, 'Missing preserved staged reduction')
-        total_groups += count
-        total_subs += count * 4
+            require(len(groups) == count, 'PG instance count mismatch')
+            for group, _ in groups:
+                require(len(instances(group, 'SubPE_' + family)) == 4, 'SubPE count mismatch')
+            total_groups += count
+            total_subs += count * 4
+        require(not instances(pe_type, 'PEAlignNormalize') and not instances(pe_type, 'PEGlobalAlignNormalize'),
+                'PE-specific reduction must be implemented inside the owning PE')
+        require(len(instances(pe_type, 'PENormalizeExact')) == 1, 'Missing generic two-stage normalization')
     if config['top'] == 'pe':
         port_map = ports(modules[top])
         require(port_map['io_out_data_bits_magnitude'][1] == config['alignment']['pe_align_width'] + 1,

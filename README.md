@@ -6,6 +6,8 @@
 
 **当前状态：五族六种基础PE及参数化K/MN编排。** H/Q专用路径改为16/32路统一对齐，HQE/QE/E保留分级复用；PE_E_g2/g4输出坐标对齐。详见 [六种PE设计](hw/spec/six-pe-design.md)、[配置](hw/configs/README.md) 和 [源码导航](hw/chisel_src/README.md)。编译/结构及有限定向检查不等于完整RTL精度验证；尚无PPA或ratio_dse实现。
 
+读计算代码直接从各族`PE_XXX.scala`开始：H/Q完整展开解包、乘法、全K对齐及累加；HQE/QE/E保留SubPE/PG，PE级输入分发、组间对齐/求和和流水均在各自PE文件。Utils保留通用算术/规格化及接口，不再包装整条PE规约。重构前后逐拍检查见 [记录](hw/spec/pe-code-locality-checks.md)。
+
 阵列扩展目前只做 [调研与方案讨论](hw/spec/array_ref/array-design-discussion.md)：2×2 group 组内广播/组间脉动、L0 A/B/C、逻辑 M8N32 指令及 GEMM 调度。物理阵列规模参数化；方案待用户审核，尚未新增阵列代码。
 
 进一步的 [OS 内部调度调研](hw/spec/array_ref/os-array-scheduling-research.md) 聚焦一条指令如何拆成物理 tile，比较 L0C 反馈与 group 本地累加，并给出论文、逆向研究和公开 RTL 的依据。
