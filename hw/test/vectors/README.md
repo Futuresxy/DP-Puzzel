@@ -1,6 +1,6 @@
 # 精确 golden 随机测试语料
 
-`generate_random_vectors.py` 先生成原始 A/B、scale、HiF4 group bits 和 FP32 C
+`generate_random_vectors.py` 默认生成正常范围语料；先生成原始 A/B、scale、HiF4 group bits 和 FP32 C
 编码，再由独立的 `exact_dot.py` 反量化、计算精确点积及 C，最后一次 RNE 到 FP32。
 参考计算只使用 Python 任意精度整数与二进制指数，不使用 FP64、DUT 对齐窗口或 RTL
 截断模型。普通回归只读输入与 golden。
@@ -14,9 +14,14 @@ python hw/test/vectors/generate_random_vectors.py
 ```
 
 默认 seed 为 `24301`（`0x5eed`），生成到
-`hw/test/vectors/generated/random_1600_seed24301/`。默认九种格式与33种格式/K
-组合共52800笔独立输入。每个格式/K的随机流由用户 seed、格式名称和 K
+`hw/test/vectors/generated/random_1600_normal_seed24301/`。默认九种格式与33种格式/K
+组合共52800笔独立输入。每个格式/K的随机流由scope、用户seed、格式名称和K
 稳定派生，选择格式或改变遍历顺序不会改变同一个 case。
+
+正常范围包含规格化数、非规格化数及其混合；“正常”指排除严重抵消，不表示只测试规格化编码。
+`--scope stress` 可重建原始压力语料，数据集仍名为`random_1600`，默认根目录仍为
+`generated/random_1600_seed<seed>/`。历史输入和原始失败报告保留，不能把新范围的通过追溯
+改写为旧压力语料通过。
 
 自选格式、K、seed 和新输出位置：
 
@@ -34,8 +39,8 @@ python hw/test/vectors/generate_random_vectors.py \
 
 ```sh
 python scripts/run_pe_tests.py \
-  --data-root hw/test/vectors/generated/random_1600_seed24301 \
-  --datasets random_1600
+  --data-root hw/test/vectors/generated/random_1600_normal_seed24301 \
+  --datasets random_1600_normal
 ```
 
 可追加 `--profiles k_1_2_4 --formats fp16` 缩小范围，或使用
@@ -54,21 +59,31 @@ native K；仿真入口仅选取该 PE/格式支持的 K。
 normal×subnormal、subnormal×normal、subnormal×subnormal、逐元素混合、
 normal×normal scale 边界、逐元素混合且 scale 跨度较大。
 
-有限编码内直接随机选择符号、指数、尾数和独立 A/B 块 scale。局部指数与常用 scale
-样本保证普通有限计算占主体；全指数、极端 scale 和跨度样本保留输出溢出/下溢，
-不根据 DUT 结果或抵消程度筛选。BF16 的极小乘积可能最终下溢为零，case.json
+有限编码内随机选择幅值编码和独立 A/B 块scale。正常范围约束每个packed word、
+四word分组、十六word分组、完整点积以及全部乘积加C满足：
+
+```text
+4 * abs(sum(terms)) >= sum(abs(terms))
+```
+
+即抵消系数不超过4；全零输入的绝对值和为0时不构成病态抵消。`normal_scope.py`
+从随机同号产品开始，随机尝试word、PG和单元素翻转，只有仍满足输入数学约束的符号组合
+才保留。A符号仍随机，B符号与A及约束关联，所以这不是无条件独立随机bit采样。
+规则不读取RTL输出、不使用对齐窗口模型或失败事务编号。局部指数、全指数、极端scale
+及跨度样本继续覆盖合法数值范围与输出溢出/下溢。BF16 的极小乘积可能最终下溢为零，case.json
 逐段记录输出分类，不能把这类样本等同于有效非零结果的精度覆盖。
 
-512笔 C 测试分为八类，每类64笔：C=0、与点积同量级同号、同量级异号、精确抵消、
-近抵消、明显主导、明显较小、FP32 subnormal C。普通 C 样本使用中等指数的随机
-normal A/B，并关联符号使点积非零，便于明确 C 相对点积的量级。精确抵消用成对
-产品抵消后保留一个产品，保证其相反数可表示为 FP32 C；近抵消把这个 C 改为相邻
-FP32 值。该构造不假设任意精确点积都能直接存入 FP32 C。
+512笔 C 测试分为八类，每类64笔：C=0、同量级同号、同量级异号、同号较小、同号较大、
+明显主导、明显较小、FP32 subnormal C。普通C样本使用中等指数的随机normal A/B，
+并关联符号使产品同号、点积非零。异号C的绝对值为点积的1/4至1/2，避免接近-dot；
+另外两个同号分层分别为点积的1/4至1/2、2至4倍。原来刻意构造的精确抵消和近抵消
+残差样本仅在`--scope stress`中生成，不再进入默认正常语料。
 
-64笔由16种定向语义各配四个注入位置组成，包含 A/B 零、负零、抵消、C quiet/signaling
+64笔由16种定向语义各配四个注入位置组成，包含 A/B 零、负零、同幅值单位项零和、C quiet/signaling
 NaN、C ±Inf，以及该格式实际支持的元素/scale 特殊值与边界。位置包括首端、中间、
 末端和块边界；小 K 下允许位置重合。无 Inf/NaN 元素编码的格式通过合法 scale NaN
 及 C 测试特殊语义，不制造不存在的编码。
+同幅值单位项/C的精确零和仅检查零语义，不含被大项遮蔽的小残差，作为64笔定向检查的明确例外保留。
 
 ## 格式与 K
 
@@ -98,7 +113,7 @@ K96等尾部不足64元素的块仍具有独立主scale；逻辑lane索引决定
 ```text
 <output-root>/
 ├── index.json
-└── <format>/K<k>/random_1600/
+└── <format>/K<k>/random_1600_normal/
     ├── inputs.txt
     ├── golden.txt
     └── case.json
@@ -113,6 +128,8 @@ case.json 的模型标识为 `integer_dyadic_dot_plus_c_rne_fp32_v1`，保存三
 每笔场景、逐段分类/scale编码覆盖，以及精确参考的`coefficient/exponent/special`。
 有限值代表`coefficient * 2^exponent`，系数保存为十进制字符串。输入校验器从TXT
 重新精确计算，并同时核对这些记录及FP32 golden。
+正常语料另记录`sampling_scope=normal`与版本化`normal_scope_contract`；校验器还会从
+TXT重新检查每笔普通输入满足范围条件。压力语料的目录名为`random_1600`，保留旧元数据语义。
 
 NaN优先传播；0×Inf与相反符号Inf相加产生NaN；NaN输出固定为`7fc00000`。
 Inf保持符号。与DP公共合同一致，精确全零/抵消结果为+0；负的非零精确值下溢时保留-0。
@@ -123,7 +140,7 @@ NaN/Inf始终严格核对编码，64条定向测试也严格核对零符号。�
 `abs(RTL-exact)/ulp32(exact)`形式的实数ULP误差。bit-exact比例仅作统计，
 不设置90%门槛。旧 `correct_961` 的历史比较策略保持其原语义。
 
-## 验证与首轮结果
+## 正常范围验证结果
 
 ```sh
 python -B -m unittest discover -s hw/test/tests -p test_exact_vectors.py -v
@@ -131,13 +148,23 @@ python -B -m unittest discover -s hw/test/tests -p test_exact_vectors.py -v
 
 测试包括独立Fraction/FP32邻值搜索对RNE的交叉核验、完整FP16有限编码、FP4/6/8码本、
 HiF4分组、NaN/Inf传播、舍入边界、数据篡改拒绝与≤2门槛的包含性。
+正常范围测试还检查严重抵消输入拒绝、范围合同不可静默放宽、正负产品混合，以及精确golden
+正确但输入越界时仍被拒绝。当前工作区34项软件测试通过。
+
+seed24301的正常范围结果见[摘要](../regressions/normal-random-1600-summary.json)与
+[分类分析](../regressions/normal-random-1600-analysis.json)：46个PE/格式组合、73600个DUT
+输出全部通过，最大FP32编码距离1，2944笔定向输出全部bit-exact，全部周期协议检查通过。
+该结论仅适用于上述抵消系数≤4的输入范围、所列配置和seed，不代表无条件随机输入验收，
+也不改变现有有限窗口对严重抵消的数值限制，不启用PPA。
+
+## 历史压力语料结果
 
 seed24301的首轮连续输入结果见
 [摘要](../regressions/exact-random-1600-summary.json) 与
 [分类分析](../regressions/exact-random-1600-analysis.json)：
 46个PE/格式组合共73600个DUT输出，22个组合通过、24个组合数值未通过；
 全部周期协议检查通过，全部2944个定向测试输出bit-exact。
-失败集中于C抵消/近抵消与部分跨指数/scale样本，未调整语料或门槛来规避失败。
+失败集中于C抵消/近抵消与部分跨指数/scale样本，该历史报告保留原始输入与原验收门槛。
 失败的68个独立输入用Fraction反量化/点积与独立FP32邻值搜索交叉检查，golden无差异。
 这些结果尚未定位全部RTL误差根因，不构成所有参数/格式的完整验收，也不启用PPA。
 

@@ -69,6 +69,8 @@ def main():
          'datasets':a.datasets,'formats':a.formats,'scope':'listed fixed data only; not full precision/PPA signoff',
          'results_directory':run.relative_to(ROOT).as_posix(),'cases':[],'groups':[],
          'tools':{},'ppa_eligible':False}
+ if index.get('sampling_scope')=='normal':
+  report.update(sampling_scope='normal',normal_scope_contract=index['normal_scope_contract'])
  for tool in ['iverilog','vvp']:
   result=subprocess.run([tool,'-V'],text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
   report['tools'][tool]=result.stdout.splitlines()[0]
@@ -112,6 +114,8 @@ def main():
             'input':(case/'inputs.txt').relative_to(ROOT).as_posix(),
             'golden':(case/'golden.txt').relative_to(ROOT).as_posix(),'transactions':meta['txn_count'],
             'protocol_passed':ok,'passed':False,'reasons':[]}
+    if meta.get('sampling_scope')=='normal':
+     result['sampling_scope']='normal'
     if ok:
      verify_trace(out,meta['txn_count'],schedule)
      if meta.get('kind')=='random_exact_1600':
