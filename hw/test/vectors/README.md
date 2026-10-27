@@ -140,3 +140,19 @@ seed24301的首轮连续输入结果见
 失败集中于C抵消/近抵消与部分跨指数/scale样本，未调整语料或门槛来规避失败。
 失败的68个独立输入用Fraction反量化/点积与独立FP32邻值搜索交叉检查，golden无差异。
 这些结果尚未定位全部RTL误差根因，不构成所有参数/格式的完整验收，也不启用PPA。
+
+## K124失败样本的逐级定位
+
+只读诊断入口：`python -B scripts/diagnose_pe_precision.py --output hw/test/runs/k124-diagnosis-new`。
+输出目录必须不存在。脚本读取显式source run及其中的RTL_ID，用同一个固定TB重放，
+额外的SV层次监视器只记录SubPE、PG、PE、C及末端对齐/舍入边界，不修改设计RTL。
+
+[定位摘要](../regressions/k124-precision-diagnosis.json)覆盖K124的54笔数值失败与对照，
+共148笔重放。FP16/BF16的42笔及MXFP8 E4M3的2笔首先在PG局部对齐丢位；
+MXFP8的另6笔首先在SubPE双lane对齐丢位，后续PG也可能继续引入主要误差；
+MXFP4的4笔在PE跨PG对齐丢失小项。全部被观察的RTZ操作与末端RNE均符合当前算术公式，
+这不意味着满足精确点积参考的≤2编码距离要求。
+
+对45笔输入去掉精确相互抵消项、保持精确点积和C不变后，全部恢复bit-exact。
+逐级数值、移位坐标、原始输入、golden及对照记录保存在摘要指向的diagnostic run中。
+这些是对当前失败输入的根因证据；未修改RTL或放宽验收阈值。
