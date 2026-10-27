@@ -19,6 +19,8 @@ from exact_dot import (FORMATS, FP32, NAN, ONE, ZERO, Dyadic, Operand,
                        round_fp32, serialize, shape)
 from generate_random_vectors import (AB_SCENARIOS, C_SCENARIOS, DATASET,
                                      generate, unit_operand)
+from generate_random_vectors import NORMAL_C_SCENARIOS
+from normal_scope import NORMAL_CONTRACT,NORMAL_DATASET,condition_product_signs,normal_scope_violations
 from pe_vectors import validate_case
 from fp32_compare import compare_random_case
 
@@ -156,7 +158,7 @@ class GeneratedCorpusTests(unittest.TestCase):
     def setUpClass(cls):
         cls.temporary = tempfile.TemporaryDirectory()
         cls.root = Path(cls.temporary.name) / 'corpus'
-        cls.index = generate(cls.root, list(FORMATS), [32], seed=24301)
+        cls.index = generate(cls.root, list(FORMATS), [32], seed=24301, scope='stress')
 
     @classmethod
     def tearDownClass(cls):
@@ -185,7 +187,7 @@ class GeneratedCorpusTests(unittest.TestCase):
 
     def test_seed_selection_stability_and_no_overwrite(self):
         other = Path(self.temporary.name) / 'other'
-        generate(other, ['hif4'], [32], seed=24301)
+        generate(other, ['hif4'], [32], seed=24301, scope='stress')
         for filename in ('inputs.txt','golden.txt','case.json'):
             self.assertEqual((self.case('hif4')/filename).read_bytes(),
                              (other/'hif4/K32'/DATASET/filename).read_bytes())
@@ -229,6 +231,85 @@ class GeneratedCorpusTests(unittest.TestCase):
             self.assertTrue(compare_random_case(actual,golden,segments,root)['passed'])
             actual.write_text('00000001\n'*4+'7fc00001\n')
             self.assertFalse(compare_random_case(actual,golden,segments,root)['passed'])
+
+
+class NormalScopeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.temporary=tempfile.TemporaryDirectory()
+        cls.root=Path(cls.temporary.name)/'normal'
+        cls.index=generate(cls.root,list(FORMATS),[32],seed=24301)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.temporary.cleanup()
+
+    def test_default_nine_formats_obey_normal_scope_and_keep_1600_rows(self):
+        self.assertEqual(self.index['sampling_scope'],'normal')
+        self.assertEqual(self.index['normal_scope_contract'],NORMAL_CONTRACT)
+        for name in FORMATS:
+            meta=validate_case(self.root/name/'K32'/NORMAL_DATASET)
+            labels=meta['scenario_by_transaction']
+            self.assertEqual(meta['txn_count'],1600)
+            self.assertEqual(Counter(labels[1088:]),{s:64 for s in NORMAL_C_SCENARIOS})
+            self.assertFalse(any('near_cancellation' in x or 'exact_cancellation' in x for x in labels))
+            self.assertEqual(meta['normal_scope_contract'],NORMAL_CONTRACT)
+
+    def test_scope_rejects_large_cancelling_terms_and_small_residual(self):
+        a,b=unit_operand('fp16',16),unit_operand('fp16',16)
+        a.codes=[0]*16;b.codes=[0]*16
+        a.codes[:4]=[0x7400,0xf400,0x3c00,0x3c00]  # +16384,-16384,+1,+1
+        b.codes[:4]=[0x3c00]*4
+        self.assertIn('products[0:4]',normal_scope_violations('fp16',a,b))
+        before=[abs(rational(x)) for x in dequantize('fp16',b)]
+        condition_product_signs('fp16',a,b,random.Random(77))
+        self.assertFalse(normal_scope_violations('fp16',a,b))
+        self.assertEqual(before,[abs(rational(x)) for x in dequantize('fp16',b)])
+
+    def test_scope_checks_C_without_looking_at_RTL(self):
+        a,b=unit_operand('fp16',16),unit_operand('fp16',16)
+        self.assertIn('products+C',normal_scope_violations('fp16',a,b,0xc1800000)) # C=-16
+        self.assertFalse(normal_scope_violations('fp16',a,b,0xc1000000)) # C=-8
+
+    def test_mixed_signs_and_seed_selection_stability(self):
+        case=self.root/'fp16/K32'/NORMAL_DATASET
+        rows=(case/'inputs.txt').read_text().splitlines()[2:1026]
+        mixed=0
+        for row in rows:
+            values=[int(x,16) for x in row.split()]
+            signs={(a>>15)^(b>>15) for a,b in zip(values[2:34],values[34:66])}
+            mixed+=len(signs)==2
+        self.assertGreater(mixed,0)
+        other=Path(self.temporary.name)/'selected'
+        generate(other,['fp16'],[32],seed=24301)
+        for filename in ('inputs.txt','golden.txt','case.json'):
+            self.assertEqual((case/filename).read_bytes(),(other/'fp16/K32'/NORMAL_DATASET/filename).read_bytes())
+
+    def test_scope_contract_cannot_be_silently_weakened(self):
+        target=Path(self.temporary.name)/'tampered_scope'
+        shutil.copytree(self.root/'fp16/K32'/NORMAL_DATASET,target)
+        path=target/'case.json';meta=json.loads(path.read_text())
+        meta['normal_scope_contract']['maximum_cancellation_factor']=1000000
+        path.write_text(json.dumps(meta))
+        with self.assertRaises(ValueError):
+            validate_case(target)
+
+    def test_exact_golden_does_not_allow_an_out_of_scope_input(self):
+        target=Path(self.temporary.name)/'consistent_but_ill_conditioned'
+        shutil.copytree(self.root/'fp16/K32'/NORMAL_DATASET,target)
+        path=target/'inputs.txt';lines=path.read_text().splitlines()
+        tokens=lines[2].split()
+        a=[0x7400,0xf400,0x3c00,0x3c00]+[0]*28
+        b=[0x3c00]*4+[0]*28
+        tokens[1]='00000000'
+        tokens[2:66]=[f'{x:04x}' for x in a+b]
+        lines[2]=' '.join(tokens);path.write_text('\n'.join(lines)+'\n')
+        path=target/'golden.txt';goldens=path.read_text().splitlines()
+        goldens[0]='40000000';path.write_text('\n'.join(goldens)+'\n')
+        path=target/'case.json';meta=json.loads(path.read_text())
+        meta['exact_results'][0]=serialize(finite(2));path.write_text(json.dumps(meta))
+        with self.assertRaisesRegex(ValueError,'normal cancellation scope'):
+            validate_case(target)
 
 
 if __name__ == '__main__':

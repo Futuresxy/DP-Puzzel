@@ -1,0 +1,90 @@
+{
+  "run_id": "pe-normal-random-1600-seed24301",
+  "seed": 24301,
+  "sampling_scope": "normal",
+  "normal_scope_contract": {
+    "version": "bounded_cancellation_v1",
+    "maximum_cancellation_factor": 4,
+    "rule": "4*abs(sum(terms)) >= sum(abs(terms))",
+    "regions": "packed word; four words; sixteen words; full dot; all products plus C",
+    "applies_to": [
+      "ab_scale_random",
+      "c_stratified_random"
+    ],
+    "special_exception": "64 directed encoding tests, including homogeneous unit zero sums",
+    "sign_sampling": "random feasible word/PG/lane sign flips from coherent product signs",
+    "uses_rtl_outputs": false
+  },
+  "unique_format_k_groups": 33,
+  "unique_input_transactions": 52800,
+  "dut_profile_format_groups": 46,
+  "dut_outputs": 73600,
+  "passed_groups": 46,
+  "failed_groups": 0,
+  "protocol_passed_groups": 46,
+  "directed_bit_exact_outputs": 2944,
+  "max_fp32_steps": 1,
+  "by_format": {
+    "bf16": {
+      "groups": 4,
+      "passed_groups": 4,
+      "max_ulp": 1
+    },
+    "fp16": {
+      "groups": 4,
+      "passed_groups": 4,
+      "max_ulp": 1
+    },
+    "mxfp8_e5m2": {
+      "groups": 5,
+      "passed_groups": 5,
+      "max_ulp": 1
+    },
+    "mxfp8_e4m3": {
+      "groups": 5,
+      "passed_groups": 5,
+      "max_ulp": 1
+    },
+    "mxfp6_e3m2": {
+      "groups": 5,
+      "passed_groups": 5,
+      "max_ulp": 1
+    },
+    "mxfp6_e2m3": {
+      "groups": 5,
+      "passed_groups": 5,
+      "max_ulp": 1
+    },
+    "mxfp4_e2m1": {
+      "groups": 6,
+      "passed_groups": 6,
+      "max_ulp": 1
+    },
+    "nvfp4": {
+      "groups": 6,
+      "passed_groups": 6,
+      "max_ulp": 1
+    },
+    "hif4": {
+      "groups": 6,
+      "passed_groups": 6,
+      "max_ulp": 1
+    }
+  },
+  "software_tests_passed": 34,
+  "historical_stress_counterexamples": {
+    "distinct_failed_inputs": 68,
+    "outside_declared_normal_scope": 68,
+    "historical_inputs_and_results_retained": true,
+    "sampling_does_not_use_failed_transaction_ids": true
+  },
+  "stress_compatibility_check": "FP16/BF16 K16 seed24301 input/golden/metadata reproduced byte-for-byte",
+  "results_directory": "hw/test/runs/pe-normal-random-1600-seed24301",
+  "scope": "bounded-cancellation input scope only; not unconditioned random/signoff/PPA",
+  "commands": {
+    "generate": "python -B hw/test/vectors/generate_random_vectors.py",
+    "tests": "python -B -m unittest discover -s hw/test/tests -v",
+    "regression": "python -B scripts/run_pe_tests.py --data-root hw/test/vectors/generated/random_1600_normal_seed24301 --datasets random_1600_normal --run-id pe-normal-random-1600-seed24301 --summary hw/test/regressions/normal-random-1600-summary.json"
+  },
+  "scope_change_reason": "User-requested exclusion of ill-conditioned cancellation after the historical stress-run diagnosis; new results are conditional on the stated scope."
+}

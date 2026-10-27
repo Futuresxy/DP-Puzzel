@@ -88,9 +88,16 @@ def validate_case(directory):
  if exact:
   sys.path.insert(0,str(ROOT/'hw/test/vectors'))
   from exact_dot import FP32,Operand,decode_binary,dot_product,exact_sum,round_fp32,serialize
+  from normal_scope import NORMAL_CONTRACT,NORMAL_DATASET,normal_scope_violations
+  sampling_scope=m.get('sampling_scope','stress')
+  if sampling_scope not in ('normal','stress'):
+   raise ValueError('unknown exact random sampling scope')
+  if sampling_scope=='normal' and m.get('normal_scope_contract')!=NORMAL_CONTRACT:
+   raise ValueError('unrecognized normal input scope contract')
+  expected_dataset=NORMAL_DATASET if sampling_scope=='normal' else 'random_1600'
   expected_segments=[('ab_scale_random',1024,True,False),('special_directed',64,False,True),
                      ('c_stratified_random',512,True,False)]
-  if (m.get('kind')!='random_exact_1600' or m['dataset']!='random_1600' or n!=1600
+  if (m.get('kind')!='random_exact_1600' or m['dataset']!=expected_dataset or n!=1600
       or m.get('precision_txn_count')!=1536 or len(m.get('segments',[]))!=3
       or len(m.get('exact_results',[]))!=n or len(m.get('scenario_by_transaction',[]))!=n):
    raise ValueError('invalid exact random corpus identity/count')
@@ -128,6 +135,8 @@ def validate_case(directory):
     reference=exact_sum((dot_product(m['format'],a,b),decode_binary(FP32,vals[1])))
     if count>=n or serialize(reference)!=m['exact_results'][count] or round_fp32(reference)!=goldens[count]:
      raise ValueError('exact reference/golden does not match input encodings')
+    if sampling_scope=='normal' and not 1024<=count<1088 and normal_scope_violations(m['format'],a,b,vals[1]):
+     raise ValueError('ordinary input violates the declared normal cancellation scope')
    count+=1
   if count!=n: raise ValueError(f'{directory}: missing/extra transactions {count}/{n}')
  return m

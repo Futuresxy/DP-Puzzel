@@ -11,6 +11,7 @@ import tempfile
 from exact_dot import (FORMATS, FP32, GOLDEN_MODEL, SCALE_TYPES, Operand,
                        decode_binary, dot_product, exact_sum, finite, fp32_class,
                        round_fp32, serialize, shape)
+from normal_scope import NORMAL_CONTRACT,NORMAL_DATASET,condition_product_signs,normal_scope_violations
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -24,6 +25,10 @@ C_SCENARIOS = (
     "c_zero", "c_comparable_same_sign", "c_comparable_opposite_sign",
     "c_exact_cancellation", "c_near_cancellation", "c_dominant", "c_tiny",
     "c_subnormal",
+)
+NORMAL_C_SCENARIOS = (
+    "c_zero", "c_comparable_same_sign", "c_comparable_opposite_sign",
+    "c_same_sign_half", "c_same_sign_double", "c_dominant", "c_tiny", "c_subnormal",
 )
 SEGMENTS = (
     ("ab_scale_random", 1024, True, False),
@@ -173,6 +178,49 @@ def c_cases(name, k, rng):
             yield a, b, c, scenario
 
 
+def normal_ab_cases(name,k,rng):
+    for a,b,c,label in ab_cases(name,k,rng):
+        condition_product_signs(name,a,b,rng)
+        yield a,b,c,label
+
+
+def normal_c_cases(name,k,rng):
+    for scenario in NORMAL_C_SCENARIOS:
+        for _ in range(64):
+            a,b = coherent_operands(name,k,rng)
+            dot = dot_product(name,a,b)
+            sign = -1 if dot.coefficient<0 else 1
+            exponent = abs(dot.coefficient).bit_length()-1+dot.exponent
+            if scenario=='c_zero':
+                c = 0
+            elif scenario=='c_subnormal':
+                c = (rng.getrandbits(1)<<31) | rng.randint(1,0x7fffff)
+            elif scenario in ('c_comparable_opposite_sign','c_same_sign_half','c_same_sign_double'):
+                # Small ratios are in [1/4,1/2); large ratios are in [2,4).
+                # The opposite-sign stratum stays comfortably away from C=-dot.
+                factor = finite(rng.randint(1<<22,(1<<23)-1),-24)
+                target = finite(dot.coefficient*factor.coefficient,dot.exponent+factor.exponent)
+                if scenario=='c_same_sign_double':
+                    target = finite(target.coefficient,target.exponent+3)
+                elif scenario=='c_comparable_opposite_sign':
+                    target = -target
+                c = round_fp32(target)
+            else:
+                shift = 40 if scenario=='c_dominant' else -40 if scenario=='c_tiny' else 0
+                c = round_fp32(finite(sign*rng.randrange(1<<23,1<<24),exponent+shift-23))
+            if normal_scope_violations(name,a,b,c):
+                raise ValueError('C stratum violated the declared normal input scope')
+            yield a,b,c,scenario
+
+
+def normal_special_cases(name,k):
+    for a,b,c,label in special_cases(name,k):
+        # Homogeneous unit cancellations check zero encoding, without a small
+        # residual hidden behind large cancelling terms.
+        label = label.replace('dot_cancellation','unit_zero_sum').replace('cancel_with_c','unit_dot_plus_c_zero')
+        yield a,b,c,label
+
+
 def special_cases(name, k):
     fmt = FORMATS[name]
     common = ("a_zero", "b_zero", "negative_zeros", "dot_cancellation",
@@ -259,20 +307,22 @@ def element_class(name, raw):
     return "subnormal" if ((raw >> fmt.frac_bits) & ((1 << fmt.exp_bits) - 1)) == 0 and raw & ((1 << fmt.frac_bits) - 1) else "normal"
 
 
-def write_case(root, name, k, seed):
+def write_case(root, name, k, seed, scope="normal"):
     # Seed identity is stable across format selection, K selection and loop order.
-    derived = int.from_bytes(hashlib.sha256(f"dp-exact-v1:{seed}:{name}:K{k}".encode()).digest(), "big")
+    identity = f"dp-exact-v1:{seed}:{name}:K{k}" if scope=="stress" else f"dp-exact-normal-v2:{seed}:{name}:K{k}"
+    derived = int.from_bytes(hashlib.sha256(identity.encode()).digest(), "big")
     rng = random.Random(derived)
     fmt = FORMATS[name]
     ns, ng0, ng1 = shape(name, k)
-    directory = root / name / f"K{k}" / DATASET
+    dataset = DATASET if scope=="stress" else NORMAL_DATASET
+    directory = root / name / f"K{k}" / dataset
     directory.mkdir(parents=True)
     segments, offset = [], 0
     for label, count, precision, exact in SEGMENTS:
         segments.append(dict(dataset=label, start=offset, stop=offset + count, count=count,
                              include_in_precision_rate=precision, require_bit_exact=exact))
         offset += count
-    meta = dict(schema_version="dp_pe_vectors_v2", format=name, dataset=DATASET,
+    meta = dict(schema_version="dp_pe_vectors_v2", format=name, dataset=dataset,
                 kind="random_exact_1600", txn_count=1600, logical_k=k,
                 a_data_type=fmt.dtype, b_data_type=fmt.dtype,
                 a_sf_type=SCALE_TYPES[fmt.scale_kind], b_sf_type=SCALE_TYPES[fmt.scale_kind],
@@ -286,10 +336,16 @@ def write_case(root, name, k, seed):
                                   c_fixture="coherent product signs; paired cancellation retains one product"),
                 zero_policy="exact zero/cancellation -> +0; negative nonzero underflow -> -0",
                 nan_policy="all NaNs -> canonical quiet FP32 7fc00000")
+    if scope=="normal":
+        meta.update(sampling_scope="normal",normal_scope_contract=NORMAL_CONTRACT)
+        meta['distribution'].update(kind="raw_encoding_stratified_normal_v2",
+                                    product_sign_sampling=NORMAL_CONTRACT['sign_sampling'],
+                                    c_fixture="coherent random normal products; no engineered small cancellation residuals")
     header = [1600, k, fmt.dtype, fmt.dtype, SCALE_TYPES[fmt.scale_kind], SCALE_TYPES[fmt.scale_kind],
               0, 0, 0, ns, ns, ng0, ng1]
     labels, coverage, exact_results = [], [], []
-    streams = (ab_cases(name, k, rng), special_cases(name, k), c_cases(name, k, rng))
+    streams = ((ab_cases(name,k,rng),special_cases(name,k),c_cases(name,k,rng)) if scope=="stress" else
+               (normal_ab_cases(name,k,rng),normal_special_cases(name,k),normal_c_cases(name,k,rng)))
     with (directory / "inputs.txt").open("w") as inputs, (directory / "golden.txt").open("w") as golden:
         inputs.write("PE_VECTORS_V2\n" + " ".join(map(str, header)) + "\n")
         txn = 0
@@ -320,7 +376,7 @@ def write_case(root, name, k, seed):
                                  b_scale_codes={f"{v:02x}": n for v, n in sorted(b_scales.items())}))
     meta.update(scenario_by_transaction=labels, coverage=coverage, exact_results=exact_results)
     (directory / "case.json").write_text(json.dumps(meta, indent=2) + "\n")
-    return dict(format=name, k=k, dataset=DATASET, transactions=1600,
+    return dict(format=name, k=k, dataset=dataset, transactions=1600,
                 path=directory.relative_to(root).as_posix(), kind=meta["kind"])
 
 
@@ -330,7 +386,9 @@ def default_ks(name):
     return (32, 64, 96, 128) if FORMATS[name].bits in (6, 8) else (64, 96, 128, 192, 256)
 
 
-def generate(output, names, ks=None, seed=0x5EED):
+def generate(output, names, ks=None, seed=0x5EED, scope="normal"):
+    if scope not in ("normal","stress"):
+        raise ValueError("Unknown sampling scope")
     groups = [(name, k) for name in names for k in (ks if ks is not None else default_ks(name))]
     if not groups or len(groups) != len(set(groups)):
         raise ValueError("Empty or duplicate format/K selection")
@@ -343,11 +401,15 @@ def generate(output, names, ks=None, seed=0x5EED):
     with tempfile.TemporaryDirectory(prefix=".exact-vectors-", dir=output.parent) as temporary:
         staging = Path(temporary) / "corpus"
         staging.mkdir()
-        entries = [write_case(staging, name, k, seed) for name, k in groups]
+        entries = [write_case(staging, name, k, seed, scope) for name, k in groups]
         index = dict(schema_version="dp_pe_exact_corpus_v1", source_project="DP-Puzzel",
                      generator="hw/test/vectors/generate_random_vectors.py", generator_version=1,
-                     golden_model=GOLDEN_MODEL, seed=seed, default_precision_dataset=DATASET,
+                     golden_model=GOLDEN_MODEL, seed=seed,
+                     default_precision_dataset=DATASET if scope=="stress" else NORMAL_DATASET,
                      format_k_groups=len(entries), case_count=len(entries), cases=entries)
+        if scope=="normal":
+            index.update(schema_version="dp_pe_exact_corpus_normal_v2",generator_version=2,
+                         sampling_scope="normal",normal_scope_contract=NORMAL_CONTRACT)
         (staging / "index.json").write_text(json.dumps(index, indent=2) + "\n")
         staging.rename(output)
     return index
@@ -358,11 +420,14 @@ def main():
     parser.add_argument("--formats", "--format", nargs="+", choices=tuple(FORMATS), default=list(FORMATS))
     parser.add_argument("--k", nargs="+", type=int, help="logical K values; defaults follow each precision family")
     parser.add_argument("--seed", type=lambda s: int(s, 0), default=0x5EED)
+    parser.add_argument("--scope", choices=("normal","stress"), default="normal",
+                        help="normal excludes ill-conditioned cancellation; stress replays the original full suite")
     parser.add_argument("--output-root", type=Path)
     args = parser.parse_args()
-    output = args.output_root or ROOT / "hw/test/vectors/generated" / f"random_1600_seed{args.seed}"
+    dataset = DATASET if args.scope=="stress" else NORMAL_DATASET
+    output = args.output_root or ROOT / "hw/test/vectors/generated" / f"{dataset}_seed{args.seed}"
     try:
-        index = generate(output, args.formats, args.k, args.seed)
+        index = generate(output, args.formats, args.k, args.seed, args.scope)
     except (ValueError, OSError) as error:
         parser.exit(1, f"Generation rejected: {error}\n")
     print(json.dumps(dict(output_root=str(output.resolve()), cases=index["case_count"],
