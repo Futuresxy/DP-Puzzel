@@ -1,0 +1,102 @@
+{
+  "run_id": "pe-exact-random-1600-seed24301-final",
+  "seed": 24301,
+  "unique_format_k_groups": 33,
+  "unique_input_transactions": 52800,
+  "dut_profile_format_groups": 46,
+  "dut_outputs": 73600,
+  "passed_groups": 22,
+  "failed_groups": 24,
+  "protocol_passed_groups": 46,
+  "acceptance_policy": "fp32_steps_le2_special_exact_v1",
+  "by_format": {
+    "fp16": {
+      "passed": 0,
+      "failed": 4,
+      "failed_transactions": 136
+    },
+    "bf16": {
+      "passed": 0,
+      "failed": 4,
+      "failed_transactions": 32
+    },
+    "mxfp8_e4m3": {
+      "passed": 0,
+      "failed": 5,
+      "failed_transactions": 30
+    },
+    "mxfp8_e5m2": {
+      "passed": 0,
+      "failed": 5,
+      "failed_transactions": 13
+    },
+    "mxfp6_e3m2": {
+      "passed": 5,
+      "failed": 0,
+      "failed_transactions": 0
+    },
+    "mxfp6_e2m3": {
+      "passed": 5,
+      "failed": 0,
+      "failed_transactions": 0
+    },
+    "mxfp4_e2m1": {
+      "passed": 0,
+      "failed": 6,
+      "failed_transactions": 16
+    },
+    "nvfp4": {
+      "passed": 6,
+      "failed": 0,
+      "failed_transactions": 0
+    },
+    "hif4": {
+      "passed": 6,
+      "failed": 0,
+      "failed_transactions": 0
+    }
+  },
+  "segments": {
+    "ab_scale_random": {
+      "outputs": 47104,
+      "failed_outputs": 40
+    },
+    "special_directed": {
+      "outputs": 2944,
+      "failed_outputs": 0
+    },
+    "c_stratified_random": {
+      "outputs": 23552,
+      "failed_outputs": 187
+    }
+  },
+  "failed_scenarios": {
+    "c_comparable_opposite_sign": 20,
+    "c_exact_cancellation": 80,
+    "c_near_cancellation": 87,
+    "mixed_local": 5,
+    "normal_normal_scale_edges": 4,
+    "mixed_scale_spread": 16,
+    "normal_subnormal": 3,
+    "subnormal_subnormal": 11,
+    "normal_normal_full": 1
+  },
+  "independent_fraction_audit": {
+    "unique_failed_inputs_checked": 68,
+    "golden_mismatches": 0,
+    "method": "Fraction dequantization/dot and binary search of FP32 rational neighbors",
+    "command": "python -B hw/test/runs/pe-exact-random-1600-seed24301-final/audit_golden.py",
+    "result": "hw/test/runs/pe-exact-random-1600-seed24301-final/fraction-audit.json"
+  },
+  "scope": "specified RTL_IDs/data/seed only; RTL numerical failures retained; no PPA",
+  "results_directory": "hw/test/runs/pe-exact-random-1600-seed24301-final",
+  "commands": {
+    "generate": "python -B hw/test/vectors/generate_random_vectors.py",
+    "regression": "python -B scripts/run_pe_tests.py --data-root hw/test/vectors/generated/random_1600_seed24301 --datasets random_1600 --run-id pe-exact-random-1600-seed24301-final --summary hw/test/regressions/exact-random-1600-summary.json",
+    "unit_tests": "python -B -m unittest discover -s hw/test/tests -v"
+  },
+  "unit_tests": {
+    "workspace_tests_passed": 28,
+    "new_tests_passed_in_clean_staged_tree": 10
+  }
+}

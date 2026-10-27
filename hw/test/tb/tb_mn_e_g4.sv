@@ -1,0 +1,138 @@
+// Fixed, reviewable DUT instance for mn_e_g4. Shared tasks do not generate wiring.
+`timescale 1ns/1ps
+`ifndef DUT_MODULE
+`define DUT_MODULE MN_PE_H0Q0E64
+`endif
+module tb_mn_e_g4;
+  localparam integer WORD_COUNT=16;
+  localparam integer MID_COUNT=1;
+  `include "pe_tb_signals.svh"
+  function automatic integer mid_words(input integer index);
+    case(index)
+      0: mid_words=16;
+      default: mid_words=0;
+    endcase
+  endfunction
+  function automatic integer mid_kind(input integer index);
+    case(index)
+      0: mid_kind=2;
+      default: mid_kind=0;
+    endcase
+  endfunction
+  `DUT_MODULE dut (
+    .clock(clock),
+    .reset(reset),
+    .io_in_cfg_ready(cfg_ready),
+    .io_in_cfg_valid(cfg_valid),
+    .io_in_cfg_bits_data_type(a_dtype),
+    .io_in_cfg_bits_b_data_type(b_dtype),
+    .io_in_cfg_bits_sf_type(a_sf_type),
+    .io_in_cfg_bits_b_sf_type(b_sf_type),
+    .io_in_cfg_bits_c_type(c_type),
+    .io_in_cfg_bits_rm(rm),
+    .io_in_cfg_bits_out_type(out_type),
+    .io_in_ab_ready(ab_ready),
+    .io_in_ab_valid(ab_valid),
+    .io_in_ab_bits_a_data_0(a_words[0]),
+    .io_in_ab_bits_a_data_1(a_words[1]),
+    .io_in_ab_bits_a_data_2(a_words[2]),
+    .io_in_ab_bits_a_data_3(a_words[3]),
+    .io_in_ab_bits_a_data_4(a_words[4]),
+    .io_in_ab_bits_a_data_5(a_words[5]),
+    .io_in_ab_bits_a_data_6(a_words[6]),
+    .io_in_ab_bits_a_data_7(a_words[7]),
+    .io_in_ab_bits_a_data_8(a_words[8]),
+    .io_in_ab_bits_a_data_9(a_words[9]),
+    .io_in_ab_bits_a_data_10(a_words[10]),
+    .io_in_ab_bits_a_data_11(a_words[11]),
+    .io_in_ab_bits_a_data_12(a_words[12]),
+    .io_in_ab_bits_a_data_13(a_words[13]),
+    .io_in_ab_bits_a_data_14(a_words[14]),
+    .io_in_ab_bits_a_data_15(a_words[15]),
+    .io_in_ab_bits_a_data_type(a_dtype),
+    .io_in_ab_bits_a_sf_sf_data_0(a_scales[0]),
+    .io_in_ab_bits_a_sf_sf_data_1(a_scales[1]),
+    .io_in_ab_bits_a_sf_sf_data_2(a_scales[2]),
+    .io_in_ab_bits_a_sf_sf_data_3(a_scales[3]),
+    .io_in_ab_bits_a_sf_sf_type(a_sf_type),
+    .io_in_ab_bits_a_sf_sf_group0_0(a_group0[0]),
+    .io_in_ab_bits_a_sf_sf_group0_1(a_group0[1]),
+    .io_in_ab_bits_a_sf_sf_group0_2(a_group0[2]),
+    .io_in_ab_bits_a_sf_sf_group0_3(a_group0[3]),
+    .io_in_ab_bits_a_sf_sf_group0_4(a_group0[4]),
+    .io_in_ab_bits_a_sf_sf_group0_5(a_group0[5]),
+    .io_in_ab_bits_a_sf_sf_group0_6(a_group0[6]),
+    .io_in_ab_bits_a_sf_sf_group0_7(a_group0[7]),
+    .io_in_ab_bits_a_sf_sf_group0_8(a_group0[8]),
+    .io_in_ab_bits_a_sf_sf_group0_9(a_group0[9]),
+    .io_in_ab_bits_a_sf_sf_group0_10(a_group0[10]),
+    .io_in_ab_bits_a_sf_sf_group0_11(a_group0[11]),
+    .io_in_ab_bits_a_sf_sf_group0_12(a_group0[12]),
+    .io_in_ab_bits_a_sf_sf_group0_13(a_group0[13]),
+    .io_in_ab_bits_a_sf_sf_group0_14(a_group0[14]),
+    .io_in_ab_bits_a_sf_sf_group0_15(a_group0[15]),
+    .io_in_ab_bits_a_sf_sf_group1_0(a_group1[0]),
+    .io_in_ab_bits_a_sf_sf_group1_1(a_group1[1]),
+    .io_in_ab_bits_a_sf_sf_group1_2(a_group1[2]),
+    .io_in_ab_bits_a_sf_sf_group1_3(a_group1[3]),
+    .io_in_ab_bits_a_sf_sf_group1_4(a_group1[4]),
+    .io_in_ab_bits_a_sf_sf_group1_5(a_group1[5]),
+    .io_in_ab_bits_a_sf_sf_group1_6(a_group1[6]),
+    .io_in_ab_bits_a_sf_sf_group1_7(a_group1[7]),
+    .io_in_ab_bits_b_data_0(b_words[0]),
+    .io_in_ab_bits_b_data_1(b_words[1]),
+    .io_in_ab_bits_b_data_2(b_words[2]),
+    .io_in_ab_bits_b_data_3(b_words[3]),
+    .io_in_ab_bits_b_data_4(b_words[4]),
+    .io_in_ab_bits_b_data_5(b_words[5]),
+    .io_in_ab_bits_b_data_6(b_words[6]),
+    .io_in_ab_bits_b_data_7(b_words[7]),
+    .io_in_ab_bits_b_data_8(b_words[8]),
+    .io_in_ab_bits_b_data_9(b_words[9]),
+    .io_in_ab_bits_b_data_10(b_words[10]),
+    .io_in_ab_bits_b_data_11(b_words[11]),
+    .io_in_ab_bits_b_data_12(b_words[12]),
+    .io_in_ab_bits_b_data_13(b_words[13]),
+    .io_in_ab_bits_b_data_14(b_words[14]),
+    .io_in_ab_bits_b_data_15(b_words[15]),
+    .io_in_ab_bits_b_data_type(b_dtype),
+    .io_in_ab_bits_b_sf_sf_data_0(b_scales[0]),
+    .io_in_ab_bits_b_sf_sf_data_1(b_scales[1]),
+    .io_in_ab_bits_b_sf_sf_data_2(b_scales[2]),
+    .io_in_ab_bits_b_sf_sf_data_3(b_scales[3]),
+    .io_in_ab_bits_b_sf_sf_type(b_sf_type),
+    .io_in_ab_bits_b_sf_sf_group0_0(b_group0[0]),
+    .io_in_ab_bits_b_sf_sf_group0_1(b_group0[1]),
+    .io_in_ab_bits_b_sf_sf_group0_2(b_group0[2]),
+    .io_in_ab_bits_b_sf_sf_group0_3(b_group0[3]),
+    .io_in_ab_bits_b_sf_sf_group0_4(b_group0[4]),
+    .io_in_ab_bits_b_sf_sf_group0_5(b_group0[5]),
+    .io_in_ab_bits_b_sf_sf_group0_6(b_group0[6]),
+    .io_in_ab_bits_b_sf_sf_group0_7(b_group0[7]),
+    .io_in_ab_bits_b_sf_sf_group0_8(b_group0[8]),
+    .io_in_ab_bits_b_sf_sf_group0_9(b_group0[9]),
+    .io_in_ab_bits_b_sf_sf_group0_10(b_group0[10]),
+    .io_in_ab_bits_b_sf_sf_group0_11(b_group0[11]),
+    .io_in_ab_bits_b_sf_sf_group0_12(b_group0[12]),
+    .io_in_ab_bits_b_sf_sf_group0_13(b_group0[13]),
+    .io_in_ab_bits_b_sf_sf_group0_14(b_group0[14]),
+    .io_in_ab_bits_b_sf_sf_group0_15(b_group0[15]),
+    .io_in_ab_bits_b_sf_sf_group1_0(b_group1[0]),
+    .io_in_ab_bits_b_sf_sf_group1_1(b_group1[1]),
+    .io_in_ab_bits_b_sf_sf_group1_2(b_group1[2]),
+    .io_in_ab_bits_b_sf_sf_group1_3(b_group1[3]),
+    .io_in_ab_bits_b_sf_sf_group1_4(b_group1[4]),
+    .io_in_ab_bits_b_sf_sf_group1_5(b_group1[5]),
+    .io_in_ab_bits_b_sf_sf_group1_6(b_group1[6]),
+    .io_in_ab_bits_b_sf_sf_group1_7(b_group1[7]),
+    .io_in_ab_bits_last(input_last),
+    .io_in_c_ready(c_ready),
+    .io_in_c_valid(c_valid),
+    .io_in_c_bits_c(c_word),
+    .io_out_result_valid(result_valid),
+    .io_out_result_bits_result(result),
+    .io_out_result_bits_last(result_last),
+    .io_out_idle(idle)
+  );
+  `include "pe_tb_common.svh"
+endmodule
