@@ -1,97 +1,37 @@
-> 功能：汇总 DP 主方案与设计入口；范围：分组共享 DP、外部边界和后续独立对齐探索；版本：v1.3；修改时间：2026-11-04 21:03:38 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：汇总 DP 主方案与设计入口；范围：分组共享 DP、外部边界和后续独立对齐探索；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；Chisel/手写 Verilog 模块尚未实现。
 
-# DP：分组共享主方案、接口与后续对比架构
+# 多精度 DP 设计
 
-~~状态：用户已确定 T2H4Q8E16 基本组及 1/2/4 组构成 K4/K8/K16、scale 和 HiF4 metadata 按 16 个 E 元素切分、DP 内加 FP32 C 和无输出背压的固定流水。本轮主方案为 **近乎复用的分组对齐**。独立移位对齐保留为后续对比探索，暂不与主方案共用逐级流水合同。C 的来源/依赖由指令层处理；保留 last 并在最后结果输出后切换模式，使用全局统一复位。固定 E/M/S 解包布局已补充；T/H/Q/E 解包数值已明确，HiF4 采用用户指定的 S1P2/e1/e2/E6M2 定义；逐级保留精度、MX/NV scale 与 RM 仍需闭合。~~
+当前实现分组共享计算方案。每笔完成 `scaled_dot(A,B)+C`，没有跨请求累加状态。默认容量为 **T8H16Q32E64**，所有格式共用八级寄存边界；CModel 已完成首批测试。
 
-**v1.2 当前定义：** 状态：T2H4Q8E16 基本组及 K4/K8/K16、T/H/Q/E 解包和分组共享方向保持。v1.2 取消会话锁定、逐请求 datatype 控制，C 在 S5 解包；FP32 RNE 与 INT32 回绕仍统一八级。独立对齐留待后续，当前仅 spec。
+## 1. 层级与术语
 
-**v1.1 当前定义：** 当前按 v1.1 八级图推进：两次幅值 RTZ、统一 E8M3 scale、S5 sign/magnitude、最终 FP32 RNE 和 INT32 回绕。位宽按参数推导，时序与最终误差仍需闭合。
-
-## 主方案与对比方案
-
-| 设计 | 当前阶段 | 目标 |
+| 层级 | 容量 | 主要功能 |
 | --- | --- | --- |
-| [T2H4Q8E16 分组共享](shared-align.md) | 当前详细设计与后续 CModel 的基线 | lane 内按 1/2/4/8 规约成统一 token；共享乘法、移位、规约和输出通路，尽量缩短到 8 周期 |
-| [独立移位对齐](independent-align.md) | 后续对比探索 | 高精度整体比较指数、一次对齐；低精度按 scale 组形成点积再与 C 汇合，允许更多并行资源以换取较浅对齐路径 |
+| lane | T1H2Q4E8 | 解包、元素乘法、局部对齐与规约 |
+| 基本组 | T2H4Q8E16 | 两条 lane 共享指数基准、组和与 scale |
+| DP | G 个基本组；G=K_FP16/4 | 所有组与 C 对齐、累加、输出 |
 
-后续独立架构复用同一外部接口与数学参考边界，但其不同内部舍入顺序须由自己的 CModel 定义；当前先实现本分组共享方案。
+T=TF32，H=FP16/BF16，Q=MXFP8/6，E=MXFP4/NVFP4/HiF4。INT8 与 Q 同并行度，C/D 解释为 INT32。K4/K8/K16 分别实例化 1/2/4 个基本组。
 
-## 容量层次
+## 2. 当前数据路径
 
-FP16 K4 基本组为 T2H4Q8E16；拆为两个 T1H2Q4E8 lane。K8/K16 并行组合 2/4 组，得到 T4H8Q16E32 / T8H16Q32E64。跨组平衡和的自然增长为 0/1/2 位。完整映射、紧密打包和 scale slots 见 [容量与 scale](layout-and-scales.md)。
+S1 解包 A/B/scale → S2 尾数乘法与指数 MAX → S3 幅值 RTZ/E pair → S4 lane 树 → S5 组和/scale/abs/LZD 计数及 C 解包 → S6 一次双向对齐 → S7 总树 → S8 FP32 RNE 或 INT32 回绕。
 
-## DP 接口与结果
+S5 保留未左移幅值、无偏原 anchor 和 z。S6 先求真实指数 MAX，再执行净位移 z−d。NVFP4/HiF4 共用 15×9 scale 乘法器，不再添加格式缩位 mux。
 
-~~每次原子接收 A、B、FP32 C 和当前模式所需 scale/metadata。所有浮点模式都在 DP 内完成 scale dot 与 C 最终累加，再由末段 LZD、RM 舍入和 norm 输出 FP32 D。A/B/C 必须同时有效才可接收，不支持输出 ready 背压；模式固定到 last 对应结果输出完成。C 仅使用本笔输入，指令层负责数据依赖。last 明确保留，逐笔与 valid 传递，最后输出后解除模式锁定。详见 [接口](interface.md)、[控制](control.md) 与 [特殊值](special-values.md)。~~
+## 3. 规范导航
 
-**v1.2 当前定义：** 每次原子接收 A/B/C、独立 datatype 与所需 scale/meta。首版 A/B 同格式，浮点 C/D 为 FP32，INT8 C/D 为 INT32；C 只使用本笔输入，指令依赖由上层负责。相邻请求可换型，last 只透传，无输出 ready。完整端口与打包见 [DP 接口](interface.md)，逐级控制见 [控制](control.md)。
+| 内容 | 入口 |
+| --- | --- |
+| 层级与流水 | [模块边界](module-hierarchy.md) · [流水](pipeline.md) · [分组共享方案](shared-align.md) |
+| 数据与控制 | [接口](interface.md) · [容量/scale 布局](layout-and-scales.md) · [控制](control.md) |
+| 数值 | [解包](unpack.md) · [逐级格式](stage-formats.md) · [位宽推导](numeric-layout.md) · [特殊值](special-values.md) |
+| 资源 | [乘法共享](multiplier-sharing.md) · [移位共享](shifter-sharing.md) · [scale](scale.md) · [组间对齐](group-normalization-options.md) |
+| 实施 | [CModel](cmodel.md) · [功能统计](resource-accounting.md) · [独立对齐候选](independent-align.md) |
 
-## 主方案八周期目标
+## 4. 当前边界
 
-~~浮点数据路径按照以下依赖切分候选周期：~~
+A/B 首版同格式，合法请求可逐拍换型，last 只透传。无输出背压；输入缺失不暂停在途请求。默认 L8，备用 L9 静态配置只作探索。
 
-~~1. [固定 E/M/S 解包](unpack.md)、TF32/FP16/BF16 兼容解码、scale/metadata 拆分及 A/B/C 特殊值分类。~~
-~~2. 指数加法和乘积指数坐标。~~
-~~3. 尾数定点乘法。~~
-~~4. T1H2Q4E8 lane 内移位对齐。~~
-~~5. lane 规约、两个 lane 合为基本组并融合适用 scale。~~
-~~6. 1/2/4 个组结果的对齐、平衡规约。~~
-~~7. 与 C 对齐并最终累加。~~
-~~8. LZD、RM 舍入、FP32 norm/打包输出。~~
-
-~~详细候选运算和最大 K 时序风险见 [流水文档](pipeline.md)。这是目标分配，不是已测可行性；位宽完成后要检查每级组合深度以及 1.41 GHz。INT8 保留整数乘法、分层规约及加 C，省去适用的浮点移位/归一化/舍入；具体缩短周期数由切分推导，C/D 的整数编码仍待定。~~
-
-**v1.1 当前定义：** 当前流水及关键路径见 [v1.1 八级划分](pipeline.md)。[乘法器共享](multiplier-sharing.md)、[逐级数值布局](numeric-layout.md)、[scale/bias](scale.md) 分别定义资源和数值边界。INT8 首版统一 L=8，在 S8 直接输出 INT32；早出路径后续探索。
-
-## v1.1：模块层级与扩展边界
-
-用户指定 `T1H2Q4E8 → T2H4Q8E16 → H16Q32E64`，顶层名称中的 T 省略但 TF32 T8 能力保留。lane 拥有 S1–S4 局部计算，基本组 S5 合并/scale，顶层 S6–S8 处理组+C 与输出。详见 [模块层级](module-hierarchy.md)。后续 Q/E/QE 专用源从 S6 前的 sign/magnitude 组 token 边界接入，可为独立扩展 profile 增加 1–2 级；当前仅设计八级主配置。
-
-## 历史修订对照
-
-以下为本次版本化时恢复的历史草案对照；删除线内容已被替代，不作为当前实现依据。较早内容尚无正式版本号，来源按真实提交或用户确认记录，不追认其为已批准合同。
-
-- **主路径与接口边界**：~~last 的必要性及逐请求 C 的初始化/跨请求 RAW 合同仍待确认。~~ → **当前：**last 已保留；末结果输出后切换模式，C 的依赖由指令层处理。（来源：dba8ecf → 42350c5，用户确认）
-
-## v1.2：本轮审阅入口
-
-- [DP 接口定义](interface.md)：端口、编码、合法组合、K 派生、原子握手和内部 token。
-- [每级 anchor/SOP/SxIxFx](stage-formats.md)：C 在 S5、统一 top-anchor、默认位宽与推导。
-- [共享移位器](shifter-sharing.md)：输入 mux→固定参数宽度单元，T/H/Q 复用。
-- [功能块面积/功耗](resource-accounting.md)：模块 ID、寄存/mux 归属和后端报告映射。
-
-这四项补充描述当前八级架构，尚未进入 CModel 或 RTL 实现。
-
-## v1.2.1：组 SOP 的实际指数讨论
-
-~~用户提出每个基本组做前导零检测，以改善 SOP 与 C 对齐的窗口利用率。新增 [组规格化与合并移位候选](group-normalization-options.md)：精确 LZD 后可将左规格化与全局对齐合为一次数据移位；粗粒度检测可提供明确的前导零误差界。尚未替换 v1.2 主路径，指数位宽与最终特殊值 mux 的注意事项同时补充。~~
-
-**v1.3：** 候选讨论已推进为 S5 scale 后计数与 S6 一次双向移位选择；保留其他候选作为对照，见本版入口。
-
-## v1.3：当前首选为 LZD 计数＋一次双向移位
-
-用户最终选择S5在scale乘法后做LZD，**只产生z、不左移SOP**；原幅值/A_raw/z同拍输出。S6以e=A_raw-z取E_max，按net=z-d=A_raw-E_max一次双向移动，正左负右，右移RTZ。C在S5并行解包及子正规计数。见[规格化与对照](group-normalization-options.md)、[出口表](stage-formats.md)、[移位器](shifter-sharing.md)。
-
-两段单向移位作为等价数值/PPA/时序对照保留。scale共享乘法默认位宽派生见[scale](scale.md)。8级仍首选，必要时允许拆检测/指数准备形成L9备用；没有实测PPA或新CModel/RTL。
-
-## 本轮未提交草案对照：v1.3：scale 后规格化已确认
-
-~~## v1.3：scale 后规格化已确认~~
-
-~~用户明确 **scale 乘法完成后**再做 LZD、修正 anchor 并左移 SOP，首选放在 S5；S6 对组与 C 的真实无偏指数求 MAX，再对幅值右移 RTZ。浮点组出口统一默认 S1I1F29，C 在 S5 并行解包并处理非正规规格化。具体定义见 [组规格化](group-normalization-options.md)、[出口表](stage-formats.md) 和 [scale 共享乘法](scale.md)。~~
-
-~~8级仍为目标；若 S5 时序不足，用户允许单独拆出规格化一级形成明确的 L9 备用 profile。当前未选用9级，也未开始 CModel/RTL/EDA。合并双向移位和粗粒度检测保留为对照，不是本版主路径。旧版容器 anchor 的对齐结果不能直接作为 v1.3 位精确 golden。~~
-
-## 版本与架构时间线
-
-| 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
-| --- | --- | --- | --- | --- |
-| 未编号（追溯） | 2026-11-04T15:43:59+08:00 | 历史记录 | 记录 TensorCore/DP-Group/DP 首批架构、数值和时序要求。 | [76d31f2](https://github.com/Futuresxy/DP-Puzzel/commit/76d31f2) |
-| 未编号（追溯） | 2026-11-04T17:02:03+08:00 | 历史记录 | 细化分组共享、K 参数化、scale/metadata、接口与八周期候选。 | [dba8ecf](https://github.com/Futuresxy/DP-Puzzel/commit/dba8ecf) |
-| 未编号（追溯） | 2026-11-04T17:28:50+08:00 | 历史记录 | 明确固定解包、C/last 边界、全局复位及特殊值规则。 | [42350c5](https://github.com/Futuresxy/DP-Puzzel/commit/42350c5) |
-| v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](../document-control.md) |
-| v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 更新相关数值/接口/流水定义，旧稿保留删除线。 | 用户架构图与补充；[总时间线](../CHANGELOG.md) |
-| v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 同步本轮接口、C 解包阶段、逐请求控制或资源/验证合同；保留被替代定义。 | 用户本轮要求及确认；[总时间线](../CHANGELOG.md) |
-| v1.2.1 | 2026-11-04 20:17:40 +08:00 | 讨论/说明补充 | 记录组实际指数候选及对应数值、特殊值或资源边界；不改变 v1.2 主路径。 | 用户 LZD/指数/特殊值讨论；[总时间线](../CHANGELOG.md) |
-| v1.3 | 2026-11-04 21:03:38 +08:00 | 架构修订 | 按用户最终选择，S5 scale后LZD仅计数、S6一次双向移位；同步数值/接口/资源/备用周期，保留对照。 | 用户最终双向移位选择；[总时间线](../CHANGELOG.md) |
+独立一次对齐、专用 Q/E/QE 增源、阵列和两套 RTL 尚未实现。功耗优先、1.41GHz 以及整体精度目标仍须后续证据支持。

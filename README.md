@@ -1,18 +1,15 @@
 # DAC 2027 · 多精度张量计算算力配比 DSE
 
-**当前阶段：重新定义多精度 DP / Cube 整体架构 spec。** 用户明确旧 DP 设计过时；先逐步写完并确认新 spec，再编写 CModel，之后开发 Chisel 和独立手写 Verilog，共用根目录 `test/` 验证。已写入 TensorCore 16×4、4×4 广播 DP-Group 和多精度 DP 的首批要求；详细 spec 继续完善，没有新版实现。
+**当前阶段：DP spec v1.4 / 文档 v1.4.1，CModel 搭建与首批验证完成。** 当前主方案为 T8H16Q32E64 分组共享八级 DP；两套 RTL、Cube 阵列及 EDA 尚未实施。
 
-```text
-src/
-├── spec/       新架构唯一规格入口
-├── cmodel/     位精确与周期模型，待 spec 确认
-├── chisel/     Chisel 实现，待 CModel
-└── verilog/    独立手写 RTL，待 CModel
-test/          共用用例、数学参考、TB 与适配层
-hw/legacy/     旧 Chisel 与历史构建定义，仅供参考
-```
+| 入口 | 内容 |
+| --- | --- |
+| [设计规范](src/spec/README.md) | 架构、接口、每级数值与资源共享 |
+| [CModel](src/cmodel/README.md) | C++ 位精确 / 逐级周期模型与构建命令 |
+| [共用测试](test/README.md) | Packed 数据、独立参考及回归 |
+| [验证报告](test/results/cmodel-v1.4.md) | 10747 笔精度检查、协议测试与覆盖边界 |
 
-入口：[新设计](src/README.md) · [规格索引](src/spec/README.md) · [验证目录](test/README.md) · [历史归档](hw/legacy/README.md) · [重规划记录](docs/dp-cube-replan.md)。生成 RTL、DC 与功耗目录继续保留在 `hw/`。
+新设计统一在 `src/{spec,cmodel,chisel,verilog}`，共用测试在根 `test/`。旧 Chisel 归档于 `hw/legacy/`；生成 RTL、DC 与功耗目录仍在 `hw/`。文档采用当前定义优先的排版，只有相邻两个主要版本的核心变更保留删除线；见 [维护规则](src/spec/document-control.md)。
 
 ## 历史项目背景与旧实现记录
 

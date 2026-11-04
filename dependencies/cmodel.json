@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "dependencies": [
+    {
+      "name": "boost",
+      "version": "1.83.0",
+      "upstream": "https://www.boost.org/releases/1.83.0/",
+      "license": "BSL-1.0",
+      "purpose": "cpp_int exact integer storage; all modeled width/truncation explicit",
+      "acquisition": "system installed headers; CMake EXACT version check; no bundled copy",
+      "patches": [],
+      "key_header_sha256": {
+        "boost/version.hpp": "a547ee7eddf1b96695027922345b471feba8bcba79a8572399d282247c02e4ab",
+        "boost/multiprecision/cpp_int.hpp": "2677f6c5f854060c483f08500f2d7ddb16e4d3f5e64562e414fdd1ebb4226aa4"
+      }
+    },
+    {
+      "name": "nlohmann_json",
+      "version": "3.11.3",
+      "upstream": "https://github.com/nlohmann/json/releases/tag/v3.11.3",
+      "license": "MIT",
+      "purpose": "JSONL protocol and trace serialization",
+      "acquisition": "system installed headers; CMake EXACT version check; no bundled copy",
+      "patches": [],
+      "key_header_sha256": {
+        "nlohmann/json.hpp": "2432cbf7f4258453538eca193cd937fc777462ae2ce8ee9f46e6ee460ef56bea",
+        "nlohmann/detail/abi_macros.hpp": "1c7dc7c5062b199a35853f4056ed00ed359ef8fa5c7fb15a58bc79598ec21422"
+      }
+    }
+  ],
+  "scope": "C++ CModel only, no RTL dependency",
+  "reproducibility": "Version pinned; key header hashes identify this validation environment, not a full distribution archive checksum."
+}
