@@ -202,6 +202,33 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(record["rtl_fingerprint"], rtl_fingerprint(self.export))
         self.assertNotIn("artifact_sha256", record)
 
+    def test_hold_repair_keeps_source_and_rejects_constraint_drift(self):
+        parent = self.completed()
+        repair_id = "dc_Fixture_10240002"
+        args = ["prepare", *self.selection(), "--run-id", repair_id,
+                "--hold-repair-from", parent.name]
+        result = self.cli(*args)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        repair = self.dc / "runs" / repair_id
+        config = json.loads((repair / "inputs/resolved.json").read_text())
+        self.assertEqual(config["hold_repair"], {"source_run": parent.name, "guardband_ns": 0.001})
+        self.assertIn(tcl_string(str(parent / "netlist/Fixture.ddc")), (repair / "inputs/resolved.tcl").read_text())
+        self.assertEqual(self.cli("run", "--run-id", repair_id).returncode, 0)
+        changed = json.loads(self.constraints.read_text())
+        changed["period_ns"] += 0.1
+        dump(self.constraints, changed)
+        rejected = self.cli("prepare", *self.selection(), "--run-id", "dc_Fixture_10240003",
+                            "--hold-repair-from", parent.name)
+        self.assertEqual(rejected.returncode, 2)
+        self.assertIn("source differs: constraints", rejected.stderr.decode())
+
+    def test_hold_repair_rejects_incomplete_source(self):
+        parent = self.prepare()
+        result = self.cli("prepare", *self.selection(), "--run-id", "dc_Fixture_10240002",
+                          "--hold-repair-from", parent.name)
+        self.assertEqual(result.returncode, 2)
+        self.assertFalse((self.dc / "runs/dc_Fixture_10240002").exists())
+
     def test_rtl_and_testbench_changes_rejected(self):
         verify_export(EXPORT, self.root)
         (self.export / "src/Fixture.sv").write_text("changed")

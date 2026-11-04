@@ -12,13 +12,17 @@ set_svf -off
 define_design_lib WORK -path work/WORK
 set_units -time ns -capacitance pf
 
-analyze -format $rtl_language -work WORK $rtl_sources
-if {$rtl_parameters eq ""} {
-  elaborate $top -work WORK
+if {$source_ddc ne ""} {
+  read_ddc $source_ddc
 } else {
-  elaborate $top -work WORK -parameters $rtl_parameters
-  # DC names an explicitly parameterized design with a parameter suffix.
-  rename_design [get_object_name [current_design]] $top
+  analyze -format $rtl_language -work WORK $rtl_sources
+  if {$rtl_parameters eq ""} {
+    elaborate $top -work WORK
+  } else {
+    elaborate $top -work WORK -parameters $rtl_parameters
+    # DC names an explicitly parameterized design with a parameter suffix.
+    rename_design [get_object_name [current_design]] $top
+  }
 }
 current_design $top
 uniquify
@@ -83,20 +87,26 @@ if {[sizeof_collection $hierarchy] > 0} {
   set_ungroup $hierarchy false
   set_boundary_optimization $hierarchy false
 }
-set compile_command [list compile_ultra -no_autoungroup -no_boundary_optimization]
-if {$clock_gating} {
-  set_clock_gating_style -positive_edge_logic integrated -negative_edge_logic integrated \
-    -control_point before -minimum_bitwidth $clock_gating_min_bitwidth
-  lappend compile_command -gate_clock
+if {$source_ddc eq ""} {
+  set compile_command [list compile_ultra -no_autoungroup -no_boundary_optimization]
+  if {$clock_gating} {
+    set_clock_gating_style -positive_edge_logic integrated -negative_edge_logic integrated \
+      -control_point before -minimum_bitwidth $clock_gating_min_bitwidth
+    lappend compile_command -gate_clock
+  }
+  # X-2025.06 may ignore -area_high_effort_script (OPT-1341). Do not request it.
+  if {$optimize_area} { set_max_area 0 }
+  eval $compile_command
+  if {$optimize_area} { optimize_netlist -area }
+  compile -incr -only_design_rule
 }
-# X-2025.06 may ignore -area_high_effort_script (OPT-1341). Do not request it.
-if {$optimize_area} { set_max_area 0 }
-eval $compile_command
-if {$optimize_area} { optimize_netlist -area }
-compile -incr -only_design_rule
 if {$hold_fix} {
   set_fix_hold $clk
+  # Repair runs temporarily tighten hold by 1 ps; final reports/SDC retain the
+  # original budget. This adds real delay instead of waiving a small violation.
+  set_clock_uncertainty -hold [expr {$hold_uncertainty_ns + $hold_repair_guardband_ns}] $clk
   compile -incremental_mapping -only_hold_time
+  set_clock_uncertainty -hold $hold_uncertainty_ns $clk
 }
 change_names -rules verilog -hierarchy
 redirect -file reports/check_design.rpt { set design_ok [check_design] }

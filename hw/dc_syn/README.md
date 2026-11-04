@@ -74,7 +74,7 @@ bash scripts/dc_syn.sh clean --run-id dc_MyTop_10241850 --apply
 
 DC 不包含 testbench；消费根 test/（新版 DP）或 hw/test（历史接口）的真实验证证据。项目软件回归为 `python3 -m unittest discover -s hw/test/unit -v`；新版 DP 验证在根 test/，综合只通过 scripts/dc_syn.sh 执行。本分支不继承旧示例测量。
 
-## 单 DP / N12 / 1.41 GHz
+## 单 DP / N12 / 1.41 GHz 与 1 GHz
 
 实际 RTL 基线为 `138c4b1d2be2e9e626387db67461ed113e56c77a`，工作分支
 `chore/dp-dc-12nm`。通用 runner/templates 从本仓库提交
@@ -116,3 +116,10 @@ CModel GCC 8.5.0、Verilator 5.030、仿真器编译 GCC 10.3.1。
 已完成 run 可用 `python3 hw/dc_syn/scripts/inspect_dc.py --run-id RUN_ID` 只读载入 DDC 补报；
 该入口不优化、不改网表，只有全局关键路径与原报告完全复现才接受分级结果。
 `report` 会更新派生摘要；setup/hold 和 LVT 配额分别报告，flow_pass 要求全部满足。
+
+
+`dp-1000mhz.json` 仅将周期改为 1 ns。1GHz 首轮 setup 通过，但残留一条 −0.266 ps hold 违例；
+独立修复 run `dc_dp_top_11050215` 的 setup/hold 与 Vt 配额均通过，最差 slack 分别为 +0.003815 ps / +1.100987 ps。
+可在相同 `prepare` 选项上增加 `--hold-repair-from SOURCE_RUN`，在新 run 内载入有效源 DDC 只做 hold 优化；
+门禁、库、机器绑定和最终约束必须相同。优化时临时增加 1 ps hold uncertainty，报告/SDC 恢复原值，
+并重新检查 setup/hold 与 Vt；不会把修复成功作为前提。源 run 保留，不覆盖原始失败证据。

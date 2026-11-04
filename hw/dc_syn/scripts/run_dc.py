@@ -135,6 +135,9 @@ def load_inputs(args):
 
 def render_tcl(data):
     settings = dict(data["constraints"])
+    repair = data.get("hold_repair")
+    settings["source_ddc"] = str(run_path(repair["source_run"]) / "netlist" / (data["gate"]["top"] + ".ddc")) if repair else ""
+    settings["hold_repair_guardband_ns"] = repair["guardband_ns"] if repair else 0
     settings.update({k: data["technology"][k] for k in ("operating_library", "operating_condition", "wire_load_model")})
     settings["top"] = data["gate"]["top"]
     settings["rtl_language"] = data["gate"].get("language", "sverilog")
@@ -158,6 +161,9 @@ def render_tcl(data):
 
 
 def prepare(args, data):
+    if getattr(args, "hold_repair_from", None):
+        data["hold_repair"] = {"source_run": args.hold_repair_from, "guardband_ns": 0.001}
+        verify_repair_source(data)
     run_id = args.run_id or default_run_id(data["gate"]["top"])
     run = run_path(run_id)
     require(run_id.rsplit("_", 1)[0] == "dc_" + data["gate"]["top"], "Run name must match the RTL top")
@@ -179,10 +185,25 @@ def prepare(args, data):
     return 0
 
 
+def verify_repair_source(data):
+    repair = data.get("hold_repair")
+    if not repair:
+        return
+    parent = run_path(repair["source_run"])
+    require(not (parent / ".running").exists(), "Source synthesis is still running")
+    original = read_json(parent / "inputs/resolved.json")
+    require(not original.get("hold_repair"), "Repair must start from an original synthesis run")
+    for key in ("gate", "technology", "constraints", "machine", "target_dbs"):
+        require(original[key] == data[key], "Hold repair source differs: " + key)
+    require(data["constraints"]["hold_fix"], "Hold repair requires hold_fix")
+    require(analyze(parent, original)["synthesis_valid"], "Hold repair requires a valid source synthesis")
+
+
 def verify_inputs(run, for_execution=False):
     data = read_json(run / "inputs/resolved.json")
     gate = verify_export(data["gate"]["export_id"], ROOT)
     require(gate["rtl_fingerprint"] == data["gate"]["rtl_fingerprint"], "RTL directory changed since preparation")
+    verify_repair_source(data)
     if for_execution:
         for key, path in data.get("config_paths", {}).items():
             current = read_json(path)
@@ -223,7 +244,7 @@ def execute(run):
         try:
             verify_inputs(run)
         except (ValueError, OSError, KeyError) as error:
-            summary.update(status="invalid", synthesis_valid=False, timing_pass=False, timing_status="UNKNOWN")
+            summary.update(status="invalid", synthesis_valid=False, timing_pass=False, flow_pass=False, timing_status="UNKNOWN")
             summary["errors"].append("Inputs changed during synthesis: " + str(error))
         summary["finished_utc"] = utc()
         write_summary(run, summary)
@@ -283,6 +304,7 @@ def main():
         if name == "prepare":
             sub.add_argument("--run-id")
             sub.add_argument("--purpose", default="RTL 综合面积与时序检查")
+            sub.add_argument("--hold-repair-from", help="Load this valid run's DDC and repair hold only, with identical inputs")
     for name in ("run", "report", "clean"):
         sub = commands.add_parser(name)
         sub.add_argument("--run-id", required=True)
