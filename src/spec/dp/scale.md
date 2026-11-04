@@ -1,4 +1,4 @@
-> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.2；修改时间：2026-11-04 19:38:52 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
+> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.2.1；修改时间：2026-11-04 20:17:40 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
 
 # scale 统一 E8M3 数值表示
 
@@ -58,9 +58,16 @@ S2 可以保留原始指数和，在 S3–S5 的独立标量路径预先减去 s
 
 每侧独立 in_scale_a_datatype/in_scale_b_datatype，每个请求的全部同侧槽共用一个类型。支持 E8M0、E4M3、E6M2 及无 scale 的 NONE；NVFP4 仍需要 E4M3，不能从接口遗漏。首版两侧格式相同，scale 类型按 [合法矩阵](interface.md) 对应，但 scale 数值可不同。S1 解包后，scale 系数/指数和控制与请求同步，不从后续输入格式取值。
 
+## v1.2.1：去 bias、MAX 与 unsigned 差值
+
+S5 组 token 的 A 已完成元素/scale bias 与定点坐标修正，C 的 A_c 同样无偏。先对有限非零源做 signed MAX，再在足够宽的 signed 临时量中计算 MAX-anchor，确认非负后转 unsigned 移位量；不能用 unsigned 比较负的无偏指数。S2/S3 的同格式产品相减中，相同的元素双 bias 抵消，因此可以保留 r/p 的带偏置无符号表示。
+
+若采用实际指数候选，还需 e=A-clz(m)。MAX(e)-e 非负，但把规格化左移与对齐右移合并后，净位移可以有方向；这不是指数 bias 再次变化。详见 [候选推导](group-normalization-options.md)。
+
 ## 版本与架构时间线
 
 | 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
 | --- | --- | --- | --- | --- |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 新建架构合同 | 按用户架构图及后续补充定义本模块；区分已确认结构与待审查的位宽推导，尚无实现或 EDA 证据。 | 用户确认；[流水](pipeline.md) |
 | v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 同步本轮接口、C 解包阶段、逐请求控制或资源/验证合同；保留被替代定义。 | 用户本轮要求及确认；[总时间线](../CHANGELOG.md) |
+| v1.2.1 | 2026-11-04 20:17:40 +08:00 | 讨论/说明补充 | 记录组实际指数候选及对应数值、特殊值或资源边界；不改变 v1.2 主路径。 | 用户 LZD/指数/特殊值讨论；[总时间线](../CHANGELOG.md) |

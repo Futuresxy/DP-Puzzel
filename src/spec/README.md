@@ -1,4 +1,4 @@
-> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.2；修改时间：2026-11-04 19:38:52 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.2.1；修改时间：2026-11-04 20:17:40 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
 # 多精度 TensorCore 规格
 
@@ -61,6 +61,10 @@
 
 本轮重点入口：[DP 接口定义](dp/interface.md)、[逐请求控制](dp/control.md)、[每级 SxIxFx/anchor/SOP](dp/stage-formats.md)、[固定共享移位器](dp/shifter-sharing.md)、[功能块面积与功耗归属](dp/resource-accounting.md)。A/B 独立 datatype 但首版仅同格式；scale 保留 E8M0/E4M3/E6M2；C 在 S5 解包；所有格式固定 L=8。last 保留为逐请求上层标记，不再限制换型。
 
+## v1.2.1 文档补充
+
+新增 [组 SOP 实际指数与对齐候选](dp/group-normalization-options.md)，比较逐组 LZD、合并移位与粗粒度检测；明确 signed anchor/unsigned 对齐差值及最终特殊值 mux。本次为同架构讨论修订，当前 v1.2 算术/流水路径没有切换，候选尚待选定。
+
 ## 版本与架构时间线
 
 | 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
@@ -72,3 +76,4 @@
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](document-control.md) |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 更新相关数值/接口/流水定义，旧稿保留删除线。 | 用户架构图与补充；[总时间线](CHANGELOG.md) |
 | v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 同步本轮接口、C 解包阶段、逐请求控制或资源/验证合同；保留被替代定义。 | 用户本轮要求及确认；[总时间线](CHANGELOG.md) |
+| v1.2.1 | 2026-11-04 20:17:40 +08:00 | 讨论/说明补充 | 记录组实际指数候选及对应数值、特殊值或资源边界；不改变 v1.2 主路径。 | 用户 LZD/指数/特殊值讨论；[总时间线](CHANGELOG.md) |
