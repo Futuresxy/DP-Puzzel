@@ -1,4 +1,4 @@
-> 功能：定义周期和状态推进要求；范围：八周期目标、输入气泡、逐请求控制与全局复位；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/model.cpp](../cmodel/lib/model.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义周期和状态推进要求；范围：八周期目标、输入气泡、逐请求控制与全局复位；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/model.cpp](../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 周期与状态合同
 

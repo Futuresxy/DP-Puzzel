@@ -1,4 +1,4 @@
-> 功能：定义 scale 后实际指数检测与合并对齐；范围：S5/S6 主方案及对照、LZD、合并移位、粗粒度检测、指数范围和特殊值；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义 scale 后实际指数检测与合并对齐；范围：S5/S6 主方案及对照、LZD、合并移位、粗粒度检测、指数范围和特殊值；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 组结果的真实指数与合并对齐
 

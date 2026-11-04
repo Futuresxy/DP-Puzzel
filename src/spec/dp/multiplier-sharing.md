@@ -1,4 +1,4 @@
-> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/lane.cpp](../../cmodel/lib/lane.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/lane.cpp](../../cmodel/lib/lane.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 两组尾数乘法器覆盖 T1H2Q4E8
 

@@ -1,8 +1,8 @@
-> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/detail.hpp](../../cmodel/lib/detail.hpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/detail.hpp](../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 模块层级、所有权与 S6 扩展点
 
-状态：当前用户指定模块化层级 `T1H2Q4E8 → T2H4Q8E16 → H16Q32E64`；顶层名称省略 T，但保留 TF32 T8。只描述当前主配置，未来 Q/E/QE 专用源的功能与数据布局待单独批准；DP CModel 已实现；RTL 和未来专用源尚未实现。
+状态：当前用户指定模块化层级 `T1H2Q4E8 → T2H4Q8E16 → H16Q32E64`；顶层名称省略 T，但保留 TF32 T8。只描述当前主配置，未来 Q/E/QE 专用源的功能与数据布局待单独批准；DP CModel 及手写 Verilog/SystemVerilog 主方案已实现；Chisel 和未来专用源尚未实现。
 
 ## 1. 当前层级与周期所有权
 
@@ -59,11 +59,11 @@ S6 是未来扩展的接入边界。新增源必须表示同一事务、同一�
 
 顶层向基本组、基本组向 lane 传入已校验的参数对象；各层只从自身项数、格式宽度、保护位和父层有效配置派生局部结构。参数对象计划置于 src/chisel/parameter/，尚未创建。共有公式和格式常量集中定义，禁止三层各写一套 27/15/40 或树深常量。
 
-CModel 应按同一模块边界提供 S1 解包、S2 MAX/产品、S3 移位、S4 lane 和、S5 组 token、S6 对齐、S7 总和、S8 输出的 trace。数学参考独立评价误差；CModel 已提供这些观察点，RTL 尚未实现。
+CModel 应按同一模块边界提供 S1 解包、S2 MAX/产品、S3 移位、S4 lane 和、S5 组 token、S6 对齐、S7 总和、S8 输出的 trace。数学参考独立评价误差；CModel 已提供这些观察点；手写 RTL 的 S1–S7 观测与模型比较见 [实现合同](verilog.md)。
 
 ## 7. 功能模块边界与源码映射
 
-[DP 接口](interface.md) 统一列出顶层信号、datatype 编码与内部同拍 token；[功能统计](resource-accounting.md) 定义乘法、指数/MAX、移位、树、scale、解包和 LZD/norm/RNE 等逻辑模块 ID。后续各功能模块单独映射 Chisel、手写 RTL 和网表实例，统计区域明确拥有的寄存/mux，保留八级边界；当前已有 CModel 映射，尚无 RTL 源码。S3 按 [移位器共享](shifter-sharing.md) 由输入 mux 驱动四个固定 W-bit 实例。
+[DP 接口](interface.md) 统一列出顶层信号、datatype 编码与内部同拍 token；[功能统计](resource-accounting.md) 定义乘法、指数/MAX、移位、树、scale、解包和 LZD/norm/RNE 等逻辑模块 ID。后续各功能模块单独映射 Chisel、手写 RTL 和网表实例，统计区域明确拥有的寄存/mux，保留八级边界；当前已有 CModel 与 [手写 RTL 源码映射](verilog.md)。S3 按 [移位器共享](shifter-sharing.md) 由输入 mux 驱动四个固定 W-bit 实例。
 
 ## 8. 基本组与全局边界更新
 

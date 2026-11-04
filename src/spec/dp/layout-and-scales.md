@@ -1,4 +1,4 @@
-> 功能：定义 DP 容量与输入布局；范围：K4/K8/K16、紧密打包、scale 槽与 HiF4 metadata；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/config.cpp](../../cmodel/lib/config.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义 DP 容量与输入布局；范围：K4/K8/K16、紧密打包、scale 槽与 HiF4 metadata；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/config.cpp](../../cmodel/lib/config.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # DP 容量、逻辑输入与 scale / metadata 分组
 

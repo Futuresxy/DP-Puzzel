@@ -1,8 +1,8 @@
-> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 多精度 DP / Cube 设计规范
 
-本规范定义一套由 CModel、Chisel 与独立手写 Verilog 共同遵循的硬件合同。**当前架构为 v1.4，文档整理版为 v1.4.1；DP CModel 已完成首批验证，RTL 与阵列尚未实现。**
+本规范定义一套由 CModel、Chisel 与独立手写 Verilog 共同遵循的硬件合同。**当前架构为 v1.4，当前实现映射为 v1.4.2；DP CModel、手写 Verilog 与 SystemVerilog 对照已建立，Chisel 与阵列尚未实现。**
 
 ## 1. 阅读路径
 
@@ -14,7 +14,8 @@
 | 核对计算与位宽 | [解包](dp/unpack.md) · [逐级定点格式](dp/stage-formats.md) · [数值推导](dp/numeric-layout.md) |
 | 理解共享资源 | [乘法器](dp/multiplier-sharing.md) · [移位器](dp/shifter-sharing.md) · [scale](dp/scale.md) · [组间对齐](dp/group-normalization-options.md) |
 | 运行与评估模型 | [CModel 合同](dp/cmodel.md) · [构建入口](../cmodel/README.md) · [测试报告](../../test/results/cmodel-v1.4.md) |
-| 准备 RTL 和 PPA | [参数](06-configuration.md) · [验证](07-verification.md) · [实现与 PPA](08-implementation-ppa.md) · [功能块统计](dp/resource-accounting.md) |
+| 手写 RTL | [实现合同](dp/verilog.md) · [源码](../verilog/README.md) · [验证报告](../../test/results/verilog-v1.4.md) |
+| 准备 PPA | [参数](06-configuration.md) · [验证](07-verification.md) · [实现与 PPA](08-implementation-ppa.md) · [功能块统计](dp/resource-accounting.md) |
 
 ## 2. 设计摘要
 

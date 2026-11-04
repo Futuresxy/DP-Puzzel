@@ -1,4 +1,4 @@
-> 功能：汇总共用输入输出协议；范围：A/B/C、scale、metadata、逐笔 datatype 和 valid/last；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：汇总共用输入输出协议；范围：A/B/C、scale、metadata、逐笔 datatype 和 valid/last；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 共用输入输出合同
 

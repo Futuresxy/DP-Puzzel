@@ -1,4 +1,4 @@
-> 功能：列出每级数值出口的定点格式与指数范围；范围：S1–S8、同格式 A/B、C 的 S5 解包、anchor 与 SOP；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/detail.hpp](../../cmodel/lib/detail.hpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：列出每级数值出口的定点格式与指数范围；范围：S1–S8、同格式 A/B、C 的 S5 解包、anchor 与 SOP；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/detail.hpp](../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 每级 anchor、SOP 与 SxIxFx
 

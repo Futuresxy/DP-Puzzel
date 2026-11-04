@@ -1,4 +1,4 @@
-> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/model.cpp](../../cmodel/lib/model.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/model.cpp](../../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 分组共享 DP：八级流水
 

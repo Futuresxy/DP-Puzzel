@@ -1,4 +1,4 @@
-> 功能：定义浮点分类与特殊值传播；范围：NaN/Inf/零/非正规数、scale、规约和 C 合并；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/arithmetic.cpp](../../cmodel/lib/arithmetic.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义浮点分类与特殊值传播；范围：NaN/Inf/零/非正规数、scale、规约和 C 合并；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/arithmetic.cpp](../../cmodel/lib/arithmetic.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 浮点分类、特殊值传播与 FP32 输出
 

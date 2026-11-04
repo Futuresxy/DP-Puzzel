@@ -1,4 +1,4 @@
-> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel include/dp/config.hpp](../cmodel/include/dp/config.hpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel include/dp/config.hpp](../cmodel/include/dp/config.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 参数与派生关系
 

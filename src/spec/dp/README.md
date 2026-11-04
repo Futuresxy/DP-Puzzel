@@ -1,8 +1,8 @@
-> 功能：汇总 DP 主方案与设计入口；范围：分组共享 DP、外部边界和后续独立对齐探索；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：汇总 DP 主方案与设计入口；范围：分组共享 DP、外部边界和后续独立对齐探索；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 多精度 DP 设计
 
-当前实现分组共享计算方案。每笔完成 `scaled_dot(A,B)+C`，没有跨请求累加状态。默认容量为 **T8H16Q32E64**，所有格式共用八级寄存边界；CModel 已完成首批测试。
+当前实现分组共享计算方案。每笔完成 `scaled_dot(A,B)+C`，没有跨请求累加状态。默认容量为 **T8H16Q32E64**，所有格式共用八级寄存边界；CModel 已完成首批测试，单 DP 手写 RTL 已建立。
 
 ## 1. 层级与术语
 
@@ -28,10 +28,10 @@ S5 保留未左移幅值、无偏原 anchor 和 z。S6 先求真实指数 MAX，
 | 数据与控制 | [接口](interface.md) · [容量/scale 布局](layout-and-scales.md) · [控制](control.md) |
 | 数值 | [解包](unpack.md) · [逐级格式](stage-formats.md) · [位宽推导](numeric-layout.md) · [特殊值](special-values.md) |
 | 资源 | [乘法共享](multiplier-sharing.md) · [移位共享](shifter-sharing.md) · [scale](scale.md) · [组间对齐](group-normalization-options.md) |
-| 实施 | [CModel](cmodel.md) · [功能统计](resource-accounting.md) · [独立对齐候选](independent-align.md) |
+| 实施 | [CModel](cmodel.md) · [Verilog 实现](verilog.md) · [功能统计](resource-accounting.md) · [独立对齐候选](independent-align.md) |
 
 ## 4. 当前边界
 
 A/B 首版同格式，合法请求可逐拍换型，last 只透传。无输出背压；输入缺失不暂停在途请求。默认 L8，备用 L9 静态配置只作探索。
 
-独立一次对齐、专用 Q/E/QE 增源、阵列和两套 RTL 尚未实现。功耗优先、1.41GHz 以及整体精度目标仍须后续证据支持。
+独立一次对齐、专用 Q/E/QE 增源、阵列及 Chisel 尚未实现；手写 Verilog 和 SystemVerilog 对照仅覆盖单 DP 的 L8 主方案。功耗优先、1.41GHz 以及整体精度目标仍须后续证据支持。

@@ -1,13 +1,13 @@
 # DP / Cube 设计与实现
 
-当前架构 **v1.4**，文档整理版 **v1.4.1**。DP CModel已搭建并完成首批精度、周期与协议检查；Chisel、独立手写Verilog和Cube阵列尚未实现。
+当前架构 **v1.4**，实现映射 **v1.4.2**。DP CModel、独立手写 Verilog 与 SystemVerilog 对照已建立；两版 RTL 共用 Verilog TB 验证。Chisel 和 Cube 阵列尚未实现。
 
 | 入口 | 内容 |
 | --- | --- |
 | [spec/](spec/README.md) | 三实现共同的架构、接口、数值和验证规范 |
 | [cmodel/](cmodel/README.md) | C++整数位精确与逐级周期模型 |
 | [chisel/](chisel/README.md) | 后续Chisel实现 |
-| [verilog/](verilog/README.md) | 后续独立手写可综合RTL |
+| [verilog/](verilog/README.md) | 单 DP Verilog 主实现与 SystemVerilog 对照 |
 | [test/](../test/README.md) | 共用packed数据、独立参考、协议检查和报告 |
 
 开发顺序为spec → CModel → 两套RTL → 共用RTL回归 → DC/功耗。生成RTL集中在hw/rtl/；旧hw/legacy/仅作参考，不继承其数值、周期或验证状态。

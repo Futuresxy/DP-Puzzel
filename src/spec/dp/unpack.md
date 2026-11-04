@@ -1,4 +1,4 @@
-> 功能：定义固定 E/M/S 解包数值布局；范围：T/H/Q/E、HiF4 e1/e2 和 E6M2 块 scale；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/unpack.cpp](../../cmodel/lib/unpack.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义固定 E/M/S 解包数值布局；范围：T/H/Q/E、HiF4 e1/e2 和 E6M2 块 scale；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/unpack.cpp](../../cmodel/lib/unpack.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 固定 E/M/S 解包布局
 

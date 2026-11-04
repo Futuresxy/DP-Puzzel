@@ -1,4 +1,4 @@
-> 功能：推导逐级位宽和统一对齐坐标；范围：参数化局部/全局窗口、sign/magnitude、S5 C 和 INT32；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：推导逐级位宽和统一对齐坐标；范围：参数化局部/全局窗口、sign/magnitude、S5 C 和 INT32；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 逐级位宽、符号/幅值与 anchor
 

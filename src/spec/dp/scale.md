@@ -1,4 +1,4 @@
-> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # scale 统一 E8M3 数值表示
 

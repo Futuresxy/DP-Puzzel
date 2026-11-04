@@ -1,4 +1,4 @@
-> 功能：定义分组共享对齐微架构；范围：T2H4Q8E16 基本组、lane 规约和资源共享；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/model.cpp](../../cmodel/lib/model.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义分组共享对齐微架构；范围：T2H4Q8E16 基本组、lane 规约和资源共享；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/model.cpp](../../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 当前主方案：T2H4Q8E16 分组共享对齐
 

@@ -1,4 +1,4 @@
-> 功能：定义数值语义与保留精度；范围：全部数值模式、缩放、精度窗口和 FP32 输出；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/arithmetic.cpp](../cmodel/lib/arithmetic.cpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义数值语义与保留精度；范围：全部数值模式、缩放、精度窗口和 FP32 输出；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/arithmetic.cpp](../cmodel/lib/arithmetic.cpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 数值语义与保留精度
 

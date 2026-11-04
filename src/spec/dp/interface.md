@@ -1,8 +1,8 @@
-> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # DP 顶层与模块接口定义
 
-状态：当前 H16Q32E64（T8）及 K4/K8 变体的接口合同。用户确认 A/B 各自携带 datatype、首版仅同格式；C 在 S5 按 FP32/INT32 解包；每笔控制随流水推进，取消 DP 内会话锁定。原子 ready 及逐请求协议已在 CModel 验证；RTL 电气复位方式仍待实现时冻结。
+状态：当前 H16Q32E64（T8）及 K4/K8 变体的接口合同。用户确认 A/B 各自携带 datatype、首版仅同格式；C 在 S5 按 FP32/INT32 解包；每笔控制随流水推进，取消 DP 内会话锁定。原子 ready 及逐请求协议已在 CModel 验证；手写 RTL 已采用同步高有效复位，见 [实现合同](verilog.md)。
 
 ## 1. 运算和模块边界
 
@@ -28,7 +28,7 @@
 
 | 信号 | 方向 | 宽度 | 合同 |
 | --- | --- | --- | --- |
-| `clock`, `reset` | 入 | 各 1 | 所有子模块共用；同步高有效 reset 仍为接口候选，复位取消所有在途请求 |
+| `clock`, `reset` | 入 | 各 1 | 所有子模块共用；同步高有效 reset，复位取消所有在途请求 |
 | `in_a_valid`, `in_b_valid`, `in_c_valid` | 入 | 各 1 | 三个源有效；datatype 与各自 payload 同属一笔 |
 | `out_a_ready`, `out_b_ready`, `out_c_ready` | 出 | 各 1 | 只允许同拍原子接收，见握手公式 |
 | `in_a`, `in_b` | 入 | 各 16K | 低位对应低元素索引，格式切片见下文 |
@@ -49,7 +49,7 @@
 
 ## 4. 具名 datatype 与编码
 
-以下为当前接口编码，不沿用旧 Scala 枚举数值。具名常量及编码表将由统一配置/参数定义提供给三实现与 TB；位宽由枚举最大编码推导，禁止各模块自写数值。保留码和未实现格式不作为合法输入。
+以下为当前接口编码，不沿用旧 Scala 枚举数值。具名常量及编码表由 [Verilog 头文件](../../verilog/parameter/dp_defs.vh) 和各实现参数定义提供；位宽由枚举最大编码推导，禁止各模块自写数值。保留码和未实现格式不作为合法输入。
 
 | data datatype | 4-bit 编码 | lane 类别 |
 | --- | --- | --- |
@@ -104,7 +104,7 @@ req_fire = accept_enable & all_valid
 
 ## 7. 内部模块端口与时刻
 
-以下为语义端口与参数宽度；CModel 观察点已映射，RTL Bundle/模块文件尚未建立。内部使用无背压的 Valid token，不把忽略 ready 的接口声明为可停顿 Decoupled。
+以下为语义端口与参数宽度；CModel 观察点已映射，手写 RTL 模块与观测点见 [实现映射](verilog.md)，Chisel Bundle 尚未建立。内部使用无背压的 Valid token，不把忽略 ready 的接口声明为可停顿 Decoupled。
 
 | 边界 | 输入 / 输出 | 必须同行的字段 | 时刻 |
 | --- | --- | --- | --- |
