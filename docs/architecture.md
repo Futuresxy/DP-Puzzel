@@ -6,7 +6,7 @@
 
 当前使用 [TensorCore](../src/spec/tensorcore/README.md) → [DP-Group](../src/spec/dp-group/README.md) → [DP](../src/spec/dp/README.md)：16×4 阵列由四个 4×4 广播组竖直拼接，组内 DP 无脉动。组间网络待定义。DP 按 FP16 基准 K4/K8/K16 参数化，支持 TF32/FP16/BF16/MXFP8/6/4/NVFP4/HiF4/INT8；HiF8 暂不支持。
 
-精度、≤8级和 1.41 GHz 为设计约束；在满足约束的前提下功耗第一、面积第二。位宽计数口径、模式倍率、C/D、接口和逐级流水仍待确认；本轮无实现或 EDA 结果。
+精度、≤8级和 1.41 GHz 为设计约束；在满足约束的前提下功耗第一、面积第二。容量已定为 T2H4Q8E16 基本组的 1/2/4 组并行；DP 内加 FP32 C，C 依赖归指令层，last 末输出后切模式，使用固定 E/M/S 解包及全局统一复位。逐级位宽、scale/HiF4 数值映射与舍入合同继续完善；本轮无实现或 EDA 结果。
 
 ## 历史系统架构与研究边界
 

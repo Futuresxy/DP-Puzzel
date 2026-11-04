@@ -10,7 +10,7 @@
 | DP-Group | [广播计算组](dp-group/README.md) | 每组 4×4 个 DP，组内广播，DP 间无脉动 |
 | DP | [多精度点积](dp/README.md) | FP16 K4 基本组 T2H4Q8E16；并行组合成 K8/K16；分组共享是当前主方案 |
 
-支持 TF32（每元素输入容器 32 位）、FP16、BF16、MXFP8、MXFP6、MXFP4、NVFP4、HiF4 和 INT8；暂不支持 HiF8。INT8 的计算并行度与 MXFP8 相同，可旁路浮点专用级；预计比 8 周期主路径少约 2–3 周期，精确延迟待定。
+支持 TF32（每元素输入容器 32 位）、FP16、BF16、MXFP8、MXFP6、MXFP4、NVFP4、HiF4 和 INT8；暂不支持 HiF8。INT8 的计算并行度与 MXFP8 相同，可旁路浮点专用级；保留整数乘法/累加/加 C，精确延迟由省去浮点对齐/归一化/舍入后的流水切分决定。
 
 精度要求为：TF32/FP16/BF16/MXFP8/MXFP6 至少保留 25 位；MXFP4/NVFP4 保留 35 位；HiF4 复用 NVFP4 通路，以约 37 位作为待推导目标。保留宽度的计数口径和所在节点仍待确认，见 [数值语义](01-numerics.md)。
 
@@ -22,6 +22,8 @@
 | --- | --- |
 | [系统范围](00-system-scope.md) | 目标、边界及要求状态 |
 | [数值语义](01-numerics.md) | 格式、保留精度、特殊值、数学参考与 NVIDIA 证据边界 |
+| [DP 固定解包](dp/unpack.md) | E/M/S 布局、原子块与 lane、I1F10/I1F7/I1F3/I3F1/I2F2 |
+| [DP 特殊值](dp/special-values.md) | IEEE 分类、乘加例外、分组/scale/C 传播和待决数值规则 |
 | [接口与协议](03-interfaces.md) | TF32 容器、数据与 scale、事务和输出边界 |
 | [周期与状态](04-timing-state.md) | ≤8 级、INT8 旁路、时钟和状态推进 |
 | [参数与配置](06-configuration.md) | 集中参数、派生关系、合法性与未决倍率 |

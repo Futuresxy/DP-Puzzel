@@ -13,19 +13,20 @@
 
 ### DP spec 闭合清单（CModel 前）
 
-已确定当前主方案为 T2H4Q8E16 基本组、两个 T1H2Q4E8 lane；FP16 K4/K8/K16 对应 1/2/4 个基本组及 T2H4Q8E16 / T4H8Q16E32 / T8H16Q32E64。A/B/C 原子接收、scale/meta 携带、DP 内 FP32 C 合并、FP32 D 与无输出背压已写入 DP 接口/控制 spec。独立移位对齐保留为后续对比探索。
+已确定 T2H4Q8E16 基本组、两个 T1H2Q4E8 lane，1/2/4 个基本组构成 FP16 K4/K8/K16。A/B/C 原子接收、DP 内 FP32 C 合并、无输出背压已写入接口；独立移位对齐留作后续探索。
 
-开始 CModel 前按依赖顺序逐项闭合：
+本轮已收敛的边界：C 的来源/指令依赖由上层处理，DP 仅计算本笔缩放点积加 C；输入/输出 last 保留，末结果输出后才能切换 mode；全局复位统一取消在途。固定 E/M/S 解包已确定，T/FP16 为 I1F10、BF16 为 I1F7、Q 统一 E5M3/I1F3、E2M1 转 I3F1、HiF4 S1P2/e1 融合为 I2F2，保留 1-bit e2，块 scale 为 E6M2 bias=48。特殊值分类、NaN/Inf 传播及渐进下溢行为目标已写入 [解包](../src/spec/dp/unpack.md) 和 [特殊值](../src/spec/dp/special-values.md)。这些定义尚无实现验收证据。
 
-1. **一次 DP 请求及跨请求 C**：C 是每笔独立 DP 点积的初始加数，还是通过下一请求的 C 做累积；是否需要 in/out last；DP 与上层如何避免连续累加的 C→D RAW。FP32 输出与“每请求一个 C”已有方向，累加流语义仍待确认。
-2. **逐格式 scale 数值语义**：MXFP8/6 scale 格式和一值覆盖 32 项规则；MXFP4/NVFP4 scale 编码、乘法值域及 scale 与 dot 的应用顺序；HiF4 e1/e2 字段的位宽、表示和作用顺序。物理每 16 E 项拆组已确定，格式数值规则未定。
-3. **定点 token 合同**：lane 部分和、基本组 token、跨组和、缩放结果及 FP32 C 各自的 sign/exp-or-binary-point/width。解释 25/35/约 37 位分别保留在哪个节点、是否含符号/增长/保护位；证明 E 的 4-bit fixed-point 融合是否对所支持编码无损。
-4. **浮点编码与结果规则**：TF32 高 19 位各字段映射（复用 FP16 尾数、BF16 指数），FP16/BF16 特殊值；FP32 C/D 的 NaN/Inf/zero/subnormal 行为，RM 含义与可选舍入方向。
-5. **请求/会话协议**：共享 A/B/C ready 的准确时序、scale/meta 与 A/B valid 的绑定；last 是否必需、什么时候可切换 mode、复位中止规则。固定 L=8 已确定为目标，INT8 快 2–3 周期是估计，精确 L 待算术合同收敛。
-6. **共享 datapath 资源边界**：哪些乘法器位片、lane 移位、组内/组间加法器、scale 运算和 C/norm 逻辑跨 T/H/Q/E 共用；依构建 K 变化的树/宽度生成公式。此项完成后可形成可实现 RTL 结构映射。
-7. **CModel 观察合同**：上述数值路径的逐周期状态和 valid/last 对齐；定义 S1–S8 可选 cutpoint 内容。数学高精度 reference 与位精确 cycle model 分开。
+开始 CModel 前继续闭合：
 
-每次先只闭合一项、同步编辑对应 spec 和本清单，再推进下一项。第 1–5 项收敛后先开始 CModel 算术及周期模型；资源映射可与实现细化同步，但不能改变已确认数值/周期合同。完整 Cube 存储、组间调度和 EDA 参数不阻塞 DP CModel，仍留在 TensorCore spec 与后续阶段。
+1. **块 scale 与模式表**：明确 MX 的 E8M0、NVFP4 的 E4M3 是否作为本项目 scale 编码及特殊值合同，是否存在额外 per-tensor scale；定义 A/B 子型合法组合。HiF4 E6M2/e1/e2 已明确，不再重复待定。
+2. **逐级定点数值合同**：为解包后乘积、lane 和、基本组和、scale 融合、跨组和及 C 合并写出 sign/width/exponent-or-binary-point；定义主浮点至少 25 位、FP4 35 位、HiF4 约 37 位的计数口径、第一对齐保留节点、增长位和 guard/sticky/舍入规则。E 元素解包无损不等于所有后续移位无损。
+3. **最终 FP32 转换**：冻结 RM 集合/默认值，NaN canonical 或 payload 选择，有符号零、正常/非正规及 overflow/underflow 边界；异常 flags 是否导出和 tininess 时点。不能用 IEEE 特殊值正确替代有限点积正确舍入证明。
+4. **INT8 数值与流水**：确定 signed/unsigned、C/D 整数编码及 overflow/saturation；保留乘法/规约/加 C，按省去浮点对齐/归一化/舍入后的具体树深决定延迟，不继续预设 L=5–6。
+5. **周期/资源合同**：浮点目标 L=8，完成最大 K 下各级组合深度和资源共享边界推导；复核 II=1、原子 ready 表达式、首请求锁定模式和同步高有效全局 reset 的候选协议。时序约束仍是 1.41 GHz，当前不运行 EDA。
+6. **CModel 观察合同**：定义统一配置、事务 API、周期采样边界及 S1–S8 cutpoint，包含 E/M/S 分类、特殊摘要、各级部分和、valid/last、模式/复位状态；数学高精度 reference 与位精确 cycle model 分开。
+
+每项先同步 spec，再推进 CModel；精确 INT8 延迟由其算术合同与切分决定。Cube 存储、取数/指令依赖、组间调度和 EDA 参数继续在上层定义，不作为单 DP 的 C 来源问题重复讨论。
 
 ## 历史路线（保留供参考）
 
