@@ -8,8 +8,13 @@
 | --- | --- | --- |
 | `group_rows` / `group_cols` | 4 / 4 | 当前广播组结构参数；其他取值待批准 |
 | `group_stack_count` | 4 | 竖直组数；当前水平方向只有一组 |
-| `k_fp16` | 4、8、16 | 构建期探索参数；默认值未选 |
-| `k_mode(mode,k_fp16)` | FP16 等于基准；INT8 等于 MXFP8 | 模式容量表或精确派生式；其余倍率待定 |
+| `k_fp16` | 4、8、16；主配置取 16 | 构建期参数；对应 K4/K8/K16 |
+| `base_group_fp16_k` | 4 | 固定基本组基准；T2H4Q8E16 |
+| `elements_per_lane[T/H/Q/E]` | 1/2/4/8 | 每组拆两 lane，每 lane T1H2Q4E8 |
+| `group_count` | `k_fp16/base_group_fp16_k` | 1/2/4 个并行基本组 |
+| `group_sum_growth_bits` | `ceil(log2(group_count))` | 0/1/2 位自然增长 |
+| `scale_group_elements` | 16 E 元素 | scale/HiF4 metadata 物理分组参数 |
+| `k_mode(mode,k_fp16)` | `(k_fp16/4)*2*(1/2/4/8)`，T/H/Q/E | INT8 与 Q 同并行度；由 lane/formula 派生 |
 | `tf32_input_bits` | 32 | 输入容器规格常量，不改变 TF32 数值精度 |
 | `retain_main_bits` | ≥25 | 主浮点模式保留目标；计数口径待定 |
 | `retain_fp4_bits` | 基准 35 | MXFP4/NVFP4 保留目标；可探索范围待定 |
@@ -20,7 +25,15 @@
 | `supported_modes` | TF32、FP16、BF16、MXFP8/6/4、NVFP4、HiF4、INT8 | 功能范围；HiF8 排除 |
 | `int8_bypass` | 允许评估，选择待定 | 构建期候选；不能当作已存在路径 |
 
-## 统一派生
+## DP 容量派生
+
+- 基本组为 `T2H4Q8E16`，由两个 `T1H2Q4E8` lane 构成。
+- `base_group_count=k_fp16/4`，故 K4/K8/K16 并行使用 1/2/4 组。
+- 对模式 T/H/Q/E，`k_mode=base_group_count*2*elements_per_lane[mode]`，lane 项数为 1/2/4/8。K16 得到 T8H16Q32E64。
+- E 模式计算组数由 `k_mode(E,k_fp16)/scale_group_elements` 推导；MXFP4/HiF4 scale 槽按相邻组映射，NVFP4 各槽独立，MXFP8/6 32 项块 scale 按两个 E 槽广播。
+- K 组和树自然增长 `ceil(log2(base_group_count))` 位；组数为 1 时增长为 0。
+
+## TensorCore 统一派生
 
 - `group_dp_count=group_rows*group_cols`，当前 16。
 - `tensorcore_rows=group_rows*group_stack_count`，当前 16。

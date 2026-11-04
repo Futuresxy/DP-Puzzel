@@ -8,9 +8,9 @@
 | --- | --- | --- |
 | TensorCore | [阵列组织](tensorcore/README.md) | 16×4 个 DP；四个 DP-Group 沿竖直方向拼接 |
 | DP-Group | [广播计算组](dp-group/README.md) | 每组 4×4 个 DP，组内广播，DP 间无脉动 |
-| DP | [多精度点积](dp/README.md) | FP16 基准 K4/K8/K16；多格式共享设计；输入到输出不超过 8 级 |
+| DP | [多精度点积](dp/README.md) | FP16 K4 基本组 T2H4Q8E16；并行组合成 K8/K16；分组共享是当前主方案 |
 
-支持 TF32（每元素输入容器 32 位）、FP16、BF16、MXFP8、MXFP6、MXFP4、NVFP4、HiF4 和 INT8；暂不支持 HiF8。INT8 的计算并行度与 MXFP8 相同，允许评估较短的旁路输出。
+支持 TF32（每元素输入容器 32 位）、FP16、BF16、MXFP8、MXFP6、MXFP4、NVFP4、HiF4 和 INT8；暂不支持 HiF8。INT8 的计算并行度与 MXFP8 相同，可旁路浮点专用级；预计比 8 周期主路径少约 2–3 周期，精确延迟待定。
 
 精度要求为：TF32/FP16/BF16/MXFP8/MXFP6 至少保留 25 位；MXFP4/NVFP4 保留 35 位；HiF4 复用 NVFP4 通路，以约 37 位作为待推导目标。保留宽度的计数口径和所在节点仍待确认，见 [数值语义](01-numerics.md)。
 
