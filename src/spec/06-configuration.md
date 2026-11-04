@@ -1,4 +1,4 @@
-> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.1；修改时间：2026-11-04 19:12:59 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.2；修改时间：2026-11-04 19:38:52 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
 # 参数与配置合同
 
@@ -25,7 +25,8 @@
 | `retain_fp4_bits` | 基准 35 | MXFP4/NVFP4 保留目标；可探索范围待定 |
 | `retain_hif4_bits` | 初始目标 37 | HiF4/NVFP4 共享路径推导后确认 |
 | `max_dp_pipeline_stages` | 8 | 输入到输出深度上限，不可为时序任意放宽 |
-| `latency_by_mode` / `ii_by_mode` | 待定义，L≤8 | 实现结果及协议合同，不得与 K 混淆 |
+| ~~`latency_by_mode` / `ii_by_mode`~~ | ~~待定义，L≤8~~ | ~~实现结果及协议合同，不得与 K 混淆~~ |
+| `latency_by_mode` / `ii_by_mode` | 当前全格式 L=8，II=1 目标 | 结构与时序仍待验证；不得与 K 混淆 |
 | `target_frequency_hz` | 1_410_000_000 | 当前时序目标；周期由此派生 |
 | `supported_modes` | TF32、FP16、BF16、MXFP8/6/4、NVFP4、HiF4、INT8 | 功能范围；HiF8 排除 |
 | `int8_bypass` | 允许评估，选择待定 | 构建期候选；不能当作已存在路径 |
@@ -66,7 +67,9 @@ CModel、Chisel、手写 Verilog 和 testbench 使用相同的有效配置。规
 | --- | --- | --- |
 | lanes_per_base_group / mul_groups_per_lane | 2 / 2 | 基本组与乘法器组实例数 |
 | mul_hi_bits / mul_lo_bits | 8 / 4 | HH/HL/LH/LL 原始乘积和位移 |
-| local_align_fraction_bits | 当前 25，至少 25 | 小数保留位；局部幅值宽=乘积整数位+该值 |
+| ~~local_align_fraction_bits~~ | ~~当前 25，至少 25~~ | ~~小数保留位；局部幅值宽=乘积整数位+该值~~ |
+| local_shift_mag_width | 可调无符号窗口，默认 27 | S3 固定共享移位器位宽，实例统一接收参数 |
+| local_align_fraction_bits | local_shift_mag_width-product_integer_bits，当前至少 25 | 派生量，不与窗口作为两个独立输入 |
 | global_signed_align_width | 初值 40，可扫参 | 包含符号；幅值窗口为该值减一 |
 | hif_e1_bits / hif_e2_bits | 1 / 1 | 局部幅值与剩余指数范围 |
 | e_exact_guard_bits | 2×(2^hif_e2_bits-1) | 先补低零保证 HiF4 局部移位精确 |
@@ -75,7 +78,8 @@ CModel、Chisel、手写 Verilog 和 testbench 使用相同的有效配置。规
 | top_sum_width | global_signed_align_width+tree_depth(top_fanin) | 默认 41/42/43，完整保留增长 |
 | local/global_shift_control_bits | ceil(log2(window_width+1)) | 完整比较 delta 后饱和，不截断 delta 造成回绕 |
 | int8_input_bits / int32_bits | 标准格式常量 8 / 32 | INT8 幅值范围及 INT32 回绕模数 |
-| latency_fp / latency_int | 当前 8 / 8 | 模式会话共享输出寄存边界 |
+| ~~latency_fp / latency_int~~ | ~~当前 8 / 8~~ | ~~模式会话共享输出寄存边界~~ |
+| latency_fp / latency_int | 当前 8 / 8 | 逐请求格式控制，共享固定输出寄存边界 |
 
 计数器/指数/anchor 的宽度从最大值和有符号范围推导。8+8 的指数和必须保留第九位，5+5 保留第六位；scale 指数和也是九位。上表实际值和 [逐级布局](dp/numeric-layout.md) 中的 27/15/30/31 仅作默认配置的推导展示，不在算术模块中重新硬写。窗口合法范围由输入位宽与精度条件决定，不自行填一组扫描上下限。
 
@@ -89,6 +93,10 @@ CModel、Chisel、手写 Verilog 和 testbench 使用相同的有效配置。规
 
 - **Q scale 广播更正**：~~MXFP8/6 32 项块 scale 按两个 E 槽广播。~~ → **当前：**每个基本组为 Q8，Q32 的同一 scale 在四个基本组槽广播；短 K 使用原块子片段。（来源：dba8ecf → 42350c5，修正文档笔误）
 
+## v1.2：接口与控制参数
+
+A/B datatype 枚举、C/D 类型、scale 类型及编码集中定义，默认位宽 4/1/2；端口尺寸从 k_fp16、G 和格式容器推导，见 [DP 接口](dp/interface.md)。mode_session/active_mode 不再是构建参数或运行状态。各级 r/alpha/A 范围、SOP 格式、移位/树参数关系见 [出口表](dp/stage-formats.md)；所有减法临时位宽由完整范围推导。局部 W 改变时连同后续槽宽和全局 pad 合法性一起重新检查。
+
 ## 版本与架构时间线
 
 | 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
@@ -99,3 +107,4 @@ CModel、Chisel、手写 Verilog 和 testbench 使用相同的有效配置。规
 | 未编号（追溯） | 2026-11-04T17:28:50+08:00 | 历史记录 | 明确固定解包、C/last 边界、全局复位及特殊值规则。 | [42350c5](https://github.com/Futuresxy/DP-Puzzel/commit/42350c5) |
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](document-control.md) |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 补充 v1.1 相关资源、数值或验证合同。 | 用户架构图与补充；[总时间线](CHANGELOG.md) |
+| v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 同步本轮接口、C 解包阶段、逐请求控制或资源/验证合同；保留被替代定义。 | 用户本轮要求及确认；[总时间线](CHANGELOG.md) |

@@ -19,4 +19,6 @@ test/          三套代码共用的测试环境（仓库根目录）
 
 ~~当前全部新版 spec 已建立 **v1.0 文档基线**；后续按 [版本与修订规则](spec/document-control.md) 更新页首元信息、删除线对照及各自时间线。架构和文档版本见 [总时间线](spec/CHANGELOG.md)，新增规格使用 [模板](spec/TEMPLATE.md)。版本不改变现有“已确认/候选/待定义”状态。~~
 
-**当前 v1.1：** 共享八级流水、模块层级、符号/幅值接口及参数推导见 [规格索引](spec/README.md)；v1.0 基线和所有修改保留于 [总时间线](spec/CHANGELOG.md)。仍按完整 spec 审查后再开展 CModel。
+~~**当前 v1.1：** 共享八级流水、模块层级、符号/幅值接口及参数推导见 [规格索引](spec/README.md)；v1.0 基线和所有修改保留于 [总时间线](spec/CHANGELOG.md)。仍按完整 spec 审查后再开展 CModel。~~
+
+**v1.2 当前定义：** 当前为 v1.2：独立 datatype、逐请求控制、C 的 S5 解包、逐级定点/anchor、固定共享移位器和功能块统计，见 [规格索引](spec/README.md)。原版本与改动保留在 [总时间线](spec/CHANGELOG.md)；仍先审查完整 spec，再开始 CModel。

@@ -1,4 +1,4 @@
-> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.1；修改时间：2026-11-04 19:12:59 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
+> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.2；修改时间：2026-11-04 19:38:52 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
 
 # 两组尾数乘法器覆盖 T1H2Q4E8
 
@@ -68,8 +68,13 @@ A_scale×B_scale 的 I1F3 系数乘法另需每基本组一份 4×4 资源，可
 
 依据 [SubPE_HQE](../../../hw/legacy/chisel_src/pe/PE_HQE/SubPE_HQE.scala) 的四单元路由及部分积思路，新增 TF32/INT8；不继承其旧尾数落位、三级局部流水或输出位宽。
 
+## v1.2：逐笔控制与统计边界
+
+每一级乘法器路由/输入隔离只使用与本级数据同行的 ctrl；新请求的 datatype 不得关闭前笔的 S2/S5 资源。A/B 首版仅同格式，独立字段在入口检查后形成内部 op_format。mantissa_mul_bank、HH/HL/LH/LL、重构加法、scale-pair 与 group-scale 乘法保留独立逻辑 ID，寄存/mux 归属见 [功能统计](resource-accounting.md)。
+
 ## 版本与架构时间线
 
 | 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
 | --- | --- | --- | --- | --- |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 新建架构合同 | 按用户架构图及后续补充定义本模块；区分已确认结构与待审查的位宽推导，尚无实现或 EDA 证据。 | 用户确认；[流水](pipeline.md) |
+| v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 同步本轮接口、C 解包阶段、逐请求控制或资源/验证合同；保留被替代定义。 | 用户本轮要求及确认；[总时间线](../CHANGELOG.md) |

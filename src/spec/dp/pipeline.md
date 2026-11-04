@@ -1,6 +1,8 @@
-> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.1；修改时间：2026-11-04 19:12:59 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.2；修改时间：2026-11-04 19:38:52 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
-# T2H4Q8E16 分组共享方案：八周期流水 v1.1
+# T2H4Q8E16 分组共享方案：八周期流水 v1.2
+
+~~T2H4Q8E16 分组共享方案：八周期流水 v1.1（旧标题）~~
 
 状态：用户确定本图的数据依赖和阶段组织，浮点与 INT8 当前统一 L=8、目标 II=1；S2/S3 标量边界、S5/S6/S8 组合时序仍待验证。~~INT8 在 S8 直接输出 INT32，未启用早出旁路。~~
 
@@ -10,27 +12,36 @@
 
 | 级 | 数据路径 | 指数、scale 与控制并行路径 |
 | --- | --- | --- |
-| S1 | A/B/C/scale 解包；A/B 固定 E/M/S；HiF4 e1 融入幅值；INT8 变符号+八位幅值 | C 浮点分类及有效指数、INT32 C 的整数解释；scale 统一 E8M3；采样 mode/valid/last |
+| ~~S1~~ | ~~A/B/C/scale 解包；A/B 固定 E/M/S；HiF4 e1 融入幅值；INT8 变符号+八位幅值~~ | ~~C 浮点分类及有效指数、INT32 C 的整数解释；scale 统一 E8M3；采样 mode/valid/last~~ |
+| S1 | A/B/scale 解包；HiF4 e1 融合、INT8 sign/abs；保存原始 C32 | 逐笔采样 A/B/C/scale datatype，派生 ctrl；C 不解包，raw32 与 c_datatype 传至 S4 |
 | S2 | 每 lane 两组四单元尾数乘法，含 T/FP16 和 INT8 部分积重构 | 8+8→9、5+5→6 指数加法；lane MAX→两个 lane 的基本组 MAX；scale 指数和及 4×4 系数积 |
-| S3 | T/H/Q 使用四个共享幅值移位器，向零截断后符号化；E 八项先合四个 pair，补保护低零并作 HiF4 e2 差值移位；INT8 固定落位 | 消费基本组共同 MAX 与每项指数，计算 delta；共同 anchor、scale 修正和 C 逐级传递 |
-| S4 | 共用四路两层规约树：Q/E/INT8 四项，H 复用末层，T 单项直通同一输出边界 | 同步基本组共同 anchor、scale 系数/指数、分类、C、valid/last |
-| S5 | 两个 lane 相加；NVFP4/HiF4 紧凑组和乘 scale 系数，其他模式旁路；输出独立符号+幅值+anchor/F/zero/special | 完成或透传元素/scale bias 与静态小数点修正；可预计算全局比较信息，但不能忽略 S5 实际组和为零的依赖 |
+| ~~S3~~ | ~~T/H/Q 使用四个共享幅值移位器，向零截断后符号化；E 八项先合四个 pair，补保护低零并作 HiF4 e2 差值移位；INT8 固定落位~~ | ~~消费基本组共同 MAX 与每项指数，计算 delta；共同 anchor、scale 修正和 C 逐级传递~~ |
+| S3 | 四个固定 W-bit 共享移位器：T/H/Q 经输入 mux 复用，默认 W27；E pair/小范围精确移位与 INT8 结构落位走旁路 | 本级 ctrl 选择数据/sign/delta 和输入隔离；公共 r、scale、C raw32 与 valid/last 同行 |
+| ~~S4~~ | ~~共用四路两层规约树：Q/E/INT8 四项，H 复用末层，T 单项直通同一输出边界~~ | ~~同步基本组共同 anchor、scale 系数/指数、分类、C、valid/last~~ |
+| S4 | 共用四路两层规约树：Q/E/INT8 四项，H 复用末层，T 旁路同一边界 | 同步 r、scale、special、ctrl/valid/last；C 仍为 raw32 |
+| ~~S5~~ | ~~两个 lane 相加；NVFP4/HiF4 紧凑组和乘 scale 系数，其他模式旁路；输出独立符号+幅值+anchor/F/zero/special~~ | ~~完成或透传元素/scale bias 与静态小数点修正；可预计算全局比较信息，但不能忽略 S5 实际组和为零的依赖~~ |
+| S5 | 两 lane 合并、NV/HiF4 scale 注入及 sign/magnitude；并行把 C raw32 按本笔 c_datatype 解包为 FP32 或 INT32 | 输出组 top-anchor、zero/special；C 分类/幅值/anchor 同拍注册；逐笔 ctrl 同行 |
 | S6 | 所有基本组 token 与 C 按有效 top anchor 比较，求 delta，幅值移位向零截断，再转补码；INT8 仅作可逆低零落位 | 当前全局对齐总宽初值 W40（含符号）可扫参；C 指数和幅值在这里与所有 SOP 汇合 |
 | S7 | 一棵树直接求和 group_count 个组结果与 C，保留全部增长位 | 包含 C 的扇入数 2/3/5，深度 1/2/3；旁带持续推进 |
-| S8 | 浮点 abs/LZD/规范化/RNE/FP32 打包；INT8 删除结构低零后输出 INT32 低 32 位 | 特殊结果固定同延迟选择；INT32 回绕，溢出写入验证 trace；输出 out_valid/out_last |
+| ~~S8~~ | ~~浮点 abs/LZD/规范化/RNE/FP32 打包；INT8 删除结构低零后输出 INT32 低 32 位~~ | ~~特殊结果固定同延迟选择；INT32 回绕，溢出写入验证 trace；输出 out_valid/out_last~~ |
+| S8 | 浮点 abs/LZD/norm/RNE/FP32；INT8 删除结构低零后 INT32 回绕 | out_valid/out_last/out_d_datatype 对应同一请求；不同格式均 L=8 |
 
 ```mermaid
 flowchart LR
- S1["S1 解包 A/B/C/scale"] --> S2["S2 尾数乘 + 指数和/MAX"]
- S2 --> S3["S3 delta/幅值移位 + E pair"]
+ S1["S1 A/B/scale 解包；采样逐笔 ctrl"] --> S2["S2 尾数乘 + 指数和/MAX"]
+ S2 --> S3["S3 mux + 共享幅值移位 / E pair"]
  S3 --> S4["S4 共用四路树"]
- S4 --> S5["S5 两 lane 合并/scale/符号幅值"]
+ S4 --> S5["S5 两 lane / scale / 符号幅值"]
+ C["C raw32：S1–S4 寄存"] --> C5["S5 FP32 / INT32 C 解包"]
  S5 --> S6["S6 组与 C 的 MAX/delta/幅值移位"]
+ C5 --> S6
  S6 --> S7["S7 组数+1 路求和"]
- S7 --> S8["S8 FP32 RNE / INT32 回绕"]
+ S7 --> S8["S8 FP32 / INT32 + datatype/last"]
 ```
 
-C 在 S1 完成解包，S2–S5 只随对应事务透传；若将全局 MAX 提前到 S5，C 指数可提前用于该标量比较，C 幅值仍在 S6 首次参与对齐。所有特殊值、valid/last 与数据逐级匹配；输入 bubble 不停顿在途流水，mode 仍在 last 输出后切换。
+~~C 在 S1 完成解包，S2–S5 只随对应事务透传；若将全局 MAX 提前到 S5，C 指数可提前用于该标量比较，C 幅值仍在 S6 首次参与对齐。所有特殊值、valid/last 与数据逐级匹配；输入 bubble 不停顿在途流水，mode 仍在 last 输出后切换。~~
+
+**v1.2 当前定义：** C 仍在沿 n 与 A/B 原子接收；S1–S4 只传一份顶层 C raw32 及 c_datatype，S5 读取 S4 原值完成分类/解包，S6 首次对齐，S7 加 C。新增 C 解包不串接在组 scale 数据路径后。datatype/ctrl、特殊摘要、valid/last 随对应数据推进；相邻请求可换型，last 不引发排空。
 
 ## S2 的跨 lane MAX 与 S3 差值
 
@@ -61,6 +72,21 @@ S2 的 MAX 回传是同一周期中的有向组合路径，不是跨周期握手
 - [乘法器共享](multiplier-sharing.md)：每 lane 两套 HH/HL/LH/LL、INT8 路由与 operand isolation。
 - [数值布局](numeric-layout.md)：W27 幅值/W28 补码、E W15 紧凑组和、独立符号/幅值接口、全局窗口、树宽度和 RNE/INT32。
 - [scale 与 bias](scale.md)：E8M0/E4M3/E6M2 到 E8M3，元素与 scale 的偏置只扣一次，C 比较前完成统一坐标。
+
+## v1.1 流水图（已替代）
+
+~~旧图将 C 放在 S1 解包；v1.2 改为上图的 S5 并行 C 支路。~~
+
+```mermaid
+flowchart LR
+ S1["S1 解包 A/B/C/scale"] --> S2["S2 尾数乘 + 指数和/MAX"]
+ S2 --> S3["S3 delta/幅值移位 + E pair"]
+ S3 --> S4["S4 共用四路树"]
+ S4 --> S5["S5 两 lane 合并/scale/符号幅值"]
+ S5 --> S6["S6 组与 C 的 MAX/delta/幅值移位"]
+ S6 --> S7["S7 组数+1 路求和"]
+ S7 --> S8["S8 FP32 RNE / INT32 回绕"]
+```
 
 ## v1.0 八级候选（已替代）
 
@@ -117,6 +143,10 @@ S2 的 MAX 回传是同一周期中的有向组合路径，不是跨周期握手
 
 - **E 路径融合位置**：~~S5 融合 scale/e1。~~ → **当前：**元素指数/HiF4 e1 按已定解包前移至 S1；后续只处理剩余 e2 与块 scale，避免重复施加。（来源：dba8ecf → 42350c5，解包细化）
 
+## v1.2：逐级数值与模块统计
+
+每级 SM/TC、SxIxFx、r/alpha/top-anchor 的范围和位宽见 [出口表](stage-formats.md)。固定输入 mux 复用与参数窗口见 [移位器](shifter-sharing.md)；模块、寄存器与后端归属见 [面积/功耗统计](resource-accounting.md)。这些边界均属于同一八级，不因拆功能模块新增周期。S5 的 C 解包为独立并行支路，也需纳入时序检查。
+
 ## 版本与架构时间线
 
 | 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
@@ -125,3 +155,4 @@ S2 的 MAX 回传是同一周期中的有向组合路径，不是跨周期握手
 | 未编号（追溯） | 2026-11-04T17:28:50+08:00 | 历史记录 | 明确固定解包、C/last 边界、全局复位及特殊值规则。 | [42350c5](https://github.com/Futuresxy/DP-Puzzel/commit/42350c5) |
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](../document-control.md) |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 重排 S2 并行乘/指数、S3 移位、S4 规约、S5 scale/sign-magnitude、S6+C 对齐、S7 总和、S8 FP32/INT32。 | 用户架构图与补充；[总时间线](../CHANGELOG.md) |
+| v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | C 从 S1 解包改为 S1–S4 raw32、S5 解包；保持 L8；同步共享移位/控制/输出类型。 | 用户本轮要求及确认；[总时间线](../CHANGELOG.md) |

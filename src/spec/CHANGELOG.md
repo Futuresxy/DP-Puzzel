@@ -1,10 +1,12 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.1；修改时间：2026-11-04 19:12:59 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.2；修改时间：2026-11-04 19:38:52 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 规格版本与架构总时间线
 
 ~~状态：当前架构文档基线 v1.0；各文档保留已有确认/候选/待决状态，尚未进入新版实现。首次编号不构成新的架构批准。~~
 
-状态：当前架构为 v1.1，按用户图重排共享八级流水及 sign/magnitude 接口；原候选/待决状态不因版本号自动批准。
+~~状态：当前架构为 v1.1，按用户图重排共享八级流水及 sign/magnitude 接口；原候选/待决状态不因版本号自动批准。~~
+
+状态：当前架构为 v1.2。逐请求 datatype 替代模式会话；C 在 S5 解包；补齐逐级数值、固定共享移位器与模块统计。仍仅 spec，原待决项不因版本号自动批准。
 
 ## 版本建立前的真实记录
 
@@ -23,6 +25,7 @@
 | --- | --- | --- | --- | --- |
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 为当前全部规格补齐页首元信息与各自时间线；建立删除线修订规则、模板与版本索引，恢复关键旧稿对照。正文架构及确认状态承接 42350c5。 | 用户文档维护要求；[规则](document-control.md) |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | S2 并行乘/指数和/MAX；S3 幅值 RTZ/E pair；S4 树；S5 scale 后 sign/magnitude；S6+C 幅值 RTZ；S7 全部求和；S8 FP32 RNE/INT32 回绕。新增四份模块/资源/数值文档；全部宽度、树深、增长和补零由参数推导。同步全部文档架构号，层级及待决状态保持。 | 用户架构图及后续确认 |
+| v1.2 | 2026-11-04 19:38:52 +08:00 | 接口/周期控制修订 | A/B/C/scale 独立 datatype、首版 A/B 同格式；取消会话 FSM，逐请求 ctrl 与 last；C 解包移 S5；明确各级 SxIxFx/r/alpha/top-anchor、参数化 mux 共享移位器及功能块面积/功耗归属。新增三份文档，全套 29 份同步架构号。 | 用户本轮要求、两项确认及模块统计补充 |
 
 ## 当前文档版本索引
 
@@ -55,36 +58,70 @@ v1.0 索引（已替代）：
 | ~~[dp/unpack.md](dp/unpack.md)~~ | ~~v1.0~~ | ~~定义固定 E/M/S 解包数值布局~~ |
 | ~~[tensorcore/README.md](tensorcore/README.md)~~ | ~~v1.0~~ | ~~定义 TensorCore 阵列规格~~ |
 
-v1.1 当前索引：
+v1.1 索引（已替代）：
+
+| ~~文档~~ | ~~当前版本~~ | ~~功能~~ |
+| --- | --- | --- |
+| ~~[00-system-scope.md](00-system-scope.md)~~ | ~~v1.1~~ | ~~定义系统边界和设计目标~~ |
+| ~~[01-numerics.md](01-numerics.md)~~ | ~~v1.1~~ | ~~定义数值语义与保留精度~~ |
+| ~~[03-interfaces.md](03-interfaces.md)~~ | ~~v1.1~~ | ~~汇总共用输入输出协议~~ |
+| ~~[04-timing-state.md](04-timing-state.md)~~ | ~~v1.1~~ | ~~定义周期和状态推进要求~~ |
+| ~~[06-configuration.md](06-configuration.md)~~ | ~~v1.1~~ | ~~定义参数及其合法派生关系~~ |
+| ~~[07-verification.md](07-verification.md)~~ | ~~v1.1~~ | ~~定义三实现共用验收合同~~ |
+| ~~[08-implementation-ppa.md](08-implementation-ppa.md)~~ | ~~v1.1~~ | ~~定义实现交付与 PPA 评价规则~~ |
+| ~~[CHANGELOG.md](CHANGELOG.md)~~ | ~~v1.1~~ | ~~记录整体架构与文档版本~~ |
+| ~~[README.md](README.md)~~ | ~~v1.1~~ | ~~汇总新版规格入口和生效范围~~ |
+| ~~[TEMPLATE.md](TEMPLATE.md)~~ | ~~v1.1~~ | ~~提供新规格模板~~ |
+| ~~[document-control.md](document-control.md)~~ | ~~v1.1~~ | ~~维护版本与修订规则~~ |
+| ~~[dp-group/README.md](dp-group/README.md)~~ | ~~v1.1~~ | ~~定义广播计算组规格~~ |
+| ~~[dp/README.md](dp/README.md)~~ | ~~v1.1~~ | ~~汇总 DP 主方案与设计入口~~ |
+| ~~[dp/control.md](dp/control.md)~~ | ~~v1.1~~ | ~~定义 DP 会话状态与有效位推进~~ |
+| ~~[dp/independent-align.md](dp/independent-align.md)~~ | ~~v1.1~~ | ~~记录独立移位对齐对比方案~~ |
+| ~~[dp/interface.md](dp/interface.md)~~ | ~~v1.1~~ | ~~定义 DP 请求及端口合同~~ |
+| ~~[dp/layout-and-scales.md](dp/layout-and-scales.md)~~ | ~~v1.1~~ | ~~定义 DP 容量与输入布局~~ |
+| ~~[dp/pipeline.md](dp/pipeline.md)~~ | ~~v1.1~~ | ~~定义分组共享 DP 的流水候选~~ |
+| ~~[dp/shared-align.md](dp/shared-align.md)~~ | ~~v1.1~~ | ~~定义分组共享对齐微架构~~ |
+| ~~[dp/special-values.md](dp/special-values.md)~~ | ~~v1.1~~ | ~~定义浮点分类与特殊值传播~~ |
+| ~~[dp/unpack.md](dp/unpack.md)~~ | ~~v1.1~~ | ~~定义固定 E/M/S 解包数值布局~~ |
+| ~~[tensorcore/README.md](tensorcore/README.md)~~ | ~~v1.1~~ | ~~定义 TensorCore 阵列规格~~ |
+| ~~[dp/multiplier-sharing.md](dp/multiplier-sharing.md)~~ | ~~v1.1~~ | ~~尾数乘法器组共享与路由~~ |
+| ~~[dp/module-hierarchy.md](dp/module-hierarchy.md)~~ | ~~v1.1~~ | ~~三层模块所有权与未来 S6 专用源接入~~ |
+| ~~[dp/numeric-layout.md](dp/numeric-layout.md)~~ | ~~v1.1~~ | ~~参数位宽/符号幅值/全局 anchor~~ |
+| ~~[dp/scale.md](dp/scale.md)~~ | ~~v1.1~~ | ~~E8M3 scale 与 bias~~ |
+
+v1.2 当前索引：
 
 | 文档 | 当前版本 | 功能 |
 | --- | --- | --- |
-| [00-system-scope.md](00-system-scope.md) | v1.1 | 定义系统边界和设计目标 |
-| [01-numerics.md](01-numerics.md) | v1.1 | 定义数值语义与保留精度 |
-| [03-interfaces.md](03-interfaces.md) | v1.1 | 汇总共用输入输出协议 |
-| [04-timing-state.md](04-timing-state.md) | v1.1 | 定义周期和状态推进要求 |
-| [06-configuration.md](06-configuration.md) | v1.1 | 定义参数及其合法派生关系 |
-| [07-verification.md](07-verification.md) | v1.1 | 定义三实现共用验收合同 |
-| [08-implementation-ppa.md](08-implementation-ppa.md) | v1.1 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.1 | 记录整体架构与文档版本 |
-| [README.md](README.md) | v1.1 | 汇总新版规格入口和生效范围 |
-| [TEMPLATE.md](TEMPLATE.md) | v1.1 | 提供新规格模板 |
-| [document-control.md](document-control.md) | v1.1 | 维护版本与修订规则 |
-| [dp-group/README.md](dp-group/README.md) | v1.1 | 定义广播计算组规格 |
-| [dp/README.md](dp/README.md) | v1.1 | 汇总 DP 主方案与设计入口 |
-| [dp/control.md](dp/control.md) | v1.1 | 定义 DP 会话状态与有效位推进 |
-| [dp/independent-align.md](dp/independent-align.md) | v1.1 | 记录独立移位对齐对比方案 |
-| [dp/interface.md](dp/interface.md) | v1.1 | 定义 DP 请求及端口合同 |
-| [dp/layout-and-scales.md](dp/layout-and-scales.md) | v1.1 | 定义 DP 容量与输入布局 |
-| [dp/pipeline.md](dp/pipeline.md) | v1.1 | 定义分组共享 DP 的流水候选 |
-| [dp/shared-align.md](dp/shared-align.md) | v1.1 | 定义分组共享对齐微架构 |
-| [dp/special-values.md](dp/special-values.md) | v1.1 | 定义浮点分类与特殊值传播 |
-| [dp/unpack.md](dp/unpack.md) | v1.1 | 定义固定 E/M/S 解包数值布局 |
-| [tensorcore/README.md](tensorcore/README.md) | v1.1 | 定义 TensorCore 阵列规格 |
-| [dp/multiplier-sharing.md](dp/multiplier-sharing.md) | v1.1 | 尾数乘法器组共享与路由 |
-| [dp/module-hierarchy.md](dp/module-hierarchy.md) | v1.1 | 三层模块所有权与未来 S6 专用源接入 |
-| [dp/numeric-layout.md](dp/numeric-layout.md) | v1.1 | 参数位宽/符号幅值/全局 anchor |
-| [dp/scale.md](dp/scale.md) | v1.1 | E8M3 scale 与 bias |
+| [00-system-scope.md](00-system-scope.md) | v1.2 | 定义系统边界和设计目标 |
+| [01-numerics.md](01-numerics.md) | v1.2 | 定义数值语义与保留精度 |
+| [03-interfaces.md](03-interfaces.md) | v1.2 | 汇总共用输入输出协议 |
+| [04-timing-state.md](04-timing-state.md) | v1.2 | 定义周期和状态推进要求 |
+| [06-configuration.md](06-configuration.md) | v1.2 | 定义参数及其合法派生关系 |
+| [07-verification.md](07-verification.md) | v1.2 | 定义三实现共用验收合同 |
+| [08-implementation-ppa.md](08-implementation-ppa.md) | v1.2 | 定义实现交付与 PPA 评价规则 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.2 | 维护整体架构与文档版本时间线 |
+| [README.md](README.md) | v1.2 | 汇总新版规格入口和生效范围 |
+| [TEMPLATE.md](TEMPLATE.md) | v1.2 | 提供新规格的固定格式模板 |
+| [document-control.md](document-control.md) | v1.2 | 定义规格版本和历史修订规则 |
+| [dp/README.md](dp/README.md) | v1.2 | 汇总 DP 主方案与设计入口 |
+| [dp/control.md](dp/control.md) | v1.2 | 定义 DP 逐请求控制与有效位推进 |
+| [dp/independent-align.md](dp/independent-align.md) | v1.2 | 记录独立移位对齐对比方案 |
+| [dp/interface.md](dp/interface.md) | v1.2 | 定义 DP 顶层和模块接口 |
+| [dp/layout-and-scales.md](dp/layout-and-scales.md) | v1.2 | 定义 DP 容量与输入布局 |
+| [dp/module-hierarchy.md](dp/module-hierarchy.md) | v1.2 | 定义 DP 模块层级与未来 S6 接入合同 |
+| [dp/multiplier-sharing.md](dp/multiplier-sharing.md) | v1.2 | 定义尾数乘法器共享和模式路由 |
+| [dp/numeric-layout.md](dp/numeric-layout.md) | v1.2 | 推导逐级位宽和统一对齐坐标 |
+| [dp/pipeline.md](dp/pipeline.md) | v1.2 | 定义分组共享 DP 的流水候选 |
+| [dp/resource-accounting.md](dp/resource-accounting.md) | v1.2 | 定义可统计的功能模块边界 |
+| [dp/scale.md](dp/scale.md) | v1.2 | 定义 scale 统一解包和 bias 处理 |
+| [dp/shared-align.md](dp/shared-align.md) | v1.2 | 定义分组共享对齐微架构 |
+| [dp/shifter-sharing.md](dp/shifter-sharing.md) | v1.2 | 定义固定物理移位器的 mux 复用 |
+| [dp/special-values.md](dp/special-values.md) | v1.2 | 定义浮点分类与特殊值传播 |
+| [dp/stage-formats.md](dp/stage-formats.md) | v1.2 | 列出每级数值出口的定点格式与指数范围 |
+| [dp/unpack.md](dp/unpack.md) | v1.2 | 定义固定 E/M/S 解包数值布局 |
+| [dp-group/README.md](dp-group/README.md) | v1.2 | 定义广播计算组规格 |
+| [tensorcore/README.md](tensorcore/README.md) | v1.2 | 定义 TensorCore 阵列规格 |
 
 新条目继续追加时间线。已替代的正文保留删除线，历史版本和历史时间不能被删除；详见 [版本与修订规则](document-control.md)。
 
@@ -98,3 +135,4 @@ v1.1 当前索引：
 | --- | --- | --- | --- | --- |
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 初建 | 建立版本前记录、正式版本时间线及当前文档版本索引；本文件无算术/流水架构变更。 | 用户文档维护要求 |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 记录本轮新流水、源码参考边界与 26 份文档版本索引；旧 v1.0 索引保留删除线。 | 用户确认 |
+| v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 记录 v1.2 架构修订和 29 份文档索引；v1.0/v1.1 索引与真实时间保留。 | 用户本轮要求及确认；[总时间线](CHANGELOG.md) |

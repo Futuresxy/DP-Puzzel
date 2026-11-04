@@ -1,4 +1,4 @@
-> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.1；修改时间：2026-11-04 19:12:59 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
+> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.2；修改时间：2026-11-04 19:38:52 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
 
 # scale 统一 E8M3 数值表示
 
@@ -50,10 +50,17 @@ S2 可以保留原始指数和，在 S3–S5 的独立标量路径预先减去 s
 
 [PEGroup_HQE](../../../hw/legacy/chisel_src/pe/PE_HQE/PEGroup_HQE.scala) 的 S03 先减 scale 的 2×127；[PE_HQE](../../../hw/legacy/chisel_src/pe/PE_HQE/PE_HQE.scala) 与 [FixedPointMeta](../../../hw/legacy/chisel_src/Utils/FixedPointMeta.scala) 使用 `raw_anchor - 2*element_bias + I - 1` 映射到有效 top anchor。旧 [CUnpacker](../../../hw/legacy/chisel_src/Utils/CUnpacker.scala) 在 C 解包时去 bias 并另做规范化。
 
-新版只采用这些数值关系。C 在 S1 一次解包并透传，不复制旧两级 C normalizer；缺省采用有效指数与原始 24 位幅值，在 S8 做最终 LZD/归一化。
+~~新版只采用这些数值关系。C 在 S1 一次解包并透传，不复制旧两级 C normalizer；缺省采用有效指数与原始 24 位幅值，在 S8 做最终 LZD/归一化。~~
+
+**v1.2 当前定义：** 新版只采用这些数值关系。C 改在 S5 单级解包，S1–S4 保持 raw32，FP32 使用有效指数及原始 M24，不复制旧两级 C normalizer；INT32 C 按本笔类型单独解释。
+
+## v1.2：scale datatype 逐笔独立携带
+
+每侧独立 in_scale_a_datatype/in_scale_b_datatype，每个请求的全部同侧槽共用一个类型。支持 E8M0、E4M3、E6M2 及无 scale 的 NONE；NVFP4 仍需要 E4M3，不能从接口遗漏。首版两侧格式相同，scale 类型按 [合法矩阵](interface.md) 对应，但 scale 数值可不同。S1 解包后，scale 系数/指数和控制与请求同步，不从后续输入格式取值。
 
 ## 版本与架构时间线
 
 | 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
 | --- | --- | --- | --- | --- |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 新建架构合同 | 按用户架构图及后续补充定义本模块；区分已确认结构与待审查的位宽推导，尚无实现或 EDA 证据。 | 用户确认；[流水](pipeline.md) |
+| v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 同步本轮接口、C 解包阶段、逐请求控制或资源/验证合同；保留被替代定义。 | 用户本轮要求及确认；[总时间线](../CHANGELOG.md) |
