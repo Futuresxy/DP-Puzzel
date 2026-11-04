@@ -1,4 +1,4 @@
-> 功能：定义浮点分类与特殊值传播；范围：NaN/Inf/零/非正规数、scale、规约和 C 合并；版本：v1.0；修改时间：2026-11-04 17:36:11 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：定义浮点分类与特殊值传播；范围：NaN/Inf/零/非正规数、scale、规约和 C 合并；版本：v1.1；修改时间：2026-11-04 19:12:59 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
 # 浮点分类、特殊值传播与 FP32 输出
 
@@ -49,7 +49,9 @@ MX 子格式按其自身编码分类，不能统一以“指数全 1”判断无
 
 精确抵消为零、多个带符号零求和以及微小值舍入至零的符号需依运算及 RM 规则定义，不能统一清除 sign。输入非正规数的 h 和有效指数按 [解包合同](unpack.md) 处理；FP32 输出在正常数/非正规数边界正确舍入，避免误把 tiny 等同于必定 underflow/inexact。
 
-尚需冻结：支持的 RM 集合与默认值；NaN 使用统一 canonical qNaN 还是确定的 payload 传播顺序；invalid/overflow/underflow/inexact 是否对外输出，以及 underflow 的 tininess 判定时点。若不导出 flags，合规声明必须明确接口范围，不能宣称完整 IEEE 异常环境已经实现。
+~~尚需冻结：支持的 RM 集合与默认值；NaN 使用统一 canonical qNaN 还是确定的 payload 传播顺序；invalid/overflow/underflow/inexact 是否对外输出，以及 underflow 的 tininess 判定时点。~~
+
+**v1.1 当前定义：** 首版最终 FP32 已确定为 RNE；两次局部/全局对齐是幅值 RTZ。尚需冻结 NaN canonical/payload、IEEE 零符号细节、外部 flags 和 tininess；INT32 回绕及其验证溢出记录独立于浮点例外。若不导出 flags，合规声明必须明确接口范围，不能宣称完整 IEEE 异常环境已经实现。
 
 本项目的分组点积使用明确的有限保留窗口。特殊值与 FP32 编码/舍入规则的符合性，以及有限数点积相对精确数学和的误差，须分别验收；前者不能证明整个点积已经做到无限精度求和后一次正确舍入。
 
@@ -63,3 +65,4 @@ MX 子格式按其自身编码分类，不能统一以“指数全 1”判断无
 | --- | --- | --- | --- | --- |
 | 未编号（追溯） | 2026-11-04T17:28:50+08:00 | 历史记录 | 明确固定解包、C/last 边界、全局复位及特殊值规则。 | [42350c5](https://github.com/Futuresxy/DP-Puzzel/commit/42350c5) |
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](../document-control.md) |
+| v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 更新相关数值/接口/流水定义，旧稿保留删除线。 | 用户架构图与补充；[总时间线](../CHANGELOG.md) |

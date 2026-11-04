@@ -17,12 +17,20 @@
 
 本轮已收敛的边界：C 的来源/指令依赖由上层处理，DP 仅计算本笔缩放点积加 C；输入/输出 last 保留，末结果输出后才能切换 mode；全局复位统一取消在途。固定 E/M/S 解包已确定，T/FP16 为 I1F10、BF16 为 I1F7、Q 统一 E5M3/I1F3、E2M1 转 I3F1、HiF4 S1P2/e1 融合为 I2F2，保留 1-bit e2，块 scale 为 E6M2 bias=48。特殊值分类、NaN/Inf 传播及渐进下溢行为目标已写入 [解包](../src/spec/dp/unpack.md) 和 [特殊值](../src/spec/dp/special-values.md)。这些定义尚无实现验收证据。
 
+**v1.1 架构进展（2026-11-04）：** 当前按 T1H2Q4E8→T2H4Q8E16→H16Q32E64（T8）的模块边界定义八级共享流水；S2 乘/指数并行、S3 幅值 RTZ、S4 lane 树、S5 scale 后 sign/magnitude、S6+C 幅值 RTZ、S7 全部规约、S8 RNE/INT32 回绕。E8M3 scale、bias 坐标、参数位宽和树深公式已补充；未来 Q/E/QE 仅在 S6 接入点规划，额外 1–2 级限于后续 profile。当前仍仅 spec，见 [模块层级](../src/spec/dp/module-hierarchy.md) 与 [数值布局](../src/spec/dp/numeric-layout.md)。
+
 开始 CModel 前继续闭合：
 
-1. **块 scale 与模式表**：明确 MX 的 E8M0、NVFP4 的 E4M3 是否作为本项目 scale 编码及特殊值合同，是否存在额外 per-tensor scale；定义 A/B 子型合法组合。HiF4 E6M2/e1/e2 已明确，不再重复待定。
+~~1. **块 scale 与模式表**：明确 MX 的 E8M0、NVFP4 的 E4M3 是否作为本项目 scale 编码及特殊值合同，是否存在额外 per-tensor scale；定义 A/B 子型合法组合。HiF4 E6M2/e1/e2 已明确，不再重复待定。~~
+
+1. **v1.1 更新：** 块 scale 编码与融合顺序已有 v1.1 合同；继续冻结 A/B 子型组合、负/非法 scale 处理与额外 per-tensor scale 的边界。
 2. **逐级定点数值合同**：为解包后乘积、lane 和、基本组和、scale 融合、跨组和及 C 合并写出 sign/width/exponent-or-binary-point；定义主浮点至少 25 位、FP4 35 位、HiF4 约 37 位的计数口径、第一对齐保留节点、增长位和 guard/sticky/舍入规则。E 元素解包无损不等于所有后续移位无损。
-3. **最终 FP32 转换**：冻结 RM 集合/默认值，NaN canonical 或 payload 选择，有符号零、正常/非正规及 overflow/underflow 边界；异常 flags 是否导出和 tininess 时点。不能用 IEEE 特殊值正确替代有限点积正确舍入证明。
-4. **INT8 数值与流水**：确定 signed/unsigned、C/D 整数编码及 overflow/saturation；保留乘法/规约/加 C，按省去浮点对齐/归一化/舍入后的具体树深决定延迟，不继续预设 L=5–6。
+~~3. **最终 FP32 转换**：冻结 RM 集合/默认值，NaN canonical 或 payload 选择，有符号零、正常/非正规及 overflow/underflow 边界；异常 flags 是否导出和 tininess 时点。不能用 IEEE 特殊值正确替代有限点积正确舍入证明。~~
+
+3. **v1.1 更新：** RNE 已确认；继续冻结 NaN/canonical、零符号、渐进下溢与外部 flags/tininess 观察范围。
+~~4. **INT8 数值与流水**：确定 signed/unsigned、C/D 整数编码及 overflow/saturation；保留乘法/规约/加 C，按省去浮点对齐/归一化/舍入后的具体树深决定延迟，不继续预设 L=5–6。~~
+
+4. **v1.1 更新：** signed INT8、INT32 C/D、八级与回绕已确认；继续审查精确位宽界限和共用数据通路落位。
 5. **周期/资源合同**：浮点目标 L=8，完成最大 K 下各级组合深度和资源共享边界推导；复核 II=1、原子 ready 表达式、首请求锁定模式和同步高有效全局 reset 的候选协议。时序约束仍是 1.41 GHz，当前不运行 EDA。
 6. **CModel 观察合同**：定义统一配置、事务 API、周期采样边界及 S1–S8 cutpoint，包含 E/M/S 分类、特殊摘要、各级部分和、valid/last、模式/复位状态；数学高精度 reference 与位精确 cycle model 分开。
 

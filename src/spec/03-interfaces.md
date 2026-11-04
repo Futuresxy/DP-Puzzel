@@ -1,4 +1,4 @@
-> 功能：汇总共用输入输出协议；范围：A/B/C、scale、metadata、valid/last 和模式会话；版本：v1.0；修改时间：2026-11-04 17:36:11 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：汇总共用输入输出协议；范围：A/B/C、scale、metadata、valid/last 和模式会话；版本：v1.1；修改时间：2026-11-04 19:12:59 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
 # 接口与协议
 
@@ -14,11 +14,15 @@
 
 scale 接口以每 16 个 E 元素一槽组织。T8H16Q32E64 有四个物理槽：MXFP8/6 四槽复制同一 32 项块 scale；HiF4 一个 64 项 scale 广播四槽；NVFP4 四槽独立；MXFP4 每两相邻槽共用一个 scale。HiF4 每槽携带 4 个 e1、2 个 e2 项，A/B 独立。
 
-HiF4 e1/e2 均为 1 位，块 scale 为 8-bit E6M2 bias=48，编码见 [解包](dp/unpack.md)。MX/NV scale 的精确合同仍需冻结，不以空默认代替。
+HiF4 e1/e2 均为 1 位，块 scale 为 8-bit E6M2 bias=48，编码见 [解包](dp/unpack.md)。~~MX/NV scale 的精确合同仍需冻结，不以空默认代替。~~
+
+**v1.1 当前定义：** MX/NV scale 现采用 E8M0/非负 E4M3，与 E6M2 共用内部 E8M3；见 [scale](dp/scale.md)。
 
 ## 计算输出
 
-所有浮点模式在 DP 内融合 C，经过最后的对齐和加法、LZD、RM 舍入与 norm，输出 FP32。INT8 可绕开浮点专用路径，但整数在 FP32 C/D 接口上的解释尚未决定。
+所有浮点模式在 DP 内融合 C，经过最后的对齐和加法、LZD、RM 舍入与 norm，输出 FP32。~~INT8 可绕开浮点专用路径，但整数在 FP32 C/D 接口上的解释尚未决定。~~
+
+**v1.1 当前定义：** INT8 会话将相同的 32 位 C/D 端口解释为 INT32，首版八级输出并按低 32 位回绕。
 
 DP 输出包含 `valid`、结果和 `last`，不提供 ready。下游必须保证结果可接收。各输入源采用共同握手，避免 A/B/C 分开接收造成事务错配。
 
@@ -39,3 +43,4 @@ DP 输出包含 `valid`、结果和 `last`，不提供 ready。下游必须保�
 | 未编号（追溯） | 2026-11-04T17:02:03+08:00 | 历史记录 | 细化分组共享、K 参数化、scale/metadata、接口与八周期候选。 | [dba8ecf](https://github.com/Futuresxy/DP-Puzzel/commit/dba8ecf) |
 | 未编号（追溯） | 2026-11-04T17:28:50+08:00 | 历史记录 | 明确固定解包、C/last 边界、全局复位及特殊值规则。 | [42350c5](https://github.com/Futuresxy/DP-Puzzel/commit/42350c5) |
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](document-control.md) |
+| v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 更新相关数值/接口/流水定义，旧稿保留删除线。 | 用户架构图与补充；[总时间线](CHANGELOG.md) |

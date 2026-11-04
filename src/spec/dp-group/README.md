@@ -1,4 +1,4 @@
-> 功能：定义广播计算组规格；范围：4×4 DP 组织、组内无脉动和广播待决项；版本：v1.0；修改时间：2026-11-04 17:36:11 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：定义广播计算组规格；范围：4×4 DP 组织、组内无脉动和广播待决项；版本：v1.1；修改时间：2026-11-04 19:12:59 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
 # DP-Group：4×4 广播计算组
 
@@ -31,3 +31,4 @@
 | 未编号（追溯） | 2026-11-04T15:43:59+08:00 | 历史记录 | 记录 TensorCore/DP-Group/DP 首批架构、数值和时序要求。 | [76d31f2](https://github.com/Futuresxy/DP-Puzzel/commit/76d31f2) |
 | 未编号（追溯） | 2026-11-04T17:02:03+08:00 | 历史记录 | 细化分组共享、K 参数化、scale/metadata、接口与八周期候选。 | [dba8ecf](https://github.com/Futuresxy/DP-Puzzel/commit/dba8ecf) |
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](../document-control.md) |
+| v1.1 | 2026-11-04 19:12:59 +08:00 | 版本承接 | 架构版本承接 v1.1；本文层级/流程或文档维护规则不变，具体流水/数值变更见 DP 合同。 | 用户架构图与补充；[总时间线](../CHANGELOG.md) |

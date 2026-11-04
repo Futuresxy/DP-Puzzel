@@ -1,0 +1,142 @@
+> 功能：推导逐级位宽和统一对齐坐标；范围：局部 27 位幅值、E 紧凑组和、sign/magnitude、全局窗口和 INT32；版本：v1.1；修改时间：2026-11-04 19:12:59 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
+
+# 逐级位宽、符号/幅值与 anchor
+
+状态：用户确定两次移位均对无符号幅值向零截断，S5 T2H4Q8E16 输出独立符号/幅值；宽度和树深由参数派生。以下为与图一致的可审阅数值推导，不代表完整误差或时序验收。
+
+## 集中参数与自然增长
+
+所有结构值由有效配置进入 Chisel 参数对象及模块构造参数；计划入口 `src/chisel/parameter/`，文件尚未创建。CModel、手写 Verilog 与 TB 使用同一有效参数，不从各模块中的常数字面值拼装设计。
+
+```text
+L(n) = ceil(log2(n)), L(1)=0
+product_width = operand_width_a + operand_width_b
+sum_signed_width(w,n) = w + L(n)
+local_mag_width = product_integer_bits + local_align_fraction_bits
+local_signed_width = local_mag_width + 1
+pair_count_E = elements_per_lane_E / 2
+hif_delta_max = operands_per_product * (2^hif_e2_bits - 1)
+e_exact_guard_bits = hif_delta_max
+E_pair_signed_width = 2*e_magnitude_bits + 1 + L(2)
+E_group_compact_width = E_pair_signed_width + e_exact_guard_bits
+                        + L(pair_count_E) + L(lanes_per_base_group)
+```
+
+本配置 `local_align_fraction_bits=25`、乘积整数位=2，得到无符号 W27=I2F25、符号化后 W28。E 元素幅值四位、e2 一位、两侧相乘，推导 pair W10、guard=2、四个 pair 的 lane 和 W14、两个 lane 的基本组和 W15；15 已含符号，不能将它当作任意模式的统一精度常量。
+
+对 n 个叶节点的平衡树，由参数生成每层两两相加，未配对叶节点直传，层数 L(n)；各节点按输入宽度与增长推导。顶层参与数为 `group_count+1`（包括 C），K4/K8/K16 对应 2/3/5 项，树深 1/2/3；三组或其他未来非二次幂也遵循该规则，但当前合法构建 K 仍为 4/8/16。
+
+## S2 到 S3：T/H/Q 初次对齐
+
+| 模式 | 原始无符号幅值乘积 | 原小数位 | 放入 I2F25 的低位补零 |
+| --- | --- | --- | --- |
+| TF32/FP16 | W22，I2F20 | 20 | 25-20 |
+| BF16 | W16，I2F14 | 14 | 25-14 |
+| Q | W8，I2F6 | 6 | 25-6 |
+
+基本组公共 r 是两个 lane 所有有效有限非零乘积指数的 MAX，delta=r-e_product。若有效有限非零乘积集合为空，参考 r 使用安全占位零、数据幅值全部为零；特殊值与零符号仍通过旁带传递。S3 对无符号幅值执行逻辑右移，`delta>=local_mag_width` 时幅值为零；随后以独立 sign XOR 转成补码供加法树使用。向零截断发生在该保留窗口，不能把负数直接算术右移后的 -1 当作小负值的正确零结果。
+
+25 是当前小数位配置下限；派生 W27 不含符号。移出位可用于误差统计，不能未经新数值合同直接混入最终舍入；S8 RNE 对已规定有限位宽路径结果舍入，不意味着被局部截断的精确点积可恢复。
+
+## S3 到 S5：E、整数及共享加法树
+
+E 的八个产品先两两符号化相加为四个 pair。每个 pair 低位补 `e_exact_guard_bits`，HiF4 再按基本组公共 e2 和右移 0/1/2 位，随后参与四路求和。由于所有移位前至少有两个低零，HiF4 此处精确；取差值低两位前必须先保证 delta≤2，不能把更大差值截短后回绕。
+
+Q 四路在 S4 通过两层加法；H 两路复用最后一层；T 单项通过最后一级的旁路或与零相加，保持同一寄存边界。E 的四个 pair 和 INT8 的四个产品使用相同四路树。每种模式先按参数给出自然表示，再以**有符号值低位补零**放入共用槽；补 p 位必须同步令 F增加 p，数值不变。
+
+一套由当前参数推导的共享槽候选是：S3 补码叶 W28、S4 lane 槽 W30、S5 基本组补码槽 W31。下表 F 是该槽对应的小数点，不是新增加的数学信息：
+
+| 模式 | S4 lane W30 的 F | S5 W31 的 F（含 scale 系数后的落位） |
+| --- | ---: | ---: |
+| T | 27 | 27 |
+| FP16/BF16 | 26 | 26 |
+| Q | 25 | 25 |
+| MXFP4，单位 scale 系数 | 20 | 20 |
+| NVFP4，非单位 scale 系数 | 20 | 18 |
+| HiF4，非单位 scale 系数 | 22 | 20 |
+| INT8，结构低零 | 12 | 12 |
+
+这些值由自然位宽、两级树、E 保护位及槽尾部补零计算，改变参数后重算，不把表中 30/31 或 F 写死进模块。NV/HiF4 的紧凑有符号组和 W15 乘八位无符号 scale 系数，数学上 W23 足够；若 RTL 先对系数补符号零而产生 W24 原生乘积，需证明高位仅是符号扩展才能删除。
+
+## 共享槽与 F 的构造公式
+
+```text
+W_leaf = local_signed_width
+W_lane = W_leaf + L(elements_per_lane_Q)
+W_group = W_lane + L(lanes_per_base_group)
+W_lane_natural(T/H/Q) = local_signed_width + L(elements_per_lane(mode))
+F_lane_natural(T/H/Q) = local_align_fraction_bits
+W_lane_natural(E) = E_pair_signed_width + e_exact_guard_bits + L(pair_count_E)
+F_lane_natural(E) = e_product_fraction_bits(mode) + e_exact_guard_bits
+W_lane_natural(INT8) = signed_width_from_product_range(INT8) + L(elements_per_lane_INT8)
+F_lane_natural(INT8) = 0
+pad_lane(mode) = W_lane - W_lane_natural(mode)
+F_lane(mode) = F_lane_natural(mode) + pad_lane(mode)
+F_group_unscaled(mode) = F_lane(mode)
+W_scale_product = 2 * scale_mantissa_bits
+F_scale_product = 2 * scale_mantissa_fraction_bits
+W_compact_scaled = E_group_compact_width + W_scale_product
+F_group_scaled(E) = e_product_fraction_bits(mode) + e_exact_guard_bits
+                    + F_scale_product + W_group - W_compact_scaled
+```
+
+signed_width_from_product_range 从完整合法输入范围推导，包括 -128；不用浮点尾数的 sign+自然无符号宽度估计代替。所有 pad 均须非负，按模式裁剪高符号扩展或低结构零必须有范围/整除证明；不适用的公式分支不生成硬件。E8M0 单位系数旁路直接使用 F_group_unscaled，不让虚拟系数人为移动小数点。
+
+## S5 输出为独立符号/幅值
+
+S5 内部允许补码求和，接口输出 `negative`、`magnitude[M_group-1:0]`、无偏 alpha 或等价 raw-anchor/bias、F、zero 和 special。`value=(-1)^negative*magnitude*2^(alpha-F)`。
+
+M_group 从合法输入的绝对值上界和公共落位推导。取 abs 使用足够宽的临时值；不能对最负补码在原宽度取负并丢失高位。当前表格可由范围证明使用 30 位幅值和一位独立符号，但该数值只是默认参数的派生结果；若范围证明不成立，参数检查须加宽，不能隐式截断。零的数值幅值为零，IEEE 零符号仍由旁带规则保存。
+
+## S6：组 token 与 C 共用幅值移位
+
+组输出是定点数，统一比较的应是其幅值最高物理位的权重：
+
+```text
+lambda_i = alpha_i - F_i
+A_i = lambda_i + (M_i - 1)
+A_common = max(A_i for finite_nonzero group tokens and C)
+M_global = global_signed_align_width - 1
+pad_i = M_global - M_i
+shift_i = A_common - A_i
+aligned_mag_i = (magnitude_i << pad_i) >> shift_i
+lambda_common = A_common - (M_global - 1)
+```
+
+全局有限非零集合为空时不执行空集合 MAX，A_common 使用安全占位零，全部对齐幅值为零；特殊结果和 IEEE 零符号由旁带选择。zero/特殊源不计算无意义的 sentinel 差值。超出窗口的 shift 输出零；先对幅值向零截断，再恢复独立符号为补码供 S7 使用。各 source 的 pad 必须非负，由构建期合法性检查保证。`global_signed_align_width` 当前初值为 40（含一位符号），其幅值移位窗口为 39；扫描范围必须满足输入容器和目标精度约束，尚不任意指定上下限。
+
+C 在 S1 解包为符号、24 位幅值 `{h,F23}`、`alpha_c=(raw_e==0 ? 1 : raw_e)-127`、F_c=23。非正规 C 保留 h=0 与有效指数，不增加前置 LZD 级。C 的有效指数参与 S6 MAX，尾数在 S6 首次参与对齐。若提前到 S5 计算全局 MAX，必须计入实际组和是否为零的依赖，不能让完全抵消的组赢得 MAX 并使其他小结果无谓截断。
+
+## S7：一次规约所有组与 C
+
+`N=group_count+1`，每个输入为 global_signed_align_width 位，输出自然宽度 `W_sum=global_signed_align_width+L(N)`。默认 W40 下，K4/K8/K16 的总和分别 W41/W42/W43，不把五项和截回 W40。加法树可采用平衡 CPA 或压缩树，单周期完成是目标，组合路径需评估。
+
+总和仍位于 lambda_common。S8 对绝对值求最高有效位 k，最终无偏指数 `E=lambda_common+k`；若采用随容器最高位的 anchor 表示，宽度增长必须同步修正 anchor。不得用裸 raw anchor 直接编码 FP32。
+
+## INT8/INT32 与共用输出
+
+有符号 INT8 输入解为符号+8 位幅值；C 在整数会话按二补码 INT32 解释，输出也是 INT32。S3、S6 不做浮点指数对齐；供共享加法器的低位补零仅是可逆结构落位。
+
+C 的绝对值最多 2^31，故需要 32 位无符号幅值。令 `int_pad_bits=M_global-int32_bits`（默认 39-32=7），将各组整数与 C 的幅值统一低位补该数量零，再恢复符号。INT8 原始乘积虽由 16 位无符号单元产生，但合法输入范围保证乘积在 [-16256,16384]，可精确用 16 位补码；共享 W28 叶槽因此补 12 个低零，S4/S5 保持该 F。组槽中原有结构低零先按其派生 F 精确还原，不能把它们当作真实小数截断。要求 M_global≥int32_bits。
+
+S7 保留完整求和；S8 精确删除结构零后得到数学整数 R，输出 `D_bits=R mod 2^32`，按二补码 INT32 解释。溢出条件 `R < -2^31 or R > 2^31-1` 记入验证/trace；本轮不新增 DUT 异常端口。即使 R 溢出，也不变成 NaN/Inf 或触发 RNE。
+
+IEEE 754 的浮点转整数异常不规定本项目整数乘加的溢出选择；用户已选首版回绕。[PTX ISA 9.0 的整数 mma](https://docs.nvidia.com/cuda/archive/13.0.2/parallel-thread-execution/index.html#warp-level-matrix-instructions-mma) 同样区分未指定 satfinite 的回绕和指定后的饱和；此处不引入饱和模式。
+
+## INT32 回绕示例
+
+- C=2147483647、点积贡献=1：数学 R=2147483648，输出位为 0x80000000，按 INT32 为 -2147483648，overflow=true。
+- C=-2147483648、点积贡献=-1：数学 R=-2147483649，输出位为 0x7fffffff，按 INT32 为 2147483647，overflow=true。
+- R 在 [-2^31,2^31-1] 内时数值不变，overflow=false。输出行为与 overflow 记录分开，不增加输出周期。
+
+## S8 RNE 与剩余数值待决项
+
+首版 FP32 只支持 RNE，相等时取偶数。设规范化后保留位最低位为 lsb，丢弃部分首两位为 guard/round，其后各位 OR 为 sticky，则进位条件为 `guard && (round || sticky || lsb)`；舍入进位可再次调整输出指数。对 S7 有限结果确定符号、LZD、规范化、guard/round/sticky 及舍入进位，再打包 FP32。NaN payload/canonical、负零与微小值边界、异常 flags 范围仍需冻结；RNE 不追溯修复前面向零截断的信息损失。
+
+当前已把主模式首次局部对齐解释为至少 25 个小数位。FP4 35/HiF4 37 的精度计数口径及在 W40 全局窗口下的误差边界仍需证明，不能把 40 位容器自动视为这些目标已验收。
+
+## 版本与架构时间线
+
+| 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
+| --- | --- | --- | --- | --- |
+| v1.1 | 2026-11-04 19:12:59 +08:00 | 新建架构合同 | 按用户架构图及后续补充定义本模块；区分已确认结构与待审查的位宽推导，尚无实现或 EDA 证据。 | 用户确认；[流水](pipeline.md) |

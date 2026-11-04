@@ -1,8 +1,10 @@
-> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.0；修改时间：2026-11-04 17:36:11 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.1；修改时间：2026-11-04 19:12:59 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
 # 参数与配置合同
 
-状态：首批参数与关系已定义；具体 schema、默认 K 和未决参数待定。下列名称是 spec 的统一符号，不代表已实现 API。
+~~状态：首批参数与关系已定义；具体 schema、默认 K 和未决参数待定。下列名称是 spec 的统一符号，不代表已实现 API。~~
+
+状态：当前主配置 k_fp16=16、合法变体 K4/K8/K16 已明确；格式/结构常量与派生公式按 v1.1 参数合同集中管理。配置 schema、扫描合法范围及未来扩展 profile 尚待冻结，当前没有已实现 API。
 
 ## 集中参数与约束
 
@@ -52,7 +54,34 @@ CModel、Chisel、手写 Verilog 和 testbench 使用相同的有效配置。规
 
 “所有值参数化”包括命名的固定格式常量和有依据的派生表达式，不意味着可以随意改变标准格式编码或把每条局部连线都变为独立自由参数。参数须有单位、作用域、来源、合法性和默认状态；尚未决定的值保持未指定，不能以 0 或旧版值代替。
 
-非法 K、HiF8 模式、低于明确精度下限或超过 8 级的候选不得静默降级。精度计数口径等未闭合项在实施前必须解决，不能仅通过“参数检查”伪装为已验证设计。
+~~非法 K、HiF8 模式、低于明确精度下限或超过 8 级的候选不得静默降级。~~
+
+**v1.1 当前定义：** 非法 K、HiF8、低于精度下限或当前基线超过八级都不得静默降级；未来源扩展增加 1–2 级必须以另行批准的 profile 显式记录。精度计数口径等未闭合项在实施前必须解决，不能仅通过“参数检查”伪装为已验证设计。
+
+## v1.1：参数对象与资源公式
+
+所有模块由构造参数接收有效参数对象，计划在 `src/chisel/parameter/` 定义（未创建文件），生成期做合法性检查；输入配置与实际派生结果进入后续 manifest。CModel/手写 Verilog/TB 读取同一有效配置。
+
+| 具名量 | 定义或当前初值 | 派生用途 |
+| --- | --- | --- |
+| lanes_per_base_group / mul_groups_per_lane | 2 / 2 | 基本组与乘法器组实例数 |
+| mul_hi_bits / mul_lo_bits | 8 / 4 | HH/HL/LH/LL 原始乘积和位移 |
+| local_align_fraction_bits | 当前 25，至少 25 | 小数保留位；局部幅值宽=乘积整数位+该值 |
+| global_signed_align_width | 初值 40，可扫参 | 包含符号；幅值窗口为该值减一 |
+| hif_e1_bits / hif_e2_bits | 1 / 1 | 局部幅值与剩余指数范围 |
+| e_exact_guard_bits | 2×(2^hif_e2_bits-1) | 先补低零保证 HiF4 局部移位精确 |
+| tree_depth(n) | ceil(log2(n))，n=1 为零 | 递归生成平衡树，不要求 n 为二次幂 |
+| top_fanin | group_count+1 | 包含 C；2/3/5 项对应深度 1/2/3 |
+| top_sum_width | global_signed_align_width+tree_depth(top_fanin) | 默认 41/42/43，完整保留增长 |
+| local/global_shift_control_bits | ceil(log2(window_width+1)) | 完整比较 delta 后饱和，不截断 delta 造成回绕 |
+| int8_input_bits / int32_bits | 标准格式常量 8 / 32 | INT8 幅值范围及 INT32 回绕模数 |
+| latency_fp / latency_int | 当前 8 / 8 | 模式会话共享输出寄存边界 |
+
+计数器/指数/anchor 的宽度从最大值和有符号范围推导。8+8 的指数和必须保留第九位，5+5 保留第六位；scale 指数和也是九位。上表实际值和 [逐级布局](dp/numeric-layout.md) 中的 27/15/30/31 仅作默认配置的推导展示，不在算术模块中重新硬写。窗口合法范围由输入位宽与精度条件决定，不自行填一组扫描上下限。
+
+## v1.1：当前与未来 profile 的延迟约束
+
+当前主配置 `H16Q32E64（TF32=T8）` 的 latency_fp/latency_int=8，max_dp_pipeline_stages=8；K4/K8 的派生变体同一固定输出周期。未来专用 Q/E/QE 输入源必须另定静态 source profile；全局物理扇入数=实例化来源数+1（C），生成树的深度按该物理扇入数计算。模式能力掩码不改变本 profile 的固定周期。只有用户批准的未来扩展 profile 才能定义 9/10 级上限及对应 valid/last 延迟，当前不开放或实现这些配置。
 
 ## 历史修订对照
 
@@ -69,3 +98,4 @@ CModel、Chisel、手写 Verilog 和 testbench 使用相同的有效配置。规
 | 未编号（追溯） | 2026-11-04T17:02:03+08:00 | 历史记录 | 细化分组共享、K 参数化、scale/metadata、接口与八周期候选。 | [dba8ecf](https://github.com/Futuresxy/DP-Puzzel/commit/dba8ecf) |
 | 未编号（追溯） | 2026-11-04T17:28:50+08:00 | 历史记录 | 明确固定解包、C/last 边界、全局复位及特殊值规则。 | [42350c5](https://github.com/Futuresxy/DP-Puzzel/commit/42350c5) |
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](document-control.md) |
+| v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 补充 v1.1 相关资源、数值或验证合同。 | 用户架构图与补充；[总时间线](CHANGELOG.md) |
