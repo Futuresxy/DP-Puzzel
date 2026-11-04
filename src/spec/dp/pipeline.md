@@ -1,12 +1,20 @@
-> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.2.1；修改时间：2026-11-04 20:17:40 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.3；修改时间：2026-11-04 21:03:38 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
-# T2H4Q8E16 分组共享方案：八周期流水 v1.2
+~~# T2H4Q8E16 分组共享方案：八周期流水 v1.2~~
+
+# T2H4Q8E16 分组共享方案：八周期流水 v1.3
+
+~~旧标题：八周期流水 v1.2。~~
 
 ~~T2H4Q8E16 分组共享方案：八周期流水 v1.1（旧标题）~~
 
 状态：用户确定本图的数据依赖和阶段组织，浮点与 INT8 当前统一 L=8、目标 II=1；S2/S3 标量边界、S5/S6/S8 组合时序仍待验证。~~INT8 在 S8 直接输出 INT32，未启用早出旁路。~~
 
-**v1.1 当前定义：** INT8 在 S8 直接输出 INT32，未启用早出旁路。模块归属与未来 S6 专用源接入见 [模块层级](module-hierarchy.md)；当前基线八级，未来扩展 profile 的额外 1–2 级不用于放宽本基线。旧八级分配见下方删除线记录。
+~~**v1.1 当前定义：** INT8 在 S8 直接输出 INT32，未启用早出旁路。模块归属与未来 S6 专用源接入见 [模块层级](module-hierarchy.md)；当前基线八级，未来扩展 profile 的额外 1–2 级不用于放宽本基线。旧八级分配见下方删除线记录。~~
+
+~~**v1.3 当前定义：** 首选全格式 L8，INT8 无早出；S5 增加 scale 后规格化。用户现允许若该级不能满足时序，单独拆出规格化一级形成 L9 备用 profile；不因此自动启用，也不涉及先前 Q/E/QE 扩展的其他级数。~~
+
+**v1.3 当前定义：** 首选全格式L8；S5 scale后LZD只计数，S6一次双向移位。必要时允许L9备用拆检测/指数准备；INT无早出。
 
 ## 当前八级划分
 
@@ -20,11 +28,17 @@
 | ~~S4~~ | ~~共用四路两层规约树：Q/E/INT8 四项，H 复用末层，T 单项直通同一输出边界~~ | ~~同步基本组共同 anchor、scale 系数/指数、分类、C、valid/last~~ |
 | S4 | 共用四路两层规约树：Q/E/INT8 四项，H 复用末层，T 旁路同一边界 | 同步 r、scale、special、ctrl/valid/last；C 仍为 raw32 |
 | ~~S5~~ | ~~两个 lane 相加；NVFP4/HiF4 紧凑组和乘 scale 系数，其他模式旁路；输出独立符号+幅值+anchor/F/zero/special~~ | ~~完成或透传元素/scale bias 与静态小数点修正；可预计算全局比较信息，但不能忽略 S5 实际组和为零的依赖~~ |
-| S5 | 两 lane 合并、NV/HiF4 scale 注入及 sign/magnitude；并行把 C raw32 按本笔 c_datatype 解包为 FP32 或 INT32 | 输出组 top-anchor、zero/special；C 分类/幅值/anchor 同拍注册；逐笔 ctrl 同行 |
-| S6 | 所有基本组 token 与 C 按有效 top anchor 比较，求 delta，幅值移位向零截断，再转补码；INT8 仅作可逆低零落位 | 当前全局对齐总宽初值 W40（含符号）可扫参；C 指数和幅值在这里与所有 SOP 汇合 |
+| ~~S5~~ | ~~两 lane 合并、NV/HiF4 scale 注入及 sign/magnitude；并行把 C raw32 按本笔 c_datatype 解包为 FP32 或 INT32~~ | ~~输出组 top-anchor、zero/special；C 分类/幅值/anchor 同拍注册；逐笔 ctrl 同行~~ |
+| ~~S5~~ | ~~两 lane 合并 → scale 乘法/旁路 → 安全 sign/abs → 最终 SOP 的 LZD → 左移规格化~~ | ~~bias/静态坐标先准备，最终 e=A_raw-l；C 并行解包并规格化；组/C token 同拍注册~~ |
+| S5 | 两 lane 合并 → scale 乘法/旁路 → 安全 sign/abs → LZD 只产生计数z；SOP不左移 | 注册原幅值/A_raw/z及zero/special；C并行解包、子正规检测z；控制同行 |
+| ~~S6~~ | ~~所有基本组 token 与 C 按有效 top anchor 比较，求 delta，幅值移位向零截断，再转补码；INT8 仅作可逆低零落位~~ | ~~当前全局对齐总宽初值 W40（含符号）可扫参；C 指数和幅值在这里与所有 SOP 汇合~~ |
+| ~~S6~~ | ~~规格化组与 C 取真实指数 MAX，求 unsigned delta，幅值右移 RTZ，再转补码~~ | ~~当前全局 signed W40 可扫参；INT8 仅结构落位，所有字段使用同行 ctrl~~ |
+| S6 | 由A_raw-z求实际指数并MAX，按net=z-d=A_raw-E_max一次双向幅值移位，再转补码 | 正net左移、负net右移RTZ；默认signed W40；INT仅结构落位 |
 | S7 | 一棵树直接求和 group_count 个组结果与 C，保留全部增长位 | 包含 C 的扇入数 2/3/5，深度 1/2/3；旁带持续推进 |
 | ~~S8~~ | ~~浮点 abs/LZD/规范化/RNE/FP32 打包；INT8 删除结构低零后输出 INT32 低 32 位~~ | ~~特殊结果固定同延迟选择；INT32 回绕，溢出写入验证 trace；输出 out_valid/out_last~~ |
 | S8 | 浮点 abs/LZD/norm/RNE/FP32；INT8 删除结构低零后 INT32 回绕 | out_valid/out_last/out_d_datatype 对应同一请求；不同格式均 L=8 |
+
+~~下图为v1.2简图，未包含S5的z字段与S6双向控制；当前完整图见本页v1.3数据流。~~
 
 ```mermaid
 flowchart LR
@@ -51,13 +65,21 @@ S2 的 MAX 回传是同一周期中的有向组合路径，不是跨周期握手
 
 ## 全局 MAX 能否放在 S5
 
-组的 anchor 与 F 可以提前算，实际零组状态取决于 S5 求和/scale 结果。稳妥候选是在 S6 对 S5 已注册的组 token（包含 zero）及 C 做 MAX/delta/移位。如果要把 MAX 提前至 S5，必须把零屏蔽、特殊值屏蔽及 C 比较一并满足，并预算求和→zero 检测→MAX 路径。不得为省时序让完全抵消的高 anchor 零组压低其他小结果。
+~~组的 anchor 与 F 可以提前算，实际零组状态取决于 S5 求和/scale 结果。稳妥候选是在 S6 对 S5 已注册的组 token（包含 zero）及 C 做 MAX/delta/移位。如果要把 MAX 提前至 S5，必须把零屏蔽、特殊值屏蔽及 C 比较一并满足，并预算求和→zero 检测→MAX 路径。不得为省时序让完全抵消的高 anchor 零组压低其他小结果。~~
+
+~~**v1.3：** 静态 A_raw 可以提前准备；实际 e=A_raw-l 必须等最终 scale 后幅值检测。S6 对已注册的规格化 token 做全局 MAX，不将其提前到 S5。零/特殊源独立屏蔽。~~
+
+**当前：** 静态A_raw可提前准备；e=A_raw-z依赖scale后计数。S6对原幅值/A_raw/z的token生成e并MAX；如把e预计算到S5，需记录寄存字段且保持原坐标可重建。
 
 ## 时序与完整计算预算
 
 1. S2 T/FP16 部分积重构及 INT8 两个交叉乘积重构；指数/MAX 与尾数乘法是并行路径。
 2. S3 delta+27 位幅值移位+符号化；E pair 加法与最大两位精确移位。
-3. S5 两 lane 相加→紧凑化→scale 系数乘法→符号/幅值输出。
+~~3. S5 两 lane 相加→紧凑化→scale 系数乘法→符号/幅值输出。~~
+
+~~3. **v1.3 S5：** 两 lane 相加→紧凑化→scale 系数乘法/旁路→安全 abs→LZD→左移；A_raw 预计算与数据链并行，但 e 修正等待 l。C 解包/子正规规格化是另一条并行路径。~~
+
+3. **当前S5：** 两lane和→紧凑scale乘法/旁路→安全abs→LZD计数。C解包/子正规计数并行；S5无动态左移。S6需预算e生成→MAX→net→方向mux/移位。
 4. S6 最多四组+C 的有效 anchor MAX、减法、幅值移位与符号恢复。
 5. S7 最大五项宽位数规约，S8 abs/LZD/规范化/舍入进位链。
 
@@ -149,7 +171,64 @@ flowchart LR
 
 ## v1.2.1：组输出 LZD 的时序候选
 
-[组规格化候选](group-normalization-options.md) 比较精确 LZD＋合并移位及粗粒度检测。S5 放 LZD 会延长组和/scale/abs 路径，S6 放 LZD 则延长 MAX/shift 前的路径；当前尚未选择或改变八级分工。C 的非正规输入也需考虑实际最高位。不能只提前静态 bias 就宣称解决了 SOP 抵消后的指数检测依赖。
+~~[组规格化候选](group-normalization-options.md) 比较精确 LZD＋合并移位及粗粒度检测。S5 放 LZD 会延长组和/scale/abs 路径，S6 放 LZD 则延长 MAX/shift 前的路径；当前尚未选择或改变八级分工。C 的非正规输入也需考虑实际最高位。不能只提前静态 bias 就宣称解决了 SOP 抵消后的指数检测依赖。~~
+
+~~**v1.3：** 已按用户选择把完整规格化放在 S5 的 scale 乘法之后；合并移位/粗粒度为未采用对照。S5 到 LZD 的实际数据依赖必须计入时序。~~
+
+**当前：** S5 scale之后只做LZD计数；合并双向移位已选为S6主方案，完整双单向和粗粒度版仅作对照。
+
+## v1.3：当前首选数据流与 L9 条件备用
+
+```mermaid
+flowchart LR
+ S4["S4 lane SOP"] --> ADD["S5 两lane合并"]
+ ADD --> MUL["scale乘法 / 旁路"]
+ MUL --> ABS["安全sign/abs：m_raw"]
+ ABS --> Z["LZD：只产生z"]
+ ABS --> REG["S5寄存 m_raw / A_raw / z"]
+ Z --> REG
+ A["bias与静态坐标修正：A_raw"] --> REG
+ REG --> E["S6 e=A_raw-z / MAX"]
+ C["S5 C解包 / 仅计数z_c"] --> E
+ E --> NET["net=z-d=A_raw-E_max"]
+ REG --> SHIFT["S6一次双向移位"]
+ C --> SHIFT
+ NET --> SHIFT
+ SHIFT --> S7["S7符号总和"]
+ S7 --> S8["S8 norm/RNE 或 INT32"]
+```
+
+S5没有动态左移器；S6直接用A_raw-E_max可避免MAX后串联d再减z两次减法，数值等价，trace仍显示e/d/z/net。e=A_raw-z若提前在S5计算并寄存，是后续等价时序优化，需要预算LZD后标量减法及接口字段；当前基础接口明确原anchor+z。
+
+首选全格式L8。若S5检测链或S6指数比较链过长，可设置构建期post_scale_norm_extra_stage=1（默认0）：S5组和/scale及C解包，新增S6完成abs/LZD计数与anchor准备，S7全局MAX/一次双向移位，S8总树，S9最终编码。该备用仍不实例化前置动态左移器。C/INT/special/ctrl/valid/last同拍顺延，latency=8+该参数，全格式同L，不引入乱序。
+
+这是用户允许的必要时多一级，不是已选9级；CModel/RTL后续按同配置记录真实寄存边界，L8/L9算术须bit-exact。两段单向方案也保持同一数学参考，另列面积/功耗/关键路径对照；未运行EDA。沿n接收，末级在n+L-1更新，沿n+L更新前观察。
+
+## 本轮未提交草案对照：v1.3：当前数据流与必要时的 L9 分拆
+
+~~## v1.3：当前数据流与必要时的 L9 分拆~~
+
+~~`flowchart LR`~~
+~~`S4["S4 lane SOP"] --> ADD["S5 两 lane 合并"]`~~
+~~`ADD --> MUL["scale 乘法 / 旁路"]`~~
+~~`MUL --> ABS["安全 sign/abs"]`~~
+~~`ABS --> LZ["最终幅值 LZD"]`~~
+~~`LZ --> LEFT["左移规格化"]`~~
+~~`A["无偏 A_raw 预计算"] --> E["e = A_raw - l"]`~~
+~~`LZ --> E`~~
+~~`LEFT --> REG["S5 组 token 寄存"]`~~
+~~`E --> REG`~~
+~~`C["S4 raw C"] --> CN["S5 解包 / 子正规规格化"]`~~
+~~`REG --> S6["S6 signed MAX / unsigned delta / 右移 RTZ"]`~~
+~~`CN --> S6`~~
+~~`S6 --> S7["S7 完整求和"]`~~
+~~`S7 --> S8["S8 norm / RNE 或 INT32"]`~~
+
+~~上方旧 v1.2 简图未画出规格化，此图及本页当前表为 v1.3 的完整依赖。S5 左移精确，不产生 RTZ；S3/S6 的两个 RTZ 截断点仍保留，S6 网格坐标发生变化。~~
+
+~~若 S5 未满足目标周期，可用构建期 `post_scale_norm_extra_stage=1`（默认0）：S5 完成组和/scale 并寄存未规格化 coefficient/坐标，S6 专门安全 abs/LZD/左移/修正 anchor，S7 全局对齐，S8 总树，S9 最终编码。C 仍在 S5 解包；L9 时其规格化可在新增 S6 完成，与组同步。INT、特殊摘要、ctrl/valid/last 同样通过新增一级，所有格式同为 L9，不引入结果乱序。~~
+
+~~`latency=8+post_scale_norm_extra_stage`；L8 首选，L9 是用户授权的时序备用，尚未选择。沿 n 接收、末级在 n+L-1 更新、TB 在 n+L 更新前观察。每个 profile 必须在配置/trace/验收中显式记录；数值结果应完全一致，只移动寄存边界。未取得实现和工艺时序证据前，不宣称任一 profile 达到1.41 GHz。~~
 
 ## 版本与架构时间线
 
@@ -161,3 +240,4 @@ flowchart LR
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 重排 S2 并行乘/指数、S3 移位、S4 规约、S5 scale/sign-magnitude、S6+C 对齐、S7 总和、S8 FP32/INT32。 | 用户架构图与补充；[总时间线](../CHANGELOG.md) |
 | v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | C 从 S1 解包改为 S1–S4 raw32、S5 解包；保持 L8；同步共享移位/控制/输出类型。 | 用户本轮要求及确认；[总时间线](../CHANGELOG.md) |
 | v1.2.1 | 2026-11-04 20:17:40 +08:00 | 讨论/说明补充 | 记录组实际指数候选及对应数值、特殊值或资源边界；不改变 v1.2 主路径。 | 用户 LZD/指数/特殊值讨论；[总时间线](../CHANGELOG.md) |
+| v1.3 | 2026-11-04 21:03:38 +08:00 | 架构修订 | 按用户最终选择，S5 scale后LZD仅计数、S6一次双向移位；同步数值/接口/资源/备用周期，保留对照。 | 用户最终双向移位选择；[总时间线](../CHANGELOG.md) |

@@ -1,4 +1,4 @@
-> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token 和历史对照；版本：v1.2；修改时间：2026-11-04 19:38:52 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token 和历史对照；版本：v1.3；修改时间：2026-11-04 21:03:38 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
 # DP 顶层与模块接口定义
 
@@ -112,14 +112,20 @@ req_fire = accept_enable & all_valid
 | 基本组 → lane | 每侧 32 bit、该 lane e1×2/e2×1、ctrl、valid | 当前请求控制和分类 | S1 解包归 lane，两个 lane 同步 |
 | lane → 组 MAX → lane | exp_candidates/active、group_max | 指数和当前请求的有效掩码 | S2 组合侧接口；候选不依赖返回 MAX，无反馈环 |
 | lane → 基本组 | SOP 补码 W_lane、r、zero/special、ctrl、valid/last | 默认 W_lane=30，r=U9 | S4 同拍输出；本地 F 由本笔 ctrl 推导 |
-| 基本组 → 顶层 | negative、magnitude[M_group]、anchor_top、zero/special、ctrl、valid/last | 默认 M_group=30、anchor_top=S10 | S5 所有字段同拍注册；不采用旧 anchor 早一拍的接口 |
-| C 支路 → 顶层 | 固定 sign+M32、anchor_top=S10、class、ctrl、valid | FP32 M24 低补 8 零，F31/A=alpha；INT32 M32/F0、浮点 anchor 置零；S5 解包 | 与本笔全部 S5 组 token 同拍 |
+| ~~基本组 → 顶层~~ | ~~negative、magnitude[M_group]、anchor_top、zero/special、ctrl、valid/last~~ | ~~默认 M_group=30、anchor_top=S10~~ | ~~S5 所有字段同拍注册；不采用旧 anchor 早一拍的接口~~ |
+| ~~基本组 → 顶层~~ | ~~negative、magnitude[M_group]、anchor_top、zero/special、ctrl、valid/last~~ | ~~默认 M30；浮点 S1I1F29、非零最高位1，anchor_top=e 为 signed10；INT 保持结构落位~~ | ~~L8 的 S5 同拍注册；备用 L9 对应 S6~~ |
+| 基本组 → 顶层 | negative、magnitude_raw[M_group]、anchor_raw、leading_zero_count、zero/special、ctrl、valid/last | 默认M30、anchor_raw signed10、z unsigned5；浮点原幅值F按模式，未左移；INT z/anchor=0 | L8 S5同拍注册；备用L9为新增S6出口 |
+| ~~C 支路 → 顶层~~ | ~~固定 sign+M32、anchor_top=S10、class、ctrl、valid~~ | ~~FP32 M24 低补 8 零，F31/A=alpha；INT32 M32/F0、浮点 anchor 置零；S5 解包~~ | ~~与本笔全部 S5 组 token 同拍~~ |
+| ~~C 支路 → 顶层~~ | ~~固定 sign+M32、anchor_top、class、ctrl、valid~~ | ~~FP32 规格化 M24 后补8零、F31/e_c；INT32 M32/F0、anchor=0~~ | ~~与本笔所有规格化组 token 同拍；C 解包仍在 S5~~ |
+| C 支路 → 顶层 | 固定sign+M32、anchor_raw、leading_zero_count、class、ctrl、valid | FP32 M24低补8零、F31，原有效无偏anchor及z_c；不动态左移；INT32 M32/F0、z/anchor=0 | S5解包，与组token同拍 |
 | S6 → S7 | N 个 TC 对齐叶、A_common、ctrl、special、valid/last | 默认 N=5、叶 W40；INT 分支仅结构低零 | 一组叶对应同一请求，不逐源握手 |
 | S7 → S8 | TC 总 SOP、A_common、ctrl、special、valid/last | 默认 W43；完整自然增长 | S8 按本笔输出类型处理 |
 
 C 的 M32 取 FP32 significand 与 INT32 magnitude 所需宽度的最大值，补零数/小数位由格式参数推导；无效分类字段安全置零。
 
-字段 `anchor_top` 表示最高幅值容器位权重，值公式为 `(-1)^negative*magnitude*2^(anchor_top-(M_group-1))`。SOP/anchor 各级格式及范围见 [S1–S8 出口表](stage-formats.md)。ctrl 可以共用一路逐级寄存后广播给同拍组/算术块；必须与数据阶段匹配，不能直接广播当前顶层 datatype 给所有级。
+~~字段 `anchor_top` 表示最高幅值容器位权重，值公式为 `(-1)^negative*magnitude*2^(anchor_top-(M_group-1))`。SOP/anchor 各级格式及范围见 [S1–S8 出口表](stage-formats.md)。ctrl 可以共用一路逐级寄存后广播给同拍组/算术块；必须与数据阶段匹配，不能直接广播当前顶层 datatype 给所有级。~~
+
+**v1.3：** 组字段改称anchor_raw，其值仍是原幅值容器最高位权重，value=sign×magnitude_raw×2^(anchor_raw-(M-1))；另外传z，e=anchor_raw-z供MAX。默认z有5位，zero/special另传；只给e而保留未左移幅值是错误接口。ctrl必须同行。
 
 ## 历史代码参考与新版差异
 
@@ -205,6 +211,16 @@ C 的 M32 取 FP32 significand 与 INT32 magnitude 所需宽度的最大值，�
 
 - **C 来源**：~~C 是每个独立点积请求的初始加数，还是流中逐项累加的前序结果，仍待确认。~~ → **当前：**DP 只使用本笔 C 计算缩放点积加 C；取数与依赖由指令层保证。（来源：dba8ecf → 42350c5，旧待决问题摘要）
 
+## v1.3：计数 token 与固定延迟
+
+S5输出原幅值/anchor_raw/z，S6完成合并移位；最小字段不同时存三套A_raw/e/z。外部端口不变，初版L8；备用post_scale_norm_extra_stage=1时全部模式L9，静态配置不可逐请求变化。所有源及控制同步。S6/S7 的公共anchor字段A_common是实际指数E_max（数值同义，建议trace使用E_max区分raw）。
+
+## 本轮未提交草案对照：v1.3：规格化出口及备用固定延迟
+
+~~## v1.3：规格化出口及备用固定延迟~~
+
+~~浮点组/C 的 anchor_top 仍表示最高幅值位权重，现在非零 magnitude 最高位恒1，因此也是真实无偏指数；value=sign×magnitude×2^(anchor_top-(M-1))。INT 分支坐标不变。外部端口不变；首选 L8，备用 post_scale_norm_extra_stage=1 时所有格式固定 L9，内部全局对齐/总树/输出阶段顺延。禁止依据当前 datatype 动态切换此构建参数。~~
+
 ## 版本与架构时间线
 
 | 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
@@ -214,3 +230,4 @@ C 的 M32 取 FP32 significand 与 INT32 magnitude 所需宽度的最大值，�
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](../document-control.md) |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 补充 v1.1 相关资源、数值或验证合同。 | 用户架构图与补充；[总时间线](../CHANGELOG.md) |
 | v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 重写顶层端口/编码/合法矩阵和内部接口；独立 datatype、无会话锁定、结果类型、历史 PE_HQE 对照。 | 用户本轮要求及确认；[总时间线](../CHANGELOG.md) |
+| v1.3 | 2026-11-04 21:03:38 +08:00 | 架构修订 | 按用户最终选择，S5 scale后LZD仅计数、S6一次双向移位；同步数值/接口/资源/备用周期，保留对照。 | 用户最终双向移位选择；[总时间线](../CHANGELOG.md) |

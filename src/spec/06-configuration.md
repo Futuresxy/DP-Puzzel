@@ -1,4 +1,4 @@
-> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.2；修改时间：2026-11-04 19:38:52 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.3；修改时间：2026-11-04 21:03:38 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
 # 参数与配置合同
 
@@ -24,7 +24,8 @@
 | `retain_main_bits` | ≥25 | 主浮点模式保留目标；计数口径待定 |
 | `retain_fp4_bits` | 基准 35 | MXFP4/NVFP4 保留目标；可探索范围待定 |
 | `retain_hif4_bits` | 初始目标 37 | HiF4/NVFP4 共享路径推导后确认 |
-| `max_dp_pipeline_stages` | 8 | 输入到输出深度上限，不可为时序任意放宽 |
+| ~~`max_dp_pipeline_stages`~~ | ~~8~~ | ~~输入到输出深度上限，不可为时序任意放宽~~ |
+| `max_dp_pipeline_stages` | 默认8；仅 post_scale_norm_extra_stage=1 的备用 profile 为9 | 用户允许为 scale 后规格化拆一级；不任意增加周期 |
 | ~~`latency_by_mode` / `ii_by_mode`~~ | ~~待定义，L≤8~~ | ~~实现结果及协议合同，不得与 K 混淆~~ |
 | `latency_by_mode` / `ii_by_mode` | 当前全格式 L=8，II=1 目标 | 结构与时序仍待验证；不得与 K 混淆 |
 | `target_frequency_hz` | 1_410_000_000 | 当前时序目标；周期由此派生 |
@@ -85,7 +86,9 @@ CModel、Chisel、手写 Verilog 和 testbench 使用相同的有效配置。规
 
 ## v1.1：当前与未来 profile 的延迟约束
 
-当前主配置 `H16Q32E64（TF32=T8）` 的 latency_fp/latency_int=8，max_dp_pipeline_stages=8；K4/K8 的派生变体同一固定输出周期。未来专用 Q/E/QE 输入源必须另定静态 source profile；全局物理扇入数=实例化来源数+1（C），生成树的深度按该物理扇入数计算。模式能力掩码不改变本 profile 的固定周期。只有用户批准的未来扩展 profile 才能定义 9/10 级上限及对应 valid/last 延迟，当前不开放或实现这些配置。
+~~当前主配置 `H16Q32E64（TF32=T8）` 的 latency_fp/latency_int=8，max_dp_pipeline_stages=8；K4/K8 的派生变体同一固定输出周期。未来专用 Q/E/QE 输入源必须另定静态 source profile；全局物理扇入数=实例化来源数+1（C），生成树的深度按该物理扇入数计算。模式能力掩码不改变本 profile 的固定周期。只有用户批准的未来扩展 profile 才能定义 9/10 级上限及对应 valid/last 延迟，当前不开放或实现这些配置。~~
+
+**v1.3：** 默认所有K/格式L8；本次允许为scale后检测/指数准备单独形成L9备用。未来专用增源的9/10级另定profile，不与本例外自动叠加；均未实现。
 
 ## 历史修订对照
 
@@ -96,6 +99,12 @@ CModel、Chisel、手写 Verilog 和 testbench 使用相同的有效配置。规
 ## v1.2：接口与控制参数
 
 A/B datatype 枚举、C/D 类型、scale 类型及编码集中定义，默认位宽 4/1/2；端口尺寸从 k_fp16、G 和格式容器推导，见 [DP 接口](dp/interface.md)。mode_session/active_mode 不再是构建参数或运行状态。各级 r/alpha/A 范围、SOP 格式、移位/树参数关系见 [出口表](dp/stage-formats.md)；所有减法临时位宽由完整范围推导。局部 W 改变时连同后续槽宽和全局 pad 合法性一起重新检查。
+
+## v1.3：规格化与 scale 的派生参数
+
+`post_scale_norm_extra_stage` 是构建期0/1，默认0；latency_fp=latency_int=8+该值，备用1须有时序选择记录。该条件例外补充旧“只有专用增源 profile 可超过8级”的限制，不能动态逐笔切换。
+
+group_lzd_input_bits=M_group；group_lzd_count_bits=uwidth(M_group-1)，另有zero标志。S5不做动态左移，原F按模式保留；逻辑规格化F=M_group-1只用于推导。global_net_shift_bits按signed z-d或A_raw-E_max中间范围派生；双向shift_amount宽度为uwidth(M_global)，方向独立。anchor 范围从 A_raw 范围减最大非零 clz 推导；delta_bits=uwidth(e_max-e_min)，减法临时宽度单独推导。NV/HiF 的结构零删除量、紧凑 SOP/scale/乘积宽度及共享乘法最大宽度按 [scale 公式](dp/scale.md) 计算。默认13/15、8/6、21和15×8均是推导结果，不增加互相独立且可能矛盾的手填宽度旋钮。
 
 ## 版本与架构时间线
 
@@ -108,3 +117,4 @@ A/B datatype 枚举、C/D 类型、scale 类型及编码集中定义，默认位
 | v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](document-control.md) |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 补充 v1.1 相关资源、数值或验证合同。 | 用户架构图与补充；[总时间线](CHANGELOG.md) |
 | v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 同步本轮接口、C 解包阶段、逐请求控制或资源/验证合同；保留被替代定义。 | 用户本轮要求及确认；[总时间线](CHANGELOG.md) |
+| v1.3 | 2026-11-04 21:03:38 +08:00 | 架构修订 | 按用户最终选择，S5 scale后LZD仅计数、S6一次双向移位；同步数值/接口/资源/备用周期，保留对照。 | 用户最终双向移位选择；[总时间线](CHANGELOG.md) |

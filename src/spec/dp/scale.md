@@ -1,4 +1,4 @@
-> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.2.1；修改时间：2026-11-04 20:17:40 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
+> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.3；修改时间：2026-11-04 21:03:38 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
 
 # scale 统一 E8M3 数值表示
 
@@ -52,7 +52,9 @@ S2 可以保留原始指数和，在 S3–S5 的独立标量路径预先减去 s
 
 ~~新版只采用这些数值关系。C 在 S1 一次解包并透传，不复制旧两级 C normalizer；缺省采用有效指数与原始 24 位幅值，在 S8 做最终 LZD/归一化。~~
 
-**v1.2 当前定义：** 新版只采用这些数值关系。C 改在 S5 单级解包，S1–S4 保持 raw32，FP32 使用有效指数及原始 M24，不复制旧两级 C normalizer；INT32 C 按本笔类型单独解释。
+~~**v1.2 当前定义：** 新版只采用这些数值关系。C 改在 S5 单级解包，S1–S4 保持 raw32，FP32 使用有效指数及原始 M24，不复制旧两级 C normalizer；INT32 C 按本笔类型单独解释。~~
+
+**v1.3：** C仍S5解包，FP32原M24及有效指数另配非正规LZD计数；不复制旧两级C normalizer，也不在S5动态左移。INT32独立解释。
 
 ## v1.2：scale datatype 逐笔独立携带
 
@@ -62,7 +64,46 @@ S2 可以保留原始指数和，在 S3–S5 的独立标量路径预先减去 s
 
 S5 组 token 的 A 已完成元素/scale bias 与定点坐标修正，C 的 A_c 同样无偏。先对有限非零源做 signed MAX，再在足够宽的 signed 临时量中计算 MAX-anchor，确认非负后转 unsigned 移位量；不能用 unsigned 比较负的无偏指数。S2/S3 的同格式产品相减中，相同的元素双 bias 抵消，因此可以保留 r/p 的带偏置无符号表示。
 
-若采用实际指数候选，还需 e=A-clz(m)。MAX(e)-e 非负，但把规格化左移与对齐右移合并后，净位移可以有方向；这不是指数 bias 再次变化。详见 [候选推导](group-normalization-options.md)。
+~~若采用实际指数候选，还需 e=A-clz(m)。MAX(e)-e 非负，但把规格化左移与对齐右移合并后，净位移可以有方向；这不是指数 bias 再次变化。详见 [候选推导](group-normalization-options.md)。~~
+
+~~**v1.3：** 已采用 scale 后 e=A_raw-clz(m) 并同时左移 m；S6 的 MAX(e)-e 为非负无符号右移量。合并为一次双向移位仅作 [对照推导](group-normalization-options.md)，不属于当前两级边界。~~
+
+**本轮最终选择：** scale后LZD只计数z；e=A_raw-z用于比较，d=MAX(e)-e非负，但net=z-d有符号。已选 [一次双向移位](group-normalization-options.md) 为当前首选；bias不重复扣除。
+
+## v1.3：NVFP4 / HiF4 紧凑乘法与 scale 后规格化
+
+用户提出 NVFP4 13×9、HiF4 15×7。这里 9/7 位 scale 系数均含一位恒零符号，实际分别为 unsigned 8/6 位；两路都是 signed SOP 乘非负系数。
+
+| 模式 | 紧凑 SOP（TC） | 两侧 scale 的系数积 | 自然乘积（TC） | 装入 W31 中间槽 |
+| --- | --- | --- | --- | --- |
+| NVFP4 | W13，S1I10F2 | U8，S0I2F6；正 signed 包装 S1I2F6=W9 | W21，S1I12F8 | 低补 10 零，F18 |
+| HiF4 | W15，S1I8F6 | U6，S0I2F4；正 signed 包装 S1I2F4=W7 | W21，S1I10F10 | 低补 10 零，F20 |
+
+NV 的 W15/F4 组和没有 HiF4 e2 移位，其两位 guard 始终为结构零；精确去掉后为 W13/F2。HiF4 的 e2 移位可能消耗 guard，仍用 W15/F6；但统一 I1F3 scale 的每侧 coefficient 低位恒零，S2 产生的 U8/F6 积有两个结构低零，可精确去掉成为 U6/F4。原始 scale E8M3 解包与指数支路保持不变。
+
+```text
+sop_drop_NV = e_exact_guard_bits
+sop_drop_HiF = 0
+scale_drop_NV = 0
+scale_drop_HiF = 2*(scale_common_fraction_bits-scale_hif_fraction_bits)
+W_sop(mode) = E_group_compact_width - sop_drop(mode)
+F_sop(mode) = e_product_fraction_bits(mode)+e_exact_guard_bits-sop_drop(mode)
+W_factor(mode) = W_scale_product - scale_drop(mode)
+F_factor(mode) = F_scale_product - scale_drop(mode)
+W_product(mode) = W_sop(mode)+W_factor(mode)  // signed × unsigned
+F_product(mode) = F_sop(mode)+F_factor(mode)
+pad_product(mode) = W_group-W_product(mode)
+```
+
+参数默认推导得到两个 W21。NV SOP 绝对值≤16×12²=2304；HiF SOP 绝对值≤16×14²×2²=12544。scale 系数积分别≤15²=225、7²=49，因此最终绝对值分别≤518400、614656，均可安全装入 20 位幅值。signed×正 signed 包装得到 W22 时，最高位为冗余符号扩展；禁止不检查范围直接裁位。所有去低零操作须证明整除，不是 RTZ。
+
+**共享结构建议：每基本组一套输入 mux 后的乘法器。** 固定输入宽度按能力集合取 `max(W_sop)=15`（signed）及 `max(W_factor)=8`（unsigned）。NV 符号扩展 SOP；HiF 系数高补零。通用乘积 W23，但这两个合法模式的高两位可证明为符号扩展，保留精确 W21 后再落位。若 RTL 乘法要求两输入同为 signed，则给系数补一位零，原生输出 W24，再依据同一范围证明去冗余位。不得把 unsigned 8 位系数直接解释为 signed 8 位。
+
+运行时 mux 不改变物理位宽；未使用位/整个旁路模式需隔离以减少切换。显式写两套乘法器后 mux 输出不保证工具合并；[Yosys 0.45 的 opt_share](https://yosyshq.readthedocs.io/projects/yosys/en/0.45/cmd/opt_share.html) 就有共同输入等适用条件，此来源仅说明工具共享有条件，不推断 DC 的结果。初版保持一套共享资源的方向，是否进一步定制分块部分积或以两套窄单元换时序，须以同工况综合比较，当前不声称 PPA 已优化。
+
+~~**顺序已确认：乘完 scale 后才取幅值、LZD、左移并重算 anchor。** 上表 F18/F20 只到规格化前；S5 正式浮点出口统一为 M30/F29、e=A_raw-clz(m)。无 scale/单位系数路径在选择后进入同一规格化器。不能先规格化 SOP，再忽略 scale 对最高有效位的影响；也不能把 S5 规格化当成最终 FP32 舍入。~~
+
+**当前确认顺序：** 乘完scale后安全取幅值、LZD只产生z；S5原幅值和A_raw保留，NV/HiF出口F18/F20不变。S6得到E_max后按z-d一次双向移位，等价于先左规格化再右对齐。不得在scale之前检测而忽略最终乘积最高位；S8仍负责最终FP32舍入。
 
 ## 版本与架构时间线
 
@@ -71,3 +112,4 @@ S5 组 token 的 A 已完成元素/scale bias 与定点坐标修正，C 的 A_c 
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 新建架构合同 | 按用户架构图及后续补充定义本模块；区分已确认结构与待审查的位宽推导，尚无实现或 EDA 证据。 | 用户确认；[流水](pipeline.md) |
 | v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 同步本轮接口、C 解包阶段、逐请求控制或资源/验证合同；保留被替代定义。 | 用户本轮要求及确认；[总时间线](../CHANGELOG.md) |
 | v1.2.1 | 2026-11-04 20:17:40 +08:00 | 讨论/说明补充 | 记录组实际指数候选及对应数值、特殊值或资源边界；不改变 v1.2 主路径。 | 用户 LZD/指数/特殊值讨论；[总时间线](../CHANGELOG.md) |
+| v1.3 | 2026-11-04 21:03:38 +08:00 | 架构修订 | 按用户最终选择，S5 scale后LZD仅计数、S6一次双向移位；同步数值/接口/资源/备用周期，保留对照。 | 用户最终双向移位选择；[总时间线](../CHANGELOG.md) |

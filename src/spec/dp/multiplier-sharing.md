@@ -1,4 +1,4 @@
-> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.2；修改时间：2026-11-04 19:38:52 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
+> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.3；修改时间：2026-11-04 21:03:38 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
 
 # 两组尾数乘法器覆盖 T1H2Q4E8
 
@@ -72,9 +72,14 @@ A_scale×B_scale 的 I1F3 系数乘法另需每基本组一份 4×4 资源，可
 
 每一级乘法器路由/输入隔离只使用与本级数据同行的 ctrl；新请求的 datatype 不得关闭前笔的 S2/S5 资源。A/B 首版仅同格式，独立字段在入口检查后形成内部 op_format。mantissa_mul_bank、HH/HL/LH/LL、重构加法、scale-pair 与 group-scale 乘法保留独立逻辑 ID，寄存/mux 归属见 [功能统计](resource-accounting.md)。
 
+## v1.3：S5 scale 乘法器的模式共享
+
+NV 的 13×9、HiF 的 15×7 含恒零的 scale 符号位，等价于 signed13×unsigned8 与 signed15×unsigned6；两路自然结果均 signed21。建议通过输入 mux 进入一套按能力集派生的 signed15×unsigned8 单元，保留合法模式范围证明及输入隔离；不默认实例化两套再期待工具合并。详细小数点、结构零裁剪与原生乘积裁宽见 [scale 合同](scale.md)。S5 的 LZD 位于该乘法器**输出之后**。
+
 ## 版本与架构时间线
 
 | 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
 | --- | --- | --- | --- | --- |
 | v1.1 | 2026-11-04 19:12:59 +08:00 | 新建架构合同 | 按用户架构图及后续补充定义本模块；区分已确认结构与待审查的位宽推导，尚无实现或 EDA 证据。 | 用户确认；[流水](pipeline.md) |
 | v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 同步本轮接口、C 解包阶段、逐请求控制或资源/验证合同；保留被替代定义。 | 用户本轮要求及确认；[总时间线](../CHANGELOG.md) |
+| v1.3 | 2026-11-04 21:03:38 +08:00 | 架构修订 | 按用户最终选择，S5 scale后LZD仅计数、S6一次双向移位；同步数值/接口/资源/备用周期，保留对照。 | 用户最终双向移位选择；[总时间线](../CHANGELOG.md) |
