@@ -1,6 +1,6 @@
 # 多精度 DP · 手写 RTL
 
-实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **spec v1.4 / 实现映射 v1.4.2**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
+实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **spec v1.4 / 实现映射 v1.4.3**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
 
 | 实现 | 编译清单 | 顶层 |
 | --- | --- | --- |
@@ -59,4 +59,6 @@ RTL 单独执行 `-Wall` lint，位宽、锁存器、组合环类警告不豁免
 
 ## 当前边界
 
-只实现 L8；CModel 的 L9 备用探索未在这两套 RTL 中开放。未实现 Chisel、DP-Group、TensorCore/Cube、专用 Q/E/QE 扩展或独立对齐方案。1.41 GHz 是目标，尚未运行 DC/STA/功耗，不能从仿真周期或逻辑共享数量推断 PPA 已达标。
+只实现 L8；CModel 的 L9 备用探索未在这两套 RTL 中开放。未实现 Chisel、DP-Group、TensorCore/Cube、专用 Q/E/QE 扩展或独立对齐方案。N12 TT 的 1.41 GHz DC 已完成但 setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/dp_n12_timing_20261105.md)。尚无布局布线或真实活动功耗。
+
+DC 接入使用 [统一门禁与流程](../../hw/dc_syn/README.md)。Verilog 的运行时 `lane_fraction` 已改为等价常量选择以兼容 DC；新快照重新完整回归，不继承旧 snapshot 的通过状态。

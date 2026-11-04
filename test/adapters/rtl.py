@@ -7,6 +7,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 import hashlib
 import json
+import sys
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -43,6 +44,8 @@ def snapshot(implementation):
     for rel,digest in manifest['exported_sha256'].items():
         if hashlib.sha256((dest/rel).read_bytes()).hexdigest()!=digest:
             raise RuntimeError(f'modified snapshot: {dest/rel}')
+    manifest.update(status='generated',ppa_eligible=False)
+    (dest/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     # Build-tool adapter only; canonical manifest/list above use portable paths.
     resolved=[]
     for line in (dest/'files.f').read_text().splitlines():
@@ -52,8 +55,10 @@ def snapshot(implementation):
     return dest,build_list
 
 
-def record_validation(dest,scopes,test_fingerprint):
+def record_validation(dest,scopes,test_fingerprint,*,phase,started,run_dir,command,simulator_version):
     path=dest/'manifest.json'; manifest=json.loads(path.read_text())
+    manifest['ppa_eligible']=False
+    path.write_text(json.dumps(manifest,indent=2)+'\n')
     # Recheck exactly the simulated inputs before assigning any passing status.
     for rel,digest in manifest['exported_sha256'].items():
         if hashlib.sha256((dest/rel).read_bytes()).hexdigest()!=digest: raise RuntimeError('snapshot modified during verification')
@@ -64,3 +69,26 @@ def record_validation(dest,scopes,test_fingerprint):
     manifest.update(status='passed',verified_scopes=combined,test_fingerprint=test_fingerprint,
                     validated_utc=datetime.now(timezone.utc).isoformat())
     path.write_text(json.dumps(manifest,indent=2)+'\n')
+
+    if phase == 'all' and manifest['implementation'] == 'verilog' and all(r['simulator']=='verilator' for r in scopes):
+        sys.path.insert(0,str(ROOT/'scripts'))
+        from dp_rtl_gate import payload, verification_inputs, validate_scopes, PARAMETERS
+        _, fingerprint, _ = payload(dest,ROOT)
+        finished=datetime.now(timezone.utc).isoformat()
+        inputs=verification_inputs(ROOT)
+        start_time=datetime.fromisoformat(started).timestamp()
+        if any(p.stat().st_mtime>start_time for p in inputs):
+            raise RuntimeError('verification input changed during regression')
+        validate_scopes(scopes,ROOT,start_time,datetime.fromisoformat(finished).timestamp())
+        receipt=dict(schema_version=1,verification_id=run_dir.name,export_id=dest.name,
+            rtl_fingerprint=fingerprint,status='passed',method='verilog_testbench',
+            numerical_pass=True,protocol_pass=True,phase=phase,parameters=PARAMETERS,
+            latency=8,ii=1,seeds=[20271105],command=command,
+            simulator=dict(name='verilator',version=simulator_version),
+            started_utc=started,finished_utc=finished,scopes=scopes,
+            inputs=[str(p.relative_to(ROOT)) for p in inputs])
+        receipt_path=run_dir/'verification.json'
+        receipt_path.write_text(json.dumps(receipt,indent=2)+'\n')
+        manifest.update(ppa_eligible=True,rtl_fingerprint=fingerprint,
+                        verification=dict(path=str(receipt_path.relative_to(ROOT))))
+        path.write_text(json.dumps(manifest,indent=2)+'\n')

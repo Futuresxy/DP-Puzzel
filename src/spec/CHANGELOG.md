@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.4.3；修改时间：2026-11-05 00:25:00 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -13,11 +13,13 @@ v1.4.1 为文档整理版：清除过时草案、旧流水图和重复索引，�
 
 v1.4.2 新增单 DP 手写 Verilog 主实现及 SystemVerilog 对照、标准 Verilog TB、Verilator 回归与源快照；冻结同步高有效复位，数值和 L8 合同不变。对应 [实现合同](dp/verilog.md)。
 
+v1.4.3 接入新版单 DP 验证门禁与 N12 DC；Verilog 将运行时 `$clog2(elements(t))` 改为等价常量选择以兼容 DC。算术和 L8/II1 合同不变，原始基线展开失败记录与后续实测分别保留。
+
 仅在[scale](dp/scale.md)及[特殊值](dp/special-values.md)保留 v1.3→v1.4 核心变更的删除线。更早版本由 Git 保存，非核心小修不在正文逐条累积。规则见[文档控制](document-control.md)。
 
 ## 2. 验证与实施状态
 
-CModel 的 10747 笔精度检查、九项定向/协议测试及 sanitizer 检查通过。详见[验证报告](../../test/results/cmodel-v1.4.md)。手写两版单 DP RTL 的验证范围见 [RTL 报告](../../test/results/verilog-v1.4.md)。Chisel、阵列和 EDA 尚未实施；仿真通过不构成整体精度目标或 1.41GHz 验收。
+CModel 的 10747 笔精度检查、九项定向/协议测试及 sanitizer 检查通过。详见[验证报告](../../test/results/cmodel-v1.4.md)。手写两版单 DP RTL 的验证范围见 [RTL 报告](../../test/results/verilog-v1.4.md)。Chisel、阵列尚未实施；N12 TT DC 的 1.41GHz setup 未通过，见 [时序分析](../../hw/dc_syn/records/dp_n12_timing_20261105.md)。仿真通过不构成频率验收。
 
 ## 3. 当前文件索引
 
@@ -30,7 +32,7 @@ CModel 的 10747 笔精度检查、九项定向/协议测试及 sanitizer 检查
 | [06-configuration.md](06-configuration.md) | v1.4.2 | 定义参数及其合法派生关系 |
 | [07-verification.md](07-verification.md) | v1.4.1 | 定义三实现共用验收合同 |
 | [08-implementation-ppa.md](08-implementation-ppa.md) | v1.4.1 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.4.2 | 维护整体架构与文档版本时间线 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.4.3 | 维护整体架构与文档版本时间线 |
 | [README.md](README.md) | v1.4.2 | 汇总新版规格入口和生效范围 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.4.1 | 定义规格版本和历史修订规则 |
@@ -54,4 +56,4 @@ CModel 的 10747 笔精度检查、九项定向/协议测试及 sanitizer 检查
 | [dp/unpack.md](dp/unpack.md) | v1.4.2 | 定义固定 E/M/S 解包数值布局 |
 | [dp-group/README.md](dp-group/README.md) | v1.4.1 | 定义广播计算组规格 |
 | [tensorcore/README.md](tensorcore/README.md) | v1.4.1 | 定义 TensorCore 阵列规格 |
-| [dp/verilog.md](dp/verilog.md) | v1.4.2 | 定义单 DP 手写 RTL 实现映射及验证合同 |
+| [dp/verilog.md](dp/verilog.md) | v1.4.3 | 定义单 DP 手写 RTL 实现映射及验证合同 |

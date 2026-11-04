@@ -6,7 +6,7 @@
 
 ## 构建和测试
 
-依赖 C++17 编译器、CMake≥3.16、Boost **1.83.0**、nlohmann_json **3.11.3**、Python3≥3.9。版本固定，使用系统已安装包，不下载依赖；来源与哈希见 [依赖记录](../../dependencies/cmodel.json)。
+依赖 C++17 编译器、CMake≥3.16、Boost **1.83.0**、nlohmann_json **3.11.3**、Python3≥3.9。版本固定，优先使用系统包；缺失时可按依赖记录的 URL/SHA 获取固定 release 到忽略的 `.deps/`，通过 CMAKE_PREFIX_PATH/BOOST_ROOT 选择；来源与哈希见 [依赖记录](../../dependencies/cmodel.json)。
 
 ```sh
 cmake -S src/cmodel -B src/cmodel/build -DCMAKE_BUILD_TYPE=Release
