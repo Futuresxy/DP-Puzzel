@@ -1,6 +1,6 @@
 # SubPE_QE：QE 专用通路
 
-对应源码：[SubPE_QE.scala](../../../chisel_src/pe/PE_QE/SubPE_QE.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
+对应源码：[SubPE_QE.scala](../../../legacy/chisel_src/pe/PE_QE/SubPE_QE.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
 
 四个4×4资源随Q/E互斥使用，Q两lane先MAX，仅MIN按q_align_width窗口RTZ，E四lane两级和；紧凑操作数寄存与末级CPA共享。结果W=q_align_width+1，Q的I3，E I8/Hi I6，F=W−1−I。早anchor1拍、结果3拍、II1。
 

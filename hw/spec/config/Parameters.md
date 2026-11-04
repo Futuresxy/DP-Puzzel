@@ -1,6 +1,6 @@
 # 集中参数、六种profile与配置读取
 
-对应源码：[Parameters.scala](../../chisel_src/config/Parameters.scala)。
+对应源码：[Parameters.scala](../../legacy/chisel_src/config/Parameters.scala)。
 
 `Parameters` 是程序员修改默认参数的唯一入口；不可变 `AlignmentConfig` 显式沿顶层→PE→PG/SubPE/规约传递。没有隐式环境变量电路配置，CHISEL_FIRTOOL_PATH仅选择工具。
 

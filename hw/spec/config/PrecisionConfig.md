@@ -1,6 +1,6 @@
 # 五族能力集合
 
-对应源码：[PrecisionConfig.scala](../../chisel_src/config/PrecisionConfig.scala)。
+对应源码：[PrecisionConfig.scala](../../legacy/chisel_src/config/PrecisionConfig.scala)。
 
 Precision.h/q/e/hqe/qe是五种封闭profile派生的能力。H支持FP16/BF16；Q支持E5M2/E4M3/E3M2/E2M3；E支持E2M1/NVFP4/HiF4；HQE和QE为相应并集。PEPrecisionConfig只作为内部host元信息，不对JSON开放任意布尔组合。
 

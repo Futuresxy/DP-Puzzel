@@ -5,7 +5,15 @@ description: 在 DP-Puzzel 中迁移、审查五族六种基础PE及K/MN编排�
 
 # Chisel 设计与规格协同
 
-先读取根目录 [AGENTS.md](../../AGENTS.md)、[源码导航](../../hw/chisel_src/README.md) 和目标文件对应的 spec；当前可执行范围以用户本轮授权为准。
+## 新版适用范围（2026-11-04）
+
+用户已废止旧 DP 架构作为新设计依据。新设计使用根目录 `src/spec/`、`src/cmodel/`、`src/chisel/`、`src/verilog/` 与 `test/`；先完成整体 spec 并经用户确认，再开发 CModel 和两套 RTL。当前只搭建骨架，不从历史代码推导新规格。
+
+新模块以 `src/spec/` 的共用合同为准，建立模块与三实现源码映射；不强制复用旧层级、路径镜像、参数或周期。下面五族六 PE 规则只适用于 `hw/legacy/chisel_src/` 的历史设计解释，不能作为新版默认值。通用位宽、流水、协议、可追溯性和验证要求仍适用。
+
+## 历史设计规则
+
+先读取根目录 [AGENTS.md](../../AGENTS.md)、[源码导航](../../hw/legacy/chisel_src/README.md) 和目标文件对应的 spec；当前可执行范围以用户本轮授权为准。
 
 - `hw/chisel_src/<relative>.scala` 必须一一对应 `hw/spec/<relative>.md`，辅助 object、Bundle、参数和生成/展开入口也不例外。新增、重命名、删除、修改必须同步维护两者及导航。
 - 五族目录为pe/PE_H、PE_Q、PE_E、PE_HQE、PE_QE，每族独立SubPE/PEGroup/DataUnpack/PE；公共接口/算术/C-D放Utils，Scala package小写。用户指定的下划线族名优先于原通用UpperCamelCase习惯。

@@ -1,6 +1,6 @@
 # CarrySave：共享算术/合同
 
-对应源码：[CarrySave.scala](../../chisel_src/Utils/CarrySave.scala)。
+对应源码：[CarrySave.scala](../../legacy/chisel_src/Utils/CarrySave.scala)。
 
 compressSigned 把至少两项有符号数显式符号扩展到调用者 width，再逐次 3:2 压缩为两行；sumWithCorrection 把无符号 correction 零扩成有符号加项后压缩，最后一次 CPA。sum/carry 内部按模 2^width 表示，调用者必须提供足够增长位避免数值溢出。
 

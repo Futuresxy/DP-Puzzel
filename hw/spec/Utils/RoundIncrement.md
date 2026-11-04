@@ -1,6 +1,6 @@
 # RoundIncrement：共享算术/合同
 
-对应源码：[RoundIncrement.scala](../../chisel_src/Utils/RoundIncrement.scala)。
+对应源码：[RoundIncrement.scala](../../legacy/chisel_src/Utils/RoundIncrement.scala)。
 
 本项目新写的小型primitive，替代源RoundPack对FuDian RoundingUnit的依赖；没有拷贝第三方源码树。输入fraction W=23（一般构造要求W>0）、round、sticky、sign和W3 rm，输出同宽fraction和carry。
 

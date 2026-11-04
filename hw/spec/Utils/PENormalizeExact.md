@@ -1,6 +1,6 @@
 # 自然宽度的无损规范化
 
-对应源码：[PENormalizeExact.scala](../../chisel_src/Utils/PENormalizeExact.scala)。
+对应源码：[PENormalizeExact.scala](../../legacy/chisel_src/Utils/PENormalizeExact.scala)。
 
 输入signed W位和、物理raw_top_anchor和special；value=R*2^(Araw−(W−2))。两级先扩W+1取abs并LZD，再把最高1移到bitW−2，Aout=Araw+1−LZC。最小负数abs=2^(W−1)时精确右移1并anchor+1；zero固定sign0/magnitude0/anchor=-1024。
 

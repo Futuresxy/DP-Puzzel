@@ -1,6 +1,6 @@
 # 解包数据与分类接口
 
-对应源码：[DecodeInterfaces.scala](../../chisel_src/Utils/DecodeInterfaces.scala)。
+对应源码：[DecodeInterfaces.scala](../../legacy/chisel_src/Utils/DecodeInterfaces.scala)。
 
 按族cfg位宽参数化的指数/尾数/符号/逐lane分类Bundle，A/B各自一份；PG消费合并special而不储存逐lane分类向量。scale指数W8 bias127、尾数W4 UQ1.3，unit为8。
 

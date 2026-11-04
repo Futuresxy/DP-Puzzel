@@ -1,6 +1,6 @@
 # packed输入与batch接口
 
-对应源码：[Interfaces.scala](../../chisel_src/Utils/Interfaces.scala)。
+对应源码：[Interfaces.scala](../../legacy/chisel_src/Utils/Interfaces.scala)。
 
 VectorInputBundle以W16 word为存储单位，另带dtype、W8主scale和HiF4 g0/g1。每PG四word、一个scale槽、4g0/2g1；PE_g4是16word/4scale/16g0/8g1，PE_E_g2为8word/2scale/8g0/4g1。
 

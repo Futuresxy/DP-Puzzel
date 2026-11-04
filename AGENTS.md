@@ -1,5 +1,15 @@
 # DAC 2027 工程开发约定
 
+## 当前优先约定：新版 DP / Cube（2026-11-04）
+
+用户已明确旧 DP 设计过时，由用户重新定义整体架构 spec。新设计统一放在根目录 `src/spec/`、`src/cmodel/`、`src/chisel/`、`src/verilog/`，共用测试放在根目录 `test/`。先逐项完善并确认整体 spec，再编写 CModel，之后开发 Chisel 和独立手写可综合 Verilog；当前只搭建目录与规格骨架，不开始实现。
+
+旧 Chisel 与 Mill 构建文件归档在 `hw/legacy/`，仅供参考。下面涉及旧六种 PE、层级、位宽、11/18 级流水、原生 K、阵列候选及旧源码/spec/test 路径的专用条款，只解释历史设计，不约束新架构。不得自行从旧设计补齐新版未决项。新的具体模块确定后，在 `src/spec/` 建立三实现共用的模块合同与源码映射；不机械沿用旧 Scala 路径镜像。
+
+新设计入口为 [src/README.md](src/README.md)，规格索引为 [src/spec/README.md](src/spec/README.md)。历史证据保留原归属；新的数值、周期、参数、模式、数据流和验收规则均以用户确认的新 spec 为准。通用代码质量、Git、产物与证据追踪规则继续适用；生成 RTL 仍集中在 `hw/rtl/`，DC/power 仍由 `hw/dc_syn/` 与 `hw/power/` 承担，当前不运行 EDA。
+
+## 历史设计约定与通用工程规则
+
 本文件适用于整个仓库。目标是构建面向 AI 芯片张量计算的多精度算力配比 DSE 系统，对 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 等设计选择的面积、功耗和负载延迟进行成本收益权衡。
 
 **当前阶段按用户批准方案实现五族目录与六种基础PE：PE_HQE_g4、PE_QE_g4、PE_H_g4、PE_Q_g4、PE_E_g4、PE_E_g2。** 原MidGroup改称PE；SubPE/PEGroup/PE层级保留。HQE/QE/E保留原分级复用组织；H/Q专用路径采用16/32路全局对齐和流水自然位宽累加。Utils维护公共接口/算术/C-D；K_PE/MN_PE编排基础PE，不写阵列代码。统一PE输出F=pe_align_width、11级，g2规范化后精确补一个低零对齐g4；K/MN总18级。完整RTL精度/周期回归与EDA仍在后续阶段，不能将有限定向检查称为完整精度验证通过。

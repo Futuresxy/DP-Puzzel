@@ -1,6 +1,6 @@
 # PEGroupContract：共享算术/合同
 
-对应源码：[PEGroupContract.scala](../../chisel_src/Utils/PEGroupContract.scala)。
+对应源码：[PEGroupContract.scala](../../legacy/chisel_src/Utils/PEGroupContract.scala)。
 
 固定 anchorWidth=11、anchorToDataLatency=1。PG 在 S06 发布 zero-masked anchor，S07 发布 scaled data；PE 在 S07 注册 MAX、S08 对齐同一事务数据。不能用两个独立 ready 让它们错拍。
 

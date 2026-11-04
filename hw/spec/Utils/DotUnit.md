@@ -1,6 +1,6 @@
 # K/MN公共batch与C/D实现
 
-对应源码：[DotUnit.scala](../../chisel_src/Utils/DotUnit.scala)。
+对应源码：[DotUnit.scala](../../legacy/chisel_src/Utils/DotUnit.scala)。
 
 抽象Module实现K_PE/MN_PE的共同电路，本身不产生额外具体RTL层。完整有序layout在生成时确定，固定物理输入槽位按各PE的wordCount/groupCount前缀切分；每个模式的逻辑K区间由软件映射，inactive槽仍占物理端口，不隐式压缩。能力检查必须两侧均支持且配对合法。
 

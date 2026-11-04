@@ -1,6 +1,6 @@
 # 六种PE的统一输出
 
-对应源码：[PEInterfaces.scala](../../chisel_src/Utils/PEInterfaces.scala)。
+对应源码：[PEInterfaces.scala](../../legacy/chisel_src/Utils/PEInterfaces.scala)。
 
 PEBase仅提供shape、alignment和IO。PEIO输入是packed向量+稳定cfg，输出原子Valid PEDotResult：magnitude W(F+1)、negative、top_anchor W11、is_zero、special，F=pe_align_width，所有六种profile一致。
 

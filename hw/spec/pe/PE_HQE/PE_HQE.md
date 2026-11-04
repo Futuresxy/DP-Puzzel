@@ -1,6 +1,6 @@
 # PE_HQE：HQE 专用通路
 
-对应源码：[PE_HQE.scala](../../../chisel_src/pe/PE_HQE/PE_HQE.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
+对应源码：[PE_HQE.scala](../../../legacy/chisel_src/pe/PE_HQE/PE_HQE.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
 
 合法profile为 PE_HQE_g4。统一输出sign/magnitude/top_anchor/zero/special，F=pe_align_width、总W=F+2；输入cfg必须保持至排空，II1、S11输出，控制/valid复位、数据有效更新不复位。
 

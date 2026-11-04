@@ -1,6 +1,6 @@
 # 解码字与固定点合同
 
-对应源码：[SubPEInterfaces.scala](../../chisel_src/Utils/SubPEInterfaces.scala)。
+对应源码：[SubPEInterfaces.scala](../../legacy/chisel_src/Utils/SubPEInterfaces.scala)。
 
 SubPEInput携带独立A/B指数、尾数、符号和canonical product type。HQE/QE/E使用Valid结果及早anchor的基类；H/Q使用RawSubPEIO输出独立未对齐乘积。抽象基类不生成额外硬件层。
 

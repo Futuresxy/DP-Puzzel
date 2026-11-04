@@ -1,6 +1,6 @@
 # PEGroupMath：共享算术/合同
 
-对应源码：[PEGroupMath.scala](../../chisel_src/Utils/PEGroupMath.scala)。
+对应源码：[PEGroupMath.scala](../../legacy/chisel_src/Utils/PEGroupMath.scala)。
 
 resizeSInt 将 SInt 显式符号扩展，或保留低 width bit 后重解释 signed；要求 width>0。appendZeros 追加低端 zeros 位，要求非负，zeros=0 返回原值。对固定点来说 appendZeros 同时增宽 W 和 F，二进制小数点坐标须由调用者维护。
 

@@ -35,7 +35,7 @@ HQE/QE/E仍在S07提供PG数据、S08对齐、S09和、S10/S11规范化。六种
 
 ## 参数配置
 
-集中入口 [Parameters.scala](../chisel_src/config/Parameters.scala)，详细范围见 [参数spec](config/Parameters.md)。四个可调量默认q_align_width28、group_guard_bits2、pe_align_width40、top_align_width40；窗口只在当前工程附近变化，require在构造时拒绝范围外组合。乘法和加法按自然位宽增长，不开放任意乘/加输出位宽。
+集中入口 [Parameters.scala](../legacy/chisel_src/config/Parameters.scala)，详细范围见 [参数spec](config/Parameters.md)。四个可调量默认q_align_width28、group_guard_bits2、pe_align_width40、top_align_width40；窗口只在当前工程附近变化，require在构造时拒绝范围外组合。乘法和加法按自然位宽增长，不开放任意乘/加输出位宽。
 
 这是**Chisel生成时参数**：Parameters默认<JSON<CLI，最终有效值进入manifest。改变参数要重新生成RTL，导出SV已经特化，不把它包装成可随意再次override的SV parameter。每个模块显式收到同一AlignmentConfig，不从sys.env选择电路。
 

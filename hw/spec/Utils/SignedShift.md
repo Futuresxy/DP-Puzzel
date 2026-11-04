@@ -1,6 +1,6 @@
 # SignedShift：共享算术/合同
 
-对应源码：[SignedShift.scala](../../chisel_src/Utils/SignedShift.scala)。
+对应源码：[SignedShift.scala](../../legacy/chisel_src/Utils/SignedShift.scala)。
 
 核心合同：RTZ(x,d) = (x >>> d) + [x<0 且丢弃位非零]。rightTowardZeroParts 返回 floor 和 correction；rightTowardZeroToWidth 执行校正并显式裁剪/扩展到目标宽度。每级 barrel 同时收集 discarded sticky，避免用双 abs 网络。
 

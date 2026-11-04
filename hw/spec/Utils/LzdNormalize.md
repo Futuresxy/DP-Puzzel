@@ -1,6 +1,6 @@
 # LzdNormalize：共享算术/合同
 
-对应源码：[LzdNormalize.scala](../../chisel_src/Utils/LzdNormalize.scala)。
+对应源码：[LzdNormalize.scala](../../legacy/chisel_src/Utils/LzdNormalize.scala)。
 
 输入Wsum signed和、top_anchor W11、rm/out_type/special/last。第一拍取符号、固定W的二补abs和leading-zero数；最小负数abs仍可作为W位unsigned表示。第二拍左移至最高位，提取outputMantWidth=26：hidden、23fraction、round、sticky。低于提取范围所有位OR进sticky，不能直接裁掉。
 

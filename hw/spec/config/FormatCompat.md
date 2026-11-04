@@ -1,6 +1,6 @@
 # 格式配对与特殊值
 
-对应源码：[FormatCompat.scala](../../chisel_src/config/FormatCompat.scala)。
+对应源码：[FormatCompat.scala](../../legacy/chisel_src/config/FormatCompat.scala)。
 
 沿用源工程W4数据类型及W2 scale码。H只能同类型配对；Q四格式可混合；E2M1/NVFP4可混合；HiF4仅同类型。H的NONE/E8M0输入使用虚拟unit scale；Q和MXFP4要求E8M0，NV要求E4M3，HiF4要求源E6M2。
 

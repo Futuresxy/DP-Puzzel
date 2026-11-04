@@ -1,6 +1,6 @@
 # SubPE_HQE：HQE 专用通路
 
-对应源码：[SubPE_HQE.scala](../../../chisel_src/pe/PE_HQE/SubPE_HQE.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
+对应源码：[SubPE_HQE.scala](../../../legacy/chisel_src/pe/PE_HQE/SubPE_HQE.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
 
 保留4×4、4×8、8×4、8×8部分乘法器复用。FP16分段重建再裁已知padding零；BF16使用高段；Q两lane局部MAX/MIN RTZ；E四lane和与Q共享末级加法。公共载体W=q_align_width+1；H I2、Q I3、E I8、HiF4 I6，F=W−1−I。早anchor1拍、结果3拍、II1。
 

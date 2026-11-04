@@ -1,6 +1,6 @@
 # LeadingZeroCounter：共享算术/合同
 
-对应源码：[LeadingZeroCounter.scala](../../chisel_src/Utils/LeadingZeroCounter.scala)。
+对应源码：[LeadingZeroCounter.scala](../../legacy/chisel_src/Utils/LeadingZeroCounter.scala)。
 
 一个组合Module，in_data为W位UInt，out_count为ceil(log2(W+1))位，调用BalancedLeadingZero。用于最终LzdNormalize，保留原工程独立模块边界；Mid/C的inline LZD不因此变成同一共享物理实例。
 

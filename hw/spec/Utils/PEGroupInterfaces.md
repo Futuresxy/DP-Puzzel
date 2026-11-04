@@ -1,6 +1,6 @@
 # 分级PEGroup接口
 
-对应源码：[PEGroupInterfaces.scala](../../chisel_src/Utils/PEGroupInterfaces.scala)。
+对应源码：[PEGroupInterfaces.scala](../../legacy/chisel_src/Utils/PEGroupInterfaces.scala)。
 
 仅供HQE/QE/E的PG数值边界：输入四对packed word，out_pegroup_anchor在S06发布signed W11 raw anchor，out_pegroup_data在S07发布signed局部和及special，两路间距1。
 

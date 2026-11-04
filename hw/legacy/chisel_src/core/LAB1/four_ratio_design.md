@@ -35,12 +35,12 @@ K_PE 接收 1–4 个基础单元的有序 layout，规约不同 K 区间，并�
 
 | 用途 | top | 有序 layout | 默认 RTL 顶层名 | 配置 |
 | --- | --- | --- | --- | --- |
-| 共用 1:2:4 基线 | k | HQE_g4 | K_PE_H16Q32E64 | [k_1_2_4.json](../../../configs/k_1_2_4.json) |
-| K 扩展 1:2:6 | k | HQE_g4, E_g2 | K_PE_H16Q32E96 | [k_1_2_6.json](../../../configs/k_1_2_6.json) |
-| K 扩展 1:2:8 | k | HQE_g4, E_g4 | K_PE_H16Q32E128 | [k_1_2_8.json](../../../configs/k_1_2_8.json) |
-| K 扩展 1:4:8 | k | HQE_g4, QE_g4 | K_PE_H16Q64E128 | [k_1_4_8.json](../../../configs/k_1_4_8.json) |
-| MN 补充 E64 | mn | E_g4 | MN_PE_H0Q0E64 | [mn_e_g4.json](../../../configs/mn_e_g4.json) |
-| MN 补充 Q32E64 | mn | QE_g4 | MN_PE_H0Q32E64 | [mn_qe_g4.json](../../../configs/mn_qe_g4.json) |
+| 共用 1:2:4 基线 | k | HQE_g4 | K_PE_H16Q32E64 | [k_1_2_4.json](../../../../configs/k_1_2_4.json) |
+| K 扩展 1:2:6 | k | HQE_g4, E_g2 | K_PE_H16Q32E96 | [k_1_2_6.json](../../../../configs/k_1_2_6.json) |
+| K 扩展 1:2:8 | k | HQE_g4, E_g4 | K_PE_H16Q32E128 | [k_1_2_8.json](../../../../configs/k_1_2_8.json) |
+| K 扩展 1:4:8 | k | HQE_g4, QE_g4 | K_PE_H16Q64E128 | [k_1_4_8.json](../../../../configs/k_1_4_8.json) |
+| MN 补充 E64 | mn | E_g4 | MN_PE_H0Q0E64 | [mn_e_g4.json](../../../../configs/mn_e_g4.json) |
+| MN 补充 Q32E64 | mn | QE_g4 | MN_PE_H0Q32E64 | [mn_qe_g4.json](../../../../configs/mn_qe_g4.json) |
 
 表中省略了 layout 字符串的 `PE_` 前缀，JSON 使用完整 profile 名。原 `full_h16q32e64.json` 是 `top=mn` 的历史配置，LAB1 使用显式 `top=k` 的新基线。已有的 `mn_q_g4.json` 是 Q 专用示例，不计入本实验的两个 MN 补充类型。
 
@@ -81,7 +81,7 @@ MN 扩展中，每个完整单元计算自己的输出位置，拥有独立 C �
 
 ### 4.1 生成时配置
 
-基线 [k_1_2_4.json](../../../configs/k_1_2_4.json) 的内容为：
+基线 [k_1_2_4.json](../../../../configs/k_1_2_4.json) 的内容为：
 
 ```json
 {
@@ -179,7 +179,7 @@ mill -i pe.runMain dp.elaborate.Elaborate config configs/k_1_2_4.json --pe-align
 
 本批已检查六份实验 JSON 的字段/默认窗口与容量、三组 K/MN 容量配对，以及文档本地链接、代码围栏和空白格式。当前会话的 PATH 中没有 Mill，未运行新增配置的 Chisel 展开、RTL 导出或仿真；上述命令是后续运行入口。
 
-现有 [检查记录](../../../spec/six-pe-checks.md) 包含编译/展开/结构检查，以及基础 PE 的有限 SV 定向检查。它不代表完整格式精度验证通过；K/MN 的一般数值、C/D 和完整 batch 协议仍待 RTL 回归。当前没有本实验的面积、时序或功耗测量。
+现有 [检查记录](../../../../spec/six-pe-checks.md) 包含编译/展开/结构检查，以及基础 PE 的有限 SV 定向检查。它不代表完整格式精度验证通过；K/MN 的一般数值、C/D 和完整 batch 协议仍待 RTL 回归。当前没有本实验的面积、时序或功耗测量。
 
 后续按以下顺序形成可复现批次：
 
@@ -189,4 +189,4 @@ mill -i pe.runMain dp.elaborate.Elaborate config configs/k_1_2_4.json --pe-align
 4. 在挂载 EDA 环境中，使用相同库/PVT、时钟和 IO 约束测量面积与时序，再使用匹配负载活动分析功耗。
 5. 按第 3 节的实例组合汇总，分别报告面积、功耗、时序状态、每模式容量与 workload 完成延迟的适用边界。保存小型结果摘要，大型产物保留归档位置和 hash。
 
-工艺/PVT、目标时钟、真实 workload 和 HiF4 规范版本等尚未确定项见 [roadmap](../../../../docs/roadmap.md)。不能用未校准估计填充测量栏，也不能把配置生成成功称为硬件验证完成。
+工艺/PVT、目标时钟、真实 workload 和 HiF4 规范版本等尚未确定项见 [roadmap](../../../../../docs/roadmap.md)。不能用未校准估计填充测量栏，也不能把配置生成成功称为硬件验证完成。

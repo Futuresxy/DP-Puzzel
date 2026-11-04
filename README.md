@@ -1,10 +1,28 @@
 # DAC 2027 · 多精度张量计算算力配比 DSE
 
+**当前阶段：重新定义多精度 DP / Cube 整体架构 spec。** 用户明确旧 DP 设计过时；先逐步写完并确认新 spec，再编写 CModel，之后开发 Chisel 和独立手写 Verilog，共用根目录 `test/` 验证。当前仅建立目录与规格骨架，没有新版实现。
+
+```text
+src/
+├── spec/       新架构唯一规格入口
+├── cmodel/     位精确与周期模型，待 spec 确认
+├── chisel/     Chisel 实现，待 CModel
+└── verilog/    独立手写 RTL，待 CModel
+test/          共用用例、数学参考、TB 与适配层
+hw/legacy/     旧 Chisel 与历史构建定义，仅供参考
+```
+
+入口：[新设计](src/README.md) · [规格索引](src/spec/README.md) · [验证目录](test/README.md) · [历史归档](hw/legacy/README.md) · [重规划记录](docs/dp-cube-replan.md)。生成 RTL、DC 与功耗目录继续保留在 `hw/`。
+
+## 历史项目背景与旧实现记录
+
+以下 PE、配置和实验说明属于旧设计，不构成新版架构的默认合同。
+
 面向 AI 芯片张量计算，研究 **BF16/FP16 : MXFP8/6 : MXFP4/NVFP4/HiF4** 的算力配比如何选择，以及不同物理实现对**面积、真实负载功耗和计算延迟**的成本收益影响。
 
 系统应支持两类设计决策：在已有架构的面积余量内增配计算资源，以及在下一代芯片的面积/功耗预算内重新分配张量计算资源。结果应给出可行配置、成本与收益分解及 Pareto 前沿，而不是预设一种“最佳比例”。
 
-**当前状态：五族六种基础PE及参数化K/MN编排。** H/Q专用路径改为16/32路统一对齐，HQE/QE/E保留分级复用；PE_E_g2/g4输出坐标对齐。详见 [六种PE设计](hw/spec/six-pe-design.md)、[配置](hw/configs/README.md) 和 [源码导航](hw/chisel_src/README.md)。编译/结构及有限定向检查不等于完整RTL精度验证；尚无PPA或ratio_dse实现。
+**当前状态：五族六种基础PE及参数化K/MN编排。** H/Q专用路径改为16/32路统一对齐，HQE/QE/E保留分级复用；PE_E_g2/g4输出坐标对齐。详见 [六种PE设计](hw/spec/six-pe-design.md)、[配置](hw/configs/README.md) 和 [源码导航](hw/legacy/chisel_src/README.md)。编译/结构及有限定向检查不等于完整RTL精度验证；尚无PPA或ratio_dse实现。
 
 阵列扩展目前只做 [调研与方案讨论](hw/spec/array_ref/array-design-discussion.md)：2×2 group 组内广播/组间脉动、L0 A/B/C、逻辑 M8N32 指令及 GEMM 调度。物理阵列规模参数化；方案待用户审核，尚未新增阵列代码。
 

@@ -1,6 +1,6 @@
 # PEGroup_QE：QE 专用通路
 
-对应源码：[PEGroup_QE.scala](../../../chisel_src/pe/PE_QE/PEGroup_QE.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
+对应源码：[PEGroup_QE.scala](../../../legacy/chisel_src/pe/PE_QE/PEGroup_QE.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
 
 每组4个SubPE；S01解包、S02乘积/scale、S03 MAX、S04移位控制、S05对齐、S06局部和/zero-masked anchor、S07数据。anchor/data间距1，Valid-only、II1，data有效使能不复位。
 

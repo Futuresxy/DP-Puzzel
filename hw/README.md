@@ -1,5 +1,7 @@
 # hw：单阵列 / 单计算核心
 
+> 2026-11-04：新版设计已转至根目录 [src/](../src/README.md)，共用测试在 [test/](../test/README.md)。旧 Chisel 和 Mill 构建定义归档在 [legacy/](legacy/README.md)，仅供参考；以下描述为历史架构。`rtl/`、`dc_syn/`、`power/` 和 `characterization/` 保留其产物与分析职责，新版具体入口等待整体 spec 完成。
+
 本部分提供真实硬件实现与测量证据，范围止于一个计算阵列或一个计算核心，不实现整颗多核心芯片。
 
 | 目录 | 责任 | 不负责 |
@@ -17,4 +19,4 @@
 
 单核 profile 必须列明是否包含 L0、阵列、缩放/转换、控制等，供芯片模型避免重复计费。阵列共享多个数值模式时，物理实现只计一次面积，每种模式分别测量性能和活动成本。
 
-当前实现五族六种基础PE及参数化K/MN单输出编排，见 [源码导航](chisel_src/README.md)、[设计](spec/six-pe-design.md)、[配置](configs/README.md)。H/Q采用16/32路全局对齐，HQE/QE/E保留分级复用，E_g2/g4输出小数点统一。四个对齐参数由集中默认、JSON和CLI传入。原Full迁移为历史记录；本轮只有结构和有限定向证据，没有完整RTL精度验证、DC、功耗或特征数据。
+当前实现五族六种基础PE及参数化K/MN单输出编排，见 [源码导航](legacy/chisel_src/README.md)、[设计](spec/six-pe-design.md)、[配置](configs/README.md)。H/Q采用16/32路全局对齐，HQE/QE/E保留分级复用，E_g2/g4输出小数点统一。四个对齐参数由集中默认、JSON和CLI传入。原Full迁移为历史记录；本轮只有结构和有限定向证据，没有完整RTL精度验证、DC、功耗或特征数据。

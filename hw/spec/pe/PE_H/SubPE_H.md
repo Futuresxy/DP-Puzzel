@@ -1,6 +1,6 @@
 # SubPE_H：H 专用通路
 
-对应源码：[SubPE_H.scala](../../../chisel_src/pe/PE_H/SubPE_H.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
+对应源码：[SubPE_H.scala](../../../legacy/chisel_src/pe/PE_H/SubPE_H.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
 
 FP16/BF16统一到UQ1.10，一个11×11乘法得到W22 UQ2.20 magnitude；独立sign，top_anchor=rawExpSum−2*bias+1。输入S01，一拍S02输出，没有局部对齐/求和，零使用-1024anchor。
 

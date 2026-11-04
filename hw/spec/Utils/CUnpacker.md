@@ -1,6 +1,6 @@
 # CUnpacker：共享算术/合同
 
-对应源码：[CUnpacker.scala](../../chisel_src/Utils/CUnpacker.scala)。
+对应源码：[CUnpacker.scala](../../legacy/chisel_src/Utils/CUnpacker.scala)。
 
 C在PETile中先延迟9拍，本模块两拍将FP32或低16bit FP16/BF16转为独立magnitudeW24/sign、anchorW11，坐标S1/I1/F23。第一拍按cfg C type解码，subnormal指数用1−bias，尾数hidden0；小格式补低零精确放入24位。NaN/Inf走special，数值占位0。
 

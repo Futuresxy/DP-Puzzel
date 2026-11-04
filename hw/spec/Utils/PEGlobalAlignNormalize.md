@@ -1,6 +1,6 @@
 # H16/Q32全局对齐与流水自然和
 
-对应源码：[PEGlobalAlignNormalize.scala](../../chisel_src/Utils/PEGlobalAlignNormalize.scala)。
+对应源码：[PEGlobalAlignNormalize.scala](../../legacy/chisel_src/Utils/PEGlobalAlignNormalize.scala)。
 
 H/Q专用组织，保留四个产品PG簇；共16/32个产品只经过一次全局对齐。S03平衡MAX并保持首lane平局规则；S04指数差饱和；S05每lane独立magnitude右移再施符号，实现RTZ，避免大N输入重排交叉网络。窗口A=pe_align_width，零anchor屏蔽。Q的公共E8M0 scale指数在MAX之后统一附加，不影响lane deltas。
 

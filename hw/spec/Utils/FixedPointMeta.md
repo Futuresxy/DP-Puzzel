@@ -1,6 +1,6 @@
 # FixedPointMeta：共享算术/合同
 
-对应源码：[FixedPointMeta.scala](../../chisel_src/Utils/FixedPointMeta.scala)。
+对应源码：[FixedPointMeta.scala](../../legacy/chisel_src/Utils/FixedPointMeta.scala)。
 
 FixedLayout 的 S/I/F 定义在 SubPE，I 不含符号；本对象集中给出各 format 的 Full PG 整数位、bias2x 和 top-anchor 转换，避免跨层根据 W 猜小数点。
 

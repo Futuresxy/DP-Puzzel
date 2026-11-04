@@ -1,6 +1,6 @@
 # DataUnpack_HQE：HQE 专用通路
 
-对应源码：[DataUnpack_HQE.scala](../../../chisel_src/pe/PE_HQE/DataUnpack_HQE.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
+对应源码：[DataUnpack_HQE.scala](../../../legacy/chisel_src/pe/PE_HQE/DataUnpack_HQE.scala)。来源/调整见 [六种PE设计](../../six-pe-design.md) 与 [固定版本指纹](../../six-pe-source.json)。
 
 本文件拥有该族独立的选择/打包/寄存代码，未启用的格式分支从源码删除；原子解码函数共用DecodePrimitives，接口共用DecodeInterfaces。HQE覆盖所有批准格式及scale配对。
 

@@ -10,6 +10,11 @@ target/
 .bsp/
 .metals/
 hw/out/
+hw/legacy/out/
+/src/cmodel/build/
+/src/chisel/out/
+/src/verilog/build/
+/test/runs/
 hw/.bloop/
 hw/project/project/
 hw/rtl/*/

@@ -1,6 +1,6 @@
 # 六种PE及K/MN唯一RTL导出
 
-对应源码：[Generate.scala](../../chisel_src/elaborate/Generate.scala)。
+对应源码：[Generate.scala](../../legacy/chisel_src/elaborate/Generate.scala)。
 
 用法：Generate <config.json> <reason> [--q-align-width N --group-guard-bits N --pe-align-width N --top-align-width N]。读取schema2配置，Parameters默认<JSON<CLI，验证后才创建唯一export；记录完整有效配置和命令。
 

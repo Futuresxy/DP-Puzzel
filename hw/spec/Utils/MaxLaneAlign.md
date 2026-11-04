@@ -1,6 +1,6 @@
 # MaxLaneAlign：共享算术/合同
 
-对应源码：[MaxLaneAlign.scala](../../chisel_src/Utils/MaxLaneAlign.scala)。
+对应源码：[MaxLaneAlign.scala](../../legacy/chisel_src/Utils/MaxLaneAlign.scala)。
 
 maximum 用平衡树返回有符号最大 anchor 及首 lane 获胜 index，支持单元素和非二次幂数量。index 至少 1 bit；相同 anchor 选择左侧即较早 lane。
 

@@ -1,6 +1,6 @@
 # RoundPack：共享算术/合同
 
-对应源码：[RoundPack.scala](../../chisel_src/Utils/RoundPack.scala)。
+对应源码：[RoundPack.scala](../../legacy/chisel_src/Utils/RoundPack.scala)。
 
 只输出FP32，输入W26规范化尾数、unbiased exponentW11、sign/zero/rm/special/last。两个RoundIncrement分别处理normal fraction和subnormal fraction，原工程FuDian依赖由本地组合primitive替换；此处不是继承上游验证结果。
 

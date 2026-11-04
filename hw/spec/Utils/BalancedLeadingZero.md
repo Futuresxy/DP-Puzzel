@@ -1,6 +1,6 @@
 # BalancedLeadingZero：共享算术/合同
 
-对应源码：[BalancedLeadingZero.scala](../../chisel_src/Utils/BalancedLeadingZero.scala)。
+对应源码：[BalancedLeadingZero.scala](../../legacy/chisel_src/Utils/BalancedLeadingZero.scala)。
 
 `count(UInt(W))` 递归二分有效半区，返回前导零数，零输入返回实际 W。非二次幂 W 在低端补零到二次幂，保持非零输入原 leading-zero 数，再对零覆盖为真实宽度。单 bit 也有明确行为。
 

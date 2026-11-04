@@ -1,6 +1,6 @@
 # MN_PE：基础PE编排入口
 
-对应源码：[MN_PE.scala](../../chisel_src/core/MN_PE.scala)。
+对应源码：[MN_PE.scala](../../legacy/chisel_src/core/MN_PE.scala)。
 
 恰好一个基础PE加独立C/D，构成一个未来M/N输出位置；不包含阵列或多输出复制。
 
