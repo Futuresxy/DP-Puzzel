@@ -1,0 +1,3 @@
+# Reproducible packed stimuli/goldens; collapse data in PRs while retaining it.
+# Schema, generators, CModel sources and verification reports remain reviewable.
+test/data/dp/** linguist-generated=true

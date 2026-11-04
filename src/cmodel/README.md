@@ -1,15 +1,60 @@
-# CModel
+# DP CModel
 
-~~状态：等 DP 数值细节与输入协议闭合后即可启动。本轮已确定当前主方案、T2H4Q8E16 容量层次、scale/metadata 分组、DP 内 FP32 C 与八级周期目标；C 来源与依赖归指令层；last 在末输出后结束模式会话，全局复位统一取消在途。固定 E/M/S 解包布局及 IEEE 特殊值目标已补充，尚无 CModel 实现。~~
+当前实现：C++17 整数位精确模型、逐级周期模型，支持 11 种 datatype、K4/K8/K16。默认共享八级 T8H16Q32E64，C 在 S5 解包，S8 输出 FP32 RNE 或 INT32 回绕。NVFP4/HiF4 共用 signed15×positive signed9 scale 乘法。
 
-**v1.2 当前定义：** 状态：仍等待完整 spec 闭合。当前八级、C 内部合并、固定 E/M/S、IEEE 特殊值及逐请求 datatype 合同见 spec v1.2；C 在 S5 解包，last 只透传，全局复位取消在途，无模式会话。尚无 CModel 实现。
+规格入口：[CModel 合同](../spec/dp/cmodel.md)、[DP 接口](../spec/dp/interface.md)、[逐级位宽](../spec/dp/stage-formats.md)。测试数据共用根 [test/](../../test/README.md)。当前尚无新 RTL 或 PPA 结果。
 
-~~CModel 需要同时提供两种可核对视图：**事务级**的有限位宽数值计算，及**周期级**的 valid、原子 A/B/C/scale/metadata 接收、固定延迟输出、last 和 mode 会话状态。周期级输出必须能与同一周期定义的 RTL testbench 对齐；关键中间 cutpoint 可记录解包 E/M/S 与分类、lane token、组 token、跨组和及 C 合并结果，便于定位差异。特殊值不能只在最终结果端补丁处理，其逐级摘要也须可对照；不建模指令级 C 依赖。~~
+## 构建和测试
 
-**v1.2 当前定义：** CModel 同时提供事务有限位宽计算与八级周期视图；每笔独立保存 datatype/ctrl/last，允许相邻换型，输出保存对应结果类型。各级 SM/TC、SxIxFx、r/alpha/A 与 C 的 S5 解包按 [出口表](../spec/dp/stage-formats.md) 记录。特殊摘要与控制逐级同行，不建模指令级 C 依赖；数学参考独立于位精确模型。
+依赖 C++17 编译器、CMake≥3.16、Boost **1.83.0**、nlohmann_json **3.11.3**、Python3≥3.9。版本固定，使用系统已安装包，不下载依赖；来源与哈希见 [依赖记录](../../dependencies/cmodel.json)。
 
-~~浮点主路径按 8 周期建模；INT8 按最终确认的短旁路延迟建模。~~
+```sh
+cmake -S src/cmodel -B src/cmodel/build -DCMAKE_BUILD_TYPE=Release
+cmake --build src/cmodel/build -j 2
+python3 test/run_cmodel.py --phase existing
+python3 -m unittest discover -s test/tests -p test_existing.py -v
+python3 test/run_cmodel.py --phase extensions
+python3 -m unittest discover -s test/tests -v
+```
 
-**v1.1：** 当前浮点与 INT8 均按八级数据路径推进；INT32 回绕与 FP32 RNE 在 S8 分流。组间接口采用独立符号/幅值，所有 F/anchor、宽度和树深按配置推导，模块观察点见 [模块层级](../spec/dp/module-hierarchy.md)。未来专用源及额外 1–2 级属于后续 profile，本轮不实现。CModel 明确每个阶段的符号表示、定点小数点/指数坐标、位宽、自然增长与舍入。FP32 数学参考单独用于误差评价，不替代有限位宽的硬件行为模型。
+已提交 packed 数据可直接测试，无需旧目录可用。重新导入已有源数据执行 `python3 test/cases/import_legacy.py`；这会重建新版数据/manifest，之后通过 `--write-goldens` 重建已验证期望。扩展数据用 `python3 test/cases/generate_extensions.py` 重建。不要手改 expected 来消除失败。
 
-实现语言、构建系统/API 和 golden 序列化格式待 CModel 规格冻结时决定。测试入口共用根目录 [test/](../../test/README.md)，不在此复制另一套验收规则。
+sanitizer 构建位于已忽略的 build/ 内：
+
+```sh
+cmake -S src/cmodel -B src/cmodel/build/sanitize -DCMAKE_BUILD_TYPE=Debug -DDP_SANITIZE=ON
+cmake --build src/cmodel/build/sanitize -j 2
+python3 test/run_cmodel.py --phase all --binary src/cmodel/build/sanitize/dp_cmodel_cli --run-dir test/runs/cmodel/sanitize
+```
+
+## API 和执行器
+
+[model.hpp](include/dp/model.hpp) 提供 `evaluate(Config, Request, trace)` 和 `Pipeline::step(...)`。逐周期版本在每拍计算对应级，允许并行在途和逐请求换型。沿 n 接收，step(n+8) 返回输出；reset 清空，不等 last 排空。
+
+CLI `dp_cmodel_cli [--config FILE] [--trace]` 从 stdin 读取 JSONL，逐行输出 JSONL。操作包括：
+
+```json
+{"op":"config"}
+{"op":"eval","request":{"id":0,"a_datatype":1,"b_datatype":1,"c_datatype":0,"a_scale_datatype":0,"b_scale_datatype":0,"last":true,"a":"3c00","b":"3c00","c":"00000000","a_scale":"0","b_scale":"0","a_e1":"0","a_e2":"0","b_e1":"0","b_e2":"0"}}
+{"op":"step","reset":true}
+```
+
+eval 示例是一个 FP16 非零乘积加零，其余元素为零，默认 K16，结果 0x3f800000。step 接收同样的 request 并带 a_valid/b_valid/c_valid；无有效输入用 `{"op":"step"}` 注入气泡/排空。输出 ready/accepted/valid，只有 valid=true 时带 result。id 只是软件验证关联，不增加硬件端口。
+
+四项配置默认：
+
+```json
+{"k_fp16":16,"local_shift_mag_width":27,"global_signed_align_width":40,"post_scale_norm_extra_stage":0}
+```
+
+`--trace` 给出 S1–S8 的实际数值观察点及逐拍寄存状态；大整数以十进制字符串输出，输入及最终 d 以十六进制表示。不要把 trace 内软件保存的历史字段计入硬件寄存面积。
+
+## 模块和测试结论
+
+- `lib/unpack.cpp`：E/M/S、scale 分类和 C 解包。
+- `lib/lane.cpp`：乘法重构、指数/MAX、局部 RTZ 与 lane 树。
+- `lib/group.cpp`：共享 scale、LZD 计数、一次双向全局对齐、总树、输出。
+- `lib/arithmetic.cpp`：显式有限窗口/自然增长断言及整数实现 RNE。
+- `lib/model.cpp`：事务/周期调度；`lib/json_io.cpp`：协议检查。
+
+[首批报告](../../test/results/cmodel-v1.4.md) 区分“匹配有限位宽架构”与“相对精确数学的误差”。CModel通过不等于RTL、1.41GHz或PPA通过。

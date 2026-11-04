@@ -11,3 +11,5 @@ CACTI 等项目作为依赖接入时，仓库只保存来源、固定版本、�
 Ascend ISA 调研使用直接克隆的官方 `cann/asc-devkit` 和官方 CANN 9.1.0 编译组件，固定来源、commit/release及校验和见 [ascend-research.json](ascend-research.json)。它们只用于外部 ISA 的源码分析与编译探针，不进入本项目 Chisel/RTL 构建或 characterization。完整第三方源码、二进制工具和编译产物分别保存在被忽略的 `.deps/`、`.cache/`。
 
 Chisel 构建使用 Maven 发布依赖，由 Mill/Coursier 获取并缓存，源码没有 vendoring：Mill 0.11.8、Scala 2.13.12、Chisel/plugin 6.4.0、os-lib 0.9.1、ujson 3.1.0，具体坐标在 [hw/build.sc](../hw/build.sc)；RTL 生成器要求 firtool 1.62.0。版本与有效工具字符串随导出 manifest 保存。本机已有缓存，不从旧工程复制构建产物或 FPU 依赖。
+
+DP CModel 使用系统头文件依赖 Boost 1.83.0 和 nlohmann_json 3.11.3，来源、许可证与关键头文件SHA256见 [cmodel.json](cmodel.json)。CMake用EXACT核对版本，未vendoring第三方源码，也不自动下载。

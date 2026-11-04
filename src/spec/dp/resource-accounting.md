@@ -1,12 +1,10 @@
-> 功能：定义可统计的功能模块边界；范围：当前 DP 的资源层级、面积/功耗归属、导出与后端报告映射；版本：v1.3；修改时间：2026-11-04 21:03:38 +08:00；对应代码：[Chisel](../../chisel/README.md)、[手写 Verilog](../../verilog/README.md)、[DC](../../../hw/dc_syn/README.md)、[功耗](../../../hw/power/README.md)（新版模块及统计流程尚未实现）。
+> 功能：定义可统计的功能模块边界；范围：当前 DP 的资源层级、面积/功耗归属、导出与后端报告映射；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[Chisel](../../chisel/README.md)、[手写 Verilog](../../verilog/README.md)、[DC](../../../hw/dc_syn/README.md)、[功耗](../../../hw/power/README.md)（新版模块及统计流程尚未实现）。
 
 # 功能块边界与面积、功耗统计
 
-~~状态：用户要求从模块设计阶段保留功能块统计能力。以下定义逻辑功能 ID、职责和报告口径，不创建 RTL/EDA 脚本，不填估算测量值。模块内的算术组合划分不能额外增加八级以外的寄存器。~~
+状态：按当前 profile 统计功能 ID 及组合/寄存归属；首选 L8，用户允许必要时的检测/指数准备 L9 备用。不能因模块拆分暗加寄存器，不创建 RTL/EDA 或填测量值。
 
-状态：按当前profile统计功能ID及组合/寄存归属；首选L8，用户允许必要时的检测/指数准备L9备用。不能因模块拆分暗加寄存器，不创建RTL/EDA或填测量值。
-
-## 三层架构与功能模块
+## 1. 三层架构与功能模块
 
 T1H2Q4E8、T2H4Q8E16 和 H16Q32E64 是架构层级；下表为其内部应可识别的功能块。逻辑 ID 不是已经存在的源码文件名；实施时为 Chisel Module、手写 Verilog module、生成 RTL module 和后端实例建立映射。组合小单元可以复用模块定义，但每个物理实例路径必须唯一。
 
@@ -28,14 +26,11 @@ T1H2Q4E8、T2H4Q8E16 和 H16Q32E64 是架构层级；下表为其内部应可识
 | group_sop_add | 基本组 / S5 | 两 lane 的 SOP 合并 |
 | scale_pair_mul | 基本组 / S2 | 两侧 4-bit scale coefficient 的乘积 |
 | scale_exponent | 基本组 / S2–S5 | scale 指数和、去 bias、组 top-anchor 标量处理 |
-| group_scale_mul | 基本组 / S5 | 紧凑 signed 组和×unsigned scale 系数，NV/HiF4 共享 |
+| group_scale_mul（v1.4） | 基本组 / S5 | 公共 signed15×positive signed9；不按 NV/HiF 缩位加 mux。分别统计乘法核心、公共接线/使能及寄存 |
 | group_sign_magnitude | 基本组 / S5 | 安全 abs、zero 与组 token 输出 |
-| ~~global_anchor_max~~ | ~~顶层 / S6~~ | ~~组与 C 的有效 top-anchor MAX、零/特殊屏蔽~~ |
-| global_anchor_max | 顶层 / S6 | 原anchor减z形成e后，组与C取signed MAX；零/特殊屏蔽 |
-| ~~global_delta~~ | ~~顶层 / S6~~ | ~~各源与共同 anchor 的差值与饱和~~ |
-| global_delta / global_net_shift | 顶层 / S6 | e/d/net语义及移位范围控制；可直接A_raw-E_max，避免冗余串行减法 |
-| ~~global_align_shift~~ | ~~顶层 / S6~~ | ~~N 个全局幅值移位器，格式间共享~~ |
-| global_align_shift | 顶层 / S6 | N个固定W位双向幅值单元；右移核心、方向mux和路由分别可统计 |
+| global_anchor_max | 顶层 / S6 | 原 anchor 减 z 形成 e 后，组与 C 取 signed MAX；零/特殊屏蔽 |
+| global_delta / global_net_shift | 顶层 / S6 | e/d/net 语义及移位范围控制；可直接 A_raw-E_max，避免冗余串行减法 |
+| global_align_shift | 顶层 / S6 | N 个固定 W 位双向幅值单元；右移核心、方向 mux 和路由分别可统计 |
 | global_sign_convert | 顶层 / S6 | 对齐幅值恢复补码及整数结构落位 |
 | final_sop_tree | 顶层 / S7 | N=G+1 输入树，全部增长位保留 |
 | fp32_output | 顶层 / S8 | abs/LZD、norm、RNE、pack；保留子功能映射 |
@@ -46,13 +41,13 @@ T1H2Q4E8、T2H4Q8E16 和 H16Q32E64 是架构层级；下表为其内部应可识
 
 乘法器 bank 与 HH/HL/LH/LL、fp32_output 与 LZD/norm/RNE 等是父子统计关系。可提供父级聚合和子级分解两种视图，不能在同一个总计中同时累加两者。组合单元本身不应因为便于统计暗加 pipeline stage；S1–S8 的寄存边界由架构合同控制。
 
-## 资源数量基线
+## 2. 资源数量基线
 
 令 G 为基本组数、lanes=2G。每 lane 两套四单元乘法器：总套数=4G、算术乘法单元数=16G；主配置分别 16 套/64 单元。局部四路移位器总数=8G，主配置 32。每组一份 scale-pair 乘法和一份 group-scale 乘法；组 SOP 输出 G 个，全局移位源和最终树扇入为 G+1。输出转换与 C 支路在顶层各共享一份，不按组复制。
 
 这些是当前 RTL 结构预期，不能用门数量或乘法器尺寸乘常数冒充面积。仅在明确输入 mux、输出重构和隔离成本后比较复用收益。综合可能把算术映射为通用门、DSP 或被常量优化，报告保留逻辑资源与物理映射两种视图。
 
-## 寄存器、mux 与时钟的归属
+## 3. 寄存器、mux 与时钟的归属
 
 每个有效 cell 只归属一个功能 ID。功能模块若拥有阶段输出寄存器，其 sequential 面积/功耗计入该模块；跨模块的纯传递寄存器分别计入 c_transport、request_control 或具名 transport 子项。模块必须声明寄存器所有权，不能把同一个输出寄存器又加进全局 pipeline-register 总计。
 
@@ -60,7 +55,7 @@ T1H2Q4E8、T2H4Q8E16 和 H16Q32E64 是架构层级；下表为其内部应可识
 
 时钟网络、reset buffer、跨层优化后无法唯一分配的组合共享 cell 单列为 shared/unattributed，并记录原因。不能为让表格看似完整强行按比例分摊。未接入 CTS 的综合报告不能声称包含实际时钟树成本。
 
-## 生成 RTL 与综合层级
+## 4. 生成 RTL 与综合层级
 
 后续 Chisel 使用稳定模块/实例名及显式参数专化；手写 RTL 采用对应逻辑边界。生成 RTL 按既定规则集中于 hw/rtl，文件清单/manifest 记录逻辑 ID→源码→RTL module→实例→参数。复用一个 module 定义的多个实例仍分别统计，不能因只导出一个源文件漏计实例。
 
@@ -68,7 +63,7 @@ T1H2Q4E8、T2H4Q8E16 和 H16Q32E64 是架构层级；下表为其内部应可识
 
 不为好看的统计无差别添加 dont_touch，也不能把为统计而强制保层次的结果当作完全同设置的优化结果。若需要单独的保层次归因 run 与优化 PPA run，分别标识综合选项、网表、时序和面积影响；两份 netlist 的细分功耗不能混算。当前不指定工具版本相关命令，也不运行后端。
 
-## 面积和功耗报告合同
+## 5. 面积和功耗报告合同
 
 每个 run 至少关联 spec/config、实现类别、export ID、验证证据、RTL/网表映射、工艺库/PVT、工具版本、时钟/IO 约束和分析命令。每个功能条目包含：logical_id、instance_path、parent_id、stage、参数/资源计数、是否被展开/合并、combinational/sequential area、单位、数据来源和归属状态。
 
@@ -80,32 +75,14 @@ T1H2Q4E8、T2H4Q8E16 和 H16Q32E64 是架构层级；下表为其内部应可识
 
 未来报告应同时提供按架构层级、功能类别、阶段和运行格式/负载的视图；它们是同一数据集的不同聚合，不是可相加的四份成本。未知或未测值保持 unknown/null。当前未产生任何 DC/功耗结果。
 
-## v1.2.1：规格化候选的统计项
+## 6. 规格化候选的统计项
 
-~~若后续采用 [组实际指数检测](group-normalization-options.md)，另记录 group_leading_detect、group_anchor_adjust、c_subnormal_detect 以及 S6 方向 mux/合并移位的资源。它们目前仅是候选 ID，不表示已实例化。分别比较完整规格化的左移器、合并方案的方向控制与粗粒度版增加的窗口/寄存位；S3 的固定共享移位器不因 S6 方案更换而复制。~~
+已选择精确组 LZD 计数与 S6 一次双向移位；这些逻辑 ID 进入当前规划，尚未实例化。双单向/粗粒度版本单列对照，不混入主方案资源总计。
 
-**v1.3：** 已选择精确组LZD计数与S6一次双向移位；这些逻辑ID进入当前规划，尚未实例化。双单向/粗粒度版本单列对照，不混入主方案资源总计。
+## 7. 一次双向移位的当前统计项
 
-## v1.3：一次双向移位的当前统计项
+每组增加 group_leading_detect；顶层 C 支路 c_subnormal_detect；MAX 之前的 e=A_raw-z 归入 group_anchor_adjust/c_anchor_adjust（默认 S6 组合，前移 S5 需记录）。S5 不计 group_norm_left_shift/c_norm_left_shift 实例；它们仅属于双单向对照方案。
 
-每组增加group_leading_detect；顶层C支路c_subnormal_detect；MAX之前的e=A_raw-z归入group_anchor_adjust/c_anchor_adjust（默认S6组合，前移S5需记录）。S5不计group_norm_left_shift/c_norm_left_shift实例；它们仅属于双单向对照方案。
+global_align_shift 在主方案为 G+1 份双向单元，子项区分 right_shift_core、direction_mux/reversal routing，记录净移位计算 global_net_shift；完整 d 若仅供 trace 不生成无用重复减法器。主 G4 对应 5 套双向资源，组 LZD4 份，C 检测 1 份。S2 元素乘法和 S3 局部右移数量不变。
 
-global_align_shift在主方案为G+1份双向单元，子项区分right_shift_core、direction_mux/reversal routing，记录净移位计算global_net_shift；完整d若仅供trace不生成无用重复减法器。主G4对应5套双向资源，组LZD4份，C检测1份。S2元素乘法和S3局部右移数量不变。
-
-S5寄存原幅值/A_raw/z，须计新增z寄存与扇出；不能只统计省去左移器的面积。L9备用及双单向对照分别记录组合、寄存/时钟成本与critical path。group_scale_mul共享输入mux/isolation保持单一归属，PPA未知不填零。
-
-## 本轮未提交草案对照：v1.3：scale 后规格化的必需统计项
-
-~~## v1.3：scale 后规格化的必需统计项~~
-
-~~以下逻辑 ID 纳入当前规划，不表示已有源码或面积结果：每组的 group_leading_detect、group_norm_left_shift、group_anchor_adjust；顶层 C 支路的 c_subnormal_detect、c_norm_left_shift、c_anchor_adjust。group_sign_magnitude 仍拥有 scale 后安全 abs，group_scale_mul 拥有共享乘法算术；输入 mux/isolation 按既定唯一归属统计。~~
-
-~~主配置 G=4，组规格化逻辑4份，C规格化支路1份；正常 C 可旁路动态检测/移位。S6 global_align_shift 保留5份右移器，当前不增加方向 mux。双向融合方案仅作对照。L9 若选定，新增寄存位/控制延迟分别计入实际拥有模块，不能把新增时钟负载遗漏或与 L8 混报。~~
-
-## 版本与架构时间线
-
-| 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
-| --- | --- | --- | --- | --- |
-| v1.2 | 2026-11-04 19:38:52 +08:00 | 新建统计合同 | 按乘法/指数/MAX/移位/SOP/scale/解包/输出与控制拆功能 ID；定义寄存/mux 归属和避免面积/功耗重复计数的后端映射。 | 用户模块化统计要求 |
-| v1.2.1 | 2026-11-04 20:17:40 +08:00 | 讨论/说明补充 | 记录组实际指数候选及对应数值、特殊值或资源边界；不改变 v1.2 主路径。 | 用户 LZD/指数/特殊值讨论；[总时间线](../CHANGELOG.md) |
-| v1.3 | 2026-11-04 21:03:38 +08:00 | 架构修订 | 按用户最终选择，S5 scale后LZD仅计数、S6一次双向移位；同步数值/接口/资源/备用周期，保留对照。 | 用户最终双向移位选择；[总时间线](../CHANGELOG.md) |
+S5 寄存原幅值/A_raw/z，须计新增 z 寄存与扇出；不能只统计省去左移器的面积。L9 备用及双单向对照分别记录组合、寄存/时钟成本与 critical path。group_scale_mul 共享输入 mux/isolation 保持单一归属，PPA 未知不填零。

@@ -1,84 +1,40 @@
-> 功能：定义数值语义与保留精度；范围：全部数值模式、缩放、精度窗口和 FP32 输出；版本：v1.3；修改时间：2026-11-04 21:03:38 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：定义数值语义与保留精度；范围：全部数值模式、缩放、精度窗口和 FP32 输出；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/arithmetic.cpp](../cmodel/lib/arithmetic.cpp)；Chisel/手写 Verilog 模块尚未实现。
 
 # 数值语义与保留精度
 
-状态：格式支持、固定解包布局、HiF4 数值定义、IEEE 特殊值行为目标及精度要求已给定；逐级保留窗口、RM、MX/NV scale、全部 scale 融合顺序与误差界仍需闭合。
+## 1. 格式与计算边界
 
-## 格式支持矩阵
-
-| 模式 | 支持要求 | 本轮确定内容 | 待明确内容 |
+| 族 | 输入与内部幅值 | scale | 输出 |
 | --- | --- | --- | --- |
-| TF32 | 必须支持 | 32 位容器的字段、I1F10 解包；保留至少 25 位 | 逐级窗口、舍入与输出编码细节 |
-| FP16 / BF16 | 必须支持 | I1F10/I1F7 解包、IEEE 分类；保留至少 25 位 | 逐级定点窗口、舍入与边界处理 |
-| ~~MXFP8 / MXFP6~~ | ~~必须支持~~ | ~~四种子型统一 E5M3，bias=15；保留至少 25 位~~ | ~~scale 编码、混合 A/B 模式及逐级窗口~~ |
-| MXFP8 / MXFP6 | 必须支持 | E5M3、E8M0 scale、I2F25 初次窗口 | 混合 A/B 子型合法性及全局误差边界 |
-| MXFP4 / NVFP4 | 必须支持 | E2M1 无损转 I3F1；保留精度基准 35 位 | scale 层级、施加位置、逐级截断与输出 |
-| HiF4 | 必须支持 | S1P2、1 位 e1/e2、E6M2 bias=48；I2F2 解包及复用 NVFP4；约 37 位目标 | scale 与和的融合顺序、后续位宽推导 |
-| ~~INT8~~ | ~~必须支持~~ | ~~计算并行度与 MXFP8 相同~~ | ~~有/无符号组合、累加宽度、溢出/饱和、输出类型~~ |
-| INT8 | 必须支持 | signed INT8、INT32 C/D、两组乘法器路由、八级输出、模 2^32 回绕 | 范围推导和共用数据通路的实现验收 |
-| HiF8 | 暂不支持 | 不分配首版实现和通过声明 | 后续扩展另行定义 |
+| T：TF32 | 32 位容器，高 19 位有效；I1F10 | 无 | FP32 |
+| H：FP16 / BF16 | I1F10 / I1F7 | 无 | FP32 |
+| Q：MXFP8 / MXFP6 | 四种子型统一重编码为 E5M3 / I1F3 | E8M0 | FP32 |
+| E：MXFP4 / NVFP4 | E2M1 精确转 I3F1 | E8M0 / 非负 E4M3 | FP32 |
+| E：HiF4 | S1P2，e1 融入 I2F2，e2 保留为指数 | E6M2，bias=48 | FP32 |
+| INT8 | 有符号 8 位，安全解为 sign+幅值 | 无 | INT32 |
 
-这里的“保留精度”尚未等同于某个总线宽度。必须补齐：作用节点（对齐乘积、规约累加器或归一化输出）、是否包含符号/隐藏位/整数增长位/保护位，以及小数点或 anchor。不能直接把 25/35/37 写成 Verilog 总线长度，也不能把它们解释为输入格式尾数宽度。
+A/B 首版仅同格式；混合格式相乘未启用。HiF8 不支持。每笔浮点运算为缩放点积加 FP32 C；整数为精确 signed INT8 点积加 INT32 C 后模 2^32 回绕。scale 不作用于 C，DP 不处理跨请求依赖。
 
-`retain_main_bits` 下限为 25；`retain_fp4_bits` 基准为 35；`retain_hif4_bits` 初始目标为 37，待 HiF4 语义及共享路径推导确认。即使数字不变，更改宽度计数口径也属于合同变更。完整乘积与求和需要的自然增长位须另行推导，不靠隐式截断凑保留目标。
+## 2. 保留精度与截断点
 
-## TF32 容器、解包与共用解码
+T/H/Q 在 S3 采用 I2F25 初值，即 27 位无符号移位窗口；右移 RTZ 后恢复符号，进入自然增长的补码树。E 通过两位保护低零支持 HiF4 的 0/1/2 位局部对齐，该处保持精确。INT8 的低零仅为结构落位，不能引入精度损失。
 
-TF32 每元素采用 32 位输入容器，其中高 19 位有效、低 13 位补零。解包的数值字段复用 FP16 尾数路径与 BF16 指数路径，使 TF32 可接入同一分组解码结构；不把该输入作为完整 FP32 尾数乘法。字段为 sign[31]、exponent[30:23]、fraction[22:13]、低[12:0]=0；输入已具有 TF32 编码，不在 DP 内执行 FP32 量化。内部 I1F10 的确切位号见 [解包合同](dp/unpack.md)。
+S5 公共 15×9 scale 乘法保留精确乘积。scale 后 LZD 仅计数，S6 按真实指数选 MAX 并做一次双向移位；默认全局窗口 40 位含符号，即 39 位幅值。右移 RTZ，S7 保留完整求和，S8 对实际有限位宽总和作 RNE。
 
-TF32 使用 T 并行容量，不从容器宽度推出比 FP16 更低的乘法吞吐。解包字段、指数相加和乘积尾数进入主方案流水，见 [DP 八周期切分](dp/pipeline.md)。
+局部 25 位的小数口径已经落实；FP4 的 35 位和 HiF4 约 37 位是整体精度目标，仍需结合对齐点、强抵消和误差指标验收。总线宽度、结构补零和有效数学精度不能直接等同。各级 F、整数位和 anchor 见[出口表](dp/stage-formats.md)。
 
-## 缩放与短 K 配置
+## 3. 特殊值与最终编码
 
-scale 的物理分组及原始覆盖范围已在 [DP 容量与 scale 合同](dp/layout-and-scales.md)定义。HiF4 S1P2、1 位 e1/e2 和 E6M2 bias=48 已在 [解包合同](dp/unpack.md)明确；~~仍需确定 MX/NV scale 编码与数值域、各格式块 scale 与部分和的融合坐标及舍入点。~~
+S1 分类 A/B/scale，S5 分类 C。NaN、Inf、0×Inf、异号 Inf 相加及 sNaN 按[特殊值合同](dp/special-values.md)传播；S8 选择特殊结果或有限数编码。
 
-**v1.1 当前定义：** MX/NV scale 采用 E8M0/非负 E4M3，与 HiF4 E6M2 一起统一 E8M3，数值公式见 [scale](dp/scale.md)。融合坐标与位宽见 [逐级布局](dp/numeric-layout.md)。K4/K8/K16 截取 scale block 子片段时沿用原始 scale，不改变上游量化。
+首版仅 RNE，canonical qNaN=0x7fc00000，渐进下溢，tininess 在舍入后判断。精确抵消为+0，全为负零时保留−0；异常仅记验证 trace。两次 RTZ 丢位单独记录，不重新注入 S8 的 sticky。
 
-HiF4 复用 NVFP4 的硬件通路不表示编码或缩放规则相同；本轮只按用户指定参考采用 S1P2/e1/e2/E6M2 数值定义，历史流水与窗口不继承。~~INT8 需明确有符号极值、精确乘积和规约增长，不能因与 MXFP8 并行度相同就沿用浮点截断规则。~~
+## 4. 数学参考与实现一致性
 
-**v1.1 当前定义：** INT8 使用完整 signed INT8 范围，C/D 为 INT32；内部精确规约，S8 按模 2^32 回绕，溢出记录到验证 trace。
+CModel 按固定窗口建模；独立 Fraction 参考分别计算相同 RTZ 网格和精确数学点积。RTL 须逐位匹配 CModel，数学误差另行报告。TF32 另用 FP64 近似并复核舍入边界；INT8 必须精确一致。见[验证合同](07-verification.md)。
 
-## C、最终累加与输出舍入
+## 5. 外部依据的边界
 
-~~每次 DP 请求带 FP32 C；scale 只作用于 A×B 点积部分。点积规约和 scale 融合后，在 DP 内对齐并加 C，末段 LZD、RM 舍入及 FP32 norm/打包输出 D。DP 不区分 C 的来源；指令层保证依赖与取数。A/B/C 在解包时分类，乘法/规约/scale/C 合并遵从 [特殊值合同](dp/special-values.md)，包括 0×Inf、异号 Inf 相加、NaN 和有符号零。~~
+NVIDIA CUDA 13.0.2 归档 PTX ISA 9.0 规定 TF32 使用 32 位容器，并描述相应 MMA 的中间累加语义；它并未完整规定本项目的分组次序及 25/35/37 位物理窗口。参见[类型定义](https://docs.nvidia.com/cuda/archive/13.0.2/parallel-thread-execution/index.html#alternate-floating-point-data-formats)与[MMA 数值语义](https://docs.nvidia.com/cuda/archive/13.0.2/parallel-thread-execution/index.html#warp-level-matrix-instructions-mma)。
 
-**v1.2 当前定义：** 每笔浮点请求带 FP32 C，INT8 请求带 INT32 C；scale 只作用于点积。A/B/scale 在 S1 分类，C 在 S5 按其 datatype 解包/分类，S6 与组结果对齐、S7 相加、S8 FP32 RNE 或 INT32 回绕。C 的依赖归指令层，特殊语义见 [特殊值合同](dp/special-values.md)。逐笔 control 与结果类型同行。
-
-~~RM 表示本项目最终舍入控制；目前仅确认末段按 RM 对 FP32 输出舍入，实际可选模式及编码仍待定义。~~
-
-**v1.1 当前定义：** 首版最终 FP32 仅支持 RNE（最近值、相等取偶数）。两次幅值移位均向零截断，T2H4Q8E16 以 sign/magnitude 输出；S8 对已定义有限位宽总和作 RNE，不恢复早先丢弃的信息。~~局部移位的截断和 sticky/guard 尚待明确；~~
-
-**v1.1：** 两次幅值移位均向零截断；移出位作为误差/trace 信息，不恢复到最终精确和；S8 的 guard/round/sticky 从实际 S7 总和生成。~~IEEE 特殊值分类已明确，但 NaN payload、舍入方向、渐进下溢边界及异常 flags 的精确合同仍需冻结。~~
-
-**v1.1 当前定义：** RNE 和两次幅值 RTZ 已确认；NaN payload/canonical、渐进下溢位级边界、零符号与异常 flags 的范围仍需冻结。数学误差由独立数学参考评价；各 RTL 对本架构 CModel 在有效输出位上逐位一致。
-
-## NVIDIA 依据的范围
-
-核验来源：NVIDIA CUDA 13.0.2 归档版 PTX ISA 9.0，检索日期 2026-11-04。其 TF32 类型使用 32 位寄存容器；`mma` 对相应浮点类型说明至少单精度的中间累加，并未把累加顺序与舍入完全规定。[PTX 类型定义](https://docs.nvidia.com/cuda/archive/13.0.2/parallel-thread-execution/index.html#alternate-floating-point-data-formats)、[mma 数值语义](https://docs.nvidia.com/cuda/archive/13.0.2/parallel-thread-execution/index.html#warp-level-matrix-instructions-mma)
-
-这些 ISA 条款不能推出物理硬件采用本项目所列的 25/35/37 位内部窗口。本轮将这些数字记录为**用户给定的本项目设计要求/初始目标**；若要标注为 NVIDIA 实测或逆向结果，仍需提供对应架构、探针、原始结果与位宽定义。HiF4 的 37 位也不作为 NVIDIA 官方保证。
-
-## v1.1：位宽与精度口径
-
-T/H/Q 首次幅值对齐采用 I2F25 初值：27 位无符号移位器加独立符号，之后用 28 位补码进入树。E 局部计算通过追加两位精确保护零支持 HiF4 最大差值 2；S5 紧凑组和默认推导为含符号 15 位。顶层对齐窗口默认 40 位含符号，可扫参，所有自然增长及尾部补零随配置重算。FP4 35/HiF4 37 的有效保留口径与全局误差边界仍需独立证明。
-
-## 历史修订对照
-
-以下为本次版本化时恢复的历史草案对照；删除线内容已被替代，不作为当前实现依据。较早内容尚无正式版本号，来源按真实提交或用户确认记录，不追认其为已批准合同。
-
-- **TF32 字段/解包**：~~高 19 位中 sign/exponent/fraction 的精确字段切分与舍入转换由格式定义冻结。~~ → **当前：**字段已定义为 S[31]/E[30:23]/F[22:13]，低 13 位为零；T/FP16 解包采用 I1F10。（来源：dba8ecf → 42350c5，用户确认）
-
-- **HiF4 定义**：~~没有固定来源前不臆造 HiF4 位布局。~~ → **当前：**用户指定历史解包为参考，明确 S1P2、1-bit e1/e2、E6M2 bias=48；对应公式见 dp/unpack.md。（来源：dba8ecf → 42350c5，用户指定参考）
-
-## 版本与架构时间线
-
-| 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
-| --- | --- | --- | --- | --- |
-| 未编号（追溯） | 2026-11-04T15:13:43+08:00 | 历史记录 | 建立新版规格目录骨架与历史归档边界。 | [e8e07c2](https://github.com/Futuresxy/DP-Puzzel/commit/e8e07c2) |
-| 未编号（追溯） | 2026-11-04T15:43:59+08:00 | 历史记录 | 记录 TensorCore/DP-Group/DP 首批架构、数值和时序要求。 | [76d31f2](https://github.com/Futuresxy/DP-Puzzel/commit/76d31f2) |
-| 未编号（追溯） | 2026-11-04T17:02:03+08:00 | 历史记录 | 细化分组共享、K 参数化、scale/metadata、接口与八周期候选。 | [dba8ecf](https://github.com/Futuresxy/DP-Puzzel/commit/dba8ecf) |
-| 未编号（追溯） | 2026-11-04T17:28:50+08:00 | 历史记录 | 明确固定解包、C/last 边界、全局复位及特殊值规则。 | [42350c5](https://github.com/Futuresxy/DP-Puzzel/commit/42350c5) |
-| v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](document-control.md) |
-| v1.1 | 2026-11-04 19:12:59 +08:00 | 架构修订 | 补充 v1.1 相关资源、数值或验证合同。 | 用户架构图与补充；[总时间线](CHANGELOG.md) |
-| v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 区分每笔 FP32/INT32 C，明确 A/B/scale S1 与 C S5 分类；同步逐请求控制。 | 用户本轮要求及确认；[总时间线](CHANGELOG.md) |
-| v1.3 | 2026-11-04 21:03:38 +08:00 | 版本承接 | 承接v1.3架构号；正文合同及未决状态保持。 | 用户最终双向移位选择；[总时间线](CHANGELOG.md) |
+这些位宽是用户给定的项目要求/目标，不作为 NVIDIA 官方保证或本项目已完成的逆向测量。HiF4 采用用户明确指定的字段及 scale 定义，来源见[解包规范](dp/unpack.md)。

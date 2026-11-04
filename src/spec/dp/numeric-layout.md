@@ -1,10 +1,10 @@
-> 功能：推导逐级位宽和统一对齐坐标；范围：参数化局部/全局窗口、sign/magnitude、S5 C 和 INT32；版本：v1.3；修改时间：2026-11-04 21:03:38 +08:00；对应代码：[CModel](../../cmodel/README.md)、[Chisel](../../chisel/README.md)、[Verilog](../../verilog/README.md)（模块文件未建；计划参数入口为 src/chisel/parameter/，未创建）。
+> 功能：推导逐级位宽和统一对齐坐标；范围：参数化局部/全局窗口、sign/magnitude、S5 C 和 INT32；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；Chisel/手写 Verilog 模块尚未实现。
 
 # 逐级位宽、符号/幅值与 anchor
 
 状态：用户确定两次移位均对无符号幅值向零截断，S5 T2H4Q8E16 输出独立符号/幅值；宽度和树深由参数派生。以下为与图一致的可审阅数值推导，不代表完整误差或时序验收。
 
-## 集中参数与自然增长
+## 1. 集中参数与自然增长
 
 所有结构值由有效配置进入 Chisel 参数对象及模块构造参数；计划入口 `src/chisel/parameter/`，文件尚未创建。CModel、手写 Verilog 与 TB 使用同一有效参数，不从各模块中的常数字面值拼装设计。
 
@@ -26,7 +26,7 @@ E_group_compact_width = E_pair_signed_width + e_exact_guard_bits
 
 对 n 个叶节点的平衡树，由参数生成每层两两相加，未配对叶节点直传，层数 L(n)；各节点按输入宽度与增长推导。顶层参与数为 `group_count+1`（包括 C），K4/K8/K16 对应 2/3/5 项，树深 1/2/3；三组或其他未来非二次幂也遵循该规则，但当前合法构建 K 仍为 4/8/16。
 
-## S2 到 S3：T/H/Q 初次对齐
+## 2. S2 到 S3：T/H/Q 初次对齐
 
 | 模式 | 原始无符号幅值乘积 | 原小数位 | 放入 I2F25 的低位补零 |
 | --- | --- | --- | --- |
@@ -38,13 +38,13 @@ E_group_compact_width = E_pair_signed_width + e_exact_guard_bits
 
 25 是当前小数位配置下限；派生 W27 不含符号。移出位可用于误差统计，不能未经新数值合同直接混入最终舍入；S8 RNE 对已规定有限位宽路径结果舍入，不意味着被局部截断的精确点积可恢复。
 
-## S3 到 S5：E、整数及共享加法树
+## 3. S3 到 S5：E、整数及共享加法树
 
 E 的八个产品先两两符号化相加为四个 pair。每个 pair 低位补 `e_exact_guard_bits`，HiF4 再按基本组公共 e2 和右移 0/1/2 位，随后参与四路求和。由于所有移位前至少有两个低零，HiF4 此处精确；取差值低两位前必须先保证 delta≤2，不能把更大差值截短后回绕。
 
-Q 四路在 S4 通过两层加法；H 两路复用最后一层；T 单项通过最后一级的旁路或与零相加，保持同一寄存边界。E 的四个 pair 和 INT8 的四个产品使用相同四路树。每种模式先按参数给出自然表示，再以**有符号值低位补零**放入共用槽；补 p 位必须同步令 F增加 p，数值不变。
+Q 四路在 S4 通过两层加法；H 两路复用最后一层；T 单项通过最后一级的旁路或与零相加，保持同一寄存边界。E 的四个 pair 和 INT8 的四个产品使用相同四路树。每种模式先按参数给出自然表示，再以**有符号值低位补零**放入共用槽；补 p 位必须同步令 F 增加 p，数值不变。
 
-一套由当前参数推导的共享槽候选是：S3 补码叶 W28、S4 lane 槽 W30、S5 基本组补码槽 W31。下表 F 是该槽对应的小数点，不是新增加的数学信息：
+当前 CModel 采用的共享槽为：S3 补码叶 W28、S4 lane 槽 W30、S5 基本组补码槽 W31。下表 F 是该槽对应的小数点，不是新增加的数学信息：
 
 | 模式 | S4 lane W30 的 F | S5 W31 的 F（含 scale 系数后的落位） |
 | --- | ---: | ---: |
@@ -56,13 +56,9 @@ Q 四路在 S4 通过两层加法；H 两路复用最后一层；T 单项通过�
 | HiF4，非单位 scale 系数 | 22 | 20 |
 | INT8，结构低零 | 12 | 12 |
 
-~~这些值由自然位宽、两级树、E 保护位及槽尾部补零计算，改变参数后重算，不把表中 30/31 或 F 写死进模块。NV/HiF4 的紧凑有符号组和 W15 乘八位无符号 scale 系数，数学上 W23 足够；若 RTL 先对系数补符号零而产生 W24 原生乘积，需证明高位仅是符号扩展才能删除。~~
+S5 只检测 z，不左移，原幅值 F 保持。NV/HiF 统一 W15×W9，公共 W23 有用积补 8 零；不用每模式缩位选择。S6 合并完成规格化及对齐。
 
-~~**v1.3：** 上表 F 继续描述 S5 规格化前内部 W31 槽；正式浮点出口改为 F29。NV 去两位 SOP 结构零，HiF 去两位 scale 结构零，分别 signed13×unsigned8、signed15×unsigned6，得到精确 W21；低补10零后仍为 NV F18、HiF F20。详见 [scale 参数推导](scale.md)。~~
-
-**本轮最终选择：** S5只检测z，幅值不左移，因此上表F仍为正式原幅值出口的F。NV/HiF紧凑乘法与低补10零推导不变，S6才合并完成规格化和对齐移位。
-
-## 共享槽与 F 的构造公式
+## 4. 共享槽与 F 的构造公式
 
 ```text
 W_leaf = local_signed_width
@@ -86,29 +82,27 @@ F_group_scaled(E) = e_product_fraction_bits(mode) + e_exact_guard_bits
 
 signed_width_from_product_range 从完整合法输入范围推导，包括 -128；不用浮点尾数的 sign+自然无符号宽度估计代替。所有 pad 均须非负，按模式裁剪高符号扩展或低结构零必须有范围/整除证明；不适用的公式分支不生成硬件。E8M0 单位系数旁路直接使用 F_group_unscaled，不让虚拟系数人为移动小数点。
 
-## S5：scale 后幅值与 LZD 计数
+## 5. S5：scale 后幅值与 LZD 计数
 
-S5 完成两lane组和、适用scale乘法/旁路、安全abs，再对最终m_raw求z=clz_M(m_raw)，**只输出计数，不左移**。组幅值默认M30，A_raw=alpha_raw-F_raw+(M-1)已去bias；正式出口保持各模式原F_raw。接口输出m_raw/negative/A_raw/z/zero/special及同行控制。e=A_raw-z是MAX用的真实指数，不能单独用e解释未左移幅值。
+S5 完成两 lane 组和、适用 scale 乘法/旁路、安全 abs，再对最终 m_raw 求 z=clz_M(m_raw)，**只输出计数，不左移**。组幅值默认 M30，A_raw=alpha_raw-F_raw+(M-1)已去 bias；正式出口保持各模式原 F_raw。接口输出 m_raw/negative/A_raw/z/zero/special 及同行控制。e=A_raw-z 是 MAX 用的真实指数，不能单独用 e 解释未左移幅值。
 
-C仍S1–S4 raw32、S5并行解包。FP32自然M24低补8零到M32/F31，子正规仅检测z_c，不左移；A_raw_c为有效无偏指数，e_c=A_raw_c-z_c。INT32仍M32/F0；零/特殊源不做普通非零公式。
+C 仍 S1–S4 raw32、S5 并行解包。FP32 自然 M24 低补 8 零到 M32/F31，子正规仅检测 z_c，不左移；A_raw_c 为有效无偏指数，e_c=A_raw_c-z_c。INT32 仍 M32/F0；零/特殊源不做普通非零公式。
 
-## S6：合并左规格化与右对齐
+## 6. S6：合并左规格化与右对齐
 
-对有限非零源求e_i=A_raw_i-z_i及signed E_max；d_i=E_max-e_i非负，净移位net_i=z_i-d_i=A_raw_i-E_max为signed。原幅值先静态补到M_global，再由一套双向移位器按net_i正左负右移动；右移RTZ，之后恢复补码。公共LSB权重lambda_common=E_max-(M_global-1)。零/特殊屏蔽、完整差值及过大移位处理见 [出口表](stage-formats.md)。
+对有限非零源求 e_i=A_raw_i-z_i 及 signed E_max；d_i=E_max-e_i 非负，净移位 net_i=z_i-d_i=A_raw_i-E_max 为 signed。原幅值先静态补到 M_global，再由一套双向移位器按 net_i 正左负右移动；右移 RTZ，之后恢复补码。公共 LSB 权重 lambda_common=E_max-(M_global-1)。零/特殊屏蔽、完整差值及过大移位处理见 [出口表](stage-formats.md)。
 
-默认signed全局窗口40、幅值39；所有pad由参数推导并保证非负。左移net_i≤z_i，故不会移出有效位。该合并与先精确左移再右移等价，不需要S5左移器；INT分支仍使用可逆结构落位。S3移位资源不与S6跨拍复用。
+默认 signed 全局窗口 40、幅值 39；所有 pad 由参数推导并保证非负。左移 net_i≤z_i，故不会移出有效位。该合并与先精确左移再右移等价，不需要 S5 左移器；INT 分支仍使用可逆结构落位。S3 移位资源不与 S6 跨拍复用。
 
-## S7：一次规约所有组与 C
+## 7. S7：一次规约所有组与 C
 
 `N=group_count+1`，每个输入为 global_signed_align_width 位，输出自然宽度 `W_sum=global_signed_align_width+L(N)`。默认 W40 下，K4/K8/K16 的总和分别 W41/W42/W43，不把五项和截回 W40。加法树可采用平衡 CPA 或压缩树，单周期完成是目标，组合路径需评估。
 
 总和仍位于 lambda_common。S8 对绝对值求最高有效位 k，最终无偏指数 `E=lambda_common+k`；若采用随容器最高位的 anchor 表示，宽度增长必须同步修正 anchor。不得用裸 raw anchor 直接编码 FP32。
 
-## INT8/INT32 与共用输出
+## 8. INT8/INT32 与共用输出
 
-~~有符号 INT8 输入解为符号+8 位幅值；C 在整数会话按二补码 INT32 解释，输出也是 INT32。S3、S6 不做浮点指数对齐；供共享加法器的低位补零仅是可逆结构落位。~~
-
-**v1.2 当前定义：** 有符号 INT8 输入解为符号+8 位幅值；每笔 C 根据其 INT32 datatype 解包，输出携带 INT32 datatype。S3、S6 不做浮点指数对齐，低零仅用于可逆结构落位；相邻浮点请求不会改变本笔解释。
+有符号 INT8 输入解为符号+8 位幅值；每笔 C 根据其 INT32 datatype 解包，输出携带 INT32 datatype。S3、S6 不做浮点指数对齐，低零仅用于可逆结构落位；相邻浮点请求不会改变本笔解释。
 
 C 的绝对值最多 2^31，故需要 32 位无符号幅值。令 `int_pad_bits=M_global-int32_bits`（默认 39-32=7），将各组整数与 C 的幅值统一低位补该数量零，再恢复符号。INT8 原始乘积虽由 16 位无符号单元产生，但合法输入范围保证乘积在 [-16256,16384]，可精确用 16 位补码；共享 W28 叶槽因此补 12 个低零，S4/S5 保持该 F。组槽中原有结构低零先按其派生 F 精确还原，不能把它们当作真实小数截断。要求 M_global≥int32_bits。
 
@@ -116,96 +110,30 @@ S7 保留完整求和；S8 精确删除结构零后得到数学整数 R，输出
 
 IEEE 754 的浮点转整数异常不规定本项目整数乘加的溢出选择；用户已选首版回绕。[PTX ISA 9.0 的整数 mma](https://docs.nvidia.com/cuda/archive/13.0.2/parallel-thread-execution/index.html#warp-level-matrix-instructions-mma) 同样区分未指定 satfinite 的回绕和指定后的饱和；此处不引入饱和模式。
 
-## INT32 回绕示例
+## 9. INT32 回绕示例
 
 - C=2147483647、点积贡献=1：数学 R=2147483648，输出位为 0x80000000，按 INT32 为 -2147483648，overflow=true。
 - C=-2147483648、点积贡献=-1：数学 R=-2147483649，输出位为 0x7fffffff，按 INT32 为 2147483647，overflow=true。
 - R 在 [-2^31,2^31-1] 内时数值不变，overflow=false。输出行为与 overflow 记录分开，不增加输出周期。
 
-## S8 RNE 与剩余数值待决项
+## 10. S8 RNE 与剩余数值待决项
 
-首版 FP32 只支持 RNE，相等时取偶数。设规范化后保留位最低位为 lsb，丢弃部分首两位为 guard/round，其后各位 OR 为 sticky，则进位条件为 `guard && (round || sticky || lsb)`；舍入进位可再次调整输出指数。对 S7 有限结果确定符号、LZD、规范化、guard/round/sticky 及舍入进位，再打包 FP32。NaN payload/canonical、负零与微小值边界、异常 flags 范围仍需冻结；RNE 不追溯修复前面向零截断的信息损失。
+首版 FP32 只支持 RNE，相等时取偶数。设规范化后保留位最低位为 lsb，丢弃部分首两位为 guard/round，其后各位 OR 为 sticky，则进位条件为 `guard && (round || sticky || lsb)`；舍入进位可再次调整输出指数。对 S7 有限结果确定符号、LZD、规范化、guard/round/sticky 及舍入进位，再打包 FP32。
+
+NaN/零符号/tininess/trace flags 已按 [特殊值策略](special-values.md) 冻结；RNE 不追溯修复 RTZ 的信息损失。
 
 当前已把主模式首次局部对齐解释为至少 25 个小数位。FP4 35/HiF4 37 的精度计数口径及在 W40 全局窗口下的误差边界仍需证明，不能把 40 位容器自动视为这些目标已验收。
 
-## v1.2：完整出口表与移位器主参数
+## 11. 完整出口表与移位器主参数
 
 [每级 SxIxFx/anchor/SOP](stage-formats.md) 展开默认参数全部格式的 S1–S8 出口。局部窗口的唯一主配置为 local_shift_mag_width，默认 27；local_align_fraction_bits=local_shift_mag_width-product_integer_bits 为派生量，当前要求至少 25。原 local_mag_width 公式仍成立，但不允许再单独输入一份矛盾的 F。S3 的实际四个移位器经输入 mux 在 T/H/Q 间共享，见 [资源合同](shifter-sharing.md)。
 
-~~S5 标准 token 的 anchor_top 为 A=alpha-F+(M-1)，默认 signed 10 位；alpha/r/F 作为推导与 trace 坐标，不要求全都物理寄存。S6/S7 的浮点公共 F=M_global-1，默认 38，所以 S6 为 S1I1F38 W40、S7 K16 为 S1I4F38 W43。INT8 分支分别为 S1I32F7/S1I35F7。当前请求的 ctrl 决定这些解释，不受新请求影响。~~
+S5 改传 anchor_raw=A_raw、z 及未左移 M30 幅值；S6 计算 e/MAX，按 z-d 一次双向移位。S6/S7 仍 W40/W43、F38，公共指数为实际 e 的 MAX；INT 坐标不变。
 
-~~**v1.3：** S5 anchor_top=e=A_raw-clz(m_raw)，幅值同时左移，默认仍 signed10+M30。S6/S7 物理宽度和 F38 不变，但公共指数改为实际 e 的 MAX；INT8 的固定整数坐标不变。r/alpha_raw/F_raw/A_raw/l 只需在 trace 中完整解释。~~
+## 12. 容器 anchor 与实际指数
 
-**本轮最终选择：** S5改传anchor_raw=A_raw、z及未左移M30幅值；S6计算e/MAX，按z-d一次双向移位。S6/S7仍W40/W43、F38，公共指数为实际e的MAX；INT坐标不变。
+已选择 [scale 后计数＋合并双向移位](group-normalization-options.md)。S6 结果应与精确双单向方案一致。
 
-## v1.2.1：容器 anchor 与实际指数
+## 13. 宽度公式的适用范围
 
-~~现行 A=alpha-F+(M-1) 是容器位权，不要求 m 的最高位为 1；当前公式在坐标上正确。强抵消后，前导零会使固定窗口的有效保留减少。用户提出逐组 LZD 的替代方案及精确合并移位、粗粒度检测的误差界见 [组规格化候选](group-normalization-options.md)。本次记录讨论，不把现行 S5/S6 数值合同悄然改成新舍入路径。~~
-
-~~**v1.3：** 已选择 [scale 后完整规格化](group-normalization-options.md)。S6 RTZ 网格相对 v1.2 可能改变，需要新的位精确参考；不承诺两个版本逐位一致。~~
-
-**本轮最终选择：** 已选择 [scale后计数＋合并双向移位](group-normalization-options.md)。S6结果应与精确双单向方案一致；与v1.2容器对齐不保证逐位一致。
-
-## v1.2 历史对照：S5 输出为独立符号/幅值
-
-~~## S5 输出为独立符号/幅值~~
-
-~~S5 内部允许补码求和，接口输出 `negative`、`magnitude[M_group-1:0]`、无偏 alpha 或等价 raw-anchor/bias、F、zero 和 special。`value=(-1)^negative*magnitude*2^(alpha-F)`。~~
-
-~~M_group 从合法输入的绝对值上界和公共落位推导。取 abs 使用足够宽的临时值；不能对最负补码在原宽度取负并丢失高位。当前表格可由范围证明使用 30 位幅值和一位独立符号，但该数值只是默认参数的派生结果；若范围证明不成立，参数检查须加宽，不能隐式截断。零的数值幅值为零，IEEE 零符号仍由旁带规则保存。~~
-
-~~## S6：组 token 与 C 共用幅值移位~~
-
-~~组输出是定点数，统一比较的应是其幅值最高物理位的权重：~~
-
-~~`lambda_i = alpha_i - F_i`~~
-~~`A_i = lambda_i + (M_i - 1)`~~
-~~`A_common = max(A_i for finite_nonzero group tokens and C)`~~
-~~`M_global = global_signed_align_width - 1`~~
-~~`pad_i = M_global - M_i`~~
-~~`shift_i = A_common - A_i`~~
-~~`aligned_mag_i = (magnitude_i << pad_i) >> shift_i`~~
-~~`lambda_common = A_common - (M_global - 1)`~~
-
-~~全局有限非零集合为空时不执行空集合 MAX，A_common 使用安全占位零，全部对齐幅值为零；特殊结果和 IEEE 零符号由旁带选择。zero/特殊源不计算无意义的 sentinel 差值。超出窗口的 shift 输出零；先对幅值向零截断，再恢复独立符号为补码供 S7 使用。各 source 的 pad 必须非负，由构建期合法性检查保证。`global_signed_align_width` 当前初值为 40（含一位符号），其幅值移位窗口为 39；扫描范围必须满足输入容器和目标精度约束，尚不任意指定上下限。~~
-
-~~C 在 S1 解包为符号、24 位幅值 `{h,F23}`、`alpha_c=(raw_e==0 ? 1 : raw_e)-127`、F_c=23。非正规 C 保留 h=0 与有效指数，不增加前置 LZD 级。C 的有效指数参与 S6 MAX，尾数在 S6 首次参与对齐。若提前到 S5 计算全局 MAX，必须计入实际组和是否为零的依赖，不能让完全抵消的组赢得 MAX 并使其他小结果无谓截断。~~
-
-~~**v1.2 当前定义：** C 在 S5 解包为符号、24 位幅值 `{h,F23}`、`alpha_c=(raw_e==0 ? 1 : raw_e)-127`、F_c=23，A_c=alpha_c。S1–S4 仅传 raw32/c_datatype，非正规 C 保持 h=0，无前置 LZD。INT32 C 同在 S5 转安全 sign/abs。S6 必须消费 S5 实际组 zero/special 与 C 分类；若提前全局 MAX，需重新证明 C 解包及组抵消屏蔽的同拍依赖，不得静默增加级数。~~
-
-~~**v1.2 固定 C 出口：** 自然 FP32 M24/F23 在 S5 以低补 8 个结构零装入统一 M32/F31，INT32 使用相同 M32/F0 容器；A_c 仍等于 alpha_c。因此 S6 固定 C 源补 M_global-32 个低零（默认 7），与自然 M24 直接补 15 零完全等价。C 类型随流水控制，不出现运行时变宽端口。~~
-
-## 本轮未提交草案对照：S5：scale 后独立符号/幅值规格化
-
-~~## S5：scale 后独立符号/幅值规格化~~
-
-~~S5 内部按原定 F_raw 完成两 lane 相加及适用 scale 注入，再安全取 abs。M_group 仍由绝对值范围证明派生，默认30；INT8 保持原结构低零。对所有有限非零浮点组：~~
-
-~~`A_raw = alpha_raw-F_raw+(M_group-1)`~~
-~~`l = clz_M_group(m_raw)`~~
-~~`m_norm = m_raw << l`~~
-~~`e = A_raw-l`~~
-~~`value = (-1)^negative*m_norm*2^(e-(M_group-1))`~~
-
-~~出口统一 SM S1I1F(M_group-1)，默认 F29，anchor_top=e。低位左移补零不增加信息，不截断有效位，不做 RNE。零/特殊值独立屏蔽；不能对最负补码在原 signed 宽度中溢出取负。紧凑乘积 abs 可在已证明的有效片上检测，但必须等价于完整 M_group。~~
-
-~~C 保持 S1–S4 raw32、S5 并行解包。FP32 自然 M24 中，对有限非零值求 l_c、左移，并在无偏有效指数中减 l_c；再低补 8 零到 M32/F31。INT32 为 M32/F0。C 正规数 l_c=0，非正规数1..23，零/特殊值单独处理。~~
-
-~~## S6：规格化组与 C 共用单向幅值移位~~
-
-~~只对有限非零源取 signed MAX(e_i)，全零采用 safe anchor=0；每项以 `delta=E_common-e_i` 作非负幅值右移。先 `m_norm << (M_global-M_i)` 静态补零，再逻辑右移 RTZ，最后恢复补码供 S7。共同 LSB 权重为 `lambda_common=E_common-(M_global-1)`。宽度/差值范围及默认格式见 [出口表](stage-formats.md)。~~
-
-~~所有输入 pad≥0，全局 signed 窗口默认40、幅值39；大于等于窗口的 delta 输出零。INT8/INT32 保持可逆结构落位，不参与浮点规格化或 MAX。当前方案是 S5 左移加 S6 右移，两个流水阶段在 II=1 下不能直接共用一个物理移位器。~~
-
-## v1.3：宽度公式的适用范围
-
-前文W_compact_scaled=E_group_compact_width+W_scale_product是未删除结构零的通用数学表达，仍数值等价；当前共享scale实现候选按[scale](scale.md)的W_sop/W_factor公式得到两个W21，不能把通用W23当作紧凑乘积实际宽度。上表S5各F保持原幅值含义，LZD计数不改变F。
-
-## 版本与架构时间线
-
-| 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
-| --- | --- | --- | --- | --- |
-| v1.1 | 2026-11-04 19:12:59 +08:00 | 新建架构合同 | 按用户架构图及后续补充定义本模块；区分已确认结构与待审查的位宽推导，尚无实现或 EDA 证据。 | 用户确认；[流水](pipeline.md) |
-| v1.2 | 2026-11-04 19:38:52 +08:00 | 架构修订 | 同步本轮接口、C 解包阶段、逐请求控制或资源/验证合同；保留被替代定义。 | 用户本轮要求及确认；[总时间线](../CHANGELOG.md) |
-| v1.2.1 | 2026-11-04 20:17:40 +08:00 | 讨论/说明补充 | 记录组实际指数候选及对应数值、特殊值或资源边界；不改变 v1.2 主路径。 | 用户 LZD/指数/特殊值讨论；[总时间线](../CHANGELOG.md) |
-| v1.3 | 2026-11-04 21:03:38 +08:00 | 架构修订 | 按用户最终选择，S5 scale后LZD仅计数、S6一次双向移位；同步数值/接口/资源/备用周期，保留对照。 | 用户最终双向移位选择；[总时间线](../CHANGELOG.md) |
+采用公共 W_compact_scaled=E_group_compact_width+W_scale_product，即有用 W23；signed×positive-signed 原生 W24 的最高冗余符号位按范围检查处理。S5 F 与 LZD 计数含义不变，见 [scale](scale.md)。

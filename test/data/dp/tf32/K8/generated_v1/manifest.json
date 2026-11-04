@@ -1,0 +1,51 @@
+{
+  "schema": "dp_inputs_v1",
+  "format": "tf32",
+  "logical_k": 8,
+  "k_fp16": 16,
+  "count": 1053,
+  "generator": "test/cases/generate_extensions.py",
+  "generator_sha256": "ffa47f093fee3f428f18d868ae47fed5aa6aa9c4630548905abdff963902897b",
+  "seed": 20271104,
+  "segments": [
+    {
+      "dataset": "full_encoding_random",
+      "start": 0,
+      "stop": 512,
+      "require_bit_exact": false
+    },
+    {
+      "dataset": "finite_random_and_accumulator_boundaries",
+      "start": 512,
+      "stop": 1024,
+      "require_bit_exact": false
+    },
+    {
+      "dataset": "directed_boundaries",
+      "start": 1024,
+      "stop": 1052,
+      "require_bit_exact": false
+    },
+    {
+      "dataset": "ones",
+      "start": 1052,
+      "stop": 1053,
+      "require_bit_exact": true
+    }
+  ],
+  "input_layout": "test/data/README.md",
+  "input_sha256": "62d31eadb0cd2ff2e9ce6cd8e0c33fed8870a0b37cdc2c01eaf163b5af799ed2",
+  "reference": "FP64 math.fsum plus exact Fraction",
+  "golden": {
+    "config": {
+      "k_fp16": 16,
+      "local_shift_mag_width": 27,
+      "global_signed_align_width": 40,
+      "post_scale_norm_extra_stage": 0
+    },
+    "model_source_sha256": "5ffabc43bc785bbe41066462ff16dce8f2379ff4fd3ab2c1611a15340f82f927",
+    "expected_sha256": "18dff79608202c1657ba0348ae04f93070ddb012f560159c36b399878ec8a85a",
+    "reference": "independent Fraction finite-window oracle + exact mathematical reference",
+    "status": "cmodel_verified_not_rtl"
+  }
+}
