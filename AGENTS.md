@@ -2,7 +2,7 @@
 
 ## 当前优先约定：新版 DP / Cube（2026-11-04）
 
-用户已明确旧 DP 设计过时，由用户重新定义整体架构 spec。新设计统一放在根目录 `src/spec/`、`src/cmodel/`、`src/chisel/`、`src/verilog/`，共用测试放在根目录 `test/`。先逐项完善并确认整体 spec，再编写 CModel，之后开发 Chisel 和独立手写可综合 Verilog；当前只搭建目录与规格骨架，不开始实现。
+用户已明确旧 DP 设计过时，由用户重新定义整体架构 spec。新设计统一放在根目录 `src/spec/`、`src/cmodel/`、`src/chisel/`、`src/verilog/`，共用测试放在根目录 `test/`。先逐项完善并确认整体 spec，再编写 CModel，之后开发 Chisel 和独立手写可综合 Verilog；当前逐步完善 spec，不开始实现。首批要求已写入 [新 spec 索引](src/spec/README.md)：TensorCore → DP-Group → DP，16×4 阵列由四个竖直 4×4 广播组组成；组内无脉动。具体格式、精度、K、≤8级流水、1.41 GHz 和功耗优先约束以新版 spec 为准，未决口径不得从旧设计补齐。
 
 旧 Chisel 与 Mill 构建文件归档在 `hw/legacy/`，仅供参考。下面涉及旧六种 PE、层级、位宽、11/18 级流水、原生 K、阵列候选及旧源码/spec/test 路径的专用条款，只解释历史设计，不约束新架构。不得自行从旧设计补齐新版未决项。新的具体模块确定后，在 `src/spec/` 建立三实现共用的模块合同与源码映射；不机械沿用旧 Scala 路径镜像。
 

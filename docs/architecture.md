@@ -1,8 +1,14 @@
 # 项目架构、职责与数据流
 
-> 2026-11-04 重规划：用户明确旧 DP 设计已过时，将重新定义 spec。新设计在根目录 `src/{spec,cmodel,chisel,verilog}/`，共用测试在根目录 `test/`。开发顺序为 **DP / Cube 整体 spec → CModel → Chisel 与独立手写 Verilog → 共用验证 → DC/功耗**，见 [重规划记录](dp-cube-replan.md)。本文以下内容描述此前架构；其中的 PE 组织、参数、周期和阵列候选不自动约束新设计。新 spec 确认前不开始新实现。
+> 2026-11-04 重规划：用户明确旧 DP 设计已过时，将重新定义 spec。新设计在根目录 `src/{spec,cmodel,chisel,verilog}/`，共用测试在根目录 `test/`。开发顺序为 **DP / Cube 整体 spec → CModel → Chisel 与独立手写 Verilog → 共用验证 → DC/功耗**，见 [重规划记录](dp-cube-replan.md)。本文“历史系统架构与研究边界”及其后章节描述此前架构；其中的 PE 组织、参数、周期和阵列候选不自动约束新设计。新 spec 确认前不开始新实现。
 
-## 研究边界
+## 新版硬件层级（首批要求）
+
+当前使用 [TensorCore](../src/spec/tensorcore/README.md) → [DP-Group](../src/spec/dp-group/README.md) → [DP](../src/spec/dp/README.md)：16×4 阵列由四个 4×4 广播组竖直拼接，组内 DP 无脉动。组间网络待定义。DP 按 FP16 基准 K4/K8/K16 参数化，支持 TF32/FP16/BF16/MXFP8/6/4/NVFP4/HiF4/INT8；HiF8 暂不支持。
+
+精度、≤8级和 1.41 GHz 为设计约束；在满足约束的前提下功耗第一、面积第二。位宽计数口径、模式倍率、C/D、接口和逐级流水仍待确认；本轮无实现或 EDA 结果。
+
+## 历史系统架构与研究边界
 
 给定目标工作负载与质量要求，在面积/功耗预算以及存储和运行条件约束下，选择 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 的算力配比及其硬件实现，分析负载延迟的成本收益。
 

@@ -1,6 +1,6 @@
 # DAC 2027 · 多精度张量计算算力配比 DSE
 
-**当前阶段：重新定义多精度 DP / Cube 整体架构 spec。** 用户明确旧 DP 设计过时；先逐步写完并确认新 spec，再编写 CModel，之后开发 Chisel 和独立手写 Verilog，共用根目录 `test/` 验证。当前仅建立目录与规格骨架，没有新版实现。
+**当前阶段：重新定义多精度 DP / Cube 整体架构 spec。** 用户明确旧 DP 设计过时；先逐步写完并确认新 spec，再编写 CModel，之后开发 Chisel 和独立手写 Verilog，共用根目录 `test/` 验证。已写入 TensorCore 16×4、4×4 广播 DP-Group 和多精度 DP 的首批要求；详细 spec 继续完善，没有新版实现。
 
 ```text
 src/

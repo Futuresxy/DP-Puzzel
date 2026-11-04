@@ -1,10 +1,10 @@
 # 新版 DP / Cube 设计
 
-当前阶段：**逐步完成整体架构 spec，尚未开始实现**。
+当前阶段：**逐步完成整体架构 spec，尚未开始实现**。已记录 TensorCore 16×4、四个竖直 4×4 广播 DP-Group、多精度 DP、FP16 基准 K4/K8/K16、≤8 级流水、1.41 GHz 以及功耗优先的首批要求。
 
 ```text
 src/
-├── spec/       唯一设计合同：系统、数值、DP、接口、周期、Cube 与验收
+├── spec/       唯一设计合同：TensorCore、DP-Group、DP 及共用语义
 ├── cmodel/     spec 确认后编写的位精确、周期模型
 ├── chisel/     CModel 验证后开发的 Chisel 实现
 └── verilog/    同一合同下独立维护的手写可综合 RTL
