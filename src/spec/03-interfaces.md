@@ -1,3 +1,5 @@
+> 功能：汇总共用输入输出协议；范围：A/B/C、scale、metadata、valid/last 和模式会话；版本：v1.0；修改时间：2026-11-04 17:36:11 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+
 # 接口与协议
 
 状态：DP A/B/C 原子接收、FP32 C/D、无输出背压、会话模式固定的方向已确认；last 和全局统一复位已确认；端口逐位合同见 [DP 接口](dp/interface.md)。
@@ -21,3 +23,19 @@ HiF4 e1/e2 均为 1 位，块 scale 为 8-bit E6M2 bias=48，编码见 [解包](
 DP 输出包含 `valid`、结果和 `last`，不提供 ready。下游必须保证结果可接收。各输入源采用共同握手，避免 A/B/C 分开接收造成事务错配。
 
 模式在一次活动会话中固定，收到 last 后等待最后输出，再切换格式。last 输入/输出均保留；只有接收的末请求结果输出后才允许切换格式。C 的来源及跨请求依赖由指令层保证，DP 仅执行本笔 A×B+C，见 [DP 接口](dp/interface.md)。
+
+## 历史修订对照
+
+以下为本次版本化时恢复的历史草案对照；删除线内容已被替代，不作为当前实现依据。较早内容尚无正式版本号，来源按真实提交或用户确认记录，不追认其为已批准合同。
+
+- **last 与 C 边界**：~~DP 输出只有 valid 和结果（另有 last 候选）。~~ → **当前：**保留 out_valid/out_d/out_last；C 来源和指令依赖由上层处理。（来源：dba8ecf → 42350c5，用户确认）
+
+## 版本与架构时间线
+
+| 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
+| --- | --- | --- | --- | --- |
+| 未编号（追溯） | 2026-11-04T15:13:43+08:00 | 历史记录 | 建立新版规格目录骨架与历史归档边界。 | [e8e07c2](https://github.com/Futuresxy/DP-Puzzel/commit/e8e07c2) |
+| 未编号（追溯） | 2026-11-04T15:43:59+08:00 | 历史记录 | 记录 TensorCore/DP-Group/DP 首批架构、数值和时序要求。 | [76d31f2](https://github.com/Futuresxy/DP-Puzzel/commit/76d31f2) |
+| 未编号（追溯） | 2026-11-04T17:02:03+08:00 | 历史记录 | 细化分组共享、K 参数化、scale/metadata、接口与八周期候选。 | [dba8ecf](https://github.com/Futuresxy/DP-Puzzel/commit/dba8ecf) |
+| 未编号（追溯） | 2026-11-04T17:28:50+08:00 | 历史记录 | 明确固定解包、C/last 边界、全局复位及特殊值规则。 | [42350c5](https://github.com/Futuresxy/DP-Puzzel/commit/42350c5) |
+| v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](document-control.md) |

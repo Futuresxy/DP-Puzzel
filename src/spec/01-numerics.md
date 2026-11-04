@@ -1,3 +1,5 @@
+> 功能：定义数值语义与保留精度；范围：全部数值模式、缩放、精度窗口和 FP32 输出；版本：v1.0；修改时间：2026-11-04 17:36:11 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+
 # 数值语义与保留精度
 
 状态：格式支持、固定解包布局、HiF4 数值定义、IEEE 特殊值行为目标及精度要求已给定；逐级保留窗口、RM、MX/NV scale、全部 scale 融合顺序与误差界仍需闭合。
@@ -41,3 +43,21 @@ RM 表示本项目最终舍入控制；目前仅确认末段按 RM 对 FP32 输�
 核验来源：NVIDIA CUDA 13.0.2 归档版 PTX ISA 9.0，检索日期 2026-11-04。其 TF32 类型使用 32 位寄存容器；`mma` 对相应浮点类型说明至少单精度的中间累加，并未把累加顺序与舍入完全规定。[PTX 类型定义](https://docs.nvidia.com/cuda/archive/13.0.2/parallel-thread-execution/index.html#alternate-floating-point-data-formats)、[mma 数值语义](https://docs.nvidia.com/cuda/archive/13.0.2/parallel-thread-execution/index.html#warp-level-matrix-instructions-mma)
 
 这些 ISA 条款不能推出物理硬件采用本项目所列的 25/35/37 位内部窗口。本轮将这些数字记录为**用户给定的本项目设计要求/初始目标**；若要标注为 NVIDIA 实测或逆向结果，仍需提供对应架构、探针、原始结果与位宽定义。HiF4 的 37 位也不作为 NVIDIA 官方保证。
+
+## 历史修订对照
+
+以下为本次版本化时恢复的历史草案对照；删除线内容已被替代，不作为当前实现依据。较早内容尚无正式版本号，来源按真实提交或用户确认记录，不追认其为已批准合同。
+
+- **TF32 字段/解包**：~~高 19 位中 sign/exponent/fraction 的精确字段切分与舍入转换由格式定义冻结。~~ → **当前：**字段已定义为 S[31]/E[30:23]/F[22:13]，低 13 位为零；T/FP16 解包采用 I1F10。（来源：dba8ecf → 42350c5，用户确认）
+
+- **HiF4 定义**：~~没有固定来源前不臆造 HiF4 位布局。~~ → **当前：**用户指定历史解包为参考，明确 S1P2、1-bit e1/e2、E6M2 bias=48；对应公式见 dp/unpack.md。（来源：dba8ecf → 42350c5，用户指定参考）
+
+## 版本与架构时间线
+
+| 版本 | 修改时间 | 类型 | 修改内容 / 原因 | 来源 |
+| --- | --- | --- | --- | --- |
+| 未编号（追溯） | 2026-11-04T15:13:43+08:00 | 历史记录 | 建立新版规格目录骨架与历史归档边界。 | [e8e07c2](https://github.com/Futuresxy/DP-Puzzel/commit/e8e07c2) |
+| 未编号（追溯） | 2026-11-04T15:43:59+08:00 | 历史记录 | 记录 TensorCore/DP-Group/DP 首批架构、数值和时序要求。 | [76d31f2](https://github.com/Futuresxy/DP-Puzzel/commit/76d31f2) |
+| 未编号（追溯） | 2026-11-04T17:02:03+08:00 | 历史记录 | 细化分组共享、K 参数化、scale/metadata、接口与八周期候选。 | [dba8ecf](https://github.com/Futuresxy/DP-Puzzel/commit/dba8ecf) |
+| 未编号（追溯） | 2026-11-04T17:28:50+08:00 | 历史记录 | 明确固定解包、C/last 边界、全局复位及特殊值规则。 | [42350c5](https://github.com/Futuresxy/DP-Puzzel/commit/42350c5) |
+| v1.0 | 2026-11-04 17:36:11 +08:00 | 文档版本基线 | 建立页首元信息、代码映射状态及修订时间线；保留已有正文，恢复适用的旧稿删除线对照。架构及原有确认状态不变。 | 用户文档维护要求；[版本规则](document-control.md) |

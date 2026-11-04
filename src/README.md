@@ -16,3 +16,5 @@ test/          三套代码共用的测试环境（仓库根目录）
 从 [spec 索引](spec/README.md) 开始逐项讨论。未决定内容保持“待定义”，不从旧设计复制默认参数。旧 Chisel 已归档至 [hw/legacy](../hw/legacy/README.md)，只用于参考；旧验证状态不适用于新设计。
 
 生成 RTL 继续集中于 `hw/rtl/`，测试源代码和数据在根目录 [test/](../test/README.md)，不将生成 RTL 放入测试目录。构建工具和自动化入口在实际实施时确定，本次不提供虚假的可运行实现。
+
+当前全部新版 spec 已建立 **v1.0 文档基线**；后续按 [版本与修订规则](spec/document-control.md) 更新页首元信息、删除线对照及各自时间线。架构和文档版本见 [总时间线](spec/CHANGELOG.md)，新增规格使用 [模板](spec/TEMPLATE.md)。版本不改变现有“已确认/候选/待定义”状态。
