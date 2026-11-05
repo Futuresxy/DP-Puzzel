@@ -2,7 +2,7 @@
 
 当前实现：C++17 整数位精确模型、逐级周期模型，支持 11 种 datatype、K4/K8/K16。默认共享八级 T8H16Q32E64，C 在 S5 解包，S8 输出 FP32 RNE 或 INT32 回绕。NVFP4/HiF4 共用 signed15×positive signed9 scale 乘法。
 
-规格入口：[CModel 合同](../spec/dp/cmodel.md)、[DP 接口](../spec/dp/interface.md)、[逐级位宽](../spec/dp/stage-formats.md)。测试数据共用根 [test/](../../test/README.md)。当前尚无新 RTL 或 PPA 结果。
+规格入口：[CModel 合同](../spec/dp/cmodel.md)、[DP 接口](../spec/dp/interface.md)、[逐级位宽](../spec/dp/stage-formats.md)。测试数据共用根 [test/](../../test/README.md)。综合结果见 [DC 记录](../../hw/dc_syn/records/README.md)。
 
 ## 构建和测试
 
@@ -17,7 +17,7 @@ python3 test/run_cmodel.py --phase extensions
 python3 -m unittest discover -s test/tests -v
 ```
 
-已提交 packed 数据可直接测试，无需旧目录可用。重新导入已有源数据执行 `python3 test/cases/import_legacy.py`；这会重建新版数据/manifest，之后通过 `--write-goldens` 重建已验证期望。扩展数据用 `python3 test/cases/generate_extensions.py` 重建。不要手改 expected 来消除失败。
+已提交 packed 数据可直接测试，无需旧目录可用。重新导入已有源数据执行 `python3 test/cases/import_legacy.py --source-root /path/to/legacy-corpus`；这会重建新版数据/manifest，之后通过 `--write-goldens` 重建已验证期望。扩展数据用 `python3 test/cases/generate_extensions.py` 重建。不要手改 expected 来消除失败。
 
 sanitizer 构建位于已忽略的 build/ 内：
 

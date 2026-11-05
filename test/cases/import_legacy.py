@@ -1,4 +1,5 @@
 """Convert the selected read-only legacy corpus to the current packed DP ports."""
+import argparse
 from pathlib import Path
 import json
 import sys
@@ -41,8 +42,8 @@ def request_from_elements(mode,a,b,c,scales_a=(),scales_b=(),e1a=(),e1b=(),e2a=(
                 a_e1=pack(e1a,1),a_e2=pack(e2a,1),b_e1=pack(e1b,1),b_e2=pack(e2b,1))
 
 
-def import_existing(source_root=None,dest_root=None):
-    source=Path(source_root or ROOT/'hw/test/data/petile_ratio')
+def import_existing(source_root,dest_root=None):
+    source=Path(source_root).resolve(strict=True)
     dest=Path(dest_root or TEST/'data/dp'); directories=[]
     for mode in EXISTING:
         dt=DTYPES[mode]; k=4*FORMATS[dt][5]
@@ -71,7 +72,7 @@ def import_existing(source_root=None,dest_root=None):
         (out/'source_reference.txt').write_text('\n'.join(gold)+'\n')
         manifest=dict(schema='dp_inputs_v1',format=mode,logical_k=k,k_fp16=16,count=len(requests),
                       segments=meta['segments'],source_golden_model=meta['golden_model'],
-                      sources={n:dict(path=str((src/n).relative_to(ROOT)),sha256=sha256(src/n))
+                      sources={n:dict(path=str((src/n).relative_to(source)),sha256=sha256(src/n))
                                for n in ('case.json','inputs.txt','golden.txt')},
                       input_sha256=sha256(out/'inputs.txt'),reference_sha256=sha256(out/'source_reference.txt'),
                       input_layout='test/data/README.md',legacy_thresholds_adopted=False)
@@ -81,4 +82,7 @@ def import_existing(source_root=None,dest_root=None):
 
 
 if __name__=='__main__':
-    for p in import_existing(): print(p.relative_to(ROOT))
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--source-root', type=Path, required=True, help='External legacy vector corpus')
+    args=parser.parse_args()
+    for p in import_existing(args.source_root): print(p.relative_to(ROOT))

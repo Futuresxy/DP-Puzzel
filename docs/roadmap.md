@@ -2,7 +2,7 @@
 
 ## 当前路线：先完成新版整体 spec
 
-2026-11-04 用户明确旧 DP 设计过时，新设计在根目录 `src/` 展开，共用测试在根目录 `test/`。旧 Chisel 已移至 `hw/legacy/`；历史记录保留，不能作为新版的默认结构或通过证据。
+2026-11-04 用户明确旧 DP 设计过时，新设计在根目录 `src/` 展开，共用测试在根目录 `test/`。旧 Chisel 和相关记录保留在 Git 历史，不能作为新版的默认结构或通过证据。
 
 1. 从 [新 spec 索引](../src/spec/README.md) 逐项定义系统范围、数值语义、DP 微架构、接口、周期状态、Cube、参数与验收。已记录首批要求，其余合同继续逐项定义。
 2. 整体规范闭合并经用户确认后，开始 CModel，验证位精确运算与周期行为。
@@ -53,15 +53,15 @@
 
 ## 历史路线（保留供参考）
 
-当前已完成定义/论文准备，用户已授权五族六profile的基础PE迁移与H/Q专用全局对齐。详见 [设计](../hw/spec/six-pe-design.md)。HQE/QE/E保留分级组织，公共输出F和11级周期统一，K/MN总18级；AlignmentConfig暴露四个对齐参数。后续优先完成完整数值/协议回归、验证门禁和EDA；阵列仍只调研讨论。
+当前已完成定义/论文准备，用户已授权五族六profile的基础PE迁移与H/Q专用全局对齐。详见 [设计](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/six-pe-design.md)。HQE/QE/E保留分级组织，公共输出F和11级周期统一，K/MN总18级；AlignmentConfig暴露四个对齐参数。后续优先完成完整数值/协议回归、验证门禁和EDA；阵列仍只调研讨论。
 
-LAB1 已确定回到基础 PE（原 MidGroup）层组合，复用六种 profile，先完成 1:2:4 基线及 1:2:6、1:2:8、1:4:8 的 K/MN 比较流程。K 1:2:4 同时作为 MN 增配的共用基线，MN 只增加 E64 和 Q32E64 两种实验类型。当前不采用 PEGroup 层混合扩展，不改内部微架构；完整路线与参数构建示例见 [LAB1 实验说明](../hw/legacy/chisel_src/core/LAB1/four_ratio_design.md)。目标工艺/PVT/时钟、真实 workload 与 HiF4 规范版本仍待明确，完成 RTL 验证门禁后再进入 EDA。
+LAB1 已确定回到基础 PE（原 MidGroup）层组合，复用六种 profile，先完成 1:2:4 基线及 1:2:6、1:2:8、1:4:8 的 K/MN 比较流程。K 1:2:4 同时作为 MN 增配的共用基线，MN 只增加 E64 和 Q32E64 两种实验类型。当前不采用 PEGroup 层混合扩展，不改内部微架构；完整路线与参数构建示例见 [LAB1 实验说明](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/legacy/chisel_src/core/LAB1/four_ratio_design.md)。目标工艺/PVT/时钟、真实 workload 与 HiF4 规范版本仍待明确，完成 RTL 验证门禁后再进入 EDA。
 
-阵列扩展进入调研讨论阶段，见 [阵列方案](../hw/spec/array_ref/array-design-discussion.md)。用户已确认逻辑 M8N32、物理阵列参数化，以及 FP4 K64/96/128/192/256、FP8 K32/64/96/128；L0 布局、调度、累加语义和首版配置待审核，当前不编写阵列代码。
+阵列扩展进入调研讨论阶段，见 [阵列方案](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/array-design-discussion.md)。用户已确认逻辑 M8N32、物理阵列参数化，以及 FP4 K64/96/128/192/256、FP8 K32/64/96/128；L0 布局、调度、累加语义和首版配置待审核，当前不编写阵列代码。
 
-指令内部的物理 tile 切分与 OS 状态机另见 [深入调研](../hw/spec/array_ref/os-array-scheduling-research.md)。当前按用户提出的原生 K 方向讨论：`K_inst=K_native(mode, config)`，单条指令仅切 M/N，软件用多条原生指令完成完整 GEMM 的 K。优先审核跨指令累加驻留位置、依赖/反馈路径、context 数量与排出结构；不再要求较小 K 单元在同一条指令内循环补足较大 K。
+指令内部的物理 tile 切分与 OS 状态机另见 [深入调研](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/os-array-scheduling-research.md)。当前按用户提出的原生 K 方向讨论：`K_inst=K_native(mode, config)`，单条指令仅切 M/N，软件用多条原生指令完成完整 GEMM 的 K。优先审核跨指令累加驻留位置、依赖/反馈路径、context 数量与排出结构；不再要求较小 K 单元在同一条指令内循环补足较大 K。
 
-[Ascend 对照调研](../hw/spec/array_ref/ascend-cube-scheduling-research.md) 补充另一种边界：16³ Cube 基本粒度之上，单条 MMAD 可描述更大的 K，软件仍可跨指令切 K。原生 K 绑定是本项目候选约束，不是厂商统一规律；最终指令接口须结合此次对照审核。
+[Ascend 对照调研](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/ascend-cube-scheduling-research.md) 补充另一种边界：16³ Cube 基本粒度之上，单条 MMAD 可描述更大的 K，软件仍可跨指令切 K。原生 K 绑定是本项目候选约束，不是厂商统一规律；最终指令接口须结合此次对照审核。
 
 | 阶段 | 交付 | 验收依据 |
 | --- | --- | --- |
@@ -85,11 +85,11 @@ LAB1 已确定回到基础 PE（原 MidGroup）层组合，复用六种 profile�
 7. CACTI 等依赖来源、固定版本、适用范围与校准方法。
 8. 大型证据归档与保留策略、论文复现方式。
 
-当前六种 PE 的合同和默认参数已在 [六种PE设计](../hw/spec/six-pe-design.md) 与 [参数 spec](../hw/spec/config/Parameters.md) 明确，后续优先完成用户源码审查及 SV RTL 验收。其余系统/实验参数不填任意默认值。论文投稿日期与规则仍在 paper/submission 中维护。
+当前六种 PE 的合同和默认参数已在 [六种PE设计](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/six-pe-design.md) 与 [参数 spec](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/config/Parameters.md) 明确，后续优先完成用户源码审查及 SV RTL 验收。其余系统/实验参数不填任意默认值。论文投稿日期与规则仍在 paper/submission 中维护。
 
 ## 六种 PE 后续验收
 
 - 审查六个合法 profile、四个对齐参数、batch 固定格式，以及逐层 S/I/F、scale block 和 PE 11级 / K-MN 18级周期合同。
 - 以独立 reference 验证 H/Q 全局 RTZ 与 HQE/QE/E 分级 RTZ，覆盖一般尾数/指数、scale、特殊值、严重抵消和参数边界，分别记录误差。
-- 完成 K/MN 的 C/D 数值与完整 batch 握手、排空、气泡和复位回归。当前[有限定向检查](../hw/spec/six-pe-checks.md)不能替代这些验收。
+- 完成 K/MN 的 C/D 数值与完整 batch 握手、排空、气泡和复位回归。当前[有限定向检查](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/six-pe-checks.md)不能替代这些验收。
 - 完成 export/hash 验证门禁后，再接入挂载 EDA 的 DC 与真实负载 power；位宽、流水和后续阵列优化另列可验证合同。

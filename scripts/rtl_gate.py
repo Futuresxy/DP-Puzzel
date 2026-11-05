@@ -111,7 +111,7 @@ def verify_export(export_id, root=ROOT):
             require(len(matches) == 1 and matches <= {(export / n).resolve() for n in names},
                     "Missing, ambiguous or untracked include")
     evidence_path = contained(root, manifest["verification"]["path"])
-    require(root / "hw/test/runs" in evidence_path.parents, "Evidence must be in hw/test/runs")
+    require(root / "test/runs" in evidence_path.parents, "Evidence must be in test/runs")
     evidence = read_json(evidence_path)
     require(evidence.get("schema_version") == 2 and evidence.get("status") == "passed",
             "Missing passed RTL verification")

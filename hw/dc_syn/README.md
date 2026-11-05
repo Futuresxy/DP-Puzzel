@@ -72,7 +72,7 @@ bash scripts/dc_syn.sh clean --run-id dc_MyTop_10241850 --apply
 
 清理只删除终态 run 的 work；报告、网表、SDC/DDC 和回归证据保留。功耗前仍需独立完成 RTL/netlist 一致性、时序和活动覆盖检查。当前支持单时钟/统一 IO/N12-N22 标准单元库；多时钟、UPF、宏单元和自定义时序例外仍待接入。
 
-DC 不包含 testbench；消费根 test/（新版 DP）或 hw/test（历史接口）的真实验证证据。项目软件回归为 `python3 -m unittest discover -s hw/test/unit -v`；新版 DP 验证在根 test/，综合只通过 scripts/dc_syn.sh 执行。本分支不继承旧示例测量。
+DC 消费根 `test/runs/` 的真实验证证据。流程和门禁软件测试运行 `python3 -m unittest discover -s hw/dc_syn/tests -v`。DP 数值与周期回归在根 `test/`，综合入口为 `scripts/dc_syn.sh`。
 
 ## 单 DP / N12 / 1.41 GHz 与 1 GHz
 

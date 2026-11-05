@@ -10,6 +10,8 @@ import json
 import sys
 
 ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT/'scripts'))
+from dp_rtl_gate import DP_INTERFACE, PARAMETERS, payload, validate_scopes, verification_inputs
 
 def snapshot(implementation):
     base=ROOT/'src/verilog'
@@ -37,6 +39,7 @@ def snapshot(implementation):
             specialization='parameterized source snapshot; parameters recorded per simulation',ppa_eligible=False),indent=2)+'\n')
         (dest/'README.md').write_text(f'# {export_id}\n\nFrozen hand-written RTL sources for DP v1.4.\n\n'
             'Created by `test/adapters/rtl.py`; no flattening or source editing. '
+            'Top: `dp_top`. Clock: `clock`. Synchronous active-high reset: `reset`. '
             'Compile `files.f` relative to this export directory. Parameters and verified scopes are in the regression report. '
             'No DC, timing or power analysis was performed.\n')
     manifest=json.loads((dest/'manifest.json').read_text())
@@ -44,7 +47,7 @@ def snapshot(implementation):
     for rel,digest in manifest['exported_sha256'].items():
         if hashlib.sha256((dest/rel).read_bytes()).hexdigest()!=digest:
             raise RuntimeError(f'modified snapshot: {dest/rel}')
-    manifest.update(status='generated',ppa_eligible=False)
+    manifest.update(status='generated',ppa_eligible=False,interface=DP_INTERFACE)
     (dest/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     # Build-tool adapter only; canonical manifest/list above use portable paths.
     resolved=[]
@@ -71,8 +74,6 @@ def record_validation(dest,scopes,test_fingerprint,*,phase,started,run_dir,comma
     path.write_text(json.dumps(manifest,indent=2)+'\n')
 
     if phase == 'all' and manifest['implementation'] == 'verilog' and all(r['simulator']=='verilator' for r in scopes):
-        sys.path.insert(0,str(ROOT/'scripts'))
-        from dp_rtl_gate import payload, verification_inputs, validate_scopes, PARAMETERS
         _, fingerprint, _ = payload(dest,ROOT)
         finished=datetime.now(timezone.utc).isoformat()
         inputs=verification_inputs(ROOT)

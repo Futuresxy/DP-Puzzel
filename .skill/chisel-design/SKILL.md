@@ -1,32 +1,16 @@
 ---
 name: chisel-design
-description: 在 DP-Puzzel 中迁移、审查五族六种基础PE及K/MN编排，维护逐文件 spec，检查数值位宽、资源共享、接口与流水契约。
+description: 按 DP-Puzzel 的共同规格开发和审查 Chisel，校验数值位宽、共享资源、接口、流水及验证证据。
 ---
 
 # Chisel 设计与规格协同
 
-## 新版适用范围（2026-11-04）
+先读取 [AGENTS.md](../../AGENTS.md)、[Chisel 入口](../../src/chisel/README.md) 与目标模块的 [共用规格](../../src/spec/README.md)。在 `src/chisel/` 维护源码与参数，在 `src/spec/` 建立模块与实现的映射。变更数值、资源、接口或周期时同步规格及验证计划。
 
-用户已废止旧 DP 架构作为新设计依据。新设计使用根目录 `src/spec/`、`src/cmodel/`、`src/chisel/`、`src/verilog/` 与 `test/`；先完成整体 spec 并经用户确认，再开发 CModel 和两套 RTL。当前只搭建骨架，不从历史代码推导新规格。
-
-新模块以 `src/spec/` 的共用合同为准，建立模块与三实现源码映射；不强制复用旧层级、路径镜像、参数或周期。下面五族六 PE 规则只适用于 `hw/legacy/chisel_src/` 的历史设计解释，不能作为新版默认值。通用位宽、流水、协议、可追溯性和验证要求仍适用。
-
-## 历史设计规则
-
-先读取根目录 [AGENTS.md](../../AGENTS.md)、[源码导航](../../hw/legacy/chisel_src/README.md) 和目标文件对应的 spec；当前可执行范围以用户本轮授权为准。
-
-- `hw/chisel_src/<relative>.scala` 必须一一对应 `hw/spec/<relative>.md`，辅助 object、Bundle、参数和生成/展开入口也不例外。新增、重命名、删除、修改必须同步维护两者及导航。
-- 五族目录为pe/PE_H、PE_Q、PE_E、PE_HQE、PE_QE，每族独立SubPE/PEGroup/DataUnpack/PE；公共接口/算术/C-D放Utils，Scala package小写。用户指定的下划线族名优先于原通用UpperCamelCase习惯。
-- 仅六个合法profile：H/Q/HQE/QE的g4，E的g4/g2。原MidGroup叫PE，g表示PG数量；保留实际实例边界。
-- HQE/QE/E保留源分级组织；H/Q使用16/32路产品统一对齐、流水自然位宽加法树，PG不做局部和。H/Q最终规范化后明确RTZ到公共F，不能宣称与分级路径bit-exact。
-- 统一PE结果为sign/magnitude/top_anchor/zero/special，F=pe_align_width，11级；g2规范化magnitude末尾补一个低0保持anchor，精确对齐g4。K/MN公共C-D总18级；不写阵列。
-- AlignmentConfig默认28/2/40/40，公开Q字内窗口26..30、PG guard2..4、PE窗口38..48、top窗口38..48且≥PE。默认<JSON<CLI，静态非法值require拒绝；运行硬件约束assert。乘法/加法按自然增长，无任意乘/加输出位宽旋钮。
-- spec必须记录S/I/F、anchor含义、scale、资源、各级周期、valid/复位、截断位置与状态。H/Q删掉的字内/PG参数不应重新生成电路；输出layout和保留位数相同只是公平比较条件之一。
-- 可调参数集中在 `hw/chisel_src/config/Parameters.scala`，从 `hw/configs/*.json` 传入。生成命令选择配置即可改变 RTL，不要求手改 PE 电路；固定数值/流水合同与可调参数分开。配置严格校验并随导出 manifest 保存完整有序布局、源码和工具指纹。
 - 拷贝前先读懂原始解码、固定点、scale 范围、共享乘法器和控制。保留来源 commit/文件 hash；去掉隐式环境参数，接口适配逐项记录，不把迁移/风格统一称为完成微架构优化。
 - 参数和 Scala 方法用 lowerCamelCase；硬件信号 lower_snake_case，寄存器 `_q`，端口 `in`/`out`。一个 Module 一个同名 Scala 文件；注释优先说明位宽依据和取舍。
 - 所有移位、舍入、扩展和裁剪给出依据。结构性零位裁剪与有损 RTZ 对齐分开描述。特殊值和零不能污染 MAX anchor；不同 scale block 不能错误合并。
 - 说明 ready/valid 的真实语义。没有反压的流水使用 Valid，不能把忽略 ready 的路径伪装为 Decoupled；运行格式若按事务采样，则控制必须和数据同步流水。
 - Scala 编译/CHIRRTL 展开只确认结构可生成。没有 SV testbench 对对应导出 RTL 的精度/周期验证，不标记 passed、不进入 DC/power、不继承参考项目的通过状态。源码审查阶段不擅自扩展到实验或性能结论。
 
-当前基线与待验收边界见 [六种PE设计](../../hw/spec/six-pe-design.md) 和 [检查记录](../../hw/spec/six-pe-checks.md)。旧迁移过程从 Git 历史查阅。未来流水或位宽发生变化时，先同步规格和验收计划，再决定需要的验证。
+RTL 导出至 `hw/rtl/<export-id>/`，由根 `test/` 验证。旧 PE 实现及其合同从 Git 历史查阅。

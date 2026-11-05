@@ -75,11 +75,11 @@ CModel 分为位精确运算和周期状态两部分。周期模型描述可观�
 
 | 位置 | 职责 |
 | --- | --- |
-| `src/spec/` | 新架构唯一设计合同；旧 spec 保留在 `hw/spec/` |
+| `src/spec/` | 新架构唯一设计合同；旧规格见 Git 历史 |
 | `src/cmodel/` | 位精确与周期 CModel |
-| `src/chisel/` | 新 Chisel 源码；旧源码归档于 `hw/legacy/chisel_src/` |
+| `src/chisel/` | 新 Chisel 源码；旧源码见 Git 历史 |
 | `src/verilog/` | 独立手写可综合 Verilog 源码 |
-| 配置入口待定义 | 参数合同先写入 `src/spec/06-configuration.md`；旧 `hw/configs/` 只供参考 |
+| 配置入口待定义 | 参数合同先写入 `src/spec/06-configuration.md`；历史配置见 Git 历史 |
 | `test/` | 新版共用测试、数学参考、适配层及报告 |
 | `hw/rtl/<export-id>/` | 两条 RTL 路径统一导出的只读构建快照 |
 | `hw/dc_syn/`、`hw/power/` | 对指定快照执行综合、时序及活动功耗分析 |
@@ -102,4 +102,4 @@ DC 综合的是两套 RTL，CModel 不参与逻辑综合。两条路径共用工
 
 接收用户的新 DP spec，先检查其中的数值、结构、接口、周期和验收语义是否闭合；对缺失项明确列出问题，未经确认不填入硬件默认值。随后按已确认的合同落实 CModel，再进入两套 RTL 开发。
 
-已更新仓库约定、架构提示、roadmap 和新旧导航；旧 Chisel 及构建定义移入 `hw/legacy/`，历史 Scala 内容保留。旧配置、spec、测试和导出保留原位置，不作为新版默认输入。
+已更新仓库约定、架构提示、roadmap 和新旧导航；旧 Chisel、构建定义、规格、配置和测试可从重整前的 Git 提交恢复。

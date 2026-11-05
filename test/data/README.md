@@ -36,7 +36,7 @@ G=k_fp16/4；十六进制字符数为 ceil(bits/4)，未使用的最高位必须
 - `source_reference.txt`：仅九种旧格式保留的原FP64 golden，作为来源证据，不作为新版逐位验收目标。
 - `manifest.json`：schema、类型、两个K、请求数、来源路径及SHA256、五个数据段、golden配置/源码指纹、期望文件校验和。源码指纹排除build/。
 
-九种旧格式的 correct_961 按原顺序保留 random64、mixed128、AI256、AI512、ones1；没有再次复制包含在其中的 batch512。来源仍为 `hw/test/data/petile_ratio`，导入过程不修改来源，也不继承旧误差阈值。
+九种旧格式的 correct_961 按原顺序保留 random64、mixed128、AI256、AI512、ones1；没有再次复制包含在其中的 batch512。历史来源记录在各数据 manifest 中。重新导入时通过 `test/cases/import_legacy.py --source-root` 指定原始 corpus，导入不写回来源。
 
 TF32/INT8 generated_v1 使用种子20271104；编码随机、有限数/累加边界、定向极值及ones分别列段。先完成原九格式，再生成并验证这两种扩展。
 

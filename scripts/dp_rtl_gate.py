@@ -11,6 +11,8 @@ from datetime import datetime
 from rtl_gate import contained, read_json, require, rtl_fingerprint
 
 PARAMETERS = {'K_FP16': 16, 'LOCAL_W': 27, 'GLOBAL_W': 40}
+DP_INTERFACE = {'clock_port': 'clock', 'reset_port': 'reset',
+                'reset_kind': 'synchronous', 'reset_active': 'high'}
 CONFIGS = {(4,27,40), (8,27,40), (16,27,40), (4,28,48), (8,32,64), (16,32,64)}
 
 
@@ -28,6 +30,7 @@ def payload(export, root):
     manifest = read_json(export/'manifest.json')
     require(manifest['export_id'] == export.name and manifest['implementation'] == 'verilog'
             and manifest['top'] == 'dp_top', 'DP identity mismatch')
+    require(manifest.get('interface', DP_INTERFACE) == DP_INTERFACE, 'DP clock/reset contract mismatch')
     lines = (root/'src/verilog/files.f').read_text().splitlines()
     require(lines[0] == '+incdir+src/verilog/parameter', 'Unexpected DP include path')
     sources = lines[1:]
@@ -113,4 +116,5 @@ def verify_dp_export(export_id, root):
     require(all(r['export_id'] == export_id for r in e['scopes']), 'Campaign export mismatch')
     return dict(export_id=export_id,top='dp_top',export_dir=str(export),rtl_fingerprint=fp,
                 sources=sources,include_dirs=[str(export/'src/src/verilog/parameter')],
-                language='verilog',parameters=PARAMETERS,verification_id=e['verification_id'])
+                language='verilog',parameters=PARAMETERS,verification_id=e['verification_id'],
+                clock_port=DP_INTERFACE['clock_port'])
