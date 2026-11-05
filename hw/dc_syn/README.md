@@ -131,3 +131,9 @@ E64 顶层为 dp_top_e，选择 `python3 test/run_verilog.py --frontend e --phas
 本批用户明确授权 E64 综合，并要求验证、DC 及比较基线作为重要结果长期保留。使用相同 N12 TT 0.7V/85°C、K16/28/40、L8/II1、dp-1000mhz.json、门控、层级和 Vt 预算，分别综合当前 E-only 和多精度设计；历史 27/40 数据只作背景，不能混入同参数面积百分比。[正式结果与路径](records/e64_n12_comparison_20261105.md)统一追踪两类测量。
 
 DC 在 compile/optimize_netlist 后可能使此前缓存的 collection 失效。hold 修复前及修复编译后按稳定的 clock_port 名重新获取时钟；不复用过期的 `_sel...` 句柄，不更改时钟或 uncertainty。首轮若出现 CMD-036/UID-95，门禁判为无效，在新 run 重跑并保留原始诊断；不能引用该 run 的面积冒充有效测量。
+
+### 时序优先复测
+
+`constraints/dp-1000mhz-timing-first.json` 保持原1GHz时序、IO、门控、层级和工艺预算，只设置 `optimize_area=false`，跳过 `set_max_area 0` 与显式 `optimize_netlist -area`；仍保留工具正常映射、设计规则和 hold 修复。用该文件替换 check/prepare 的 `--constraints`，在新 run 中执行。它不保证所有设计时序必然通过，最终仍检查 setup/hold 和 Vt。
+
+E64 同一已验证快照的实测 run dc_dp_top_e_11052354 已全部通过，面积增加2.54%；[对齐逻辑核验和时序结果](records/e64_n12_timing_first_20261105.md)记录小数点转换、逐级核对及各级余量。与面积优先结果比较时须注明策略不同，不能覆盖旧报告或放宽负 slack 判据。
