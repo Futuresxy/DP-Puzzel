@@ -1,6 +1,6 @@
 # DAC 2027 · 多精度张量计算算力配比 DSE
 
-**当前阶段：DP spec v1.4 / 实现映射 v1.4.2，单 DP 手写 RTL 与共用验证已建立。** 当前主方案为 T8H16Q32E64 分组共享八级 DP；提供 Verilog 主实现与 SystemVerilog 对照，Chisel、Cube 阵列及 EDA 尚未实施。
+**当前阶段：DP spec v1.4 / 实现映射 v1.4.3，单 DP 手写 RTL 与共用验证已建立。** 当前主方案为 T8H16Q32E64 分组共享八级 DP；提供 Verilog 主实现与 SystemVerilog 对照，N12 TT DC 的 1.41GHz setup 未通过；1GHz 八级经独立 hold 修复后 setup/hold 均通过（综合阶段、余量很小），见 [时序分析](hw/dc_syn/records/dp_n12_timing_20261105.md)。Chisel、Cube 阵列尚未实施。
 
 | 入口 | 内容 |
 | --- | --- |

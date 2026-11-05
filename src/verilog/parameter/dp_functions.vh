@@ -70,7 +70,14 @@
       lane_w=local_w+1+$clog2(`DP_Q_LANES);
       if(t==`DP_DT_INT8) lane_fraction=lane_w-`DP_INT_PRODUCT_W-$clog2(`DP_Q_LANES);
       else if(elements(t)==`DP_E_LANES) lane_fraction=product_fraction(t)+`DP_E_GUARD+lane_w-(`DP_E_PAIR_W+`DP_E_GUARD+$clog2(`DP_E_LANES/2));
-      else lane_fraction=local_w-2+$clog2(`DP_Q_LANES)-$clog2(elements(t));
+      // Datatype is a runtime input: DC requires constant $clog2 operands.
+      // These arms equal log2(elements(t)) for all 16 datatype encodings;
+      // E and INT8 have already taken their dedicated branches above.
+      else case(t)
+        `DP_DT_TF32: lane_fraction=local_w-2+$clog2(`DP_Q_LANES);
+        `DP_DT_FP16,`DP_DT_BF16: lane_fraction=local_w-2+$clog2(`DP_Q_LANES)-1;
+        default: lane_fraction=local_w-2;
+      endcase
     end
   endfunction
   function automatic integer group_fraction(input [`DP_TYPE_W-1:0] t,input integer local_w);

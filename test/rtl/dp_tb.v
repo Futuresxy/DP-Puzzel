@@ -5,7 +5,9 @@
 module dp_tb;
   `include "dp_functions.vh"
   parameter integer K_FP16=16, LOCAL_W=27, GLOBAL_W=40;
-  localparam integer G=K_FP16/`DP_GROUP_H, CAPACITY=20000;
+  // Largest current campaign has 1053 requests; retain a checked 2048-row buffer.
+  // This is testbench storage only; no DUT capacity/parameters are changed.
+  localparam integer G=K_FP16/`DP_GROUP_H, CAPACITY=2048;
   reg clock=0;
   always #5 clock=~clock;
   reg reset=1,in_a_valid=0,in_b_valid=0,in_c_valid=0,in_c_datatype=0,in_last=0;

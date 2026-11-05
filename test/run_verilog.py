@@ -12,6 +12,7 @@ import subprocess
 import sys
 import hashlib
 import os
+from datetime import datetime, timezone
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from adapters.cmodel import ROOT, read_inputs, write_inputs, evaluate
@@ -79,7 +80,7 @@ def campaign(name,k,local,glob,requests,exe,source=None,expected=None,stress=Fal
     check_schedule(schedule,requests,expected,(dest/'results.txt').read_text())
     cutpoints=check_cutpoints(dest/'cutpoints.txt',expected,requests) if stress else 0
     print(name,line,flush=True)
-    return dict(export_id=EXPORT.name,simulator=SIMULATOR,implementation=IMPLEMENTATION,name=name,k_fp16=k,local_width=local,global_width=glob,cutpoints_checked=cutpoints,output_sha256=hashlib.sha256((dest/"results.txt").read_bytes()).hexdigest(),input_sha256=hashlib.sha256(inp.read_bytes()).hexdigest(),result=line)
+    return dict(export_id=EXPORT.name,simulator=SIMULATOR,implementation=IMPLEMENTATION,name=name,k_fp16=k,local_width=local,global_width=glob,cutpoints_checked=cutpoints,simulation_log=str((dest/'simulation.log').relative_to(ROOT)), lint_log=str((exe.parent/'lint.log').relative_to(ROOT)), compile_log=str((exe.parent/'compile.log').relative_to(ROOT)), results_path=str((dest/'results.txt').relative_to(ROOT)), input_path=str(inp.relative_to(ROOT)), golden_path=str(gold.relative_to(ROOT)), schedule_path=str(sched.relative_to(ROOT)), output_sha256=hashlib.sha256((dest/"results.txt").read_bytes()).hexdigest(),input_sha256=hashlib.sha256(inp.read_bytes()).hexdigest(),result=line)
 
 def legal_tuple(r):
     t=r['a_datatype']
@@ -130,7 +131,7 @@ def check_cutpoints(path,results,requests):
     return count
 
 def main():
-    global SIMULATOR,IMPLEMENTATION,VERILATOR,EXPORT,SOURCE_LIST
+    global SIMULATOR,IMPLEMENTATION,VERILATOR,EXPORT,SOURCE_LIST,RUN
     ap=argparse.ArgumentParser()
     ap.add_argument('--phase',choices=['existing','parameters','all'],default='all')
     ap.add_argument('--simulator',choices=['verilator','iverilog'],default='verilator')
@@ -139,7 +140,9 @@ def main():
     args=ap.parse_args()
     SIMULATOR=args.simulator; VERILATOR=args.verilator
     implementations=['verilog','systemverilog'] if args.implementation=='both' else [args.implementation]
-    RUN.mkdir(parents=True,exist_ok=True); report=[]
+    started=datetime.now(timezone.utc).isoformat()
+    RUN=RUN/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+    RUN.mkdir(parents=True,exist_ok=False); report=[]
     for IMPLEMENTATION in implementations:
         EXPORT,SOURCE_LIST=snapshot(IMPLEMENTATION)
         if args.phase in ('existing','all'):
@@ -164,7 +167,10 @@ def main():
             if (a['name'],a['input_sha256'],a['output_sha256'])!=(b['name'],b['input_sha256'],b['output_sha256']):
                 raise AssertionError('Verilog/SystemVerilog comparison mismatch')
     for export_id in sorted({r['export_id'] for r in report}):
-        record_validation(ROOT/'hw/rtl'/export_id,[r for r in report if r['export_id']==export_id],test_fingerprint)
+        record_validation(ROOT/'hw/rtl'/export_id,[r for r in report if r['export_id']==export_id],test_fingerprint,
+                          phase=args.phase,started=started,run_dir=RUN,
+                          command=[sys.executable,*sys.argv],
+                          simulator_version=subprocess.check_output([VERILATOR,'--version'] if SIMULATOR=='verilator' else ['iverilog','-V'],text=True,stderr=subprocess.STDOUT).splitlines()[0])
     (RUN/f'{SIMULATOR}-{args.implementation}-{args.phase}-summary.json').write_text(json.dumps(report,indent=2)+'\n')
 
 if __name__=='__main__': main()
