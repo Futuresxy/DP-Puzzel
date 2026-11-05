@@ -71,4 +71,4 @@
 
 建议按 [术语](CONTEXT.md) → [架构与数据流](docs/architecture.md) → [数据契约](docs/data-contracts.md) → [实验定义](docs/experiments.md) 阅读，再按 [后续路线](docs/roadmap.md) 逐项明确设计。
 
-远程仓库：git@github.com:Futuresxy/DP-Puzzel.git。所有新增功能先建分支、提交 PR 后合并；有代码变更的工作日至少一次 commit + push，重大架构/关键数据更新及时同步。规则见 [开发流程](docs/development.md)。
+远程仓库为 `git@github.com:Futuresxy/DP-Puzzel.git`。小改动直接提交到本地 `feat/dp-verilog-v14`。需要并行推进的大任务经用户同意建立分支，通过 PR 合入 `main`。规则见 [开发流程](docs/development.md)。
