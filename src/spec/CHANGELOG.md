@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.5.5；修改时间：2026-11-05 14:38:10 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -21,7 +21,7 @@ v1.5.1 将 S5 无符号 scale 落地到 CModel、Verilog 和 SystemVerilog，更
 
 [scale](dp/group/scale.md) 保留 v1.4 → v1.5 的核心变更对照。更早版本由 Git 保存，非核心小修不在正文逐条累积。规则见[文档控制](document-control.md)。
 
-v1.5.4 按 lane/group/dptop 重组 DP 规格，跨层数值合同集中到 common，实现与验证映射集中到 implementation。S3 局部移位与 S6 全局网络分属各层，scale 乘法细节归 group；E8/E16 优化方案纳入对应模块。E 类方案沿用用户明确的 HiF4 e2 定点融合及兼容 group 输出要求，具体八级切点仍待讨论。主实现的算术、接口、参数、流水与验证/PPA 证据不变。
+v1.5.5 按用户要求冻结 SystemVerilog 为 T8H16Q32E64、K16/28/40、L8/II=1 历史参考；现用 CModel/Verilog 继续开发，默认 RTL 回归改为仅 Verilog，SV/双版检查保留显式历史用途。E64 选择优先讨论 S2 乘法+第一层 pair、S3 四项 TC 树的候选，S4/S5 和兼容 group 输出边界保持此前约定。E 专用实现与时序尚待验证；主 RTL 算术未由本批修改，历史 SV 通过证据不覆盖新功能。
 
 ## 2. 验证与实施状态
 
@@ -31,25 +31,25 @@ v1.5.1 的 CModel 与两版 RTL 均通过 10747 笔固定输入和无符号 scal
 
 | 文档 | 当前版本 | 功能 |
 | --- | --- | --- |
-| [README.md](README.md) | v1.5.4 | 汇总新版规格入口和生效范围 |
+| [README.md](README.md) | v1.5.5 | 汇总新版规格入口和生效范围 |
 | [00-system-scope.md](00-system-scope.md) | v1.4.1 | 定义系统边界和设计目标 |
 | [01-numerics.md](01-numerics.md) | v1.5.4 | 定义数值语义与保留精度 |
 | [03-interfaces.md](03-interfaces.md) | v1.5.4 | 汇总共用输入输出协议 |
 | [04-timing-state.md](04-timing-state.md) | v1.5.4 | 定义周期和状态推进要求 |
 | [06-configuration.md](06-configuration.md) | v1.5.4 | 定义参数及其合法派生关系 |
-| [07-verification.md](07-verification.md) | v1.5.4 | 定义三实现共用验收合同 |
-| [08-implementation-ppa.md](08-implementation-ppa.md) | v1.5.4 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.5.4 | 维护整体架构与文档版本时间线 |
+| [07-verification.md](07-verification.md) | v1.5.5 | 定义现用模型/RTL及未来实现的共用验收合同 |
+| [08-implementation-ppa.md](08-implementation-ppa.md) | v1.5.5 | 定义实现交付与 PPA 评价规则 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.5.5 | 维护整体架构与文档版本时间线 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.5.4 | 定义规格版本和历史修订规则 |
-| [dp/README.md](dp/README.md) | v1.5.4 | 按模块与共用合同组织 DP 规格 |
-| [dp/lane/README.md](dp/lane/README.md) | v1.5.4 | 定义 lane 规格目录与计算边界 |
-| [dp/lane/dp_lane_E.md](dp/lane/dp_lane_E.md) | v1.5.4 | 讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合 |
+| [dp/README.md](dp/README.md) | v1.5.5 | 按模块与共用合同组织 DP 规格 |
+| [dp/lane/README.md](dp/lane/README.md) | v1.5.5 | 定义 lane 规格目录与计算边界 |
+| [dp/lane/dp_lane_E.md](dp/lane/dp_lane_E.md) | v1.5.5 | 讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合 |
 | [dp/lane/multiplier-sharing.md](dp/lane/multiplier-sharing.md) | v1.5.4 | 定义尾数乘法器共享和模式路由 |
 | [dp/lane/shifter-sharing.md](dp/lane/shifter-sharing.md) | v1.5.4 | 定义固定物理移位器的 mux 复用 |
 | [dp/lane/unpack.md](dp/lane/unpack.md) | v1.5.4 | 定义固定 E/M/S 解包数值布局 |
-| [dp/group/README.md](dp/group/README.md) | v1.5.4 | 定义 group 规格目录与计算边界 |
-| [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.5.4 | 讨论 E16 定点组规约及兼容的 group 输出 |
+| [dp/group/README.md](dp/group/README.md) | v1.5.5 | 定义 group 规格目录与计算边界 |
+| [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.5.5 | 讨论 E16 定点组规约及兼容的 group 输出 |
 | [dp/group/scale.md](dp/group/scale.md) | v1.5.4 | 定义 scale 统一解包和 bias 处理 |
 | [dp/group/shared-align.md](dp/group/shared-align.md) | v1.5.4 | 定义分组共享对齐微架构 |
 | [dp/dptop/README.md](dp/dptop/README.md) | v1.5.4 | 定义 DP 顶层规格目录与后端边界 |
@@ -58,13 +58,13 @@ v1.5.1 的 CModel 与两版 RTL 均通过 10747 笔固定输入和无符号 scal
 | [dp/dptop/independent-align.md](dp/dptop/independent-align.md) | v1.5.4 | 记录独立移位对齐对比方案 |
 | [dp/dptop/interface.md](dp/dptop/interface.md) | v1.5.4 | 定义 DP 顶层和模块接口 |
 | [dp/dptop/layout-and-scales.md](dp/dptop/layout-and-scales.md) | v1.5.4 | 定义 DP 容量与输入布局 |
-| [dp/dptop/module-hierarchy.md](dp/dptop/module-hierarchy.md) | v1.5.4 | 定义 DP 模块层级与未来 S6 接入合同 |
+| [dp/dptop/module-hierarchy.md](dp/dptop/module-hierarchy.md) | v1.5.5 | 定义 DP 模块层级与未来 S6 接入合同 |
 | [dp/dptop/pipeline.md](dp/dptop/pipeline.md) | v1.5.4 | 定义分组共享 DP 的流水候选 |
 | [dp/common/numeric-layout.md](dp/common/numeric-layout.md) | v1.5.4 | 推导逐级位宽和统一对齐坐标 |
 | [dp/common/special-values.md](dp/common/special-values.md) | v1.5.4 | 定义浮点分类与特殊值传播 |
 | [dp/common/stage-formats.md](dp/common/stage-formats.md) | v1.5.4 | 列出每级数值出口的定点格式与指数范围 |
-| [dp/implementation/cmodel.md](dp/implementation/cmodel.md) | v1.5.4 | 定义 DP CModel、模块映射及共用测试接口 |
-| [dp/implementation/resource-accounting.md](dp/implementation/resource-accounting.md) | v1.5.4 | 定义可统计的功能模块边界 |
-| [dp/implementation/verilog.md](dp/implementation/verilog.md) | v1.5.4 | 定义手写 RTL 实现映射及验证合同 |
+| [dp/implementation/cmodel.md](dp/implementation/cmodel.md) | v1.5.5 | 定义 DP CModel、模块映射及共用测试接口 |
+| [dp/implementation/resource-accounting.md](dp/implementation/resource-accounting.md) | v1.5.5 | 定义可统计的功能模块边界 |
+| [dp/implementation/verilog.md](dp/implementation/verilog.md) | v1.5.5 | 定义手写 RTL 实现映射及验证合同 |
 | [dp-group/README.md](dp-group/README.md) | v1.4.1 | 定义广播计算组规格 |
 | [tensorcore/README.md](tensorcore/README.md) | v1.4.1 | 定义 TensorCore 阵列规格 |

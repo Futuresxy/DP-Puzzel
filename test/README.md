@@ -1,15 +1,15 @@
 # 新版共用验证环境
 
-**v1.4 当前状态：** 已接入分组共享 DP CModel、统一packed输入和独立精确参考。先测试原九格式，再扩展 TF32/INT8。三实现共享数据合同见 [数据说明](data/README.md)，首批结果见 [报告](results/cmodel-v1.4.md)；新增 [标准 Verilog TB](rtl_tb/README.md) 与 [两版 RTL 验证](results/verilog-v1.4.md)。
+**当前状态：** 已接入分组共享 DP CModel、统一packed输入和独立精确参考。先测试原九格式，再扩展 TF32/INT8。CModel 与现用 Verilog 的共享数据合同见 [数据说明](data/README.md)，首批结果见 [报告](results/cmodel-v1.4.md)；新增 [标准 Verilog TB](rtl_tb/README.md) 与 [历史 RTL 验证](results/verilog-v1.4.md)。
 
 | 目录 | 职责 |
 | --- | --- |
 | [cases/](cases/README.md) | 共用用例、逻辑输入及控制事件、固定种子 |
 | [reference/](reference/README.md) | 独立数学参考与精度分析 |
 | [rtl_tb/](rtl_tb/README.md) | 标准 Verilog 驱动、原子握手检查、L8 scoreboard、S1–S7 断点 |
-| [adapters/](adapters/README.md) | CModel 与两条 RTL 路径的薄适配层 |
+| [adapters/](adapters/README.md) | CModel 与现用 Verilog 的薄适配层；保留显式 SV 历史重放 |
 
-共用激励、调度、检查规则及报告，按实现选择后端。两套 RTL 对 CModel 的实现一致性要求与相对数学参考的精度指标分别验收；具体合同由 spec 定义。
+共用激励、调度、检查规则及报告，按实现选择后端。现用 Verilog 对 CModel 的实现一致性与相对数学参考的精度分别验收；SV 已冻结为历史参考，不再作为新功能的同步维护对象。具体合同由 spec 定义。
 
 生成结果放入 `test/runs/`（忽略提交）。CModel 和 RTL 各保留最近两次普通运行，重要证据与用户确认后标记保留。结果确认后按 [运行产物保留](../scripts/README.md#运行产物保留) 清理。设计 RTL 只读取 `hw/rtl/` 的显式导出，不在本目录复制另一份。DC 流程自身的校验测试位于 `hw/dc_syn/tests/`。
 
@@ -34,7 +34,7 @@ python3 test/run_verilog.py --implementation verilog --phase all --local-w 29 --
 python3 test/run_verilog.py --simulator iverilog --implementation verilog --phase all
 ```
 
-默认使用 Verilator，同时编译 Verilog 与 SystemVerilog 两个独立实现，共用 `rtl_tb/dp_tb.v`。测试前冻结 `hw/rtl/DP_<implementation>_<fingerprint>/`；脚本不直接编译可变源码。结果、日志和构建产物在 `test/runs/verilog/`，逐笔输出为 `id result_hex result_type last`。参数回归同时比较 CModel 的 S1–S7 数值断点；实现对照使用输入/输出文件指纹。详见 [运行说明](../src/verilog/README.md)。
+默认使用 Verilator，只编译纯 Verilog DUT，使用 `rtl_tb/dp_tb.v`。显式 SV/双版选项只作 [冻结版本参考检查](../src/verilog/systemverilog/README.md)，后续新特性不要求 SV 一致。测试前冻结 `hw/rtl/DP_<implementation>_<fingerprint>/`；脚本不直接编译可变源码。结果、日志和构建产物在 `test/runs/verilog/`，逐笔输出为 `id result_hex result_type last`。参数回归同时比较 CModel 的 S1–S7 数值断点；显式双版参考检查额外比较输入/输出文件指纹。详见 [运行说明](../src/verilog/README.md)。
 
 默认局部/全局窗口为 28/40。使用 `--local-w` 和 `--global-w` 可分别扫参；固定数据集仍为 K16。自选窗口用同配置 CModel 重算 `golden_exact` 的期望，数学参考和提交的 golden 文件保持原样。自选回归只记录功能验证；使用默认配置完整回归可重建 DC 门禁回执。
 

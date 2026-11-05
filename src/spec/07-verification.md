@@ -1,4 +1,4 @@
-> 功能：定义三实现共用验收合同；范围：数值、周期、协议、配置覆盖与证据；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[精度回归](../../test/run_cmodel.py)、[协议/边界测试](../../test/tests/test_existing.py)；RTL TB 尚未实现。
+> 功能：定义现用模型/RTL及未来实现的共用验收合同；范围：数值、周期、协议、配置覆盖与证据；版本：v1.5.5；修改时间：2026-11-05 14:34:46 +08:00；对应代码：[精度回归](../../test/run_cmodel.py)、[协议/边界测试](../../test/tests/test_existing.py)、[现用 Verilog TB](../../test/rtl_tb/dp_tb.v)。
 
 # 验证方法与验收边界
 
@@ -8,7 +8,9 @@
 | --- | --- | --- |
 | 架构数值 | CModel 对独立有限窗口参考逐位一致 | 首批 10747 笔通过 |
 | 数学精度 | 精确有理数参考、ULP 统计和逐例 RTZ 误差界 | 首批已记录；不等于统一精度目标签核 |
-| RTL 与硬件约束 | 两套 RTL 对 CModel 精确一致；时序、面积、功耗实测 | 尚未实施 |
+| RTL 与硬件约束 | 现用 Verilog 对 CModel 精确一致；时序、面积、功耗分别验收 | 已有 RTL 回归与历史 N12 DC；真实负载功耗待实施 |
+
+SystemVerilog 已冻结为 T8H16Q32E64 历史参考，默认回归只运行 Verilog，新功能不要求更新 SV。SV/双版选项仅用于显式历史参考检查；未来 Chisel 实施后按其对应 spec/config 单独验证。
 
 25/35/37 位是保留要求或设计目标，不能直接作为宽松 ULP 阈值。RTL 对 CModel 的有效结果、特殊值和周期必须精确一致。
 
@@ -16,7 +18,7 @@
 
 全部新版输入位于根 `test/data/dp/`，采用 [DP_INPUTS_V1](../../test/data/README.md)。旧九格式只导入所需 K 的 correct_961，保留来源 SHA256 与五段划分，不继承旧阈值。TF32 K8 和 INT8 K32 使用固定种子新建。
 
-[CModel 合同](dp/implementation/cmodel.md)区分整数位精确执行与独立 Fraction 参考。TF32 另记录 FP64 近似；INT8 必须与精确整数乘加及模 2^32 回绕完全一致。保存的 expected 同时包含架构结果和数学结果，未来两条 RTL 读取同一输入。
+[CModel 合同](dp/implementation/cmodel.md)区分整数位精确执行与独立 Fraction 参考。TF32 另记录 FP64 近似；INT8 必须与精确整数乘加及模 2^32 回绕完全一致。保存的 expected 同时包含架构结果和数学结果，现用 Verilog 读取同一输入；历史 SV 重放配套冻结版本的数据/模型/测试环境。
 
 ## 3. 必测覆盖
 
@@ -38,4 +40,4 @@
 
 [首批报告](../../test/results/cmodel-v1.4.md)与[机器可读摘要](../../test/results/cmodel-v1.4.json)记录全部配置、指纹、来源与限制。九项定向/协议测试及全量 Address/UndefinedBehavior/LeakSanitizer 通过。
 
-一个配置通过不覆盖全部参数；DP 通过不覆盖阵列。当前无新版 RTL 仿真或 PPA 结果。后续硬件证据顺序为：参数 → RTL 导出 → 同源 RTL 回归 → DC/时序 → 负载活动功耗。
+一个配置通过不覆盖全部参数；DP 通过不覆盖阵列。既有 RTL 及 N12 测量范围见 [RTL 报告](../../test/results/verilog-v1.4.md) 和 [时序记录](../../hw/dc_syn/records/dp_n12_timing_20261105.md)；新改动必须重新验证，真实负载功耗待实施。后续硬件证据顺序为：参数 → RTL 导出 → 同源 RTL 回归 → DC/时序 → 负载活动功耗。

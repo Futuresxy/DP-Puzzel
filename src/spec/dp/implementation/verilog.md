@@ -1,8 +1,8 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与 SystemVerilog 对照、L8、源码快照；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top.sv](../../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.5.5；修改时间：2026-11-05 14:34:46 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top.sv](../../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
-本页记录 v1.5 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户要求保留 SystemVerilog 对照。仅实现一个 DP，未进入计算阵列。
+本页记录 v1.5 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
 
 ## 1. 文件组织与实现边界
 
@@ -34,7 +34,7 @@ S1 每侧实际复用两份 E10/M16/S4 寄存器，按 T/H/Q/E/INT8 打包和展
 
 ## 2. 参数与数值坐标
 
-构建参数为 `K_FP16`、`LOCAL_W`、`GLOBAL_W`。分别对应 CModel 的 `k_fp16`、`local_shift_mag_width`、`global_signed_align_width`。两套 RTL 只开放 L8；L9 仍是 CModel 探索选项。默认 K16/28/40。LOCAL_W 与 GLOBAL_W 可独立调整，要求 LOCAL_W≥27、GLOBAL_W≥max(LOCAL_W+4,33)。中间模块从父层参数派生树宽、补零、LZD/指数控制及各模式 SxIxFx，DSE 直接修改窗口参数。
+构建参数为 `K_FP16`、`LOCAL_W`、`GLOBAL_W`。分别对应 CModel 的 `k_fp16`、`local_shift_mag_width`、`global_signed_align_width`。现用 Verilog 只开放 L8；L9 仍是 CModel 探索选项。默认 K16/28/40。LOCAL_W 与 GLOBAL_W 可独立调整，要求 LOCAL_W≥27、GLOBAL_W≥max(LOCAL_W+4,33)。中间模块从父层参数派生树宽、补零、LZD/指数控制及各模式 SxIxFx，DSE 直接修改窗口参数。
 
 | 派生量 | 公式 |
 | --- | --- |
@@ -64,7 +64,7 @@ S2 bank 对未使用乘法器输入清零；T 只使用一套，BF16、Q、INT �
 
 ## 4. 验证、导出与范围
 
-[纯 Verilog TB](../../../../test/rtl_tb/dp_tb.v) 直接读取 `DP_INPUTS_V1`。两版分别通过 Verilator 编译/仿真，另外以 Icarus 验证纯 Verilog 语法及四态行为。验证必须区分：对 CModel 位精确一致、相对独立数学参考的精度、RTL 时序/PPA；本轮仅前两类已有模型/仿真证据。
+[纯 Verilog TB](../../../../test/rtl_tb/dp_tb.v) 直接读取 `DP_INPUTS_V1`。默认仅对现用纯 Verilog 做 Verilator 编译/仿真，以 Icarus 单独检查严格 Verilog 语法及四态行为。SV/双版选项保留历史重放用途，冻结 SV 不参与新版本必需门禁。验证必须区分：对 CModel 位精确一致、相对独立数学参考的精度、RTL 时序/PPA；本轮仅前两类已有模型/仿真证据。
 
 验证前冻结源到 `hw/rtl/DP_<implementation>_<fingerprint>/`，每个源文件标识 `RTL_ID`。清单记录源码及快照 SHA、顶层、格式常量、参数化状态和验证范围。实际参数、工具、测试输入/输出及断点计数记录在回归摘要；快照仅在对应检查通过后标为 passed；完整回归经新版后端门禁复核后才生成验证回执并设置 `ppa_eligible=true`，部分/失败回归仍为 false。此快照是参数化源码，不冒充完成综合的特化网表。
 

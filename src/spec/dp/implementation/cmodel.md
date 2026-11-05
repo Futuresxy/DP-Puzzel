@@ -1,4 +1,4 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.5；修改时间：2026-11-05 14:34:46 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
 
 # DP CModel 合同
 
@@ -61,4 +61,4 @@ trace 的每个 cutpoint 有 stage、operation、data。覆盖 S1 每元素及 p
 
 执行说明见 [CModel](../../../cmodel/README.md)；首批结果见 [报告](../../../../test/results/cmodel-v1.4.md)。单测覆盖 K4/K8/K16、2/3/5 项树、三组窗口、L8/L9、相邻换型、reset、气泡、无效类型、输入填充/广播、small-code 与 scale 编码、特殊值/RNE 边界、INT 极值及回绕。只对已列组合作覆盖声明；不是所有 A/B 编码笛卡尔积穷举。
 
-三实现使用共同数学合同，但 C++ 文件不等于最终 RTL module 一一结构实例化；operand isolation、时钟门控、mux 门级共享和面积归属仍须实现和综合证据。当前无新版 RTL 仿真、DC 或功耗结果。
+CModel、现用 Verilog 及未来 Chisel 使用共同数学合同；SV 历史目录按冻结版本解释。 C++ 文件不等于最终 RTL module 一一结构实例化；operand isolation、时钟门控、mux 门级共享和面积归属仍须实现和综合证据。现有 RTL 与历史 N12 DC 证据见 [实现合同](verilog.md)；新专用 E 单元尚无 RTL/PPA 证据，真实负载功耗仍待实施。

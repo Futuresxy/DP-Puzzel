@@ -5,9 +5,9 @@
 | 实现 | 编译清单 | 顶层 |
 | --- | --- | --- |
 | **Verilog-2005，主要交付** | [files.f](files.f) | [dp_top.v](top/dp_top.v) |
-| SystemVerilog，对照实现 | [systemverilog/files.f](systemverilog/files.f) | [dp_top.sv](systemverilog/top/dp_top.sv) |
+| SystemVerilog，冻结的历史参考 | [systemverilog/files.f](systemverilog/files.f) | [dp_top.sv](systemverilog/top/dp_top.sv) |
 
-两套源码独立可综合，module 名相同，必须分开编译。Verilog 版使用 `wire/reg`、显式端口、具名 `generate`、头文件常量及 Verilog 函数，不使用 package、struct、logic、always_ff、always_comb 或 SV cast。SystemVerilog 版保留 packed token 与 package，不能当作 Chisel 生成 RTL。两版没有运行时软件计算/DPI、real 运算或黄金结果查表。
+当前维护纯 Verilog。SystemVerilog 仅保留当前 T8H16Q32E64 历史源码，冻结来源和边界见 [历史参考说明](systemverilog/README.md)；后续新功能和 E 专用设计不再同步 SV。两套源码的 module 名相同，历史重放必须分开编译。Verilog 版使用 `wire/reg`、显式端口、具名 `generate`、头文件常量及 Verilog 函数，不使用 package、struct、logic、always_ff、always_comb 或 SV cast。SystemVerilog 版保留 packed token 与 package，不能当作 Chisel 生成 RTL。两版没有运行时软件计算/DPI、real 运算或黄金结果查表。
 
 ## 参数与层级
 
@@ -57,17 +57,17 @@ git ls-files -z -- ':(glob)src/verilog/**/*.v' |
 先按 [CModel 说明](../cmodel/README.md) 构建参考模型，然后从仓库根目录运行：
 
 ```sh
-# 默认：Verilator + 同一份纯 Verilog testbench，同时比较两版
+# 默认：Verilator + 纯 Verilog DUT；不运行历史 SV
 python3 test/run_verilog.py --phase all
 
-# 只测主要交付；Verilator 可通过参数或 VERILATOR 环境变量指定
+# 显式选择主实现；Verilator 可通过参数或 VERILATOR 环境变量指定
 python3 test/run_verilog.py --implementation verilog --verilator /path/to/verilator
 
 # 独立四态仿真及严格 Verilog-2005 语法检查
 python3 test/run_verilog.py --simulator iverilog --implementation verilog
 ```
 
-[dp_tb.v](../../test/rtl_tb/dp_tb.v) 直接读取共用 `DP_INPUTS_V1`，逐笔检查 D/type/last、L8、原子 ready、气泡、复位及非法元组拒收。它输出 `results.txt` 和 `PASS` 统计；参数回归还输出 S1–S7 断点，与 CModel trace 比较。脚本另用独立调度队列核对输出顺序，并比较两版结果文件指纹。
+[dp_tb.v](../../test/rtl_tb/dp_tb.v) 直接读取共用 `DP_INPUTS_V1`，逐笔检查 D/type/last、L8、原子 ready、气泡、复位及非法元组拒收。它输出 `results.txt` 和 `PASS` 统计；参数回归还输出 S1–S7 断点，与 CModel trace 比较。脚本另用独立调度队列核对输出顺序。只有显式选择 `--implementation both` 时才做历史双版输出指纹比较；新版本不要求与冻结 SV 同步。
 
 每次验证先将源代码冻结到 `hw/rtl/DP_<implementation>_<fingerprint>/`，保存 portable `files.f`、源/快照 SHA、RTL_ID、README、参数与验证范围。运行日志、构建产物、逐笔输出和断点在 `test/runs/verilog/`，不提交。精简证据见 [RTL 报告](../../test/results/verilog-v1.4.md)。
 
@@ -75,6 +75,6 @@ RTL 单独执行 `-Wall` lint，位宽、锁存器、组合环类警告不豁免
 
 ## 当前边界
 
-只实现 L8；CModel 的 L9 备用探索未在这两套 RTL 中开放。未实现 Chisel、DP-Group、TensorCore/Cube、专用 Q/E/QE 扩展或独立对齐方案。历史 27/40 的 N12 TT 在 1.41 GHz setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/dp_n12_timing_20261105.md)。尚无布局布线或真实活动功耗。
+当前主实现只开放 L8；CModel 的 L9 备用探索未在主 RTL 中开放。冻结 SV 的范围由其历史说明定义。未实现 Chisel、DP-Group、TensorCore/Cube、专用 Q/E/QE 扩展或独立对齐方案。历史 27/40 的 N12 TT 在 1.41 GHz setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/dp_n12_timing_20261105.md)。尚无布局布线或真实活动功耗。
 
 DC 接入使用 [统一门禁与流程](../../hw/dc_syn/README.md)。Verilog 的运行时 `lane_fraction` 已改为等价常量选择以兼容 DC；新快照重新完整回归，不继承旧 snapshot 的通过状态。

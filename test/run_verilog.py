@@ -166,7 +166,8 @@ def main():
     ap=argparse.ArgumentParser()
     ap.add_argument('--phase',choices=['existing','parameters','all'],default='all')
     ap.add_argument('--simulator',choices=['verilator','iverilog'],default='verilator')
-    ap.add_argument('--implementation',choices=['verilog','systemverilog','both'],default='both')
+    ap.add_argument('--implementation',choices=['verilog','systemverilog','both'],default='verilog',
+                    help='RTL implementation (default: %(default)s); systemverilog/both are explicit legacy-reference checks')
     ap.add_argument('--verilator',default=os.environ.get('VERILATOR','verilator'))
     ap.add_argument('--local-w',type=int,default=DEFAULT_SCOPE[1],help='S3 unsigned window (default: %(default)s)')
     ap.add_argument('--global-w',type=int,default=DEFAULT_SCOPE[2],help='S6 signed window (default: %(default)s)')

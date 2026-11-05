@@ -1,8 +1,8 @@
-> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：专用实现尚未建立；推导基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
+> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.5.5；修改时间：2026-11-05 14:36:37 +08:00；对应代码：专用实现尚未建立；推导基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
 
 # E 类专用 group 讨论稿
 
-用户已明确 group 输出 layout 与现有多精度版本对齐，group 外计算部分复用；HiF4 e2 在 lane 内融合，MX/NV 无元素指数差。以下采用这些边界，提出 E64 的流水分工。专用 RTL/CModel 未实现，具体前端寄存切点待讨论；没有专用 PPA 或时序结论。
+用户已明确 group 输出 layout 与现有多精度版本对齐，group 外计算部分复用；HiF4 e2 在 lane 内融合，MX/NV 无元素指数差。以下采用这些边界，提出 E64 的流水分工。专用 RTL/CModel 未实现，用户已选定优先讨论 S2 乘法+pair、S3 四项树的候选，最终时序待验证；没有专用 PPA 或时序结论。
 
 ## 1. 统一定点 E16 组
 
@@ -19,13 +19,13 @@ value_before_scale = Q_group * 2^-4
 
 两 lane 可直接在同一小数点下相加。HiF4 e2 的作用全部计入 coefficient，group 无须比较、回传或保存元素公共指数 r；group 的外部指数只来自块 scale。HiF4 的 e1 仍在 S1 融入元素幅值。
 
-## 2. E64 的八级流水建议
+## 2. E64 当前优先讨论的八级流水
 
 | 级 | 数据计算 | 寄存结果/接口 |
 | --- | --- | --- |
 | S1 | E/scale 解包，HiF4 e1 融合 | 4 位幅值、符号、局部 p 及 scale |
-| S2 | 64 个无符号 4×4 元素乘法；4 组 scale 系数预乘 | 每 lane 8×8 位原始乘积与符号；scale 系数 8 位 |
-| S3 | 每 lane 八项带符号树 | 每 lane 12 位 TC；并行准备输出 anchor |
+| S2 | 64 个无符号 4×4 元素乘法、32 个 signed10 pair；4 组 scale 系数预乘 | 每 lane 4×10 位 TC pair；all_negative；scale 系数 8 位 |
+| S3 | 每 lane 四个 pair 的两层 TC 树 | 每 lane 12 位 TC；并行准备输出 anchor |
 | S4 | HiF4 lane 内左移 p，MX/NV 静态补零；两 lane TC 相加、组 abs | 每 group 14 位幅值+符号，F4 |
 | S5 | NV/HiF 14×8 无符号 scale；MX 旁路；LZD | 与原 group 完全同宽、同到达拍的 token |
 | S6 | 原来的各组+C MAX、净移位与符号恢复 | 5 路默认 40 位 TC 叶子 |
@@ -115,10 +115,10 @@ net = A_raw-E_max
 
 删除元素指数阵列、跨 lane MAX/差值/右移对齐，乘法专用化为 64 个 unsigned 4×4；S3 使用窄树，S4 以 14 位组幅值寄存，S5 直接 scale/LZD。HiF4 只在 8 个 lane 内各做一次小左移，MX/NV 完全没有元素可变移位。S6 的组+C 全局对齐仍保留。
 
-S3 的完整八项树、S4 的组加法/abs 都需要检查时序；若需平衡，可把第一层 pair 前移至 S2，保持 S4/S5 和外部 token 不动。此处待静态时序确定，不把功能等价推导当作频率通过证据。
+当前优先候选已将第一层 pair 放在 S2，S3 只做四项规约。S2 的乘法/符号注入/pair、S4 的组加法/abs、S5 的 scale/LZD 都需要检查时序。若 S2 过紧，再讨论回退切分；保持 S4/S5 和外部 token 不动，不把功能等价推导当作频率通过证据。
 
 无效周期用有效使能保持寄存器，MX 请求对 scale 数据乘法隔离，MX/NV 请求对 HiF4 控制路径隔离。是否采用额外 operand isolation，应比较 mux 的面积/延迟及实际活动功耗。不使用未经验证的生成时钟。
 
 验证要求：对旧模型的 MX/NV 检查同坐标组 token；对 HiF4 检查上面的 m/A/z 转换，再检查 S6/S7/S8 bit-exact。覆盖三精度、scale 分类、HiF4 e1/e2、lane/组抵消、零符号、FP32 C、逐拍换型及复位，并按每个合法参数分别导出验证。新专用 RTL 未通过前不能用于 PPA。
 
-PPA 对比保持相同 E64 吞吐、L8、N12 工艺/PVT、工具/约束及同一真实负载；分别报告前端与整 DP 面积/功耗。下一步需讨论确认 S3 完整 lane 树、S4 group 合并/abs 的切分，再开发专用模型及 RTL。
+PPA 对比保持相同 E64 吞吐、L8、N12 工艺/PVT、工具/约束及同一真实负载；分别报告前端与整 DP 面积/功耗。下一步围绕 S2 pair/S3 四项树收敛时序、控制和接口细节，再开发专用 CModel 与纯 Verilog。SV 历史参考不接收新 E 单元。

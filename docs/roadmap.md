@@ -11,11 +11,15 @@
 
 当前首批要求已写入 [spec](../src/spec/README.md)：TensorCore 为 16×4 个 DP，由四个 4×4 广播 DP-Group 竖直拼接，组内无脉动；DP 支持 FP16 基准 K4/K8/K16 和 TF32/FP16/BF16/MXFP8/6/4/NVFP4/HiF4/INT8，HiF8 暂不支持。精度目标为主浮点模式至少 25 位、MXFP4/NVFP4 35 位、HiF4 约 37 位并复用 NVFP4 通路；INT8 并行度等于 MXFP8。DP 不超过 8 级，目标 1.41 GHz，功耗优先、面积其次。尚无实现或验收结果。
 
+### 当前 RTL 维护范围（2026-11-05）
+
+现用 CModel 与纯 Verilog 持续开发；[SystemVerilog](../src/verilog/systemverilog/README.md) 冻结为 T8H16Q32E64、K16/28/40、L8/II=1 历史参考，不再同步新特性。默认 RTL 回归只选择 Verilog；E 类新设计不添加 SV 对照。Chisel 仍待后续实施。
+
 ### E 类专用 DP 候选（2026-11-05）
 
 当前多精度单 DP 的 CModel、两版 RTL 和 N12 DC 流程已建立；EDA 执行以 AGENTS.md 的本机授权为准。新增 [dp_lane_E](../src/spec/dp/lane/dp_lane_E.md) 与 [dp_group_E](../src/spec/dp/group/dp_group_E.md) 仅讨论 MXFP4/NVFP4/HiF4 专用 E64 单元，保留现有多精度设计作比较。
 
-用户已明确 HiF4 先求和再在 lane 内融合 e2，删除组内元素指数 MAX/差值/右移对齐；group 输出保持原多精度布局和 S5 到达拍，默认 M31，复用现有 group 外计算。待讨论的 E64 切分为 S3 完成八项 lane TC 树、S4 完成局部小左移及两 lane TC 合并/组 abs、S5 完成 scale/LZD。MX/NV 组内无可变移位，S6 仍负责各组块 scale 与 C 的全局对齐。具体切分确认后再开发专用 CModel/RTL 并验证 PPA，当前不执行新综合或功耗实验。
+用户已明确 HiF4 先求和再在 lane 内融合 e2，删除组内元素指数 MAX/差值/右移对齐；group 输出保持原多精度布局和 S5 到达拍，默认 M31，复用现有 group 外计算。当前优先讨论的 E64 切分为 S2 完成乘法及第一层 pair、S3 完成四项 TC 树、S4 完成局部小左移及两 lane TC 合并/组 abs、S5 完成 scale/LZD。MX/NV 组内无可变移位，S6 仍负责各组块 scale 与 C 的全局对齐。具体切分确认后再开发专用 CModel/RTL 并验证 PPA，当前不执行新综合或功耗实验。
 
 ### DP spec 闭合清单（CModel 前）
 

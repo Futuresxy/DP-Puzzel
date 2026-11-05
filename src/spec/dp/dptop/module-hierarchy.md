@@ -1,8 +1,8 @@
-> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.5.5；修改时间：2026-11-05 14:34:46 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 模块层级、所有权与 S6 扩展点
 
-状态：当前用户指定模块化层级 `T1H2Q4E8 → T2H4Q8E16 → H16Q32E64`；顶层名称省略 T，但保留 TF32 T8。只描述当前主配置，未来 Q/E/QE 专用源的功能与数据布局待单独批准；CModel 与手写 Verilog/SystemVerilog 已实现 v1.5 的无符号 scale。Chisel 和未来专用源待实现。
+状态：当前用户指定模块化层级 `T1H2Q4E8 → T2H4Q8E16 → H16Q32E64`；顶层名称省略 T，但保留 TF32 T8。只描述当前主配置，未来 Q/E/QE 专用源的功能与数据布局待单独批准；现用 CModel 与手写 Verilog 已实现 v1.5 的无符号 scale；SystemVerilog 保留该版本作为冻结的历史参考。Chisel 和未来专用源待实现。
 
 ## 1. 当前层级与周期所有权
 

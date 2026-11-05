@@ -1,12 +1,12 @@
 # DAC 2027 · 多精度张量计算算力配比 DSE
 
-**当前阶段：DP spec v1.5 / 实现映射 v1.5.1，单 DP 手写 RTL 与共用验证已建立。** 当前主方案为 T8H16Q32E64 分组共享八级 DP；提供 Verilog 主实现与 SystemVerilog 对照，当前默认局部/全局窗口为 28/40。S5 的 NVFP4/HiF4 幅值共用 14×8 无符号 scale 乘法。历史 27/40 的 N12 TT DC 在 1.41GHz setup 未通过，1GHz 经独立 hold 修复后 setup/hold 均通过，见 [时序分析](hw/dc_syn/records/dp_n12_timing_20261105.md)。Chisel、Cube 阵列尚未实施。
+**当前阶段：DP spec v1.5 / 实现映射 v1.5.1，单 DP 手写 RTL 与共用验证已建立。** 当前主方案为 T8H16Q32E64 分组共享八级 DP；维护 Verilog 主实现；SystemVerilog 冻结为 T8H16Q32E64 历史参考，当前默认局部/全局窗口为 28/40。S5 的 NVFP4/HiF4 幅值共用 14×8 无符号 scale 乘法。历史 27/40 的 N12 TT DC 在 1.41GHz setup 未通过，1GHz 经独立 hold 修复后 setup/hold 均通过，见 [时序分析](hw/dc_syn/records/dp_n12_timing_20261105.md)。Chisel、Cube 阵列尚未实施。
 
 | 入口 | 内容 |
 | --- | --- |
 | [设计规范](src/spec/README.md) | 架构、接口、每级数值与资源共享 |
 | [CModel](src/cmodel/README.md) | C++ 位精确 / 逐级周期模型与构建命令 |
-| [手写 RTL](src/verilog/README.md) | 单 DP、参数化 Verilog 和 SystemVerilog 对照 |
+| [手写 RTL](src/verilog/README.md) | 单 DP、参数化 Verilog；SV 仅作冻结的历史参考 |
 | [共用测试](test/README.md) | Packed 数据、独立参考及回归 |
 | [模型报告](test/results/cmodel-v1.4.md) / [RTL 报告](test/results/verilog-v1.4.md) | 精度、流水断点、周期协议与覆盖边界 |
 

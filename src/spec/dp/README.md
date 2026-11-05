@@ -1,4 +1,4 @@
-> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用单元和 Chisel 尚未实现。
+> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.5.5；修改时间：2026-11-05 14:36:37 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用单元和 Chisel 尚未实现。
 
 # DP 规格导航
 
@@ -50,14 +50,14 @@ dp/
 | S1–S8 出口 | [common/stage-formats.md](common/stage-formats.md) | 多精度主实现的逐级 S/I/F 与指数范围 |
 | 特殊值和舍入 | [common/special-values.md](common/special-values.md) | NaN/Inf/零/非正规及 FP32 RNE |
 | CModel | [implementation/cmodel.md](implementation/cmodel.md) | 位精确与周期模型、参考和 trace |
-| Verilog | [implementation/verilog.md](implementation/verilog.md) | 两版 RTL 映射、快照与验证门禁 |
+| Verilog | [implementation/verilog.md](implementation/verilog.md) | 现用 Verilog 映射、快照与验证门禁；SV 为冻结参考 |
 | 面积/功耗统计 | [implementation/resource-accounting.md](implementation/resource-accounting.md) | 逻辑块、寄存/mux、网表与活动统计归属 |
 
 跨层合同集中维护，不在 lane/group/dptop 重复定义同一套位宽公式。scale 运算由 group 拥有，S6 双向移位由 dptop 拥有；两者分别链接到共用数值坐标。
 
 ## 3. E 类优化方案入口
 
-[E8 lane 优化](lane/dp_lane_E.md) 与 [E16 group / E64 接入](group/dp_group_E.md) 已纳入对应模块目录。用户已明确 HiF4 e2 在 lane 内融合、先求和后局部左移、删除组内元素指数对齐，以及保持多精度 group 输出 layout 和 S5 到达拍。E64 的 S3 lane 树、S4 group 合并/abs、S5 scale/LZD 是待讨论的切分，专用实现与 PPA 尚未建立。
+[E8 lane 优化](lane/dp_lane_E.md) 与 [E16 group / E64 接入](group/dp_group_E.md) 已纳入对应模块目录。用户已明确 HiF4 e2 在 lane 内融合、先求和后局部左移、删除组内元素指数对齐，以及保持多精度 group 输出 layout 和 S5 到达拍。用户已选择优先讨论 E64 的 S2 乘法/pair、S3 四项 lane 树、S4 group 合并/abs、S5 scale/LZD 切分，专用实现与 PPA 尚未建立。
 
 E 专用候选通过兼容 token 接入既有 S6–S8；默认保留 40 位全局窗口。HiF4 融合 e2 后的定点坐标及 anchor/z 换算以专用 group 文档为准，不能套用多精度主实现的逐级字段值。
 
