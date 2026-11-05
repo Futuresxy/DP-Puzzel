@@ -87,7 +87,7 @@ class FlowTests(unittest.TestCase):
         (self.export / "README.md").write_text("Software fixture; not verified project hardware\n")
         self.evidence_path = self.root / "test/runs/fixture/verification.json"
         self.inputs = []
-        for role, name in (("testbench", "test/tb/fixture.sv"), ("reference", "test/reference/fixture.txt"),
+        for role, name in (("testbench", "test/rtl_tb/fixture.sv"), ("reference", "test/reference/fixture.txt"),
                            ("vectors", "test/vectors/fixture.txt"), ("log", "test/runs/fixture/test.txt")):
             p = self.root / name
             p.parent.mkdir(parents=True, exist_ok=True)

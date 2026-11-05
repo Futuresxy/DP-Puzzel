@@ -21,7 +21,7 @@
 
 ## 仿真与活动审计
 
-1. 使用同一份 packed 端口激励和独立期望。复用 `test/rtl/dp_tb.v` 的握手、L8、结果、类型和 `last` 检查。实现门级入口时实例化固定参数的映射顶层，禁用仅针对 RTL 层级的断点。所有精度通路通过合法初始化输入进入已知状态，验证初始化结果。保持测量窗内 II=1、精度固定且无复位。每个格式重跑门级仿真并保存完整输出匹配证据。
+1. 使用同一份 packed 端口激励和独立期望。复用 `test/rtl_tb/dp_tb.v` 的握手、L8、结果、类型和 `last` 检查。实现门级入口时实例化固定参数的映射顶层，禁用仅针对 RTL 层级的断点。所有精度通路通过合法初始化输入进入已知状态，验证初始化结果。保持测量窗内 II=1、精度固定且无复位。每个格式重跑门级仿真并保存完整输出匹配证据。
 2. 对 VCS 使用与库模型相配的零延迟门级配置。参考选项为 `-full64 -sverilog -debug_access+all +vcs+saif_libcell +notimingcheck +delay_mode_zero`。核对实际仿真时间单位和时钟周期。以 DUT 层级为 scope，在发射边界调用 `$set_gate_level_monitoring`、`$set_toggle_region`、`$toggle_start`、`$toggle_stop` 和 `$toggle_report`。记录开始、结束时间与 SAIF timescale。标准流程直接使用原生门级 SAIF。
 3. 枚举映射网表顶层端口的全部位、真实叶单元引脚和时钟对象。检查窗口时长与 `DURATION × TIMESCALE` 一致，状态时间完整且真实引脚 `TX=TZ=0`。VCS 若省略 `celldefine` 内叶引脚，只能从网表证明相同电气网络的 `T0/T1/TC` 或真实连接常量，保留逐引脚 alias 证据。缺失、多义或不支持的表达式使审计失败。
 4. 在 Power Compiler 链接原 DDC 与匹配 DB，保留原时钟及 IO 约束。清除既有活动后用 `read_saif` 注释，核对实例名和实际时间单位。检查 `report_saif` 的 Nets、Ports、Pins 显式注释均为 100%，传播和默认补齐均为零。把实际叶引脚与时钟引脚的概率和翻转密度同 SAIF 的 `T1 / DURATION`、`TC / duration_seconds` 对照。保留关断时钟的零翻转统计。

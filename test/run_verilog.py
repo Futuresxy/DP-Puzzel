@@ -21,6 +21,7 @@ from reference.exact import DTYPES
 from adapters.rtl import snapshot, record_validation
 
 RUN=ROOT/'test/runs/verilog'
+TESTBENCH=ROOT/'test/rtl_tb/dp_tb.v'
 SIMULATOR='verilator'
 IMPLEMENTATION='verilog'
 VERILATOR='verilator'
@@ -48,12 +49,12 @@ def compile_tb(k,local,glob):
              '-Wno-WIDTH','-Wno-TIMESCALEMOD','-Wno-INITIALDLY',
              '--top-module','dp_tb','--Mdir',str(build),
              f'-GK_FP16={k}',f'-GLOCAL_W={local}',f'-GGLOBAL_W={glob}',
-             '-I'+str(EXPORT/'src/src/verilog/parameter'),'-f',files,'test/rtl/dp_tb.v'],build/'compile.log')
+             '-I'+str(EXPORT/'src/src/verilog/parameter'),'-f',files,str(TESTBENCH)],build/'compile.log')
     else:
         exe=build/'dp_tb.vvp'
         run(['iverilog','-g2005' if IMPLEMENTATION=='verilog' else '-g2012','-I'+str(EXPORT/'src/src/verilog/parameter'),
              '-s','dp_tb',f'-Pdp_tb.K_FP16={k}',f'-Pdp_tb.LOCAL_W={local}',
-             f'-Pdp_tb.GLOBAL_W={glob}','-o',str(exe),'-f',files,'test/rtl/dp_tb.v'],build/'compile.log')
+             f'-Pdp_tb.GLOBAL_W={glob}','-o',str(exe),'-f',files,str(TESTBENCH)],build/'compile.log')
     return exe
 
 def campaign(name,k,local,glob,requests,exe,source=None,expected=None,stress=False):
@@ -159,7 +160,7 @@ def main():
                     bad=make('fp16',k,ident=len(req)); bad.update(update); req.append(bad)
                 exe=compile_tb(k,local,glob)
                 report.append(campaign(f'mixed-k{k}-l{local}-g{glob}',k,local,glob,req,exe,stress=True))
-    test_sources=[Path(__file__),ROOT/'test/rtl/dp_tb.v',ROOT/'test/adapters/rtl.py']
+    test_sources=[Path(__file__),TESTBENCH,ROOT/'test/adapters/rtl.py']
     test_fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in test_sources)).hexdigest()
     if len(implementations)==2:
         halves=len(report)//2

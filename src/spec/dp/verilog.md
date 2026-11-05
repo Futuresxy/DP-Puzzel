@@ -1,4 +1,4 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与 SystemVerilog 对照、L8、源码快照；版本：v1.4.3；修改时间：2026-11-05 00:25:00 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[dp_top.sv](../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../test/rtl/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与 SystemVerilog 对照、L8、源码快照；版本：v1.4.3；修改时间：2026-11-05 09:50:56 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[dp_top.sv](../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
@@ -64,7 +64,7 @@ S2 bank 对未使用乘法器输入清零；T 只使用一套，BF16、Q、INT �
 
 ## 4. 验证、导出与范围
 
-[纯 Verilog TB](../../../test/rtl/dp_tb.v) 直接读取 `DP_INPUTS_V1`。两版分别通过 Verilator 编译/仿真，另外以 Icarus 验证纯 Verilog 语法及四态行为。验证必须区分：对 CModel 位精确一致、相对独立数学参考的精度、RTL 时序/PPA；本轮仅前两类已有模型/仿真证据。
+[纯 Verilog TB](../../../test/rtl_tb/dp_tb.v) 直接读取 `DP_INPUTS_V1`。两版分别通过 Verilator 编译/仿真，另外以 Icarus 验证纯 Verilog 语法及四态行为。验证必须区分：对 CModel 位精确一致、相对独立数学参考的精度、RTL 时序/PPA；本轮仅前两类已有模型/仿真证据。
 
 验证前冻结源到 `hw/rtl/DP_<implementation>_<fingerprint>/`，每个源文件标识 `RTL_ID`。清单记录源码及快照 SHA、顶层、格式常量、参数化状态和验证范围。实际参数、工具、测试输入/输出及断点计数记录在回归摘要；快照仅在对应检查通过后标为 passed，；完整回归经新版后端门禁复核后才生成验证回执并设置 `ppa_eligible=true`，部分/失败回归仍为 false。此快照是参数化源码，不冒充完成综合的特化网表。
 

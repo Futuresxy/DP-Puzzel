@@ -51,7 +51,7 @@ python3 test/run_verilog.py --implementation verilog --verilator /path/to/verila
 python3 test/run_verilog.py --simulator iverilog --implementation verilog
 ```
 
-[dp_tb.v](../../test/rtl/dp_tb.v) 直接读取共用 `DP_INPUTS_V1`，逐笔检查 D/type/last、L8、原子 ready、气泡、复位及非法元组拒收。它输出 `results.txt` 和 `PASS` 统计；参数回归还输出 S1–S7 断点，与 CModel trace 比较。脚本另用独立调度队列核对输出顺序，并比较两版结果文件指纹。
+[dp_tb.v](../../test/rtl_tb/dp_tb.v) 直接读取共用 `DP_INPUTS_V1`，逐笔检查 D/type/last、L8、原子 ready、气泡、复位及非法元组拒收。它输出 `results.txt` 和 `PASS` 统计；参数回归还输出 S1–S7 断点，与 CModel trace 比较。脚本另用独立调度队列核对输出顺序，并比较两版结果文件指纹。
 
 每次验证先将源代码冻结到 `hw/rtl/DP_<implementation>_<fingerprint>/`，保存 portable `files.f`、源/快照 SHA、RTL_ID、README、参数与验证范围。运行日志、构建产物、逐笔输出和断点在 `test/runs/verilog/`，不提交。精简证据见 [RTL 报告](../../test/results/verilog-v1.4.md)。
 
