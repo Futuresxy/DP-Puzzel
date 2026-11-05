@@ -1,6 +1,9 @@
 `include "dp_defs.vh"
 // Shared S5 signed15 x positive-signed9 scale multiplier, with parameter-derived
 // physical widths. Both NVFP4 and HiF4 use the same extraction, no compact mux.
+// NVFP4 S1I10F4 / HiF4 S1I8F6 x positive TC S1I2F6 ->
+// native TC S1I13F10 / S1I11F12. Removing the redundant high sign
+// extension gives S1I12F10 / S1I10F12 before the group low pad.
 module dp_scale_multiply #(
   parameter integer SOP_W=`DP_SCALE_SOP_W,
   parameter integer COEFF_W=2*`DP_SCALE_M+1

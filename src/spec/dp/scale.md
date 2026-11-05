@@ -1,4 +1,4 @@
-> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # scale 统一 E8M3 数值表示
 
@@ -60,12 +60,12 @@ scale 后 LZD 只计数 z；e=A_raw-z 用于比较，d=MAX(e)-e 非负，但 net
 
 用户要求保留完整共享高位宽乘法，不再按 NVFP4/HiF4 分别缩位后输入 mux。每组一套 signed SOP × 非负系数乘法，两种模式使用同一物理输入宽度；仅允许单位系数模式的旁路/使能控制，不增加 13×9 / 15×7 格式专用压缩选择。
 
-默认 W31 组和统一精确去除 16 个结构低零，得到 W15 TC SOP。NVFP4 的 F=4，HiF4 的 F=6。统一 scale coefficient 为 U8/F6，补一个恒零符号位进入 W9。原生乘积 W24，其最高位在合法非负系数范围内为冗余符号扩展；公共检查后取 signed W23，低补 8 零回 W31。NV/HiF 最终 F18/F20 与此前数值不变；仅资源路由合同改变。
+W_group 位组和统一精确去除 W_group−15 个结构低零，默认 W32 去除 17 位，得到 W15 TC SOP。NVFP4 的 F=4，HiF4 的 F=6。统一 scale coefficient 为 U8/F6，补一个恒零符号位进入 W9。原生乘积 W24，其最高位在合法非负系数范围内为冗余符号扩展；公共检查后取 signed W23，低补 W_group−23 个零回组槽，默认补 9 个零。默认 NVFP4/HiF4 的原幅值分别为 F19/F21，其中末尾 9 位是结构低零。
 
-| 模式 | 同一 SOP 输入 | 同一 scale 输入 | 公共有用乘积 | W31 落位 |
-| --- | --- | --- | --- | --- |
-| NVFP4 | TC S1I10F4 W15 | 正 TC S1I2F6 W9 | TC S1I12F10 W23 | 补 8 零，S1I12F18 |
-| HiF4 | TC S1I8F6 W15 | 正 TC S1I2F6 W9 | TC S1I10F12 W23 | 补 8 零，S1I10F20 |
+| 模式 | 同一 SOP 输入 | 同一 scale 输入 | 公共有用乘积 | 原生 W24 乘积 | 默认 W32 落位 |
+| --- | --- | --- | --- | --- | --- |
+| NVFP4 | TC S1I10F4 W15 | 正 TC S1I2F6 W9 | TC S1I12F10 W23 | TC S1I13F10 | 补 9 零，S1I12F19 |
+| HiF4 | TC S1I8F6 W15 | 正 TC S1I2F6 W9 | TC S1I10F12 W23 | TC S1I11F12 | 补 9 零，S1I10F21 |
 
 ```text
 W_sop_shared = E_pair_signed_width + e_exact_guard_bits
@@ -85,4 +85,4 @@ F_group_scaled = F_group_unscaled-sop_low_drop + 2*scale_fraction_bits + product
 
 ## 7. 主要版本变更：v1.3 → v1.4
 
-~~分别压缩 NV 的 SOP 与 HiF 的 scale 系数，再由格式 mux 接入共享乘法器。~~ → **统一 15×9 输入，不增加模式专用缩位 mux。** 公共 W24→W23 冗余符号处理和补 8 低零仍精确，S5 最终 F18/F20 不变。变更依据为用户对资源设计的最新选择。
+~~分别压缩 NV 的 SOP 与 HiF 的 scale 系数，再由格式 mux 接入共享乘法器。~~ → **统一 15×9 输入，不增加模式专用缩位 mux。** 公共 W24→W23 冗余符号处理与静态低零落位保持精确。变更依据为用户对资源设计的最新选择。

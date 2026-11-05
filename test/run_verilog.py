@@ -19,6 +19,7 @@ from adapters.cmodel import ROOT, read_inputs, write_inputs, evaluate
 from cases.common import random_request, make
 from reference.exact import DTYPES, ulp_distance
 from adapters.rtl import snapshot, record_validation
+from dp_rtl_gate import CONFIGS, DEFAULT_SCOPE
 
 RUN=ROOT/'test/runs/verilog'
 TESTBENCH=ROOT/'test/rtl_tb/dp_tb.v'
@@ -167,7 +168,15 @@ def main():
     ap.add_argument('--simulator',choices=['verilator','iverilog'],default='verilator')
     ap.add_argument('--implementation',choices=['verilog','systemverilog','both'],default='both')
     ap.add_argument('--verilator',default=os.environ.get('VERILATOR','verilator'))
+    ap.add_argument('--local-w',type=int,default=DEFAULT_SCOPE[1],help='S3 unsigned window (default: %(default)s)')
+    ap.add_argument('--global-w',type=int,default=DEFAULT_SCOPE[2],help='S6 signed window (default: %(default)s)')
     args=ap.parse_args()
+    k_default=DEFAULT_SCOPE[0]
+    selected=(k_default,args.local_w,args.global_w)
+    custom=selected!=DEFAULT_SCOPE
+    if args.local_w<27 or args.global_w<max(args.local_w+4,33):
+        ap.error('require LOCAL_W >= 27 and GLOBAL_W >= max(LOCAL_W+4, 33)')
+    config=dict(k_fp16=k_default,local_shift_mag_width=args.local_w,global_signed_align_width=args.global_w)
     SIMULATOR=args.simulator; VERILATOR=args.verilator
     implementations=['verilog','systemverilog'] if args.implementation=='both' else [args.implementation]
     started=datetime.now(timezone.utc).isoformat()
@@ -176,19 +185,25 @@ def main():
     for IMPLEMENTATION in implementations:
         EXPORT,SOURCE_LIST=snapshot(IMPLEMENTATION)
         if args.phase in ('existing','all'):
-            print(f'\n{SIMULATOR} / {IMPLEMENTATION}: per-precision results (K_FP16=16, LOCAL_W=27, GLOBAL_W=40)',flush=True)
-            print('  golden_exact uses saved finite-width CModel results. '
+            print(f'\n{SIMULATOR} / {IMPLEMENTATION}: per-precision results '
+                  f'(K_FP16={k_default}, LOCAL_W={args.local_w}, GLOBAL_W={args.global_w})',flush=True)
+            golden_source='recomputed' if custom else 'saved'
+            print(f'  golden_exact uses {golden_source} finite-width CModel results. '
                   'math_exact and max_ulp use the exact mathematical reference.',flush=True)
-            exe=compile_tb(16,27,40)
+            exe=compile_tb(*selected)
             for inp in sorted((ROOT/'test/data/dp').glob('*/*/*/inputs.txt')):
                 k,req=read_inputs(inp)
+                if k!=k_default: raise ValueError(f'Unexpected K in {inp}')
                 golden=[json.loads(s) for s in inp.with_name('expected.jsonl').read_text().splitlines()]
-                report.append(campaign(inp.parts[-4],k,27,40,req,exe,inp,golden))
+                if custom:
+                    for row,result in zip(golden,evaluate(req,config=config,run_dir=RUN)):
+                        row['d']=result['d']
+                report.append(campaign(inp.parts[-4],*selected,req,exe,inp,golden))
         if args.phase in ('parameters','all'):
             print(f'\n{SIMULATOR} / {IMPLEMENTATION}: mixed-format parameter checks',flush=True)
             print('  reset_cancelled counts accepted requests cleared by reset before output.',flush=True)
             rng=random.Random(20271105)
-            for k,local,glob in [(4,27,40),(8,27,40),(16,27,40),(4,28,48),(8,32,64),(16,32,64)]:
+            for k,local,glob in dict.fromkeys(selected if c==DEFAULT_SCOPE else c for c in CONFIGS):
                 req=[random_request(mode,rng,k,ident=i*len(DTYPES)+j) for i in range(48) for j,mode in enumerate(DTYPES)]
                 for update in [dict(b_datatype=2),dict(a_datatype=15,b_datatype=15),dict(c_datatype=1),dict(a_scale_datatype=3),dict(b_scale_datatype=1)]:
                     bad=make('fp16',k,ident=len(req)); bad.update(update); req.append(bad)
@@ -204,6 +219,7 @@ def main():
     for export_id in sorted({r['export_id'] for r in report}):
         record_validation(ROOT/'hw/rtl'/export_id,[r for r in report if r['export_id']==export_id],test_fingerprint,
                           phase=args.phase,started=started,run_dir=RUN,
+                          backend_scope=not custom,
                           command=[sys.executable,*sys.argv],
                           simulator_version=subprocess.check_output([VERILATOR,'--version'] if SIMULATOR=='verilator' else ['iverilog','-V'],text=True,stderr=subprocess.STDOUT).splitlines()[0])
     summary=RUN/f'{SIMULATOR}-{args.implementation}-{args.phase}-summary.json'

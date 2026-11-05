@@ -1,4 +1,4 @@
-> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # DP 顶层与模块接口定义
 
@@ -112,7 +112,7 @@ req_fire = accept_enable & all_valid
 | 基本组 → lane | 每侧 32 bit、该 lane e1×2/e2×1、ctrl、valid | 当前请求控制和分类 | S1 解包归 lane，两个 lane 同步 |
 | lane → 组 MAX → lane | exp_candidates/active、group_max | 指数和当前请求的有效掩码 | S2 组合侧接口；候选不依赖返回 MAX，无反馈环 |
 | lane → 基本组 | SOP 补码 W_lane、r、zero/special、ctrl、valid/last | 默认 W_lane=30，r=U9 | S4 同拍输出；本地 F 由本笔 ctrl 推导 |
-| 基本组 → 顶层 | negative、magnitude_raw[M_group]、anchor_raw、leading_zero_count、zero/special、ctrl、valid/last | 默认 M30、anchor_raw signed10、z unsigned5；浮点原幅值 F 按模式，未左移；INT z/anchor=0 | L8 S5 同拍注册；备用 L9 为新增 S6 出口 |
+| 基本组 → 顶层 | negative、magnitude_raw[M_group]、anchor_raw、leading_zero_count、zero/special、ctrl、valid/last | 默认 M31、anchor_raw signed10、z unsigned5；浮点原幅值 F 按模式，未左移；INT z/anchor=0 | L8 S5 同拍注册；备用 L9 为新增 S6 出口 |
 | C 支路 → 顶层 | 固定 sign+M32、anchor_raw、leading_zero_count、class、ctrl、valid | FP32 M24 低补 8 零、F31，原有效无偏 anchor 及 z_c；不动态左移；INT32 M32/F0、z/anchor=0 | S5 解包，与组 token 同拍 |
 | S6 → S7 | N 个 TC 对齐叶、A_common、ctrl、special、valid/last | 默认 N=5、叶 W40；INT 分支仅结构低零 | 一组叶对应同一请求，不逐源握手 |
 | S7 → S8 | TC 总 SOP、A_common、ctrl、special、valid/last | 默认 W43；完整自然增长 | S8 按本笔输出类型处理 |

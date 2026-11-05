@@ -10,10 +10,11 @@ import re
 from datetime import datetime
 from rtl_gate import contained, read_json, require, rtl_fingerprint
 
-PARAMETERS = {'K_FP16': 16, 'LOCAL_W': 27, 'GLOBAL_W': 40}
+PARAMETERS = {'K_FP16': 16, 'LOCAL_W': 28, 'GLOBAL_W': 40}
+DEFAULT_SCOPE = (PARAMETERS['K_FP16'], PARAMETERS['LOCAL_W'], PARAMETERS['GLOBAL_W'])
 DP_INTERFACE = {'clock_port': 'clock', 'reset_port': 'reset',
                 'reset_kind': 'synchronous', 'reset_active': 'high'}
-CONFIGS = {(4,27,40), (8,27,40), (16,27,40), (4,28,48), (8,32,64), (16,32,64)}
+CONFIGS = ((4,27,40), (8,27,40), DEFAULT_SCOPE, (4,28,48), (8,32,64), (16,32,64))
 
 
 def verification_inputs(root):
@@ -57,7 +58,7 @@ def validate_scopes(scopes, root, started, finished):
     require(len(scopes) == 17, 'Full DP campaign requires 11 formats and six parameter runs')
     require(len({r['name'] for r in scopes}) == 17, 'Duplicate DP campaign')
     mixed = [r for r in scopes if r['name'].startswith('mixed-')]
-    require({(r['k_fp16'],r['local_width'],r['global_width']) for r in mixed} == CONFIGS,
+    require({(r['k_fp16'],r['local_width'],r['global_width']) for r in mixed} == set(CONFIGS),
             'Missing parameter/cycle coverage')
     total = 0
     for r in scopes:
@@ -73,7 +74,7 @@ def validate_scopes(scopes, root, started, finished):
             require((accepted,checked,cancelled) == (528,487,41) and r['cutpoints_checked'] > 0,
                     'Incomplete mixed-format/reset coverage')
         else:
-            require((r['k_fp16'],r['local_width'],r['global_width']) == (16,27,40), 'Wrong default parameters')
+            require((r['k_fp16'],r['local_width'],r['global_width']) == DEFAULT_SCOPE, 'Wrong default parameters')
             total += checked
         for key in ('simulation_log','lint_log','compile_log','results_path','input_path','golden_path','schedule_path'):
             p = contained(root,r[key])

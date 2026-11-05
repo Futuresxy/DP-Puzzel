@@ -1,8 +1,8 @@
-> 功能：定义固定物理移位器的 mux 复用；范围：S3 T/H/Q 共享、E/INT 旁路、S6 幅值对齐及位宽参数；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义固定物理移位器的 mux 复用；范围：S3 T/H/Q 共享、E/INT 旁路、S6 幅值对齐及位宽参数；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 参数化共享幅值移位器
 
-状态：用户明确要求固定物理移位器，由输入 mux 选择格式；当前每 lane 四个共享幅值移位器，默认每个 27 位。27 是默认参数结果，非 RTL 内硬编码。
+状态：用户明确要求固定物理移位器，由输入 mux 选择格式；每 lane 四个共享幅值移位器，位宽由 LOCAL_W 统一设置，默认为 28。
 
 ## 1. S3 的物理资源
 
@@ -34,7 +34,7 @@ E 使用 S3 的四个 pair 和及小范围精确移位支路，INT8 使用结构
 ## 2. 位宽的唯一配置来源
 
 ```text
-local_shift_mag_width = 可配置无符号幅值窗口 W，默认 27
+local_shift_mag_width = 可配置无符号幅值窗口 W，默认 28
 product_integer_bits = 2                         // T/H/Q 乘积范围推导
 local_align_fraction_bits = W - product_integer_bits
 local_signed_width = W + 1
@@ -44,7 +44,7 @@ shifters_per_lane = elements_per_lane_Q
 
 `local_shift_mag_width` 是局部移位精度的主配置项；`local_align_fraction_bits` 改为派生量，二者不能作为互相矛盾的独立输入。默认 W=`product_integer_bits+retain_main_fraction_bits=2+25`。当前合法基线要求 F≥25，并满足全部模式的静态补零、E/INT 共享槽以及后级窗口约束；不任意给出未验证的扫描上限。改变 W 会传导到 W_leaf/W_lane/W_group、各模式 F、组 magnitude、anchor 修正、全局窗口合法性和测试参考，不能只改移位器端口。
 
-T/FP16 尾数积为 W22/F20，输入左补的结构低零数是 F-20；BF16 为 F-14；Q 为 F-6。左侧补零/扩宽与低侧补零是不同操作；输入 mux 的每个候选都必须有明确 F，不依靠赋值自动截断。W27 的幅值输出再加 sign 转成 W28 补码。
+T/FP16 尾数积为 W22/F20，输入左补的结构低零数是 F-20；BF16 为 F-14；Q 为 F-6。左侧补零/扩宽与低侧补零是不同操作；输入 mux 的每个候选都必须有明确 F，不依靠赋值自动截断。W 位幅值输出恢复符号后为 W+1 位补码。S6 双向移位器由 GLOBAL_W 独立配置，幅值口为 GLOBAL_W-1。
 
 ## 3. 移位单元语义与组合接口
 

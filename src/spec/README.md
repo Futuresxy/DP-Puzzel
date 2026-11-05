@@ -1,8 +1,8 @@
-> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 多精度 DP / Cube 设计规范
 
-本规范定义一套由 CModel、Chisel 与独立手写 Verilog 共同遵循的硬件合同。**当前架构为 v1.4，当前实现映射为 v1.4.2；DP CModel、手写 Verilog 与 SystemVerilog 对照已建立，Chisel 与阵列尚未实现。**
+本规范定义一套由 CModel、Chisel 与独立手写 Verilog 共同遵循的硬件合同。**当前架构为 v1.4，当前实现映射为 v1.4.4；DP CModel、手写 Verilog 与 SystemVerilog 对照已建立，Chisel 与阵列尚未实现。**
 
 ## 1. 阅读路径
 
@@ -23,7 +23,7 @@
 | --- | --- |
 | 阵列 | TensorCore 为 16×4 DP；四个 4×4 广播 DP-Group 竖直拼接；组内无脉动 |
 | DP 组织 | T1H2Q4E8 → T2H4Q8E16 → T8H16Q32E64 |
-| 配置 | FP16 基准 K∈{4,8,16}，基本组数 G=K/4 |
+| 配置 | FP16 基准 K∈{4,8,16}，基本组数 G=K/4；局部/全局窗口默认 28/40 |
 | 数值格式 | TF32、FP16、BF16、MXFP8/6/4、NVFP4、HiF4、INT8；不支持 HiF8 |
 | 运算边界 | 一笔请求完成 scaled_dot(A,B)+C；浮点输出 FP32，整数输出 INT32 |
 | 流水 | 默认 L8、II=1；L9 仅为静态备用探索；无输出背压 |

@@ -1,19 +1,19 @@
-> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel include/dp/config.hpp](../cmodel/include/dp/config.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel include/dp/config.hpp](../cmodel/include/dp/config.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 参数与派生关系
 
-CModel 参数入口为[config.hpp](../cmodel/include/dp/config.hpp)。后续 Chisel 参数对象与手写 RTL 读取同一有效配置；格式常量集中命名，结构尺寸按公式派生。
+CModel 参数入口为 [config.hpp](../cmodel/include/dp/config.hpp)，RTL 通过 [dp_top](../verilog/top/dp_top.v) 的构建参数传入。后续 Chisel 使用等价参数对象。
 
 ## 1. 可配置项
 
 | 参数 | 默认值 | 合法性与作用 |
 | --- | ---: | --- |
 | `k_fp16` | 16 | 4、8、16；决定并行基本组数 |
-| `local_shift_mag_width` | 27 | 至少 27；T/H/Q 幅值窗口，F=width−2 |
-| `global_signed_align_width` | 40 | 幅值窗口=width−1；须覆盖组幅值与 INT32 C |
+| `local_shift_mag_width`（RTL `LOCAL_W`） | 28 | 至少 27；S3 幅值窗口，T/H/Q 的 F=width−2 |
+| `global_signed_align_width`（RTL `GLOBAL_W`） | 40 | S6 含符号窗口，实际幅值移位器为 width−1 |
 | `post_scale_norm_extra_stage` | 0 | 0 或 1；固定 L8 或备用 L9，不逐笔变化 |
 
-要求`global_mag≥max(group_mag,32)`，所有静态 pad 非负。模型允许的窗口是探索空间，不表示每个窗口都通过 35/37 位整体精度验收。软件还检查指数/索引类型可表示性，拒绝未知配置键、负数、小数和越界值。
+两级窗口独立配置。合法性约束为 `GLOBAL_W >= max(LOCAL_W+4,33)`，保证组幅值和 C 都能放入 S6 幅值槽。模型允许的窗口是探索空间，不表示每个窗口都通过 35/37 位整体精度验收。软件还检查指数/索引类型可表示性，拒绝未知配置键、负数、小数和越界值。
 
 ## 2. 结构和格式常量
 
@@ -46,6 +46,10 @@ M_group = W_group - 1
 M_global = global_signed_align_width - 1
 N_top = G + 1
 W_sum = global_signed_align_width + L(N_top)
+F_local_THQ = local_shift_mag_width - 2
+F_global_float = global_signed_align_width - 2
+pad_group_to_global = M_global - M_group
+pad_C_to_global = M_global - 32
 latency = 8 + post_scale_norm_extra_stage
 ```
 
@@ -67,7 +71,7 @@ W_useful_product = W_sop_scale + W_factor_unsigned
 
 ## 5. 指数与控制宽度
 
-8 位元素指数相加须保留 9 位，5 位指数相加须保留 6 位，scale 指数和须保留 9 位。anchor 范围按 bias、F 与容器位权推导；LZD 后实际指数范围再减最大计数。先用完整差值判断方向/饱和，再编码移位控制，不能截高位回绕。
+8 位元素指数相加须保留 9 位，5 位指数相加须保留 6 位，scale 指数和须保留 9 位。anchor 范围按 bias、F 与容器位权推导。RTL 按全局幅值上限推导共享有符号指数宽度，以覆盖源 LZD 计数及输出指数运算。先用完整差值判断方向/饱和，再编码移位控制，不能截高位回绕。
 
 默认各级范围见[出口表](dp/stage-formats.md)。datatype 编码来自[接口](dp/interface.md)，不随配置禁用某模式而重排。模块参数固定，运行时控制逐请求传递。
 

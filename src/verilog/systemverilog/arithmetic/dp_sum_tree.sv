@@ -1,5 +1,6 @@
 // Balanced signed reduction. Odd final leaves are sign extended, never dropped.
 // No registers; natural output growth is ceil(log2(N)). N=1 is a wire.
+// N TC inputs S1I(i)F(f), W=1+i+f -> TC S1I(i+ceil(log2(N)))F(f).
 module dp_sum_tree #(parameter integer N=4, W=28)(
   input wire [N*W-1:0] in_values,
   output wire signed [W+$clog2(N)-1:0] out_sum

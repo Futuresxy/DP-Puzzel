@@ -3,6 +3,8 @@
 // Two atoms each use M16/E10/S4, plus class/signaling sidebands. Different
 // formats share the same physical fields; widened element views are wires only.
 // Synchronous enable, no reset on payload; caller's valid masks all bubbles.
+// Each packed M field carries the unsigned magnitude from dp_operand_unpack.
+// Its F follows datatype; E/M/S slots may include inactive fields.
 module dp_lane_unpack(
   input wire clock,reset,in_valid,
   input wire [`DP_TYPE_W-1:0] in_datatype,in_registered_datatype,

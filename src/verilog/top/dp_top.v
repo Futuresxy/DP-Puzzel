@@ -3,6 +3,11 @@
 // Atomic A/B/C input, per-request type, II=1, L=8, no output backpressure.
 // At edge n input is accepted into S1; S8 updates at n+7, observed before n+8.
 // Synchronous active-high reset cancels all valid tokens. Datapath holds in bubbles.
+// LOCAL_W sets S3 amplitude and the downstream leaf/lane/group widths.
+// GLOBAL_W sets S6 signed alignment and the floating F=GLOBAL_W-2.
+// K=K_FP16, N=K/4+1 including C, L=ceil(log2(N)). S7 TC output
+// is S1I(1+L)F(GLOBAL_W-2) for all floats, or S1I(32+L)F(GLOBAL_W-33)
+// for INT8+INT32. S8 output is encoded FP32 (S1/E8/F23) or TC S1I31F0.
 module dp_top #(
   parameter integer K_FP16=`DP_DEFAULT_K,
   parameter integer LOCAL_W=`DP_DEFAULT_LOCAL_W,
@@ -31,7 +36,7 @@ module dp_top #(
   localparam integer GROUP_W=LOCAL_W+1+$clog2(`DP_Q_LANES)+$clog2(`DP_LANES),
     GROUP_MAG_W=GROUP_W-1, GLOBAL_MAG_W=GLOBAL_W-1,
     N=GROUPS+1, SUM_W=GLOBAL_W+$clog2(N),
-    ANCHOR_W=anchor_width(GROUP_MAG_W), Z_W=$clog2(GLOBAL_MAG_W+1),
+    ANCHOR_W=anchor_width(GLOBAL_MAG_W), Z_W=$clog2(GLOBAL_MAG_W+1),
     INT_GROUP_F=GROUP_W-1-`DP_INT_PRODUCT_W-$clog2(`DP_Q_LANES),
     INT_GLOBAL_F=GLOBAL_MAG_W-`DP_FP32_W;
   wire tuple_legal=(in_a_datatype<=`DP_DT_INT8) && (in_a_datatype==in_b_datatype) &&
@@ -131,7 +136,7 @@ module dp_top #(
   initial begin
     if(K_FP16!=4 && K_FP16!=8 && K_FP16!=16) begin $display("FAIL: %s","K_FP16 must be 4, 8 or 16"); $finish; end
     if(GROUPS!=K_FP16/`DP_GROUP_H) begin $display("FAIL: %s","GROUPS is derived"); $finish; end
-    if(LOCAL_W<`DP_DEFAULT_LOCAL_W) begin $display("FAIL: %s","LOCAL_W requires at least F25"); $finish; end
+    if(LOCAL_W<`DP_MIN_LOCAL_W) begin $display("FAIL: %s","LOCAL_W requires at least F25"); $finish; end
     if(GLOBAL_MAG_W<GROUP_MAG_W || GLOBAL_MAG_W<`DP_FP32_W) begin $display("FAIL: %s","global window is smaller than source"); $finish; end
   end
   // synthesis translate_on

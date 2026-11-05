@@ -58,7 +58,7 @@ def snapshot(implementation):
     return dest,build_list
 
 
-def record_validation(dest,scopes,test_fingerprint,*,phase,started,run_dir,command,simulator_version):
+def record_validation(dest,scopes,test_fingerprint,*,phase,started,run_dir,command,simulator_version,backend_scope):
     path=dest/'manifest.json'; manifest=json.loads(path.read_text())
     manifest['ppa_eligible']=False
     path.write_text(json.dumps(manifest,indent=2)+'\n')
@@ -73,7 +73,7 @@ def record_validation(dest,scopes,test_fingerprint,*,phase,started,run_dir,comma
                     validated_utc=datetime.now(timezone.utc).isoformat())
     path.write_text(json.dumps(manifest,indent=2)+'\n')
 
-    if phase == 'all' and manifest['implementation'] == 'verilog' and all(r['simulator']=='verilator' for r in scopes):
+    if backend_scope and phase == 'all' and manifest['implementation'] == 'verilog' and all(r['simulator']=='verilator' for r in scopes):
         _, fingerprint, _ = payload(dest,ROOT)
         finished=datetime.now(timezone.utc).isoformat()
         inputs=verification_inputs(ROOT)

@@ -1,4 +1,4 @@
-> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/model.cpp](../../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel lib/model.cpp](../../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 分组共享 DP：八级流水
 
@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | S1 | A/B/scale 解包；HiF4 e1 融合；INT8 符号/幅值 | 分类特殊值，采样逐笔 datatype/last；C 仅保留 raw32 |
 | S2 | 每 lane 两组 HH/HL/LH/LL；重构 T/FP16 及 INT8 乘积 | 元素指数相加、两 lane 基本组 MAX；预计算 scale 指数和及 4×4 系数积 |
-| S3 | 四个共享幅值移位器，默认 W27；E pair 和精确小移位；INT 结构落位 | delta 由基本组公共 r 产生；RTZ 后恢复符号 |
+| S3 | 四个共享幅值移位器，默认 W28；E pair 和精确小移位；INT 结构落位 | delta 由基本组公共 r 产生；RTZ 后恢复符号 |
 | S4 | 四路平衡树；Q/E/INT 四项，H 末层，T 旁路 | SOP、r、scale、特殊摘要和控制同拍 |
 | S5 | 两 lane 合并；公共 15×9 scale 乘法或旁路；安全 abs；LZD 只计数 | 输出原幅值/A_raw/z；并行解包 C 并检测非正规计数 |
 | S6 | 原幅值静态补零；按 net 一次双向移位；恢复补码 | e=A_raw−z，E_max=max(e)，d=E_max−e，net=z−d |

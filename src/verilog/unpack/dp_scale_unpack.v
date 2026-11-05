@@ -1,5 +1,6 @@
 `include "dp_defs.vh"
 // Nonnegative scale -> common E8M3. Special encodings remain explicit.
+// E8M0/E4M3/E6M2 and unit-scale output S0I1F3 plus separate biased exponent.
 module dp_scale_unpack(
   input wire [`DP_SCALE_W-1:0] in_data,
   input wire [`DP_SCALE_TYPE_W-1:0] in_datatype,

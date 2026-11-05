@@ -1,5 +1,6 @@
 `include "dp_defs.vh"
 // Balanced signed MAX with explicit activity. An inactive tree returns zero.
+// DP uses this signed compare on integer exponent coordinates (F0).
 module dp_max_tree #(parameter integer N=4, W=10)(
   input wire [N*W-1:0] in_values, input wire [N-1:0] in_active,
   output wire signed [W-1:0] out_max, output wire out_active

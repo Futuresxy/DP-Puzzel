@@ -1,6 +1,7 @@
 
 // Two wide/narrow exponent-adder sets per lane, matching the mantissa banks.
 // E products share one e2 sum; Q uses both sums, H/T only the wide sum.
+// Unsigned integer exponent sums (F0), including HiF4 e2; no mantissa fields.
 module dp_exponent_bank(
   input wire [dp_pkg::TYPE_W-1:0] in_datatype,
   input wire in_enable,

@@ -2,6 +2,13 @@
 // T1H2Q4E8. Owns S1 unpack, S2 products, S3 shared magnitude alignment,
 // S4 lane tree. Common group MAX is a combinational S2 side interface.
 // Synchronous high reset clears valid only; invalid data registers hold.
+// With P=LOCAL_W-2, S3 shift magnitude is S0I2F(P) for T/H/Q,
+// S0I7F(P-5) for MXFP4/NVFP4, S0I5F(P-3) for HiF4,
+// and S0I15F(P-13) for INT8. The tree leaves restore the TC sign.
+// E pairs before low padding: TC S1I7F2 (MX/NV) or S1I5F4 (HiF4).
+// S4 TC SOP: TF32 S1I2F(P+2), FP16/BF16 S1I3F(P+1),
+// MXFP8/6 S1I4F(P), MXFP4/NVFP4 S1I9F(P-5), HiF4 S1I7F(P-3),
+// INT8 S1I17F(P-13). T/H use two/one low zeros after the tree.
 module dp_lane #(
   parameter integer LOCAL_W=`DP_DEFAULT_LOCAL_W,
   parameter integer LEAF_W=LOCAL_W+1,

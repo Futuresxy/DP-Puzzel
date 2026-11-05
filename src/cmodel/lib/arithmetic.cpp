@@ -23,6 +23,7 @@ Big rtz(const Big& x,unsigned amount,bool& lost) {
 }
 Big signed_value(const Big& mag,bool negative) { return negative?Big(-mag):mag; }
 unsigned slice(const Big& x,unsigned offset,unsigned width) { return ((x>>offset)&mask(width)).convert_to<unsigned>(); }
+// TC inputs S1I(i)F(f) -> S1I(i+ceil(log2(N)))F(f).
 Big tree_sum(std::vector<Big> values,unsigned width) {
   if(values.empty()) throw std::logic_error("empty sum tree");
   for(const auto& x:values) check_signed(x,width,"tree leaf");
@@ -45,6 +46,7 @@ Big round_even(const Big& m,int shift,bool& inexact) {
   return q;
 }
 }
+// TC coefficient at the supplied LSB exponent -> FP32 S1/E8/F23.
 std::uint32_t round_fp32(const Big& value,int lsb,bool negative_zero,Flags& flags) {
   const bool negative=value<0 || (value==0 && negative_zero);
   const std::uint32_t sign=negative?0x80000000u:0;

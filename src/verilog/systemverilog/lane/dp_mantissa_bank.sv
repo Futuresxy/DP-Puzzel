@@ -1,6 +1,13 @@
 // S2 combinational lane multiplier bank: exactly two HH/HL/LH/LL sets.
 // Muxes isolate unused multiplier operands. T/H partial products, Q/E independent
 // products and the second INT8 split product share these physical instances.
+// Unsigned multiplier operands -> logical products (zero-extended in the bus):
+// TF32/FP16 S0I1F10 -> S0I2F20. HH uses I1F6 halves, LL I0F4;
+// HH/HL/LH/LL partial products are I2F12/I1F10/I1F10/I0F8.
+// BF16 S0I1F7 -> S0I2F14. MXFP8 E4M3/E5M2 and MXFP6 E3M2/E2M3
+// S0I1F3 -> S0I2F6. MXFP4/NVFP4 S0I3F1 -> S0I6F2.
+// HiF4 S0I2F2 -> S0I4F4. INT8 S0I8F0 -> S0I16F0, with the
+// split operand treated as two I4F0 digits (upper digit weighted by 2^4).
 module dp_mantissa_bank(
   input wire [dp_pkg::TYPE_W-1:0] in_datatype,
   input wire in_enable,

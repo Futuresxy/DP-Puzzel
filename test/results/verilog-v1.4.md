@@ -1,5 +1,34 @@
 # 单 DP 手写 RTL 验证 · v1.4
 
+## 28/40 默认窗口回归（v1.4.4）
+
+2026-11-05，本机 Verilator 5.030。默认 K16/28/40 的两版 RTL 各匹配 10,747 笔有限位宽 CModel 结果。六组混格式回归各版合计检查 2,922 笔输出与 231,654 个 S1–S7 断点，复位取消 246 笔。两版 17 组输出指纹一致。参数覆盖为 K4/27/40、K8/27/40、K16/28/40、K4/28/48、K8/32/64、K16/32/64。
+
+| 精度 | 数学逐位一致 | 最大 ULP |
+| --- | ---: | ---: |
+| BF16 | 958/961 | 3 |
+| FP16 | 949/961 | 1 |
+| HiF4 | 961/961 | 0 |
+| INT8 | 1045/1045 | — |
+| MXFP4 E2M1 | 961/961 | 0 |
+| MXFP6 E2M3 | 961/961 | 0 |
+| MXFP6 E3M2 | 961/961 | 0 |
+| MXFP8 E4M3 | 961/961 | 0 |
+| MXFP8 E5M2 | 958/961 | 1 |
+| NVFP4 | 961/961 | 0 |
+| TF32 | 1040/1053 | 1 |
+
+局部窗口从 27 增到 28 后，本批 FP16 数据的最大误差从 16 ULP 降至 1 ULP。CModel 通过独立有限窗口参考复核；10,747 笔数学参考字段均保持原值。另用纯 Verilog 验证 K16/29/33，此时组幅值及 C 的全局静态补零均为 0。该配置匹配 10,747 笔同配置 CModel 结果，混格式断点检查通过；本批 FP16 的最大数学误差为 2 ULP。
+
+```sh
+python3 test/run_verilog.py --implementation verilog --phase all --local-w 29 --global-w 33
+python3 test/run_verilog.py --implementation both --phase all
+```
+
+本地 28/40 回执和报告位于 `test/runs/verilog/20261105T031640468800Z/`。Verilog 导出为 `DP_verilog_a8f4e3c188cb6a23`，SystemVerilog 导出为 `DP_systemverilog_e02b1a1dae2198f6`。29/33 功能报告位于 `test/runs/verilog/20261105T031523917867Z/`。28/40 纯 Verilog 通过 `dc_syn.sh check`，该命令仅检查输入及本机库绑定。已有 N12 综合结果对应历史 27/40。
+
+## 27/40 历史回归（v1.4.2）
+
 记录时间：2026-11-04 23:42:09 +08:00。Verilog 为主要交付，SystemVerilog 为对照；同一份纯 Verilog testbench，全部仿真读取冻结源码快照。
 
 ## 1. 结果

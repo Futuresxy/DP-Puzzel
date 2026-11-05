@@ -1,5 +1,6 @@
 // One fixed-width logical right barrel shifter. Large counts flush to zero.
 // Sign is not present: discarded magnitude bits implement round toward zero.
+// Unsigned S0I(i)F(f), W=i+f, on both ports in the caller reference frame.
 module dp_rtz_shift #(parameter integer W=27, SHIFT_W=9)(
   input wire [W-1:0] in_magnitude, input wire [SHIFT_W-1:0] in_shift,
   output wire [W-1:0] out_magnitude

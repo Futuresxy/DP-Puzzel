@@ -44,7 +44,7 @@ eval 示例是一个 FP16 非零乘积加零，其余元素为零，默认 K16�
 四项配置默认：
 
 ```json
-{"k_fp16":16,"local_shift_mag_width":27,"global_signed_align_width":40,"post_scale_norm_extra_stage":0}
+{"k_fp16":16,"local_shift_mag_width":28,"global_signed_align_width":40,"post_scale_norm_extra_stage":0}
 ```
 
 `--trace` 给出 S1–S8 的实际数值观察点及逐拍寄存状态；大整数以十进制字符串输出，输入及最终 d 以十六进制表示。不要把 trace 内软件保存的历史字段计入硬件寄存面积。

@@ -83,18 +83,18 @@ DC 消费根 `test/runs/` 的真实验证证据。流程和门禁软件测试运
 ```sh
 # 先按 src/cmodel/README.md 构建；Python >= 3.9，Verilator timing 需支持 coroutine 的 C++ 编译器
 python3 test/run_verilog.py --implementation verilog --phase all
-python3 scripts/rtl_gate.py DP_verilog_36610621c85979e0
+python3 scripts/rtl_gate.py DP_verilog_a8f4e3c188cb6a23
 python3 hw/dc_syn/scripts/check_environment.py \
   --technology hw/dc_syn/configs/technologies/n12-base-lvt-tt-0p7v-85c.json \
   --machine hw/dc_syn/configs/machines/machine.local.json
-bash scripts/dc_syn.sh check --export-id DP_verilog_36610621c85979e0 \
+bash scripts/dc_syn.sh check --export-id DP_verilog_a8f4e3c188cb6a23 \
   --technology hw/dc_syn/configs/technologies/n12-base-lvt-tt-0p7v-85c.json \
   --constraints hw/dc_syn/constraints/dp-1410mhz.json \
   --machine hw/dc_syn/configs/machines/machine.local.json
 # 使用同一组显式选项 prepare，再按打印的 run ID 执行 run/report。
 ```
 
-上述 export ID 包含运行时 clog2 的等价常量选择修正；原始基线在 DC 展开时报 ELAB-922。修改设计后必须使用新回归返回的 ID。
+上述 export ID 对应已通过门禁的 28/40 功能回归。修改设计后使用新回归返回的 ID。历史综合记录对应 27/40。
 N12 profile 为项目既有 TT 0.7 V / 85°C 分析角，非最差工况或多 corner 签核。
 约束继承项目预算：0.709219858 ns 周期、0.10 ns setup uncertainty、0.03 ns hold
 uncertainty、0.20/0 ns IO max/min、0.10 ns 输入 transition、0.01 pF 输出负载。

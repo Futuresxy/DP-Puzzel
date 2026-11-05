@@ -36,10 +36,10 @@ constexpr unsigned canonical_nan = 0x7fc00000u;
 unsigned ceil_log2(unsigned n);
 
 struct Config {
-  // Build-time knobs shared with future RTL. Container widths/tree growth below
+  // Build-time knobs shared with RTL. Container widths/tree growth below
   // are derived, never additional independently adjustable precisions.
   unsigned k_fp16 = 16;
-  unsigned local_shift_mag_width = 27;
+  unsigned local_shift_mag_width = 28;
   unsigned global_signed_align_width = 40;
   unsigned post_scale_norm_extra_stage = 0;
   void validate() const;
@@ -47,7 +47,7 @@ struct Config {
   unsigned lanes() const { return groups() * lanes_per_group; }
   unsigned elements(DataType t) const { return lanes() * format(t).lane_elements; }
   unsigned packed_bits() const { return k_fp16 * 16; }
-  unsigned local_fraction() const { return local_shift_mag_width - 2; } // I2F(local-2)
+  unsigned local_fraction() const { return local_shift_mag_width - 2; } // S0I2F(local-2)
   unsigned leaf_bits() const { return local_shift_mag_width + 1; }
   unsigned lane_bits() const { return leaf_bits() + ceil_log2(q_elements_per_lane); }
   unsigned group_bits() const { return lane_bits() + ceil_log2(lanes_per_group); }

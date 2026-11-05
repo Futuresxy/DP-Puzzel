@@ -1,6 +1,10 @@
 `include "dp_defs.vh"
 // S6 combinational MAX/one bidirectional shift per source/sign restoration.
 // Inputs are statically padded to MAG_W. A_raw already includes each source F.
+// Floating input pad preserves I and adds MAG_W-M_src to F. A_raw sets
+// its coordinate. Shift output is S0I1F(MAG_W-1) at E_max; restore
+// the sign for TC S1I1F(MAG_W-1). INT8+INT32 bypasses the shift
+// and restores the sign for TC S1I32F(MAG_W-32).
 module dp_global_align #(
   parameter integer N=5, MAG_W=39, ANCHOR_W=10, Z_W=$clog2(MAG_W+1)
 )(

@@ -1,4 +1,4 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[模型 API](../../cmodel/include/dp/model.hpp)、[参数](../../cmodel/include/dp/config.hpp)、[执行器](../../cmodel/lib/model.cpp)、[测试入口](../../../test/run_cmodel.py)；Chisel/手写 RTL 未实现。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[模型 API](../../cmodel/include/dp/model.hpp)、[参数](../../cmodel/include/dp/config.hpp)、[执行器](../../cmodel/lib/model.cpp)、[测试入口](../../../test/run_cmodel.py)；Chisel/手写 RTL 未实现。
 
 # DP CModel 合同
 
@@ -21,7 +21,7 @@ C++ 使用 Boost cpp_int 保存精确整数，**在规定截断点显式 RTZ，�
 
 ## 2. 参数合同
 
-四项可配置量：k_fp16（4/8/16），local_shift_mag_width（默认 27、至少 27），global_signed_align_width（默认 40），post_scale_norm_extra_stage（0/1，默认 0）。配置是显式 JSON 对象；未知键、负数、小数、溢出值及非法组合报错，不通过环境变量隐式修改数值。
+四项可配置量：k_fp16（4/8/16），local_shift_mag_width（默认 28、至少 27），global_signed_align_width（默认 40），post_scale_norm_extra_stage（0/1，默认 0）。配置是显式 JSON 对象；未知键、负数、小数、溢出值及非法组合报错，不通过环境变量隐式修改数值。
 
 其他量由参数派生：G=K/4，leaf=local+1，lane=leaf+ceil_log2(4)，group=lane+ceil_log2(2)，group_mag=group−1，global_mag=global−1，sum=global+ceil_log2(G+1)。要求 global_mag≥max(group_mag,32)，所有静态 pad 非负。当前窗口扫描是建模探索，不把允许构建的每个窗口宣称满足用户 35/37 位精度目标；默认及已测配置单独记录。
 

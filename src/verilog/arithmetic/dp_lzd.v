@@ -1,5 +1,6 @@
 `include "dp_defs.vh"
 // Combinational balanced leading-zero detector. Zero returns count=0 and active=0.
+// Input unsigned S0I(i)F(f), W=i+f. Output is an unsigned count (F0).
 module dp_lzd #(parameter integer W=30, COUNT_W=$clog2(W+1))(
   input wire [W-1:0] in_magnitude,
   output wire [COUNT_W-1:0] out_count, output wire out_active

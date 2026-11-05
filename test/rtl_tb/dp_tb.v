@@ -4,7 +4,7 @@
 // Stimulus sidecar controls reset/independent valids without changing payload layout.
 module dp_tb;
   `include "dp_functions.vh"
-  parameter integer K_FP16=16, LOCAL_W=27, GLOBAL_W=40;
+  parameter integer K_FP16=`DP_DEFAULT_K, LOCAL_W=`DP_DEFAULT_LOCAL_W, GLOBAL_W=`DP_DEFAULT_GLOBAL_W;
   // Largest current campaign has 1053 requests; retain a checked 2048-row buffer.
   // This is testbench storage only; no DUT capacity/parameters are changed.
   localparam integer G=K_FP16/`DP_GROUP_H, CAPACITY=2048;

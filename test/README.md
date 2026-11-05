@@ -30,11 +30,14 @@ python3 -m unittest discover -s test/tests -v
 
 ```sh
 python3 test/run_verilog.py --phase all
+python3 test/run_verilog.py --implementation verilog --phase all --local-w 29 --global-w 33
 python3 test/run_verilog.py --simulator iverilog --implementation verilog --phase all
 ```
 
 默认使用 Verilator，同时编译 Verilog 与 SystemVerilog 两个独立实现，共用 `rtl_tb/dp_tb.v`。测试前冻结 `hw/rtl/DP_<implementation>_<fingerprint>/`；脚本不直接编译可变源码。结果、日志和构建产物在 `test/runs/verilog/`，逐笔输出为 `id result_hex result_type last`。参数回归同时比较 CModel 的 S1–S7 数值断点；实现对照使用输入/输出文件指纹。详见 [运行说明](../src/verilog/README.md)。
 
-命令行按实现逐项显示默认参数下的完整数据集结果。`golden_exact` 是实际 RTL 输出与 `expected.jsonl` 的 `d` 字段逐位一致的数量，该字段保存已验证的有限位宽 CModel 结果。`math_exact` 对比同文件的 `exact_fp32_or_int32`。`max_ulp` 统计有限 FP32 输出与数学参考之间的最大 ULP 距离，INT8 显示 `n/a`。特殊值仍计入逐位一致数。两项数学统计用于查看精度，RTL 的通过条件是逐位匹配有限位宽 golden 和满足协议。
+默认局部/全局窗口为 28/40。使用 `--local-w` 和 `--global-w` 可分别扫参；固定数据集仍为 K16。自选窗口用同配置 CModel 重算 `golden_exact` 的期望，数学参考和提交的 golden 文件保持原样。自选回归只记录功能验证；使用默认配置完整回归可重建 DC 门禁回执。
+
+命令行按实现逐项显示完整数据集结果。默认配置下，`golden_exact` 是实际 RTL 输出与 `expected.jsonl` 的 `d` 字段逐位一致的数量，该字段保存已验证的有限位宽 CModel 结果。`math_exact` 对比同文件的 `exact_fp32_or_int32`。`max_ulp` 统计有限 FP32 输出与数学参考之间的最大 ULP 距离，INT8 显示 `n/a`。特殊值仍计入逐位一致数。两项数学统计用于查看精度，RTL 的通过条件是逐位匹配有限位宽 golden 和满足协议。
 
 九种原有浮点编码各 961 笔，INT8 为 1045 笔，TF32 为 1053 笔。混格式参数回归单独生成每种格式 48 笔，现场调用 CModel，并插入气泡和复位来覆盖协议。`reset_cancelled` 表示已接收但在输出前被复位清空的请求数。最终打印完整 JSON 报告路径。

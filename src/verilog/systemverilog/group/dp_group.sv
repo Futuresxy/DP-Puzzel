@@ -1,6 +1,13 @@
 // T2H4Q8E16: two synchronized lanes, S2 common MAX, S5 scale/abs/LZD.
 // Owns S1 scale decode and S2 scale-pair arithmetic; transport stops at S4.
 // Output is unnormalized sign/magnitude, A_raw=alpha-F+(M-1), plus z.
+// S5 group tree adds one integer bit to each S4 TC SOP, holding F.
+// Scale pair is S0I1F3 x S0I1F3 -> S0I2F6. Only NVFP4/HiF4
+// use the compact SOP multiply. See dp_scale_multiply for its formats.
+// With P=LOCAL_W-2, the S5 SM outputs are TF32 S1I3F(P+2),
+// FP16/BF16 S1I4F(P+1), MXFP8/6 S1I5F(P), MXFP4 S1I10F(P-5),
+// NVFP4 S1I12F(P-7), HiF4 S1I10F(P-5), INT8 S1I18F(P-13).
+// LZD reads the same I/F as S0, with the sign carried separately.
 module dp_group #(
   parameter integer LOCAL_W=dp_pkg::DEFAULT_LOCAL_W,
   parameter integer LANE_SOP_W=LOCAL_W+1+$clog2(dp_pkg::Q_LANES),

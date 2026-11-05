@@ -12,6 +12,13 @@ void detect(Token& t) {
   else { t.z=0; t.anchor_raw=0; }
 }
 }
+// S5 two-input tree preserves S4 F and grows I by one. Scale pair multiplies
+// S0I1F3 operands to S0I2F6; adding a zero sign gives TC S1I2F6.
+// NVFP4/HiF4 compact TC S1I10F4/S1I8F6 -> native S1I13F10/S1I11F12,
+// then use S1I12F10/S1I10F12 and append group_bits()-23 low zeros.
+// SM output with P=local_fraction(): T S1I3F(P+2), H S1I4F(P+1),
+// Q S1I5F(P), MXFP4 S1I10F(P-5), NVFP4 S1I12F(P-7), HiF4 S1I10F(P-5),
+// INT8 S1I18F(P-13). LZD only reads the unsigned magnitude.
 void stage_group(const Config& c,State& s,bool do_detect) {
   const auto t=s.request.a_type; const auto& f=format(t);
   Json scale_trace=Json::array();
@@ -82,6 +89,9 @@ void stage_detect(const Config&,State& s) {
     trace(s,"extra_LZD_register",{{"groups",group},{"c",token_json(s.c)}});
   }
 }
+// S6: pad each floating source by global_mag_bits()-source.width low zeros.
+// The unsigned shift yields S0I1F(global_mag_bits()-1) at E_max, then TC.
+// INT8+INT32 leaves use TC S1I32F(global_mag_bits()-32).
 void stage_global_align(const Config& c,State& s) {
   std::vector<Token> sources=s.groups; sources.push_back(s.c);
   const bool integer=s.request.c_type==CType::INT32;
@@ -114,11 +124,14 @@ void stage_global_align(const Config& c,State& s) {
     {"aligned_tc",bigs_json(s.aligned)},{"width",c.global_signed_align_width},
     {"f",integer?c.global_mag_bits()-int32_bits:c.global_mag_bits()-1}});
 }
+// S7: add ceil(log2(K_FP16/4+1)) integer bits to each S6 leaf format.
 void stage_total(const Config& c,State& s) {
   s.sum=tree_sum(s.aligned,c.global_signed_align_width); check_signed(s.sum,c.sum_bits(),"final sum");
   trace(s,"total_sop_tree",{{"sop_tc",s.sum.str()},{"width",c.sum_bits()},
     {"f",s.request.c_type==CType::INT32?c.global_mag_bits()-int32_bits:c.global_mag_bits()-1},{"E_max",s.common}});
 }
+// S8: FP32 coefficient S0I1F23 after normalization/RNE -> S1/E8/F23.
+// INT8+INT32 drops structural zeros and wraps to TC S1I31F0.
 void stage_output(const Config& c,State& s) {
   auto& r=s.result; r.id=s.request.id; r.type=s.request.c_type; r.last=s.request.last;
   if(r.type==CType::INT32) {

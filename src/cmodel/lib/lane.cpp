@@ -6,6 +6,9 @@
 
 namespace dp {
 namespace {
+// S2 S0 operands/products: TF32/FP16 I1F10 -> I2F20, BF16 I1F7 -> I2F14,
+// MXFP8/6 I1F3 -> I2F6, MXFP4/NVFP4 I3F1 -> I6F2, HiF4 I2F2 -> I4F4,
+// INT8 I8F0 -> I16F0. Sign is carried separately.
 Big multiply(DataType t,const Big& a,const Big& b,unsigned in_lane) {
   if(t==DataType::TF32 || t==DataType::FP16) {
     const Big ah=a>>mul_lo_bits,al=a&mask(mul_lo_bits),bh=b>>mul_lo_bits,bl=b&mask(mul_lo_bits);
@@ -41,6 +44,9 @@ void stage_products(const Config& c,State& s) {
     trace(s,"multiply_and_group_max",{{"products",pjson},{"r",s.r},{"scale_pairs",sf}});
   }
 }
+// P=local_fraction(). S3 shift magnitudes become TC leaves of the same I/F.
+// T/H/Q S1I2F(P), MXFP4/NVFP4 S1I7F(P-5), HiF4 S1I5F(P-3),
+// INT8 S1I15F(P-13). E signed pairs before padding are I7F2 or I5F4.
 void stage_local_align(const Config& c,State& s) {
   const auto t=s.request.a_type; const unsigned n=format(t).lane_elements;
   Json deltas=Json::array();
@@ -80,6 +86,8 @@ void stage_local_align(const Config& c,State& s) {
     trace(s,"local_align_and_E_pairs",{{"leaves_tc",leaves},{"delta",deltas},{"width",c.leaf_bits()}});
   }
 }
+// S4 TC: T S1I2F(P+2), H S1I3F(P+1), Q S1I4F(P), MXFP4/NVFP4
+// S1I9F(P-5), HiF4 S1I7F(P-3), INT8 S1I17F(P-13).
 void stage_lane_sum(const Config& c,State& s) {
   const auto t=s.request.a_type;
   for(const auto& l:s.leaves) {

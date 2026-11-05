@@ -1,6 +1,6 @@
 # 多精度 DP · 手写 RTL
 
-实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **spec v1.4 / 实现映射 v1.4.3**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
+实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **spec v1.4 / 实现映射 v1.4.4**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
 
 | 实现 | 编译清单 | 顶层 |
 | --- | --- | --- |
@@ -14,8 +14,8 @@
 | 参数 | 默认值 | 合同 |
 | --- | --- | --- |
 | `K_FP16` | 16 | 4 / 8 / 16；基本组数 `G=K_FP16/4` |
-| `LOCAL_W` | 27 | 局部幅值窗口，至少 27；小数位为 `LOCAL_W−2` |
-| `GLOBAL_W` | 40 | 全局补码叶宽；幅值窗口须容纳组幅值及 C32 |
+| `LOCAL_W` | 28 | S3 幅值窗口，至少 27；T/H/Q 小数位为 `LOCAL_W−2` |
+| `GLOBAL_W` | 40 | S6 补码叶宽，幅值移位器为 `GLOBAL_W−1`；要求 `GLOBAL_W >= max(LOCAL_W+4, 33)` |
 
 `GROUPS` 等派生参数不可独立改变。组宽、树深、自然增长位、LZD 计数与 anchor 宽度从格式常量、项数和窗口推导。固定编码字段与共享粒度集中在 [dp_defs.vh](parameter/dp_defs.vh)，数值坐标公式在 [dp_functions.vh](parameter/dp_functions.vh)。这些是架构常量，不是允许任意改变输入编码的旋钮。
 
@@ -59,6 +59,6 @@ RTL 单独执行 `-Wall` lint，位宽、锁存器、组合环类警告不豁免
 
 ## 当前边界
 
-只实现 L8；CModel 的 L9 备用探索未在这两套 RTL 中开放。未实现 Chisel、DP-Group、TensorCore/Cube、专用 Q/E/QE 扩展或独立对齐方案。N12 TT 的 1.41 GHz DC 已完成但 setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/dp_n12_timing_20261105.md)。尚无布局布线或真实活动功耗。
+只实现 L8；CModel 的 L9 备用探索未在这两套 RTL 中开放。未实现 Chisel、DP-Group、TensorCore/Cube、专用 Q/E/QE 扩展或独立对齐方案。历史 27/40 的 N12 TT 在 1.41 GHz setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/dp_n12_timing_20261105.md)。尚无布局布线或真实活动功耗。
 
 DC 接入使用 [统一门禁与流程](../../hw/dc_syn/README.md)。Verilog 的运行时 `lane_fraction` 已改为等价常量选择以兼容 DC；新快照重新完整回归，不继承旧 snapshot 的通过状态。

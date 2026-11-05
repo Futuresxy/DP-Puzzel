@@ -68,6 +68,6 @@ run ID 固定 `dc_<RTL顶层名>_<MMDDHHMM>`，使用 Asia/Shanghai（UTC+08）�
 
 DP manifest 记录 `top=dp_top` 和 `interface`，其中 `clock_port=clock`，`reset_port=reset`，复位同步高有效。DC 检查时钟配置与接口一致，复位作为同步输入正常计时。
 
-当前后端准入参数仅为 `K_FP16=16, LOCAL_W=27, GLOBAL_W=40`。
+当前后端准入参数为 `K_FP16=16, LOCAL_W=28, GLOBAL_W=40`。历史综合记录的局部窗口为 27。
 其余参数虽有功能覆盖，必须另行建立对应综合配置合同。DC 显式使用
 `analyze -format verilog` 与 `elaborate -parameters`，只消费主实现 19 个 `.v` 与两份头文件。
