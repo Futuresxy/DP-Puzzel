@@ -1,4 +1,4 @@
-> 功能：定义周期和状态推进要求；范围：八周期目标、输入气泡、逐请求控制与全局复位；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/model.cpp](../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义周期和状态推进要求；范围：八周期目标、输入气泡、逐请求控制与全局复位；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/model.cpp](../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 周期与状态合同
 
@@ -16,6 +16,6 @@ DP 不设置模式会话 FSM。每笔独立保存 datatype、派生控制和 las
 
 ## 3. 时序探索
 
-[流水定义](dp/pipeline.md) 规定八级切分。静态参数 post_scale_norm_extra_stage=1 可增加一级 LZD 计数，使所有格式共同成为 L9；该备用与 L8 数值一致，不是逐请求可变延迟。
+[流水定义](dp/dptop/pipeline.md) 规定八级切分。静态参数 post_scale_norm_extra_stage=1 可增加一级 LZD 计数，使所有格式共同成为 L9；该备用与 L8 数值一致，不是逐请求可变延迟。
 
 目标频率为 1.41 GHz，名义周期约 0.709220 ns。实际组合预算还需扣除寄存、时钟不确定度和约束。CModel 证明不了物理时序；必须检查 S2 乘法/MAX、S5 scale→LZD、S6 MAX→双向移位和 S8 norm/RNE 等路径。

@@ -1,4 +1,4 @@
-> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.5.1；修改时间：2026-11-05 11:37:59 +08:00；对应代码：[CModel lib/detail.hpp](../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 模块层级、所有权与 S6 扩展点
 
@@ -59,11 +59,11 @@ S6 是未来扩展的接入边界。新增源必须表示同一事务、同一�
 
 顶层向基本组、基本组向 lane 传入已校验的参数对象；各层只从自身项数、格式宽度、保护位和父层有效配置派生局部结构。参数对象计划置于 src/chisel/parameter/，尚未创建。共有公式和格式常量集中定义，禁止三层各写一套 局部/全局窗口、紧凑 SOP 宽度 或树深常量。
 
-CModel 应按同一模块边界提供 S1 解包、S2 MAX/产品、S3 移位、S4 lane 和、S5 组 token、S6 对齐、S7 总和、S8 输出的 trace。数学参考独立评价误差；CModel 已提供这些观察点；手写 RTL 的 S1–S7 观测与模型比较见 [实现合同](verilog.md)。
+CModel 应按同一模块边界提供 S1 解包、S2 MAX/产品、S3 移位、S4 lane 和、S5 组 token、S6 对齐、S7 总和、S8 输出的 trace。数学参考独立评价误差；CModel 已提供这些观察点；手写 RTL 的 S1–S7 观测与模型比较见 [实现合同](../implementation/verilog.md)。
 
 ## 7. 功能模块边界与源码映射
 
-[DP 接口](interface.md) 统一列出顶层信号、datatype 编码与内部同拍 token；[功能统计](resource-accounting.md) 定义乘法、指数/MAX、移位、树、scale、解包和 LZD/norm/RNE 等逻辑模块 ID。后续各功能模块单独映射 Chisel、手写 RTL 和网表实例，统计区域明确拥有的寄存/mux，保留八级边界；当前已有 CModel 与 [手写 RTL 源码映射](verilog.md)。S3 按 [移位器共享](shifter-sharing.md) 由输入 mux 驱动四个固定 W-bit 实例。
+[DP 接口](interface.md) 统一列出顶层信号、datatype 编码与内部同拍 token；[功能统计](../implementation/resource-accounting.md) 定义乘法、指数/MAX、移位、树、scale、解包和 LZD/norm/RNE 等逻辑模块 ID。后续各功能模块单独映射 Chisel、手写 RTL 和网表实例，统计区域明确拥有的寄存/mux，保留八级边界；当前已有 CModel 与 [手写 RTL 源码映射](../implementation/verilog.md)。S3 按 [移位器共享](../lane/shifter-sharing.md) 由输入 mux 驱动四个固定 W-bit 实例。
 
 ## 8. 基本组与全局边界更新
 

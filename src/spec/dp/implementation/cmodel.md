@@ -1,4 +1,4 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.1；修改时间：2026-11-05 11:37:59 +08:00；对应代码：[模型 API](../../cmodel/include/dp/model.hpp)、[参数](../../cmodel/include/dp/config.hpp)、[执行器](../../cmodel/lib/model.cpp)、[测试入口](../../../test/run_cmodel.py)；Chisel/手写 RTL 未实现。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
 
 # DP CModel 合同
 
@@ -25,9 +25,9 @@ C++ 使用 Boost cpp_int 保存精确整数，**在规定截断点显式 RTZ，�
 
 其他量由参数派生：G=K/4，leaf=local+1，lane=leaf+ceil_log2(4)，group=lane+ceil_log2(2)，group_mag=group−1，global_mag=global−1，sum=global+ceil_log2(G+1)。要求 global_mag≥max(group_mag,32)，所有静态 pad 非负。当前窗口扫描是建模探索，不把允许构建的每个窗口宣称满足用户 35/37 位精度目标；默认及已测配置单独记录。
 
-格式常量、E guard、scale 窗口和每模式 F 见 [数值布局](numeric-layout.md)、[逐级出口](stage-formats.md)。S2 raw 元素指数不去 bias；S5 形成无偏原 anchor。C 同样在 S5 去 FP32 bias。S6 用 signed 真实指数 MAX 和完整 unsigned d；S8 仅为最终 FP32 编码加一次 127。
+格式常量、E guard、scale 窗口和每模式 F 见 [数值布局](../common/numeric-layout.md)、[逐级出口](../common/stage-formats.md)。S2 raw 元素指数不去 bias；S5 形成无偏原 anchor。C 同样在 S5 去 FP32 bias。S6 用 signed 真实指数 MAX 和完整 unsigned d；S8 仅为最终 FP32 编码加一次 127。
 
-S5 先分离符号和幅值。NVFP4/HiF4 共用 **14×8 无符号 scale 乘法**，22 位乘积补零后用于 LZD 计数。S6 net=z−d 一次双向移位后恢复补码。详见 [scale 合同](scale.md)。模型逐笔携带控制，last 只透传。
+S5 先分离符号和幅值。NVFP4/HiF4 共用 **14×8 无符号 scale 乘法**，22 位乘积补零后用于 LZD 计数。S6 net=z−d 一次双向移位后恢复补码。详见 [scale 合同](../group/scale.md)。模型逐笔携带控制，last 只透传。
 
 ## 3. 逐级数值与周期 API
 
@@ -43,13 +43,13 @@ trace 的每个 cutpoint 有 stage、operation、data。覆盖 S1 每元素及 p
 
 ## 4. 特殊值、舍入和诊断
 
-已确认 canonical qNaN=0x7fc00000、RNE、渐进下溢、舍入后 tininess。精确抵消为 +0，仅所有零项为负时保留 −0，最终微小负数舍入零保留负号。sNaN、0×Inf、异号 Inf 求和的 invalid 不因另一项 NaN 被屏蔽。见 [特殊值合同](special-values.md)。
+已确认 canonical qNaN=0x7fc00000、RNE、渐进下溢、舍入后 tininess。精确抵消为 +0，仅所有零项为负时保留 −0，最终微小负数舍入零保留负号。sNaN、0×Inf、异号 Inf 求和的 invalid 不因另一项 NaN 被屏蔽。见 [特殊值合同](../common/special-values.md)。
 
 结果 flags 仅供验证：invalid、overflow、underflow、inexact 为已定义有限路径的异常诊断；local_truncated/global_truncated 分别记录两次 RTZ 丢位。S8 inexact 不等价于理想点积相对输出的全程 inexact；不把早先丢位重新注入最终舍入。INT32 内部精确求和，输出模 2^32，另记 integer_overflow。
 
 ## 5. 同一份激励与两类参考
 
-规范化输入是 [DP_INPUTS_V1](../../../test/data/README.md)，位布局对应 [DP 顶层接口](interface.md)。九格式来自旧 correct_961，只导入新版要求的 K，不导入旧阈值/通过结论。原文件只读，SHA256/原始五段来源记录在每份 manifest。TF32 K8/INT8 K32 固定种子构造后使用同一 layout。
+规范化输入是 [DP_INPUTS_V1](../../../../test/data/README.md)，位布局对应 [DP 顶层接口](../dptop/interface.md)。九格式来自旧 correct_961，只导入新版要求的 K，不导入旧阈值/通过结论。原文件只读，SHA256/原始五段来源记录在每份 manifest。TF32 K8/INT8 K32 固定种子构造后使用同一 layout。
 
 1. C++ 对独立 Python Fraction **有限窗口参考**逐位比较：后者在实数 dyadic 坐标按局部/全局网格 RTZ，不复用 C++ 的容器落位、部分积重构或 z−d 代码。
 2. 对无限精度 Fraction 点积加 C 后一次 FP32 RNE 计算 ULP/绝对误差；不要求已截断架构全部逐位相等。对每个实际丢位项，累加一次局部量化单位乘 scale 绝对值，加每个全局丢位项的量化单位，再加最终半 ULP，得到每例可计算的绝对误差上界。数值接近零时 ULP 可放大，不用固定宽松 ULP 门槛掩盖误差。
@@ -59,6 +59,6 @@ trace 的每个 cutpoint 有 stage、operation、data。覆盖 S1 每元素及 p
 
 ## 6. 验证和剩余边界
 
-执行说明见 [CModel](../../cmodel/README.md)；首批结果见 [报告](../../../test/results/cmodel-v1.4.md)。单测覆盖 K4/K8/K16、2/3/5 项树、三组窗口、L8/L9、相邻换型、reset、气泡、无效类型、输入填充/广播、small-code 与 scale 编码、特殊值/RNE 边界、INT 极值及回绕。只对已列组合作覆盖声明；不是所有 A/B 编码笛卡尔积穷举。
+执行说明见 [CModel](../../../cmodel/README.md)；首批结果见 [报告](../../../../test/results/cmodel-v1.4.md)。单测覆盖 K4/K8/K16、2/3/5 项树、三组窗口、L8/L9、相邻换型、reset、气泡、无效类型、输入填充/广播、small-code 与 scale 编码、特殊值/RNE 边界、INT 极值及回绕。只对已列组合作覆盖声明；不是所有 A/B 编码笛卡尔积穷举。
 
 三实现使用共同数学合同，但 C++ 文件不等于最终 RTL module 一一结构实例化；operand isolation、时钟门控、mux 门级共享和面积归属仍须实现和综合证据。当前无新版 RTL 仿真、DC 或功耗结果。

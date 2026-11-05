@@ -1,4 +1,4 @@
-> 功能：推导逐级位宽和统一对齐坐标；范围：参数化局部/全局窗口、sign/magnitude、S5 C 和 INT32；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：推导逐级位宽和统一对齐坐标；范围：参数化局部/全局窗口、sign/magnitude、S5 C 和 INT32；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/group.cpp](../../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 逐级位宽、符号/幅值与 anchor
 
@@ -126,14 +126,14 @@ T/H/Q 首次局部对齐默认保留 26 个小数位，最小配置保留 25 位
 
 ## 11. 完整出口表与移位器主参数
 
-[每级 SxIxFx/anchor/SOP](stage-formats.md) 展开默认参数全部格式的 S1–S8 出口。局部窗口的唯一主配置为 local_shift_mag_width，默认 28；local_align_fraction_bits=local_shift_mag_width-product_integer_bits 为派生量，当前要求至少 25。原 local_mag_width 公式仍成立，但不允许再单独输入一份矛盾的 F。S3 的实际四个移位器经输入 mux 在 T/H/Q 间共享，见 [资源合同](shifter-sharing.md)。
+[每级 SxIxFx/anchor/SOP](stage-formats.md) 展开默认参数全部格式的 S1–S8 出口。局部窗口的唯一主配置为 local_shift_mag_width，默认 28；local_align_fraction_bits=local_shift_mag_width-product_integer_bits 为派生量，当前要求至少 25。原 local_mag_width 公式仍成立，但不允许再单独输入一份矛盾的 F。S3 的实际四个移位器经输入 mux 在 T/H/Q 间共享，见 [资源合同](../lane/shifter-sharing.md)。
 
 S5 改传 anchor_raw=A_raw、z 及未左移 M31 幅值；S6 计算 e/MAX，按 z-d 一次双向移位。S6/S7 仍 W40/W43、F38，公共指数为实际 e 的 MAX；INT 坐标不变。
 
 ## 12. 容器 anchor 与实际指数
 
-已选择 [scale 后计数＋合并双向移位](group-normalization-options.md)。S6 结果应与精确双单向方案一致。
+已选择 [scale 后计数＋合并双向移位](../dptop/global-align.md)。S6 结果应与精确双单向方案一致。
 
 ## 13. 宽度公式的适用范围
 
-NVFP4/HiF4 的公共幅值积宽度为 W22，末尾低补 `M_group−22` 位。14 位幅值的范围依据见 [scale](scale.md)。
+NVFP4/HiF4 的公共幅值积宽度为 W22，末尾低补 `M_group−22` 位。14 位幅值的范围依据见 [scale](../group/scale.md)。

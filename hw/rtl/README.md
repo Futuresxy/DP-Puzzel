@@ -9,7 +9,7 @@
 | `src/` | 清单里的设计 RTL 和头文件 |
 | `README.md` | 导出命令、配置和验证范围 |
 
-单 DP 通过 `python3 test/run_verilog.py --implementation verilog --phase all` 冻结并验证 `DP_verilog_<fingerprint>/`。顶层为 `dp_top`，时钟为 `clock`，复位为同步高有效 `reset`。端口与协议见 [DP 接口](../../src/spec/dp/interface.md)。
+单 DP 通过 `python3 test/run_verilog.py --implementation verilog --phase all` 冻结并验证 `DP_verilog_<fingerprint>/`。顶层为 `dp_top`，时钟为 `clock`，复位为同步高有效 `reset`。端口与协议见 [DP 接口](../../src/spec/dp/dptop/interface.md)。
 
 DC 使用 [显式约束](../dc_syn/README.md) 定义时钟周期、IO 延迟和负载。DP 的 `clock_port` 必须与 RTL 接口一致。功耗活动与综合网表必须绑定同一个 RTL 指纹和对应层级。
 

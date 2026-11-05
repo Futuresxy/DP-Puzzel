@@ -26,7 +26,7 @@ DP_INPUTS_V1
 | last | in_last | 1 |
 | id | 无 DUT 信号，scoreboard 软件编号 | 非负整数 |
 
-G=k_fp16/4；十六进制字符数为 ceil(bits/4)，未使用的最高位必须零。datatype 编码：[DP interface](../../src/spec/dp/interface.md)。scale 按基本组展开：MXQ四槽相同；MXFP4槽0=1、2=3；HiF4四槽相同；NV四槽独立。HiF e1每4元素、e2每8元素按低索引bit排列。无scale/meta的格式写全零。
+G=k_fp16/4；十六进制字符数为 ceil(bits/4)，未使用的最高位必须零。datatype 编码：[DP interface](../../src/spec/dp/dptop/interface.md)。scale 按基本组展开：MXQ四槽相同；MXFP4槽0=1、2=3；HiF4四槽相同；NV四槽独立。HiF e1每4元素、e2每8元素按低索引bit排列。无scale/meta的格式写全零。
 
 这份文件已经是物理端口 layout；各 testbench 不重新量化、不重新广播、不复制数据为另一套格式。SV 驱动可直接按16个字段 `$fscanf`，A/B须使用按 k_fp16 展开的packed向量而非32位integer。valid/气泡/reset 由测试调度控制，与数值向量分离；每个请求只在三路共同握手后推进读取位置。
 

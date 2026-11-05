@@ -1,4 +1,4 @@
-> 功能：定义 DP 逐请求控制与有效位推进；范围：datatype 管线、last 透传、无会话锁定与全局复位；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/model.cpp](../../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 逐请求控制与有效位推进；范围：datatype 管线、last 透传、无会话锁定与全局复位；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/model.cpp](../../../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # DP 逐请求控制与有效位推进
 

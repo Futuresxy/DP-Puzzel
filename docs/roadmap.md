@@ -13,7 +13,7 @@
 
 ### E 类专用 DP 候选（2026-11-05）
 
-当前多精度单 DP 的 CModel、两版 RTL 和 N12 DC 流程已建立；EDA 执行以 AGENTS.md 的本机授权为准。新增 [dp_lane_E](../src/spec/dp/dp_lane_E.md) 与 [dp_group_E](../src/spec/dp/dp_group_E.md) 仅讨论 MXFP4/NVFP4/HiF4 专用 E64 单元，保留现有多精度设计作比较。
+当前多精度单 DP 的 CModel、两版 RTL 和 N12 DC 流程已建立；EDA 执行以 AGENTS.md 的本机授权为准。新增 [dp_lane_E](../src/spec/dp/lane/dp_lane_E.md) 与 [dp_group_E](../src/spec/dp/group/dp_group_E.md) 仅讨论 MXFP4/NVFP4/HiF4 专用 E64 单元，保留现有多精度设计作比较。
 
 用户已明确 HiF4 先求和再在 lane 内融合 e2，删除组内元素指数 MAX/差值/右移对齐；group 输出保持原多精度布局和 S5 到达拍，默认 M31，复用现有 group 外计算。待讨论的 E64 切分为 S3 完成八项 lane TC 树、S4 完成局部小左移及两 lane TC 合并/组 abs、S5 完成 scale/LZD。MX/NV 组内无可变移位，S6 仍负责各组块 scale 与 C 的全局对齐。具体切分确认后再开发专用 CModel/RTL 并验证 PPA，当前不执行新综合或功耗实验。
 
@@ -21,11 +21,11 @@
 
 已确定 T2H4Q8E16 基本组、两个 T1H2Q4E8 lane，1/2/4 个基本组构成 FP16 K4/K8/K16。A/B/C 原子接收、DP 内 FP32 C 合并、无输出背压已写入接口；独立移位对齐留作后续探索。
 
-~~本轮已收敛的边界：C 的来源/指令依赖由上层处理，DP 仅计算本笔缩放点积加 C；输入/输出 last 保留，末结果输出后才能切换 mode；全局复位统一取消在途。固定 E/M/S 解包已确定，T/FP16 为 I1F10、BF16 为 I1F7、Q 统一 E5M3/I1F3、E2M1 转 I3F1、HiF4 S1P2/e1 融合为 I2F2，保留 1-bit e2，块 scale 为 E6M2 bias=48。特殊值分类、NaN/Inf 传播及渐进下溢行为目标已写入 [解包](../src/spec/dp/unpack.md) 和 [特殊值](../src/spec/dp/special-values.md)。这些定义尚无实现验收证据。~~
+~~本轮已收敛的边界：C 的来源/指令依赖由上层处理，DP 仅计算本笔缩放点积加 C；输入/输出 last 保留，末结果输出后才能切换 mode；全局复位统一取消在途。固定 E/M/S 解包已确定，T/FP16 为 I1F10、BF16 为 I1F7、Q 统一 E5M3/I1F3、E2M1 转 I3F1、HiF4 S1P2/e1 融合为 I2F2，保留 1-bit e2，块 scale 为 E6M2 bias=48。特殊值分类、NaN/Inf 传播及渐进下溢行为目标已写入 [解包](../src/spec/dp/lane/unpack.md) 和 [特殊值](../src/spec/dp/common/special-values.md)。这些定义尚无实现验收证据。~~
 
 **v1.2 当前定义：** C 来源/指令依赖归上层，DP 仅本笔 dot+C；v1.2 逐请求 datatype 控制，last 只透传，全局复位取消在途。A/B 首版同格式，各自带 datatype，scale E8M0/E4M3/E6M2；C raw32 传至 S5 再按 FP32/INT32 解包。既有固定 E/M/S 和特殊值目标保持，尚无实现验收。
 
-**v1.1 架构进展（2026-11-04）：** 当前按 T1H2Q4E8→T2H4Q8E16→H16Q32E64（T8）的模块边界定义八级共享流水；S2 乘/指数并行、S3 幅值 RTZ、S4 lane 树、S5 scale 后 sign/magnitude、S6+C 幅值 RTZ、S7 全部规约、S8 RNE/INT32 回绕。E8M3 scale、bias 坐标、参数位宽和树深公式已补充；未来 Q/E/QE 仅在 S6 接入点规划，额外 1–2 级限于后续 profile。当前仍仅 spec，见 [模块层级](../src/spec/dp/module-hierarchy.md) 与 [数值布局](../src/spec/dp/numeric-layout.md)。
+**v1.1 架构进展（2026-11-04）：** 当前按 T1H2Q4E8→T2H4Q8E16→H16Q32E64（T8）的模块边界定义八级共享流水；S2 乘/指数并行、S3 幅值 RTZ、S4 lane 树、S5 scale 后 sign/magnitude、S6+C 幅值 RTZ、S7 全部规约、S8 RNE/INT32 回绕。E8M3 scale、bias 坐标、参数位宽和树深公式已补充；未来 Q/E/QE 仅在 S6 接入点规划，额外 1–2 级限于后续 profile。当前仍仅 spec，见 [模块层级](../src/spec/dp/dptop/module-hierarchy.md) 与 [数值布局](../src/spec/dp/common/numeric-layout.md)。
 
 开始 CModel 前继续闭合：
 

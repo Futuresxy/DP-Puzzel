@@ -1,38 +1,68 @@
-> 功能：汇总 DP 主方案与设计入口；范围：分组共享 DP、外部边界和后续独立对齐探索；版本：v1.5.3；修改时间：2026-11-05 13:59:08 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用单元和 Chisel 尚未实现。
 
-# 多精度 DP 设计
+# DP 规格导航
 
-当前设计采用分组共享计算方案。每笔完成 `scaled_dot(A,B)+C`，没有跨请求累加状态。默认容量为 **T8H16Q32E64**，所有格式共用八级寄存边界；CModel 已完成首批测试，单 DP 手写 RTL 已建立。
+当前多精度主实现为 T8H16Q32E64、L8、II=1，默认局部/全局窗口 28/40；每笔完成 scaled_dot(A,B)+C，无跨请求累加状态。当前架构 v1.5，实现映射 v1.5.1。本文档目录调整不改变算术、接口、流水或验证结论。
 
-## 1. 层级与术语
+## 1. 按模块查找
 
-| 层级 | 容量 | 主要功能 |
+| 模块层级 | 容量与阶段 | 设计入口 | 内部计算设计 |
+| --- | --- | --- | --- |
+| lane | T1H2Q4E8；主实现 S1–S4 | [lane/README.md](lane/README.md) | 元素解包、尾数乘法共享、局部移位、lane 规约、E8 优化 |
+| group | T2H4Q8E16；两 lane 协作及 S5 | [group/README.md](group/README.md) | 公共指数、组和、符号/幅值、scale 乘法、LZD、E16 优化 |
+| dptop | G 个组+C；请求控制及 S5–S8 | [dptop/README.md](dptop/README.md) | 输入分发、C 解包、组间对齐、最终树、FP32/INT32 输出 |
+
+T=TF32，H=FP16/BF16，Q=MXFP8/6，E=MXFP4/NVFP4/HiF4；INT8 与 Q 同并行度。G=K_FP16/4，K4/K8/K16 对应 1/2/4 个基本组。三个层级分工于同一次八级计算，不是各串联八级。
+
+~~~text
+dp/
+├── README.md
+├── lane/
+│   ├── README.md
+│   ├── unpack.md
+│   ├── multiplier-sharing.md
+│   ├── shifter-sharing.md
+│   └── dp_lane_E.md
+├── group/
+│   ├── README.md
+│   ├── shared-align.md
+│   ├── scale.md
+│   └── dp_group_E.md
+├── dptop/
+│   ├── README.md
+│   ├── module-hierarchy.md
+│   ├── interface.md
+│   ├── layout-and-scales.md
+│   ├── control.md
+│   ├── pipeline.md
+│   ├── global-align.md
+│   └── independent-align.md
+├── common/             # 跨层数值合同
+├── implementation/     # 模型、RTL 验证与资源统计
+└── draw.io/            # 架构图源码
+~~~
+
+## 2. 跨层合同和实现验证
+
+| 分类 | 文档 | 维护边界 |
 | --- | --- | --- |
-| lane | T1H2Q4E8 | 解包、元素乘法、局部对齐与规约 |
-| 基本组 | T2H4Q8E16 | 两条 lane 共享指数基准、组和与 scale |
-| DP | G 个基本组；G=K_FP16/4 | 所有组与 C 对齐、累加、输出 |
+| 参数与定点推导 | [common/numeric-layout.md](common/numeric-layout.md) | 全部层级共用的位宽、符号表示和 anchor 公式 |
+| S1–S8 出口 | [common/stage-formats.md](common/stage-formats.md) | 多精度主实现的逐级 S/I/F 与指数范围 |
+| 特殊值和舍入 | [common/special-values.md](common/special-values.md) | NaN/Inf/零/非正规及 FP32 RNE |
+| CModel | [implementation/cmodel.md](implementation/cmodel.md) | 位精确与周期模型、参考和 trace |
+| Verilog | [implementation/verilog.md](implementation/verilog.md) | 两版 RTL 映射、快照与验证门禁 |
+| 面积/功耗统计 | [implementation/resource-accounting.md](implementation/resource-accounting.md) | 逻辑块、寄存/mux、网表与活动统计归属 |
 
-T=TF32，H=FP16/BF16，Q=MXFP8/6，E=MXFP4/NVFP4/HiF4。INT8 与 Q 同并行度，C/D 解释为 INT32。K4/K8/K16 分别实例化 1/2/4 个基本组。
+跨层合同集中维护，不在 lane/group/dptop 重复定义同一套位宽公式。scale 运算由 group 拥有，S6 双向移位由 dptop 拥有；两者分别链接到共用数值坐标。
 
-## 2. 当前数据路径
+## 3. E 类优化方案入口
 
-S1 解包 A/B/scale → S2 尾数乘法与指数 MAX → S3 幅值 RTZ/E pair → S4 lane 树 → S5 组和/abs/无符号 scale/LZD 计数及 C 解包 → S6 一次双向对齐 → S7 总树 → S8 FP32 RNE 或 INT32 回绕。
+[E8 lane 优化](lane/dp_lane_E.md) 与 [E16 group / E64 接入](group/dp_group_E.md) 已纳入对应模块目录。用户已明确 HiF4 e2 在 lane 内融合、先求和后局部左移、删除组内元素指数对齐，以及保持多精度 group 输出 layout 和 S5 到达拍。E64 的 S3 lane 树、S4 group 合并/abs、S5 scale/LZD 是待讨论的切分，专用实现与 PPA 尚未建立。
 
-S5 保留未左移幅值、无偏原 anchor 和 z。S6 先求真实指数 MAX，再执行净位移 z−d。v1.5 中 NVFP4/HiF4 先分离符号与幅值，再共用 14×8 无符号 scale 乘法器。CModel 与两版 RTL 均实现此路径。 [八级架构图](draw.io/dp_arch.drawio)
+E 专用候选通过兼容 token 接入既有 S6–S8；默认保留 40 位全局窗口。HiF4 融合 e2 后的定点坐标及 anchor/z 换算以专用 group 文档为准，不能套用多精度主实现的逐级字段值。
 
-## 3. 规范导航
+## 4. 当前实现边界
 
-| 内容 | 入口 |
-| --- | --- |
-| 层级与流水 | [模块边界](module-hierarchy.md) · [流水](pipeline.md) · [分组共享方案](shared-align.md) |
-| 数据与控制 | [接口](interface.md) · [容量/scale 布局](layout-and-scales.md) · [控制](control.md) |
-| 数值 | [解包](unpack.md) · [逐级格式](stage-formats.md) · [位宽推导](numeric-layout.md) · [特殊值](special-values.md) |
-| 资源 | [乘法共享](multiplier-sharing.md) · [移位共享](shifter-sharing.md) · [scale](scale.md) · [组间对齐](group-normalization-options.md) |
-| E 类专用讨论 | [E8 lane](dp_lane_E.md) · [E16 group / E-only DP 接入](dp_group_E.md)（HiF4 e2 定点融合、兼容输出；流水待讨论） |
-| 实施 | [CModel](cmodel.md) · [Verilog 实现](verilog.md) · [功能统计](resource-accounting.md) · [独立对齐候选](independent-align.md) |
+主实现 S1 解包 → S2 元素乘法/指数 MAX → S3 局部对齐/E pair → S4 lane 树 → S5 组和/abs/无符号 scale/LZD 及 C 解包 → S6 一次双向对齐 → S7 总树 → S8 FP32 RNE 或 INT32 回绕。[八级架构图](draw.io/dp_arch.drawio)
 
-## 4. 当前边界
-
-A/B 首版同格式，合法请求可逐拍换型，last 只透传。无输出背压；输入缺失不暂停在途请求。默认 L8，备用 L9 静态配置只作探索。
-
-独立一次对齐、专用 Q/E/QE 增源、阵列及 Chisel 尚未实现；手写 Verilog 和 SystemVerilog 对照仅覆盖单 DP 的 L8 主方案。功耗优先、1.41GHz 以及整体精度目标仍须后续证据支持。
+A/B 同格式，合法请求可逐拍换型；last 只透传，无输出背压，全局复位取消在途请求。默认 L8，L9 为静态备用探索。独立整体对齐、E 专用单元、Chisel 和阵列尚未实现；频率与功耗结论必须关联实际冻结输入与测量证据。

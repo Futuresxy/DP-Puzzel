@@ -1,4 +1,4 @@
-> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[CModel include/dp/config.hpp](../cmodel/include/dp/config.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel include/dp/config.hpp](../cmodel/include/dp/config.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 参数与派生关系
 
@@ -67,13 +67,13 @@ W_product_magnitude = W_sop_magnitude + W_factor
 pad_scale_product = M_group - W_product_magnitude
 ```
 
-由此得到 guard=2、pair W10、紧凑 SOP W15、幅值 W14、系数 W8 及无符号积 W22。默认低补 9 位进入 M31。幅值上界与 F 见 [scale](dp/scale.md)。
+由此得到 guard=2、pair W10、紧凑 SOP W15、幅值 W14、系数 W8 及无符号积 W22。默认低补 9 位进入 M31。幅值上界与 F 见 [scale](dp/group/scale.md)。
 
 ## 5. 指数与控制宽度
 
 8 位元素指数相加须保留 9 位，5 位指数相加须保留 6 位，scale 指数和须保留 9 位。anchor 范围按 bias、F 与容器位权推导。RTL 按全局幅值上限推导共享有符号指数宽度，以覆盖源 LZD 计数及输出指数运算。先用完整差值判断方向/饱和，再编码移位控制，不能截高位回绕。
 
-默认各级范围见[出口表](dp/stage-formats.md)。datatype 编码来自[接口](dp/interface.md)，不随配置禁用某模式而重排。模块参数固定，运行时控制逐请求传递。
+默认各级范围见[出口表](dp/common/stage-formats.md)。datatype 编码来自[接口](dp/dptop/interface.md)，不随配置禁用某模式而重排。模块参数固定，运行时控制逐请求传递。
 
 ## 6. 阵列与未来扩展
 

@@ -1,8 +1,8 @@
-> 功能：定义浮点分类与特殊值传播；范围：NaN/Inf/零/非正规数、scale、规约和 C 合并；版本：v1.5；修改时间：2026-11-05 11:30:43 +08:00；对应代码：[CModel lib/arithmetic.cpp](../../cmodel/lib/arithmetic.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义浮点分类与特殊值传播；范围：NaN/Inf/零/非正规数、scale、规约和 C 合并；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/arithmetic.cpp](../../../cmodel/lib/arithmetic.cpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 浮点分类、特殊值传播与 FP32 输出
 
-首版特殊值策略已由用户确认，见 [CModel 合同](cmodel.md)：canonical qNaN、RNE 零符号、渐进下溢及舍入后 tininess；异常只记录验证 trace。实现验证不等于完整 IEEE 环境合规或无限精度点积一次正确舍入。
+首版特殊值策略已由用户确认，见 [CModel 合同](../implementation/cmodel.md)：canonical qNaN、RNE 零符号、渐进下溢及舍入后 tininess；异常只记录验证 trace。实现验证不等于完整 IEEE 环境合规或无限精度点积一次正确舍入。
 
 依据为 [IEEE 754-2019](https://standards.ieee.org/ieee/754/6210/)；实现行为参考 [Berkeley HardFloat Release 1](https://www.jhauser.us/arithmetic/HardFloat-1/doc/HardFloat-Verilog.html) 的分类、异常和 NaN 定制接口。当前不引入 HardFloat/SoftFloat 依赖。
 
@@ -39,7 +39,7 @@ MX 子格式按其自身编码分类，不能统一以“指数全 1”判断无
 
 1. 局部乘法依据原始类别生成特殊乘积，有限乘积使用 E/M/S 运算。
 2. lane、基本组及跨组规约合并特殊摘要：任意 invalid 或 NaN 导向 qNaN；求和中同时出现正负 Inf 产生 invalid/qNaN；仅一种符号的 Inf 则保持该 Inf。
-3. scale 只能按已经明确的计算顺序应用。若 scale 格式允许零、Inf 或 NaN，分别遵循相应乘法规则；不能将 scale 解码为整数指数后丢失其特殊编码。scale 施加位置由[scale 合同](scale.md)规定。
+3. scale 只能按已经明确的计算顺序应用。若 scale 格式允许零、Inf 或 NaN，分别遵循相应乘法规则；不能将 scale 解码为整数指数后丢失其特殊编码。scale 施加位置由[scale 合同](../group/scale.md)规定。
 4. S7 将缩放点积摘要与 C 分类合并：例如点积 +Inf 与 C=-Inf 得到 qNaN；有限点积与 C=+Inf 得到 +Inf；任何非法乘积不会因 C 为 Inf 或 qNaN 被视为正常。
 5. S8 选择 qNaN、带符号 Inf 或有限路径 FP32 编码；特殊结果也遵循完整模式延迟及对应 valid/last。
 
@@ -47,9 +47,9 @@ MX 子格式按其自身编码分类，不能统一以“指数全 1”判断无
 
 ## 4. 零、非正规数、舍入与异常
 
-精确抵消为零、多个带符号零求和以及微小值舍入至零的符号需依运算及 RM 规则定义，不能统一清除 sign。输入非正规数的 h 和有效指数按 [解包合同](unpack.md) 处理；FP32 输出在正常数/非正规数边界正确舍入，避免误把 tiny 等同于必定 underflow/inexact。
+精确抵消为零、多个带符号零求和以及微小值舍入至零的符号需依运算及 RM 规则定义，不能统一清除 sign。输入非正规数的 h 和有效指数按 [解包合同](../lane/unpack.md) 处理；FP32 输出在正常数/非正规数边界正确舍入，避免误把 tiny 等同于必定 underflow/inexact。
 
-首版特殊值策略已由用户确认，见 [CModel 合同](cmodel.md)：canonical qNaN、RNE 零符号、渐进下溢及舍入后 tininess；异常只记录验证 trace。实现验证不等于完整 IEEE 环境合规或无限精度点积一次正确舍入。
+首版特殊值策略已由用户确认，见 [CModel 合同](../implementation/cmodel.md)：canonical qNaN、RNE 零符号、渐进下溢及舍入后 tininess；异常只记录验证 trace。实现验证不等于完整 IEEE 环境合规或无限精度点积一次正确舍入。
 
 本项目的分组点积使用明确的有限保留窗口。特殊值与 FP32 编码/舍入规则的符合性，以及有限数点积相对精确数学和的误差，须分别验收；前者不能证明整个点积已经做到无限精度求和后一次正确舍入。
 
@@ -59,7 +59,7 @@ MX 子格式按其自身编码分类，不能统一以“指数全 1”判断无
 
 ## 6. 最终结果 mux 与指数安全
 
-仅 finite_nonzero 源参与数值 LZD/MAX，zero/NaN/Inf 不以数值 sentinel 参与减 bias 或计算差值。全零有限集合以独立 numeric_active=false 标识，安全 anchor 占位为零；clz(0) 不可当作普通规格化计数使用。当前[组 LZD 与合并对齐](group-normalization-options.md)同样保留特殊摘要的等延迟旁带。
+仅 finite_nonzero 源参与数值 LZD/MAX，zero/NaN/Inf 不以数值 sentinel 参与减 bias 或计算差值。全零有限集合以独立 numeric_active=false 标识，安全 anchor 占位为零；clz(0) 不可当作普通规格化计数使用。当前[组 LZD 与合并对齐](../dptop/global-align.md)同样保留特殊摘要的等延迟旁带。
 
 S8 的结果选择顺序按当前请求类别定义：
 

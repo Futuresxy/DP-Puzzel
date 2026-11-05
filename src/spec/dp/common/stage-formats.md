@@ -1,4 +1,4 @@
-> 功能：列出每级数值出口的定点格式与指数范围；范围：S1–S8、同格式 A/B、C 的 S5 解包、anchor 与 SOP；版本：v1.5.1；修改时间：2026-11-05 11:37:59 +08:00；对应代码：[CModel lib/detail.hpp](../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：列出每级数值出口的定点格式与指数范围；范围：S1–S8、同格式 A/B、C 的 S5 解包、anchor 与 SOP；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 每级 anchor、SOP 与 SxIxFx
 
@@ -30,7 +30,7 @@
 | 单侧 scale | S0I1F3，4 位 | U8，统一 bias=127 | scale=m×2^(E-127-3) |
 | C | 原始 32 位 payload | 尚不解码 | S1–S4 携带 `c_datatype`，S5 才区分 FP32/INT32 |
 
-E/M/S 的**物理接口**仍为每原子块 E10/M16/S4，按 [解包](unpack.md) 切片；不能把 E10 当成一条十位指数。Q 的有限有效指数范围：E5M2 为 1..30，E4M3 为 9..23，E3M2 为 13..19，E2M3 为 15..17。零/特殊数占位不参与有限非零 MAX。
+E/M/S 的**物理接口**仍为每原子块 E10/M16/S4，按 [解包](../lane/unpack.md) 切片；不能把 E10 当成一条十位指数。Q 的有限有效指数范围：E5M2 为 1..30，E4M3 为 9..23，E3M2 为 13..19，E2M3 为 15..17。零/特殊数占位不参与有限非零 MAX。
 
 ## 3. S2：单乘积与基本组公共 r
 

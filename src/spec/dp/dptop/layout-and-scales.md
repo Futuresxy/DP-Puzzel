@@ -1,4 +1,4 @@
-> 功能：定义 DP 容量与输入布局；范围：K4/K8/K16、紧密打包、scale 槽与 HiF4 metadata；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/config.cpp](../../cmodel/lib/config.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 容量与输入布局；范围：K4/K8/K16、紧密打包、scale 槽与 HiF4 metadata；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/config.cpp](../../../cmodel/lib/config.cpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # DP 容量、逻辑输入与 scale / metadata 分组
 
@@ -32,7 +32,7 @@ A、B 的逻辑元素紧密打包，物理容器与逻辑编码宽度分开定�
 | MXFP6 | 6 bit | 8 bit | 6 个有效位左对齐，低 2 位补零，即 `[data[5:0],2'b00]`；跨元素仍按字节紧密排列 |
 | MXFP4/NVFP4/HiF4 | 4 bit | 4 bit | 每字节两个 nibble，按元素顺序紧密排列 |
 
-TF32 字段为 `S=x[31]`、`E=x[30:23]`、`F=x[22:13]`、`x[12:0]=0`；解包的 E/M/S 固定布局与符号分类见 [解包合同](unpack.md)。MXFP6 左对齐打包的逻辑槽不改变其格式解码语义。scale 和 HiF4 metadata 采用独立字段，不混排进 A/B 的元素槽。
+TF32 字段为 `S=x[31]`、`E=x[30:23]`、`F=x[22:13]`、`x[12:0]=0`；解包的 E/M/S 固定布局与符号分类见 [解包合同](../lane/unpack.md)。MXFP6 左对齐打包的逻辑槽不改变其格式解码语义。scale 和 HiF4 metadata 采用独立字段，不混排进 A/B 的元素槽。
 
 每侧 A、B 容器位数由 `k_mode(mode)*element_slot_bits(mode)` 推导，K4/K8/K16 的 A/B 两侧分别随配置变化。所有位宽、移位及索引从具名格式定义派生。
 
@@ -47,17 +47,17 @@ scale 的**物理接口分组按每 16 个 FP4 元素定义**。主配置 E64 �
 | NVFP4 | 16 个元素 | 每个 16 项槽独立 scale：`[s0,s1,s2,s3]`（E64） |
 | HiF4 | 64 个元素 | 本项目物理接口按每 16 项拆分，并将一个块 scale 广播到四槽；这不表示采用原格式 64 项 metadata 的打包方式 |
 
-A 与 B 各有自己的 scale 向量，值可以不同。未使用槽不影响结果。scale 的位布局和数值域待格式规范继续定义；其数值应用需与相关定点部分积结合，运算顺序见 [主方案](shared-align.md)。
+A 与 B 各有自己的 scale 向量，值可以不同。未使用槽不影响结果。scale 的位布局和数值域待格式规范继续定义；其数值应用需与相关定点部分积结合，运算顺序见 [主方案](../group/shared-align.md)。
 
 ## 4. HiF4 metadata 分组
 
 HiF4 每个 16-element 计算组包含 4 个 `e_1` 项和 2 个 `e_2` 项。E64 主配置对应四组，共 16 个 `e_1` 和 8 个 `e_2` 项；K8/K4 配置按活动 16-element 组数派生。A/B metadata 分开输入。
 
-本项目接口按 16 项子组拆分，以方便 DP 内部 lane 处理；它不同于原始语义中单个 64 项组一次携带 16 个 `e_1` 和 8 个 `e_2` 的组织。`e_1/e_2` 均为 1 位，按每 4/8 项共享；e1 在解包中融入 I2F2，e2 保留在 E[0]，块 scale 为 E6M2 bias=48，见 [固定解包](unpack.md)。
+本项目接口按 16 项子组拆分，以方便 DP 内部 lane 处理；它不同于原始语义中单个 64 项组一次携带 16 个 `e_1` 和 8 个 `e_2` 的组织。`e_1/e_2` 均为 1 位，按每 4/8 项共享；e1 在解包中融入 I2F2，e2 保留在 E[0]，块 scale 为 E6M2 bias=48，见 [固定解包](../lane/unpack.md)。
 
 ## 5. FP4 scale 与定点融合目标
 
-按用户图示，MXFP4/NVFP4 的 E2M1 元素转为四位无符号 I3F1 幅值，符号独立，元素指数不再单独输出；其有限值到整数 coefficient 的无损映射已在 [解包合同](unpack.md)列出。HiF4 将 e1 融入四位 I2F2 幅值，保留共享 e2；S1P2 三位幅值 coefficient 为 0..7，e1 为 0/1，融合后 coefficient 最大 14，可无损放入四位 I2F2。块 scale 不属于该元素无损转换结论，仍需单独处理。
+按用户图示，MXFP4/NVFP4 的 E2M1 元素转为四位无符号 I3F1 幅值，符号独立，元素指数不再单独输出；其有限值到整数 coefficient 的无损映射已在 [解包合同](../lane/unpack.md)列出。HiF4 将 e1 融入四位 I2F2 幅值，保留共享 e2；S1P2 三位幅值 coefficient 为 0..7，e1 为 0/1，融合后 coefficient 最大 14，可无损放入四位 I2F2。块 scale 不属于该元素无损转换结论，仍需单独处理。
 
 ## 6. 基本组的部分和宽度增长
 

@@ -1,4 +1,4 @@
-> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[CModel lib/lane.cpp](../../cmodel/lib/lane.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/lane.cpp](../../../cmodel/lib/lane.cpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 两组尾数乘法器覆盖 T1H2Q4E8
 
@@ -56,13 +56,11 @@ p1 = HL(A8, B_lo4) + (LH(B_hi4, A8) << 4)
 
 ## 5. 指数加法与 MAX 侧接口
 
-每个乘法器组可配一个八位输入指数加法器和一个五位输入指数加法器，分别保留九/六位结果。Q 的两项指数各用一条，H/T 按活动组使用八位通路，FP16 高位补零。每 lane 两组覆盖四个 Q 指数和；随后两个 lane 的 MAX 由基本组模块拥有，组合返回同一周期的参考指数。该接口的寄存边界见 [模块层级](module-hierarchy.md)。
+每个乘法器组可配一个八位输入指数加法器和一个五位输入指数加法器，分别保留九/六位结果。Q 的两项指数各用一条，H/T 按活动组使用八位通路，FP16 高位补零。每 lane 两组覆盖四个 Q 指数和；随后两个 lane 的 MAX 由基本组模块拥有，组合返回同一周期的参考指数。该接口的寄存边界见 [模块层级](../dptop/module-hierarchy.md)。
 
-## 6. scale 资源与 II=1
+## 6. 与 group scale 的资源分界
 
-A_scale×B_scale 的 I1F3 系数乘法另需每基本组一份 4×4 资源，可在 S2 预计算。S5 的紧凑组和×scale 系数乘法是图中另一条资源，位宽见 [数值布局](numeric-layout.md)。二者不能与同拍正在处理其他请求的 S2 元素乘法器隐式时分复用，否则会影响 II=1。
-
-资源表、选择和 operand isolation 属于该方案的硬件合同；具体工艺映射、时钟门控及复制取舍留待 RTL/EDA。
+元素乘法由 lane 拥有；A_scale×B_scale 的 S2 4×4 系数预乘，以及 S5 组幅值×系数的 14×8 数据乘法由 group 拥有，完整定义集中在 [group/scale.md](../group/scale.md)。S2/S5 同拍处理不同请求，不隐式时分复用为同一份资源，保持 II=1。范围、小数点及补零由 group 的合同维护。
 
 ## 7. 参考边界
 
@@ -70,8 +68,4 @@ A_scale×B_scale 的 I1F3 系数乘法另需每基本组一份 4×4 资源，可
 
 ## 8. 逐笔控制与统计边界
 
-每一级乘法器路由/输入隔离只使用与本级数据同行的 ctrl；新请求的 datatype 不得关闭前笔的 S2/S5 资源。A/B 首版仅同格式，独立字段在入口检查后形成内部 op_format。mantissa_mul_bank、HH/HL/LH/LL、重构加法、scale-pair 与 group-scale 乘法保留独立逻辑 ID，寄存/mux 归属见 [功能统计](resource-accounting.md)。
-
-## 9. S5 scale 乘法器的模式共享
-
-NVFP4 和 HiF4 共用 14×8 无符号 scale 乘法器。组和的符号走旁带，紧凑幅值乘非负系数，W22 乘积低补 `M_group−22` 位后供 LZD 计数。范围及各模式 F 见 [scale 合同](scale.md)。
+每一级乘法器路由/输入隔离只使用与本级数据同行的 ctrl；新请求的 datatype 不得关闭前笔的 S2/S5 资源。A/B 首版仅同格式，独立字段在入口检查后形成内部 op_format。mantissa_mul_bank、HH/HL/LH/LL、重构加法、scale-pair 与 group-scale 乘法保留独立逻辑 ID，寄存/mux 归属见 [功能统计](../implementation/resource-accounting.md)。

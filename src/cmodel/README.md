@@ -2,7 +2,7 @@
 
 当前实现：C++17 整数位精确模型、逐级周期模型，支持 11 种 datatype、K4/K8/K16。默认共享八级 T8H16Q32E64，C 在 S5 解包，S8 输出 FP32 RNE 或 INT32 回绕。NVFP4/HiF4 在 S5 共用 14×8 无符号 scale 乘法，符号独立传递。
 
-规格入口：[CModel 合同](../spec/dp/cmodel.md)、[DP 接口](../spec/dp/interface.md)、[逐级位宽](../spec/dp/stage-formats.md)。测试数据共用根 [test/](../../test/README.md)。综合结果见 [DC 记录](../../hw/dc_syn/records/README.md)。
+规格入口：[CModel 合同](../spec/dp/implementation/cmodel.md)、[DP 接口](../spec/dp/dptop/interface.md)、[逐级位宽](../spec/dp/common/stage-formats.md)。测试数据共用根 [test/](../../test/README.md)。综合结果见 [DC 记录](../../hw/dc_syn/records/README.md)。
 
 ## 构建和测试
 

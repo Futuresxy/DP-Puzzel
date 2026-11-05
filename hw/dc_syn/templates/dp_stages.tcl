@@ -1,4 +1,4 @@
-# DP v1.4 register ownership from src/spec/dp/pipeline.md and the unchanged RTL.
+# DP v1.4 register ownership from src/spec/dp/dptop/pipeline.md and the unchanged RTL.
 # Classification is reporting only: no path exceptions or optimization constraints.
 proc dp_stage {name} {
   if {[regexp {operand_unpack_[ab]/} $name]} {return S1}

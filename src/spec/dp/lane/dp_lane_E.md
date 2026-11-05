@@ -1,4 +1,4 @@
-> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.5.3；修改时间：2026-11-05 13:59:08 +08:00；对应代码：专用实现尚未建立；推导基线为 [dp_lane.v](../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../cmodel/lib/lane.cpp)。
+> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：专用实现尚未建立；推导基线为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)。
 
 # E 类专用 lane 讨论稿
 
@@ -6,7 +6,7 @@
 
 ## 1. E64 组织与 e2 融合
 
-E64 = 4 个 E16 group = 8 个 E8 lane，每拍完成 64 对元素乘积和，再与一份 FP32 C 相加。保留 MXFP4、NVFP4 和项目当前定义的 HiF4，三类可逐拍切换；每笔 A/B 同格式。输入布局和 scale 共享关系遵循 [原合同](layout-and-scales.md)。
+E64 = 4 个 E16 group = 8 个 E8 lane，每拍完成 64 对元素乘积和，再与一份 FP32 C 相加。保留 MXFP4、NVFP4 和项目当前定义的 HiF4，三类可逐拍切换；每笔 A/B 同格式。输入布局和 scale 共享关系遵循 [原合同](../dptop/layout-and-scales.md)。
 
 MXFP4/NVFP4 元素幅值 coefficient 为 {0,1,2,3,4,6,8,12}，定点格式 I3F1；HiF4 幅值为 (raw&7)×2^e1，格式 I2F2。HiF4 每侧 e2 共享 8 个元素，令 p=e2_a+e2_b，p∈{0,1,2}。原始带符号乘积为 q_i：
 
@@ -31,7 +31,7 @@ HiF4 lane:   sum_i(q_i << p) = sum_i(q_i) << p
 | S4 | lane 内 HiF4 TC 左移 p；MX/NV 静态补 2 零 | 两 lane TC 相加，组和后分离符号/幅值 | 每 group 14 位幅值+独立符号 |
 | S5 | lane 不再计算 | NV/HiF 14×8 scale 或 MX 旁路；LZD；兼容输出 | 与原多精度 group 相同的 S5 token |
 
-S3 是完整 E8 lane 规约；S4 完成 E16 group 规约及一次组 abs。S4 的组幅值已经准备好，S5 不再串联组加法及 abs。S6–S8 与 C 路径继续使用原后端，见 [group 接入合同](dp_group_E.md)。
+S3 是完整 E8 lane 规约；S4 完成 E16 group 规约及一次组 abs。S4 的组幅值已经准备好，S5 不再串联组加法及 abs。S6–S8 与 C 路径继续使用原后端，见 [group 接入合同](../group/dp_group_E.md)。
 
 模块边界也随之调整：lane 持有 S1/S2/S3 寄存器，其末端左移为 S4 组合逻辑；组模块在同一个 S4 边沿寄存两 lane 合并结果。不能先在 lane 内增加 S4 输出寄存器，再指望 group 合并仍属于 S4。对外 group 仍在 S5 输出，不改变原后端的到达拍数。
 

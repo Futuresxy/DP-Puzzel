@@ -34,7 +34,7 @@ dp_top                         单个 DP，C 传递/解包及 S6–S8
 └── fp32_output                 RNE、渐进下溢与 FP32 打包
 ```
 
-每个 module 单独同名文件。组合模块不暗加寄存器；S1 寄存器由 lane 内 `dp_lane_unpack` 持有，其余流水由 lane、group、top 三层持有。同步高有效 `reset` 清除有效控制并取消在途请求；数据寄存器以有效使能保持，不进行全数据复位。握手、阶段映射、源文件和统计归属见 [RTL 实现合同](../spec/dp/verilog.md)。
+每个 module 单独同名文件。组合模块不暗加寄存器；S1 寄存器由 lane 内 `dp_lane_unpack` 持有，其余流水由 lane、group、top 三层持有。同步高有效 `reset` 清除有效控制并取消在途请求；数据寄存器以有效使能保持，不进行全数据复位。握手、阶段映射、源文件和统计归属见 [RTL 实现合同](../spec/dp/implementation/verilog.md)。
 
 尾数定点格式注释使用对齐表格，每行一种或一类精度，独立列出 S、I、F。表前说明 SM 独立符号或 TC 二补码，以及 P、L 等参数的定义。乘法器输入和输出分别列出各自的 S、I、F。解包和尾数乘法表列有效 coefficient 的格式；通用槽的高位零扩展不增加 F，树和级间输出表按数值通路宽度列示。
 

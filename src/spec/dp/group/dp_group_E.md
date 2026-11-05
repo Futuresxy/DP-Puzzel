@@ -1,4 +1,4 @@
-> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.5.3；修改时间：2026-11-05 13:59:08 +08:00；对应代码：专用实现尚未建立；推导基线为 [dp_group.v](../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../verilog/top/dp_top.v)、[CModel group.cpp](../../cmodel/lib/group.cpp)。
+> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：专用实现尚未建立；推导基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
 
 # E 类专用 group 讨论稿
 
@@ -6,7 +6,7 @@
 
 ## 1. 统一定点 E16 组
 
-E64 = 4×E16 group，每组包含两个 E8 lane；G=1/2/4 对应 E16/E32/E64，对照原配置有 `K_E`=16G=4×`K_FP16`。默认 A/B 各 256 位。量化块 scale 与 HiF4 元数据保持 [既有广播布局](layout-and-scales.md)，不能把 MX 的 32 元素 scale 块改为每 E16 组独立量化。
+E64 = 4×E16 group，每组包含两个 E8 lane；G=1/2/4 对应 E16/E32/E64，对照原配置有 `K_E`=16G=4×`K_FP16`。默认 A/B 各 256 位。量化块 scale 与 HiF4 元数据保持 [既有广播布局](../dptop/layout-and-scales.md)，不能把 MX 的 32 元素 scale 块改为每 E16 组独立量化。
 
 定义每 lane 原始八项有符号和为 Q，HiF4 p=e2_a+e2_b。进入组规约前统一成 F4：
 
@@ -79,7 +79,7 @@ pad_scale = M_group - 22               // 默认 9
 | NVFP4 | SM | 1 | 12 | `M_group`−12 | 19 | `alpha_scale`+11 |
 | HiF4，e2 已融合 | SM | 1 | 12 | `M_group`−12 | 19 | `alpha_scale`+11 |
 
-HiF4 的默认 coefficient 从原 S1I10F21 换为 S1I12F19，表示同一个真实数值；对外字段 layout 和通用 token 语义保持一致。后端只需读取 magnitude/`A_raw`/z，不按 datatype 猜测固定 F，因此无需更改 S6 算术。原多精度主实现的 HiF4 格式仍按其 [逐级格式表](stage-formats.md) 定义，本提案单独声明专用源的坐标。
+HiF4 的默认 coefficient 从原 S1I10F21 换为 S1I12F19，表示同一个真实数值；对外字段 layout 和通用 token 语义保持一致。后端只需读取 magnitude/`A_raw`/z，不按 datatype 猜测固定 F，因此无需更改 S6 算术。原多精度主实现的 HiF4 格式仍按其 [逐级格式表](../common/stage-formats.md) 定义，本提案单独声明专用源的坐标。
 
 设原通用组公共元素指数为 r∈{0,1,2}，k=2−r。对同笔非零有限 HiF4 组有：
 
@@ -107,7 +107,7 @@ E_max = max_active(A_raw-z)
 net = A_raw-E_max
 ~~~
 
-全局对齐仍为 unsigned 左移或 RTZ 右移，进入 S7 前恢复 TC。G=4 时 S7 扇入为 4 组+C=5，默认 `GLOBAL_W`=40，输出 43 位；FP32 舍入语义和特殊值不变。复用后端并不证明其 1.41GHz 时序已解决，历史 N12 结论仍只适用于原冻结输入，见 [时序记录](../../../hw/dc_syn/records/dp_n12_timing_20261105.md)。
+全局对齐仍为 unsigned 左移或 RTZ 右移，进入 S7 前恢复 TC。G=4 时 S7 扇入为 4 组+C=5，默认 `GLOBAL_W`=40，输出 43 位；FP32 舍入语义和特殊值不变。复用后端并不证明其 1.41GHz 时序已解决，历史 N12 结论仍只适用于原冻结输入，见 [时序记录](../../../../hw/dc_syn/records/dp_n12_timing_20261105.md)。
 
 非零有限组的原 anchor 范围为 MX：[−245,263]；NV：[−1,27]；融合 e2 后 HiF4：[−85,41]。MX 的 263 已超过 signed 9-bit，应继续使用顶层原 `ANCHOR_W`；默认 signed 10-bit。净差保留原 signed 11-bit 中间值，不因元素仅 4 位而截窄。
 

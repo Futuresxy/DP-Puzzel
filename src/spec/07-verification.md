@@ -1,4 +1,4 @@
-> 功能：定义三实现共用验收合同；范围：数值、周期、协议、配置覆盖与证据；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[精度回归](../../test/run_cmodel.py)、[协议/边界测试](../../test/tests/test_existing.py)；RTL TB 尚未实现。
+> 功能：定义三实现共用验收合同；范围：数值、周期、协议、配置覆盖与证据；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[精度回归](../../test/run_cmodel.py)、[协议/边界测试](../../test/tests/test_existing.py)；RTL TB 尚未实现。
 
 # 验证方法与验收边界
 
@@ -16,7 +16,7 @@
 
 全部新版输入位于根 `test/data/dp/`，采用 [DP_INPUTS_V1](../../test/data/README.md)。旧九格式只导入所需 K 的 correct_961，保留来源 SHA256 与五段划分，不继承旧阈值。TF32 K8 和 INT8 K32 使用固定种子新建。
 
-[CModel 合同](dp/cmodel.md)区分整数位精确执行与独立 Fraction 参考。TF32 另记录 FP64 近似；INT8 必须与精确整数乘加及模 2^32 回绕完全一致。保存的 expected 同时包含架构结果和数学结果，未来两条 RTL 读取同一输入。
+[CModel 合同](dp/implementation/cmodel.md)区分整数位精确执行与独立 Fraction 参考。TF32 另记录 FP64 近似；INT8 必须与精确整数乘加及模 2^32 回绕完全一致。保存的 expected 同时包含架构结果和数学结果，未来两条 RTL 读取同一输入。
 
 ## 3. 必测覆盖
 

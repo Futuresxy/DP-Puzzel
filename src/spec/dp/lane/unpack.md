@@ -1,4 +1,4 @@
-> 功能：定义固定 E/M/S 解包数值布局；范围：T/H/Q/E、HiF4 e1/e2 和 E6M2 块 scale；版本：v1.4.2；修改时间：2026-11-05 09:35:11 +08:00；对应代码：[CModel lib/unpack.cpp](../../cmodel/lib/unpack.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义固定 E/M/S 解包数值布局；范围：T/H/Q/E、HiF4 e1/e2 和 E6M2 块 scale；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/unpack.cpp](../../../cmodel/lib/unpack.cpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 固定 E/M/S 解包布局
 
@@ -60,7 +60,7 @@ x = (-1)^s × m_out × 2^(-3) × 2^(e_out - 15)
 | E3M2 | 3 | 2 | 12 | 1 |
 | E2M3 | 1 | 3 | 14 | 0 |
 
-上述只是 bias 坐标平移和零扩展，有限输入不发生舍入，subnormal 以 h=0 保留。零可以保留其格式对应的有限占位指数，但 m=0；NaN/Inf 使用旁带，数值字段采用安全占位值（本合同选 e_out=1、m_out=0），不能从内部 E 全 1 再分类。 用户确认首版 A/B 仅同格式，独立 datatype 字段按 [接口矩阵](interface.md) 检查。
+上述只是 bias 坐标平移和零扩展，有限输入不发生舍入，subnormal 以 h=0 保留。零可以保留其格式对应的有限占位指数，但 m=0；NaN/Inf 使用旁带，数值字段采用安全占位值（本合同选 e_out=1、m_out=0），不能从内部 E 全 1 再分类。 用户确认首版 A/B 仅同格式，独立 datatype 字段按 [接口矩阵](../dptop/interface.md) 检查。
 
 ## 5. E2M1 到 I3F1 的无损转换
 
@@ -96,7 +96,7 @@ x_i = (-1)^s × mi × 2^(-2) × 2^e2[e2_index] × block_scale
 
 ## 8. 分类旁带与后续共享
 
-E/M/S 之外保留每个活动 A/B 元素的分类信息，scale 按自身格式分类；A/B/scale 分类发生在 S1，FP32 C 分类在 S5 发生，INT32 C 不执行浮点分类。所有摘要与本笔 ctrl 继续传到结果选择。分类规则见 [特殊值](special-values.md)。
+E/M/S 之外保留每个活动 A/B 元素的分类信息，scale 按自身格式分类；A/B/scale 分类发生在 S1，FP32 C 分类在 S5 发生，INT32 C 不执行浮点分类。所有摘要与本笔 ctrl 继续传到结果选择。分类规则见 [特殊值](../common/special-values.md)。
 
 固定布局方便共享乘法器位片及指数运算，不自动确定硬件复制数、subword 乘法交叉项屏蔽或加法树位宽。
 
@@ -104,9 +104,9 @@ INT8 采用有符号输入，S1 转独立符号及八位无符号幅值；与 Q 
 
 ## 9. A/B/scale 的 S1 解包与 C 的 S5 解包
 
-S1 解包 A/B/scale；A/B 仍为既定 E/M/S 布局。C 与它们同拍接收，但 S1–S4 仅保存原始 32 位编码及本笔 c_datatype，S5 并行解包：FP32 为 sign、M24={h,F23}、有效指数和分类；INT32 为独立 sign 和安全 M32 幅值（包含 INT32_MIN）。C 的数值/时刻见 [出口表](stage-formats.md)。
+S1 解包 A/B/scale；A/B 仍为既定 E/M/S 布局。C 与它们同拍接收，但 S1–S4 仅保存原始 32 位编码及本笔 c_datatype，S5 并行解包：FP32 为 sign、M24={h,F23}、有效指数和分类；INT32 为独立 sign 和安全 M32 幅值（包含 INT32_MIN）。C 的数值/时刻见 [出口表](../common/stage-formats.md)。
 
-scale 的 E8M0/E4M3/E6M2 统一解包为 E8 指数、I1F3 幅值和分类，详见 [scale 合同](scale.md)。E/M/S 布局与 HiF4 e1/e2 位号按本页定义；新乘法器必须按当前 Q 的 M[7:0] 提取两个 nibble，不能照抄历史 M[11:8] 的路由。
+scale 的 E8M0/E4M3/E6M2 统一解包为 E8 指数、I1F3 幅值和分类，详见 [scale 合同](../group/scale.md)。E/M/S 布局与 HiF4 e1/e2 位号按本页定义；新乘法器必须按当前 Q 的 M[7:0] 提取两个 nibble，不能照抄历史 M[11:8] 的路由。
 
 参数的取值与推导统一进入 Chisel 构造参数对象，计划入口 src/chisel/parameter/（未创建）。
 
@@ -114,4 +114,4 @@ scale 的 E8M0/E4M3/E6M2 统一解包为 E8 指数、I1F3 幅值和分类，详�
 
 C 的 S5 物理输出统一为 sign+M32：FP32 自然 M24/F23 在低位补 8 零，成为 I1F31；INT32 为 I32F0。FP32 额外低零可由综合常量优化，不改变数值、A_c 或流水级数。
 
-各侧 datatype 在原子 req_fire 时采样；首版 A/B 同格式，具体枚举/scale 合法矩阵见 [DP 接口](interface.md)。S1–S4 的 C 存储无需保存解包后的重复 sign/exp/mant/class；节省的是展开记录的额外寄存位，原始 C32 与类型仍须保存。S5 解包不减少 C 延迟，不延后外部接收。
+各侧 datatype 在原子 req_fire 时采样；首版 A/B 同格式，具体枚举/scale 合法矩阵见 [DP 接口](../dptop/interface.md)。S1–S4 的 C 存储无需保存解包后的重复 sign/exp/mant/class；节省的是展开记录的额外寄存位，原始 C32 与类型仍须保存。S5 解包不减少 C 延迟，不延后外部接收。
