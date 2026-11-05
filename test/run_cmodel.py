@@ -1,5 +1,6 @@
 """Build-independent precision campaign; existing formats run before extensions."""
 from pathlib import Path
+from datetime import datetime, timezone
 import argparse
 import hashlib
 import json
@@ -109,7 +110,10 @@ def main():
     ap.add_argument('--import-existing',type=Path,metavar='SOURCE_ROOT',help='Import from an external legacy vector corpus')
     ap.add_argument('--binary',type=Path,default=ROOT/'src/cmodel/build/dp_cmodel_cli')
     ap.add_argument('--run-dir',type=Path)
-    args=ap.parse_args(); run=args.run_dir or TEST/'runs/cmodel'/args.phase; run.mkdir(parents=True,exist_ok=True)
+    args=ap.parse_args()
+    run_id=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+    run=args.run_dir or TEST/'runs/cmodel'/run_id
+    run.mkdir(parents=True,exist_ok=args.run_dir is not None)
     if args.import_existing: import_existing(args.import_existing)
     directories=sorted((TEST/'data/dp').glob('*/K*/correct_961')) if args.phase!='extensions' else []
     if args.phase!='existing': directories+=sorted((TEST/'data/dp').glob('*/K*/generated_v1'))
@@ -119,7 +123,11 @@ def main():
                   model_version=json.loads(subprocess.check_output([str(args.binary),'--version'],text=True)),
                   model_source_sha256=model_fingerprint(),
                   scope='CModel and independent mathematical checks; no RTL or EDA')
-    (run/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
+    summary=run/'summary.json'
+    temporary=summary.with_suffix('.tmp')
+    temporary.write_text(json.dumps(report,indent=2)+'\n')
+    temporary.replace(summary)
+    print(f'Report: {summary}')
     if report['failures']:
         print(json.dumps(report['failures'][:10],indent=2)); return 1
     return 0

@@ -14,3 +14,5 @@ description: Plan or run single-DP workload power comparisons in DP-Puzzel using
 5. 每个格式记录 Internal、Switching、Leakage、Total、mW、有效 MAC/周期与 pJ/MAC，关联同一网表和同源负载。保存原始 SAIF、窗口、匹配结果和工具报告。精简结果和适用范围放入 `hw/power/records/`，原始工具产物保存在忽略的 `hw/power/runs/`。
 
 输入不完整、重放不一致或注释审计失败时保留诊断结果，并指出具体缺项。工具、许可证、PDK 和库路径只在本机解析。流程借鉴 [PETile 功耗 skill](https://github.com/Futuresxy/Quant_LLM_Chip_Codesign/blob/5a5037ad03b656ea975ef594d0aca4dc5ef96a39/HW/power_analysis/skills/petile-power-analysis/SKILL.md)，DP 的接口、负载和结果均取自本项目。
+
+记录功耗 run 的完成状态及所用 DC run，结果确认后按 [运行产物保留](../../scripts/README.md#运行产物保留) 清理。长期保留须与用户确认具体 run。
