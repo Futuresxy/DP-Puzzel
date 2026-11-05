@@ -15,7 +15,7 @@
 
 当前多精度单 DP 的 CModel、两版 RTL 和 N12 DC 流程已建立；EDA 执行以 AGENTS.md 的本机授权为准。新增 [dp_lane_E](../src/spec/dp/dp_lane_E.md) 与 [dp_group_E](../src/spec/dp/dp_group_E.md) 仅讨论 MXFP4/NVFP4/HiF4 专用 E64 单元，保留现有多精度设计作比较。
 
-待用户确认：采用 E0 的现有 S3/S4 切点，还是进一步将 HiF4 移位合并到 lane 树后；group 使用兼容 M31 还是紧凑 M22 接口。建议先 E0+M22，局部位宽精确压缩，S6 保留可配 40 位窗口及 FP32 C/D。方案确认后再开发专用 CModel/RTL、建立等价验证和同条件 PPA，当前不执行新综合或功耗实验。
+用户已明确 HiF4 先求和再在 lane 内融合 e2，删除组内元素指数 MAX/差值/右移对齐；group 输出保持原多精度布局和 S5 到达拍，默认 M31，复用现有 group 外计算。待讨论的 E64 切分为 S3 完成八项 lane TC 树、S4 完成局部小左移及两 lane TC 合并/组 abs、S5 完成 scale/LZD。MX/NV 组内无可变移位，S6 仍负责各组块 scale 与 C 的全局对齐。具体切分确认后再开发专用 CModel/RTL 并验证 PPA，当前不执行新综合或功耗实验。
 
 ### DP spec 闭合清单（CModel 前）
 

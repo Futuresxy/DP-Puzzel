@@ -1,114 +1,87 @@
-> 功能：讨论 E8 专用 lane 的精简数据通路；范围：MXFP4/NVFP4/HiF4、S1–S4、精确局部对齐；版本：v1.5.2；修改时间：2026-11-05 13:33:21 +08:00；对应代码：专用实现尚未建立；推导基线为 [dp_lane.v](../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../cmodel/lib/lane.cpp)。
+> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.5.3；修改时间：2026-11-05 13:59:08 +08:00；对应代码：专用实现尚未建立；推导基线为 [dp_lane.v](../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../cmodel/lib/lane.cpp)。
 
 # E 类专用 lane 讨论稿
 
-状态：候选方案，待用户讨论确认；没有新增 RTL/CModel，也没有专用设计的 PPA 测量。现有多精度 DP 继续遵循 v1.5 架构及 v1.5.1 实现映射。目标是保持当前 E 类数值语义、每 lane 每拍 8 对元素和 L8/II=1，通过专用乘法器、窄寄存器及小范围移位减少面积与活动。
+用户已确认采用 HiF4 先求和再移位，并使 group 输出兼容现有多精度版本；进一步明确可将 HiF4 e2 融入定点 coefficient，删除两 lane 间的指数 MAX/差值/右移对齐。本文给出对应的八级流水建议，具体 S2–S4 切点仍待讨论。专用 RTL/CModel 尚未实现，时序和 PPA 尚未测量；现有多精度主实现保持 v1.5 架构及 v1.5.1 实现映射。
 
-## 1. 范围与结构
+## 1. E64 组织与 e2 融合
 
-E 包括 MXFP4 E2M1、NVFP4 E2M1 和项目当前定义的 HiF4。A/B 每笔同格式，三类可逐拍切换。HiF4 沿用现有 e1/e2 和 E6M2 定义，不另造编码。C/D 为 FP32，专用 DP 不支持 INT8/INT32。输入布局和量化块 scale 共享关系保持 [原合同](layout-and-scales.md)。
+E64 = 4 个 E16 group = 8 个 E8 lane，每拍完成 64 对元素乘积和，再与一份 FP32 C 相加。保留 MXFP4、NVFP4 和项目当前定义的 HiF4，三类可逐拍切换；每笔 A/B 同格式。输入布局和 scale 共享关系遵循 [原合同](layout-and-scales.md)。
+
+MXFP4/NVFP4 元素幅值 coefficient 为 {0,1,2,3,4,6,8,12}，定点格式 I3F1；HiF4 幅值为 (raw&7)×2^e1，格式 I2F2。HiF4 每侧 e2 共享 8 个元素，令 p=e2_a+e2_b，p∈{0,1,2}。原始带符号乘积为 q_i：
 
 ~~~text
-S1 E 解包：8×(4-bit 幅值 + 符号)，HiF4 e1 融入幅值
-         ↓
-S2 8× unsigned 4×4 → 8×8-bit 乘积，符号 XOR
-   同时形成 lane e2 指数和及 active → group 两路 MAX
-         ↓
-S3 4×有符号 pair → abs → 补 2 个保护零 → HiF4 0/1/2 右移 → 恢复符号
-         ↓
-S4 四路平衡加法树 → 14-bit 有符号 lane SOP
+MXFP4/NVFP4: element_product = q_i * 2^-2
+HiF4:        element_product = (q_i << p) * 2^-4
+
+HiF4 lane:   sum_i(q_i << p) = sum_i(q_i) << p
 ~~~
 
-lane 仍占 S1–S4。两个 lane 组成 E16 基本组，见 [dp_group_E](dp_group_E.md)。G 个组组成 E(16G) DP；默认 G=4，即 E64，对应现有 `K_FP16`=16 的 E 吞吐。
+因此 group 可以在固定二进制小数点下直接累加，无需共同元素 anchor、lane candidate active 或两 lane 间 MAX/delta。HiF4 p 是 lane 内部的局部控制，在 coefficient 中消耗，不传给 group 作为指数。
 
-## 2. 可删除与保留的逻辑
+代数上等价于将 e2 融入每个 product。建议物理实现为 lane 求和后一次左移：S2 仍寄存 8 位原始乘积，S3 采用窄树，S4 在 lane 末端组合左移 0/1/2 位。MX/NV 仅静态补两个低零，以便统一成相同的 F4；静态补零是连线，无可变移位器。
 
-| 当前通用 lane | E 专用建议 | 原因 |
-| --- | --- | --- |
-| T/H/Q/INT8 解包、分类及选择 | 只保留 E2M1 与 HiF4 解包 | E 元素没有独立 NaN/Inf 编码 |
-| 每 lane 两组 HH/HL/LH/LL 混合宽度乘法及重组 | 8 个无符号 4×4 乘法器 | 三种 E 格式的解包幅值都能装入 4 位 |
-| 8 个通用元素指数和及 lane MAX | 一个 2-bit lane 指数和 | MX/NV 恒为 0；HiF4 同 lane 的 e2 相同 |
-| 4 个通用 `LOCAL_W` 幅值移位器 | 4 个 11-bit 幅值、仅选 0/1/2 的右移器 | HiF4 两侧 e2 各 1 位；MX/NV 旁路 |
-| 多精度树宽及格式 mux | 专用 12→14-bit 树 | E 的结构低零可以省去 |
-| 请求/符号/零语义及有效位 | 保留并缩短控制表示 | 逐拍换型、取消在途和负零仍要正确 |
+## 2. 建议的 S1–S5 划分
 
-上述宽度是 RTL 的逻辑容器对照；DC 可能已消除部分常零位，不能据此直接换算实际触发器或面积节省。元素分类逻辑可删，scale/C 的 NaN/Inf、payload 合法性检查仍由组和顶层承担。
+| 级 | lane 数据路径 | group/旁带 | 主要寄存数据 |
+| --- | --- | --- | --- |
+| S1 | E 解包，HiF4 e1 融入 4 位幅值 | scale 解包、采样控制 | A/B 幅值与符号、局部 p 信息 |
+| S2 | 每 lane 8 个无符号 4×4，符号 XOR | scale 4×4 系数积及指数和 | 8×8 位乘积、8 位符号 |
+| S3 | 8 项带符号规约，保留 TC | 提前计算 scale 修正后的输出 anchor | 每 lane 12 位 TC，及 p/零符号旁带 |
+| S4 | lane 内 HiF4 TC 左移 p；MX/NV 静态补 2 零 | 两 lane TC 相加，组和后分离符号/幅值 | 每 group 14 位幅值+独立符号 |
+| S5 | lane 不再计算 | NV/HiF 14×8 scale 或 MX 旁路；LZD；兼容输出 | 与原多精度 group 相同的 S5 token |
 
-## 3. S/I/F 与位宽推导
+S3 是完整 E8 lane 规约；S4 完成 E16 group 规约及一次组 abs。S4 的组幅值已经准备好，S5 不再串联组加法及 abs。S6–S8 与 C 路径继续使用原后端，见 [group 接入合同](dp_group_E.md)。
 
-S 不包含在 I 内。TC 为二补码；SM 为独立符号加无符号幅值。S0 行的符号在旁带中传递。表中为本候选的物理数值宽度，不含 valid、指数等控制。
+模块边界也随之调整：lane 持有 S1/S2/S3 寄存器，其末端左移为 S4 组合逻辑；组模块在同一个 S4 边沿寄存两 lane 合并结果。不能先在 lane 内增加 S4 输出寄存器，再指望 group 合并仍属于 S4。对外 group 仍在 S5 输出，不改变原后端的到达拍数。
+
+## 3. S/I/F 与自然增长
+
+S 不计入 I。TC 为二补码，SM 为独立符号加幅值；乘法器的符号单独携带。以下仅计数值位，不含控制和指数旁带。
 
 | 阶段/信号 | 精度 | 表示 | S | I | F | 数值位宽 |
 | --- | --- | --- | --- | --- | --- | --- |
-| S1 乘法幅值输入 | MXFP4/NVFP4 | unsigned | 0 | 3 | 1 | 4 |
-| S1 乘法幅值输入 | HiF4（融合 e1） | unsigned | 0 | 2 | 2 | 4 |
-| S2 乘法幅值输出 | MXFP4/NVFP4 | unsigned | 0 | 6 | 2 | 8 |
-| S2 乘法幅值输出 | HiF4 | unsigned | 0 | 4 | 4 | 8 |
-| S3 pair 原始和 | MXFP4/NVFP4 | TC | 1 | 7 | 2 | 10 |
-| S3 pair 原始和 | HiF4 | TC | 1 | 5 | 4 | 10 |
-| S3 补零/精确对齐后叶子 | MXFP4/NVFP4 | TC | 1 | 7 | 4 | 12 |
-| S3 补零/精确对齐后叶子 | HiF4 | TC | 1 | 5 | 6 | 12 |
-| S4 lane SOP | MXFP4/NVFP4 | TC | 1 | 9 | 4 | 14 |
-| S4 lane SOP | HiF4 | TC | 1 | 7 | 6 | 14 |
-
-MX/NV 元素幅值 coefficient 为 {0,1,2,3,4,6,8,12}，HiF4 融合 e1 后为 (raw&7)×2^e1，最大 14。每个 pair 求两个带符号乘积和：10 位 TC 足够。取幅值时用安全扩展中间值，随后补两个低零：幅值装入 11 位，另有一个符号位，组成 12 位叶子。四叶子树增长两位得到 14 位。
-
-参数从结构派生，不延用为了 T/H/Q 配置的 `LOCAL_W`=28：
+| S1 乘法器幅值输入 | MXFP4/NVFP4 | unsigned | 0 | 3 | 1 | 4 |
+| S1 乘法器幅值输入 | HiF4，e1 已融合 | unsigned | 0 | 2 | 2 | 4 |
+| S2 原始乘积 | MXFP4/NVFP4 | unsigned | 0 | 6 | 2 | 8 |
+| S2 原始乘积 | HiF4 | unsigned | 0 | 4 | 4 | 8 |
+| S3 lane 原始和 | MXFP4/NVFP4 | TC | 1 | 9 | 2 | 12 |
+| S3 lane 原始和 | HiF4 | TC | 1 | 7 | 4 | 12 |
+| S4 lane 融合 p 或静态补零后 | 全部 E | TC | 1 | 9 | 4 | 14 |
+| S4 group 合并/符号分离后 | 全部 E | TC→SM | 1 | 10 | 4 | 15 |
 
 ~~~text
-N_E = 8                     // 每 lane 元素数，保持现有 E8
-N_pair = N_E / 2 = 4
-W_mant = 4; W_product = 2*W_mant = 8
-W_pair_tc = W_product + 2 = 10
-GUARD = max(e2A+e2B) - min(e2A+e2B) = 2
-W_leaf_tc = W_pair_tc + GUARD = 12
-W_lane_tc = W_leaf_tc + ceil(log2(N_pair)) = 14
+W_mant = 4; W_product = 8
+W_lane_raw_tc = W_product + 1 + ceil(log2(8)) = 12
+W_lane_raw_mag = W_lane_raw_tc - 1 = 11
+W_lane_fused_mag = W_lane_raw_mag + max(p) = 13
+W_group_mag = W_lane_fused_mag + ceil(log2(2)) = 14
 ~~~
 
-HiF4 的 F=6 是以公共 e2 anchor 为坐标的固定小数点；右移不会丢位，因为预留 2 个保护低零，delta 最大为 2。不能将这些补零当成额外的输入有效精度。
+HiF4 原始 lane 和幅值上界 8×14²=1568，左移 p 后不超过 6272；group 不超过 12544。MX/NV 原始 lane 幅值不超过 8×12²=1152，静态补两零后不超过 4608，group 不超过 9216。均满足上述位宽。HiF4 左移增加整数范围，F 保持 4；MX/NV 静态低补零将 F2 变为 F4，两条路径精确统一到 I9F4。
 
-## 4. 两 lane 的指数 MAX 与控制
+若在 S2 对每个 HiF4 product 左移，乘积槽需要 10 位、后续 lane 树需要 14 位；共有 64 个小移位。求和后再左移只需 8 个 12→14 位 TC 小移位，S2/S3 的数据通路保持较窄。这是结构推导，实际面积与时序仍需同约束综合确认。
 
-每个 lane 的两侧 e2 各 1 位，S2 形成 `p_lane`=e2A+e2B，范围 0…2。MXFP4/NVFP4 的 `p_lane`=0。`lane_active` 必须在 pair 抵消前，由八个非零乘积候选的 OR 得到；不得用 lane SOP 是否为零替代。
+## 4. 算术和控制要求
 
-组级在 S2 对两路有效候选求 MAX，两个 lane 在同一边沿寄存 `r_group`。S3 使用 delta=`r_group`−`p_lane`；失活 lane 的移位控制取安全值。该路径是固定流水的组合侧带，没有独立握手，也没有组合反馈环；必须与同笔乘积、符号和格式同步。
+S3 的八项带符号树不能写成七次串行加法。平衡树的 TC 自然增长为 9→10→11→12 位；也可比较 CSA 压缩后一次最终 CPA。保持 TC 直到组和后再做一次 abs，省去重复的 lane abs 和符号恢复。
 
-S2 只需保存一份 lane 指数和及 group anchor，无需 8 份宽指数。S1 的 HiF4 e1 在解包后消耗，不再逐级传递；e2 在生成指数和后也无需保留原字段。独立符号一直用于 pair，S3/S4 恢复 TC；`all_negative` 的归约规则保持现有全部元素乘积符号定义，包括零元素。
+S4 对 HiF4 先将 12 位 TC 符号扩展到 14 位，再左移 p；MX/NV 直接将 12 位 TC 低拼两个零。这里左移为已证明范围内的精确整数乘 2^p，没有截断。两个 14 位 TC 相加得到 15 位组和，随后安全求绝对值并寄存 14 位幅值与独立符号。其结果与无符号幅值左移、带符号合并相等；需要在 RTL 中显式定义扩展和结果宽度。
 
-同步高有效复位只清控制/有效位，无效周期数据寄存器保持。精简模式标志可用 `is_hif4`/`needs_mant_scale` 等内部表示，但接口可继续使用原 datatype 编码，并诊断不支持的请求。
+`all_negative` 按所有原始乘积符号归约，包括零元素；group 的精确零符号继续使用原合同。不得用 lane 和的 sign bit 替代全部元素的零符号旁带。scale 乘零也保留原组和符号规则。
 
-## 5. 与当前 E 路径的数值对应
+p、datatype、scale、valid、特殊值和零符号信息必须跟随本笔数据。同步高有效复位清除有效控制并取消在途，无效周期数据保持。删去指数 MAX 后不需要 lane 之间的独立握手；顶层仍只有一次 A/B/C 原子接收。
 
-当前默认 `LOCAL_W`=28，S3 TC 叶子 29 位、S4 lane 31 位、S5 group TC 32 位。E 路径的每个 S3 叶子都含 17 个结构低零；HiF4 最大右移 2 位后仍有这 17 个零。候选移除这 17 位后，S3/S4/group 分别是 12/14/15 位，数值和符号不变。
+## 5. 时序待讨论项
 
-~~~text
-drop_local = LOCAL_W - 11              // 默认 17
-leaf_base = leaf_E << drop_local
-lane_base = lane_E << drop_local
-group_base = group_E << drop_local
-F_base = F_E + drop_local
-~~~
+当前建议将 S3 定为八项 TC 树，S4 定为小左移+两 lane TC 合并+组 abs，S5 定为 scale+LZD。这样缩短原 S5 串行链，但 S3 增加了规约深度，应作为前端首要检查点。
 
-这是对现有结构低零的精确压缩，不能直接推广为降低现有通用 lane 的 `LOCAL_W`。专用单元仍需与原 CModel/RTL 的 E 模式逐级验证，并与独立数学 reference 比较整体误差。
+若 S3 时序紧，可将第一层 pair 加法前移至 S2，S3 只处理四项 TC 规约，后端 S4/S5 不动。这会在 4×4 乘法之后增加 pair 算术，是否有预算须实测。具体切点尚未批准，不提前承诺 1GHz 或 1.41GHz。
 
-## 6. 进一步合并 HiF4 移位的备选
+若后续静态配置仅包含 MX/NV，e1/e2 解包与这 8 个小左移器可以整体裁掉，group 就是统一定点规约加 scale。运行时选择 MX/NV 只使 HiF4 路径旁路或隔离，不等于物理逻辑被删除；是否新增该能力配置另行定义。
 
-因为同 lane 八个乘积共享 delta，可将四个 pair 的精确移位移到求和之后：
+## 6. 验证边界
 
-~~~text
-sum_i ((q_i * 4) / 2^delta) = (sum_i q_i * 4) / 2^delta
-delta ∈ {0,1,2}
-~~~
+后续专用实现先验证 product 级融合与 lane 和后融合的等价，再验证 group token 的数值坐标及 S6/S7/S8 结果。S3/S4 内部切点改变后，应建立新的 trace 对照，不能继续要求旧切点原始比特相同。group 的字段宽度和语义保持原接口，HiF4 的数值坐标换算见配套文档。
 
-| 方案 | S3 | S4 | 取舍 |
-| --- | --- | --- | --- |
-| E0：建议首版 | 四个 pair、四个小移位 | 四路树 | 保持现有切点，易做等价验证 |
-| E1：后续候选 | 八乘积规约为两个四项部分和 | 最终加法、一次 lane 移位 | 移位器减为一个，但需重分配树深并检查 S4 时序 |
-
-等式成立依赖保护低零和 delta 范围；若采用 TC 算术右移，也必须先证明整除，不能把对负数的算术右移当作通用 RTZ。E1 不应简单把整棵树塞进 S3，先做静态时序后决定流水。当前讨论建议先 E0，再独立比较 E1。
-
-## 7. 验证与待确认项
-
-先确认保留三种 E 格式及 E0 切分；后续实施时增加专用 CModel/RTL，保留原多精度单元。覆盖所有元素编码乘积、HiF4 e1/e2 组合、两 lane 失活/抵消、正负零、逐拍换型、气泡和复位，检查上述各级压缩对应关系。G=1/2/4、全局窗口扫参和非法请求分别验收。
-
-模块是否值得进一步折叠 HiF4 e1 或采用特制 4-bit 乘法逻辑，需由相同约束的面积/时序/活动功耗比较决定。首版使用直接无符号 4×4 乘法描述，交给 DC 映射，避免先引入复杂共享网络。
+覆盖所有元素编码乘积、HiF4 e1/e2 组合、严重抵消、正负零、scale 分类、C 特殊值、逐拍换型、气泡和复位；G=1/2/4 及原合法窗口分别验证。当前仅有数值推导和现有模型 trace 对照，专用 RTL 验收尚未发生。

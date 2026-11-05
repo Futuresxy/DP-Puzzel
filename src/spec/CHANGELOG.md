@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.5.2；修改时间：2026-11-05 13:33:21 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.5.3；修改时间：2026-11-05 13:59:08 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -21,7 +21,7 @@ v1.5.1 将 S5 无符号 scale 落地到 CModel、Verilog 和 SystemVerilog，更
 
 [scale](dp/scale.md) 保留 v1.4 → v1.5 的核心变更对照。更早版本由 Git 保存，非核心小修不在正文逐条累积。规则见[文档控制](document-control.md)。
 
-v1.5.2 将 CModel/两版 RTL 的定点格式注释改为每精度一行的 S/I/F 表格，并新增 E-only lane/group 讨论稿。当前实现的算术、默认参数和流水不变；E 专用 12/14/15 位局部通路及 M22 组 token 尚为候选，不更新生效架构或实现映射。
+v1.5.3 整理 CModel/两版 RTL 的 S/I/F 表格注释，并更新 E-only 讨论稿：按用户要求采用 HiF4 e2 定点融合、lane 求和后局部左移、兼容原多精度 group 输出 layout。S3 lane 规约、S4 group 规约、S5 scale/LZD 为待讨论的八级切分；专用 RTL/CModel 尚未建立，现有主实现的算术、参数、流水及实现映射保持不变。
 
 ## 2. 验证与实施状态
 
@@ -38,13 +38,13 @@ v1.5.1 的 CModel 与两版 RTL 均通过 10747 笔固定输入和无符号 scal
 | [06-configuration.md](06-configuration.md) | v1.5 | 定义参数及其合法派生关系 |
 | [07-verification.md](07-verification.md) | v1.5 | 定义三实现共用验收合同 |
 | [08-implementation-ppa.md](08-implementation-ppa.md) | v1.4.1 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.5.2 | 维护整体架构与文档版本时间线 |
-| [README.md](README.md) | v1.5.2 | 汇总新版规格入口和生效范围 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.5.3 | 维护整体架构与文档版本时间线 |
+| [README.md](README.md) | v1.5.3 | 汇总新版规格入口和生效范围 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.4.1 | 定义规格版本和历史修订规则 |
-| [dp/README.md](dp/README.md) | v1.5.2 | 汇总 DP 主方案与设计入口 |
-| [dp/dp_lane_E.md](dp/dp_lane_E.md) | v1.5.2 | 讨论 E8 专用 lane 的窄乘法、局部精确对齐与流水 |
-| [dp/dp_group_E.md](dp/dp_group_E.md) | v1.5.2 | 讨论 E16 组、M22 token 与 E-only 顶层接入 |
+| [dp/README.md](dp/README.md) | v1.5.3 | 汇总 DP 主方案与设计入口 |
+| [dp/dp_lane_E.md](dp/dp_lane_E.md) | v1.5.3 | 讨论 E8 窄规约、HiF4 e2 定点融合与流水 |
+| [dp/dp_group_E.md](dp/dp_group_E.md) | v1.5.3 | 讨论 E16 定点组和、兼容输出与 E64 后端复用 |
 | [dp/cmodel.md](dp/cmodel.md) | v1.5.1 | 定义 DP CModel、模块映射及共用测试接口 |
 | [dp/control.md](dp/control.md) | v1.4.2 | 定义 DP 逐请求控制与有效位推进 |
 | [dp/group-normalization-options.md](dp/group-normalization-options.md) | v1.5 | 定义 scale 后实际指数检测与合并对齐 |

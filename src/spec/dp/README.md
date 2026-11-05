@@ -1,4 +1,4 @@
-> 功能：汇总 DP 主方案与设计入口；范围：分组共享 DP、外部边界和后续独立对齐探索；版本：v1.5.2；修改时间：2026-11-05 13:33:21 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：汇总 DP 主方案与设计入口；范围：分组共享 DP、外部边界和后续独立对齐探索；版本：v1.5.3；修改时间：2026-11-05 13:59:08 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 多精度 DP 设计
 
@@ -28,7 +28,7 @@ S5 保留未左移幅值、无偏原 anchor 和 z。S6 先求真实指数 MAX，
 | 数据与控制 | [接口](interface.md) · [容量/scale 布局](layout-and-scales.md) · [控制](control.md) |
 | 数值 | [解包](unpack.md) · [逐级格式](stage-formats.md) · [位宽推导](numeric-layout.md) · [特殊值](special-values.md) |
 | 资源 | [乘法共享](multiplier-sharing.md) · [移位共享](shifter-sharing.md) · [scale](scale.md) · [组间对齐](group-normalization-options.md) |
-| E 类专用讨论 | [E8 lane](dp_lane_E.md) · [E16 group / E-only DP 接入](dp_group_E.md)（候选，未实现） |
+| E 类专用讨论 | [E8 lane](dp_lane_E.md) · [E16 group / E-only DP 接入](dp_group_E.md)（HiF4 e2 定点融合、兼容输出；流水待讨论） |
 | 实施 | [CModel](cmodel.md) · [Verilog 实现](verilog.md) · [功能统计](resource-accounting.md) · [独立对齐候选](independent-align.md) |
 
 ## 4. 当前边界
