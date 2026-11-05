@@ -1,6 +1,11 @@
 `include "dp_defs.vh"
 // Combinational unsigned multiplier; input isolation belongs to its caller.
-// S0I(ia)F(fa) x S0I(ib)F(fb) -> S0I(ia+ib)F(fa+fb).
+// Unsigned multiplier formats.
+// Precision / signal | S | I     | F
+// ------------------ | - | ----- | -----
+// Input A            | 0 | ia    | fa
+// Input B            | 0 | ib    | fb
+// Product            | 0 | ia+ib | fa+fb
 module dp_mul_unsigned #(
   parameter integer A_W = 8,
   B_W = 8

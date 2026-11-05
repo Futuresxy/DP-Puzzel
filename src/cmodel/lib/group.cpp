@@ -12,13 +12,30 @@ void detect(Token& t) {
   else { t.z=0; t.anchor_raw=0; }
 }
 }
-// S5 two-input tree preserves S4 F and grows I by one. Scale pair multiplies
-// S0I1F3 operands to S0I2F6. NVFP4/HiF4 magnitudes S0I10F4/S0I8F6
-// multiply that coefficient to S0I12F10/S0I10F12. Append
-// group_mag_bits()-22 low zeros; carry the original sign separately.
-// SM output with P=local_fraction(): T S1I3F(P+2), H S1I4F(P+1),
-// Q S1I5F(P), MXFP4 S1I10F(P-5), NVFP4 S1I12F(P-7), HiF4 S1I10F(P-5),
-// INT8 S1I18F(P-13). LZD only reads the unsigned magnitude.
+// S5 two-input tree preserves S4 F and grows I by one.
+// S2 unsigned scale pair.
+// Precision / signal | S | I | F
+// ------------------ | - | - | -
+// A/B scale          | 0 | 1 | 3
+// Scale pair         | 0 | 2 | 6
+// S5 unsigned scale multiply. A=magnitude, B=scale pair, Y=product.
+// Precision | A S | A I | A F | B S | B I | B F | Y S | Y I | Y F
+// --------- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+// NVFP4     | 0   | 10  | 4   | 0   | 2   | 6   | 0   | 12  | 10
+// HiF4      | 0   | 8   | 6   | 0   | 2   | 6   | 0   | 10  | 12
+// Product low padding is group_mag_bits()-22; sign travels separately.
+// P=c.local_fraction() (default 26). SM carries one separate sign bit.
+// S5 group output (SM).
+// Precision / signal | S | I  | F
+// ------------------ | - | -- | ----
+// TF32               | 1 | 3  | P+2
+// FP16 / BF16        | 1 | 4  | P+1
+// MXFP8 / MXFP6      | 1 | 5  | P
+// MXFP4              | 1 | 10 | P-5
+// NVFP4              | 1 | 12 | P-7
+// HiF4               | 1 | 10 | P-5
+// INT8               | 1 | 18 | P-13
+// LZD reads the listed I/F as unsigned magnitude (S=0).
 void stage_group(const Config& c,State& s,bool do_detect) {
   const auto t=s.request.a_type; const auto& f=format(t);
   Json scale_trace=Json::array();
@@ -86,9 +103,13 @@ void stage_detect(const Config&,State& s) {
     trace(s,"extra_LZD_register",{{"groups",group},{"c",token_json(s.c)}});
   }
 }
-// S6: pad each floating source by global_mag_bits()-source.width low zeros.
-// The unsigned shift yields S0I1F(global_mag_bits()-1) at E_max, then TC.
-// INT8+INT32 leaves use TC S1I32F(global_mag_bits()-32).
+// S6 pad=global_mag_bits()-source.width. Let M=global_mag_bits().
+// Unsigned aligned magnitude -> TC leaf. Both use the listed I/F.
+// Precision          | Mag S | Leaf S | I  | F
+// ------------------ | ----- | ------ | -- | ----
+// All floating modes | 0     | 1      | 1  | M-1
+// INT8 + INT32       | 0     | 1      | 32 | M-32
+// Floating coordinates use E_max. Integers use structural low zeros.
 void stage_global_align(const Config& c,State& s) {
   std::vector<Token> sources=s.groups; sources.push_back(s.c);
   const bool integer=s.request.c_type==CType::INT32;
@@ -121,14 +142,23 @@ void stage_global_align(const Config& c,State& s) {
     {"aligned_tc",bigs_json(s.aligned)},{"width",c.global_signed_align_width},
     {"f",integer?c.global_mag_bits()-int32_bits:c.global_mag_bits()-1}});
 }
-// S7: add ceil(log2(K_FP16/4+1)) integer bits to each S6 leaf format.
+// K=c.k_fp16, G=K/4, L=ceil(log2(G+1)), W=c.global_signed_align_width.
+// S7 total SOP (TC).
+// Precision / signal | S | I    | F
+// ------------------ | - | ---- | ----
+// All floating modes | 1 | 1+L  | W-2
+// INT8 + INT32       | 1 | 32+L | W-33
 void stage_total(const Config& c,State& s) {
   s.sum=tree_sum(s.aligned,c.global_signed_align_width); check_signed(s.sum,c.sum_bits(),"final sum");
   trace(s,"total_sop_tree",{{"sop_tc",s.sum.str()},{"width",c.sum_bits()},
     {"f",s.request.c_type==CType::INT32?c.global_mag_bits()-int32_bits:c.global_mag_bits()-1},{"E_max",s.common}});
 }
-// S8: FP32 coefficient S0I1F23 after normalization/RNE -> S1/E8/F23.
-// INT8+INT32 drops structural zeros and wraps to TC S1I31F0.
+// S8 result formats.
+// Precision / signal | S | I  | F
+// ------------------ | - | -- | --
+// FP32 coefficient   | 0 | 1  | 23
+// INT32 output (TC)  | 1 | 31 | 0
+// The final FP32 output encodes sign/exponent/fraction with widths 1/8/23.
 void stage_output(const Config& c,State& s) {
   auto& r=s.result; r.id=s.request.id; r.type=s.request.c_type; r.last=s.request.last;
   if(r.type==CType::INT32) {

@@ -1,8 +1,12 @@
 `include "dp_defs.vh"
 // One right-shift core shared by both directions through static bit reversal.
 // Positive net means left, negative means unsigned right/RTZ. No registers.
-// S0I(i)F(f) -> S0I1F(W-1) in the DP global path; net changes the
-// reference exponent. The operator shifts W unsigned bits in either direction.
+// DP global float path. Net shift changes the reference exponent.
+// Precision / signal | S | I | F
+// ------------------ | - | - | ---
+// Padded source      | 0 | i | W-i
+// Aligned magnitude  | 0 | 1 | W-1
+// The operator shifts W unsigned bits in either direction.
 module dp_bidir_shift #(
   parameter integer W = 39,
   NET_W = 11

@@ -1,9 +1,15 @@
 `include "dp_defs.vh"
 // One logical element of a packed 32-bit lane. INDEX is static, so synthesis
 // removes unavailable T/H/Q routes. Combinational; S1 registers live in lane.
-// S1 logical SM outputs: TF32/FP16 S1I1F10, BF16 S1I1F7,
-// MXFP8 E4M3/E5M2 and MXFP6 E3M2/E2M3 S1I1F3, MXFP4/NVFP4
-// S1I3F1, HiF4 S1I2F2, INT8 S1I8F0. Exponent/class are separate.
+// S1 logical operand output (SM). Sign and exponent/class are separate.
+// Precision / signal | S | I | F
+// ------------------ | - | - | --
+// TF32 / FP16        | 1 | 1 | 10
+// BF16               | 1 | 1 | 7
+// MXFP8 / MXFP6      | 1 | 1 | 3
+// MXFP4 / NVFP4      | 1 | 3 | 1
+// HiF4               | 1 | 2 | 2
+// INT8               | 1 | 8 | 0
 module dp_operand_unpack #(
   parameter integer INDEX = 0
 ) (

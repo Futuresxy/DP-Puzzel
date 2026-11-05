@@ -1,6 +1,12 @@
 `include "dp_defs.vh"
 // Nonnegative scale -> common E8M3. Special encodings remain explicit.
-// E8M0/E4M3/E6M2 and unit-scale output S0I1F3 plus separate biased exponent.
+// Unsigned scale output. The biased exponent is separate.
+// Precision / signal | S | I | F
+// ------------------ | - | - | -
+// E8M0               | 0 | 1 | 3
+// E4M3               | 0 | 1 | 3
+// E6M2               | 0 | 1 | 3
+// Unit scale         | 0 | 1 | 3
 module dp_scale_unpack (
   input wire [`DP_SCALE_W-1:0] in_data,
   input wire [`DP_SCALE_TYPE_W-1:0] in_datatype,

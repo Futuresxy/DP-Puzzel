@@ -4,9 +4,17 @@
 // Synchronous active-high reset cancels all valid tokens. Datapath holds in bubbles.
 // LOCAL_W sets S3 amplitude and the downstream leaf/lane/group widths.
 // GLOBAL_W sets S6 signed alignment and the floating F=GLOBAL_W-2.
-// K=K_FP16, N=K/4+1 including C, L=ceil(log2(N)). S7 TC output
-// is S1I(1+L)F(GLOBAL_W-2) for all floats, or S1I(32+L)F(GLOBAL_W-33)
-// for INT8+INT32. S8 output is encoded FP32 (S1/E8/F23) or TC S1I31F0.
+// K=K_FP16, N=K/4+1 including C, L=ceil(log2(N)).
+// S7 final SOP (TC).
+// Precision / signal | S | I    | F
+// ------------------ | - | ---- | -----------
+// All floating modes | 1 | 1+L  | GLOBAL_W-2
+// INT8 + INT32       | 1 | 32+L | GLOBAL_W-33
+// S8 encodes FP32 with sign/exponent/fraction widths 1/8/23.
+// S8 integer output (TC).
+// Precision / signal | S | I  | F
+// ------------------ | - | -- | -
+// INT32              | 1 | 31 | 0
 module dp_top #(
   parameter integer K_FP16=dp_pkg::DEFAULT_K,
   parameter integer LOCAL_W=dp_pkg::DEFAULT_LOCAL_W,

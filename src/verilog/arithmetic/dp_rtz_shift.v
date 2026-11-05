@@ -1,7 +1,10 @@
 `include "dp_defs.vh"
 // One fixed-width logical right barrel shifter. Large counts flush to zero.
 // Sign is not present: discarded magnitude bits implement round toward zero.
-// Unsigned S0I(i)F(f), W=i+f, on both ports in the caller reference frame.
+// Unsigned RTZ in the caller reference frame, W=i+f.
+// Precision / signal | S | I | F
+// ------------------ | - | - | -
+// Input/output       | 0 | i | f
 module dp_rtz_shift #(
   parameter integer W = 27,
   SHIFT_W = 9

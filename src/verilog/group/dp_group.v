@@ -3,12 +3,24 @@
 // Owns S1 scale decode and S2 scale-pair arithmetic; transport stops at S4.
 // Output is unnormalized sign/magnitude, A_raw=alpha-F+(M-1), plus z.
 // S5 group tree adds one integer bit to each S4 TC SOP, holding F.
-// Scale pair is S0I1F3 x S0I1F3 -> S0I2F6. Only NVFP4/HiF4
-// use the compact magnitude multiply. See dp_scale_multiply for its formats.
-// With P=LOCAL_W-2, the S5 SM outputs are TF32 S1I3F(P+2),
-// FP16/BF16 S1I4F(P+1), MXFP8/6 S1I5F(P), MXFP4 S1I10F(P-5),
-// NVFP4 S1I12F(P-7), HiF4 S1I10F(P-5), INT8 S1I18F(P-13).
-// LZD reads the same I/F as S0, with the sign carried separately.
+// S2 unsigned scale pair.
+// Precision / signal | S | I | F
+// ------------------ | - | - | -
+// A/B scale          | 0 | 1 | 3
+// Scale pair         | 0 | 2 | 6
+// Only NVFP4/HiF4 use the compact magnitude multiply.
+// P=LOCAL_W-2 (default 26). SM has one separate sign bit.
+// S5 group output (SM).
+// Precision / signal | S | I  | F
+// ------------------ | - | -- | ----
+// TF32               | 1 | 3  | P+2
+// FP16 / BF16        | 1 | 4  | P+1
+// MXFP8 / MXFP6      | 1 | 5  | P
+// MXFP4              | 1 | 10 | P-5
+// NVFP4              | 1 | 12 | P-7
+// HiF4               | 1 | 10 | P-5
+// INT8               | 1 | 18 | P-13
+// LZD reads the listed I/F as unsigned magnitude (S=0).
 module dp_group #(
   parameter integer LOCAL_W = `DP_DEFAULT_LOCAL_W,
   parameter integer LANE_SOP_W = LOCAL_W + 1 + $clog2(`DP_Q_LANES),

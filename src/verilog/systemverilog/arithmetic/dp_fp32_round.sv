@@ -1,8 +1,12 @@
 // Finite signed SOP -> FP32, RNE only. One rounding operation after the two
 // architected RTZ cuts. Supports subnormals, ties, signed zero and overflow.
 // Combinational S8 block; special-result selection is owned by the top.
-// TC S1I(SUM_W-GLOBAL_MAG_W)F(GLOBAL_MAG_W-1) at in_anchor.
-// Magnitude after normalization/RNE is S0I1F23; output encodes S1/E8/F23.
+// S8 finite path.
+// Precision / signal | S | I                  | F
+// ------------------ | - | ------------------ | --------------
+// Input SOP (TC)     | 1 | SUM_W-GLOBAL_MAG_W | GLOBAL_MAG_W-1
+// Rounded magnitude  | 0 | 1                  | 23
+// Input coordinate is in_anchor. Output FP32 encodes sign/exponent/fraction 1/8/23.
 module dp_fp32_round #(
   parameter integer SUM_W=43, ANCHOR_W=10, GLOBAL_MAG_W=39
 )(

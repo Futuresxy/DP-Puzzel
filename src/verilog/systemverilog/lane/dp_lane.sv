@@ -1,13 +1,29 @@
 // T1H2Q4E8. Owns S1 unpack, S2 products, S3 shared magnitude alignment,
 // S4 lane tree. Common group MAX is a combinational S2 side interface.
 // Synchronous high reset clears valid only; invalid data registers hold.
-// With P=LOCAL_W-2, S3 shift magnitude is S0I2F(P) for T/H/Q,
-// S0I7F(P-5) for MXFP4/NVFP4, S0I5F(P-3) for HiF4,
-// and S0I15F(P-13) for INT8. The tree leaves restore the TC sign.
-// E pairs before low padding: TC S1I7F2 (MX/NV) or S1I5F4 (HiF4).
-// S4 TC SOP: TF32 S1I2F(P+2), FP16/BF16 S1I3F(P+1),
-// MXFP8/6 S1I4F(P), MXFP4/NVFP4 S1I9F(P-5), HiF4 S1I7F(P-3),
-// INT8 S1I17F(P-13). T/H use two/one low zeros after the tree.
+// P=LOCAL_W-2 (default 26). I excludes S; SM carries S separately.
+// S3 shift magnitude -> TC tree leaf. Both use the listed I/F.
+// Precision                    | Shift S | Leaf S | I  | F
+// ---------------------------- | ------- | ------ | -- | ----
+// TF32 / FP16 / BF16 / MXFP8/6 | 0       | 1      | 2  | P
+// MXFP4 / NVFP4                | 0       | 1      | 7  | P-5
+// HiF4                         | 0       | 1      | 5  | P-3
+// INT8                         | 0       | 1      | 15 | P-13
+// S3 E pair before guard/padding (TC, W10).
+// Precision / signal | S | I | F
+// ------------------ | - | - | -
+// MXFP4 / NVFP4      | 1 | 7 | 2
+// HiF4               | 1 | 5 | 4
+// S4 lane SOP (TC).
+// Precision / signal | S | I  | F
+// ------------------ | - | -- | ----
+// TF32               | 1 | 2  | P+2
+// FP16 / BF16        | 1 | 3  | P+1
+// MXFP8 / MXFP6      | 1 | 4  | P
+// MXFP4 / NVFP4      | 1 | 9  | P-5
+// HiF4               | 1 | 7  | P-3
+// INT8               | 1 | 17 | P-13
+// TF32/FP16/BF16 append 2/1/1 low zeros after the tree.
 module dp_lane #(
   parameter integer LOCAL_W=dp_pkg::DEFAULT_LOCAL_W,
   parameter integer LEAF_W=LOCAL_W+1,

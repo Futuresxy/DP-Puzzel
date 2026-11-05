@@ -38,8 +38,15 @@ Json layout(const std::vector<Number>& values,DataType type) {
   return atoms;
 }
 }
-// Logical SM: TF32/FP16 S1I1F10, BF16 S1I1F7, MXFP8/6 S1I1F3,
-// MXFP4/NVFP4 S1I3F1, HiF4 S1I2F2, INT8 S1I8F0. Exponent is separate.
+// S1 logical operand output (SM). Sign and exponent are separate.
+// Precision / signal | S | I | F
+// ------------------ | - | - | --
+// TF32 / FP16        | 1 | 1 | 10
+// BF16               | 1 | 1 | 7
+// MXFP8 / MXFP6      | 1 | 1 | 3
+// MXFP4 / NVFP4      | 1 | 3 | 1
+// HiF4               | 1 | 2 | 2
+// INT8               | 1 | 8 | 0
 Number unpack_element(DataType type,unsigned raw,unsigned e1,unsigned e2) {
   const auto& f=format(type); Number n;
   if(type==DataType::INT8) {
@@ -62,7 +69,13 @@ Number unpack_element(DataType type,unsigned raw,unsigned e1,unsigned e2) {
   }
   n.category=n.magnitude==0?Class::Zero:Class::Finite; return n;
 }
-// E8M0/E4M3/E6M2 and unit scale use S0I1F3 plus a biased exponent.
+// Unsigned scale output. The biased exponent is separate.
+// Precision / signal | S | I | F
+// ------------------ | - | - | -
+// E8M0               | 0 | 1 | 3
+// E4M3               | 0 | 1 | 3
+// E6M2               | 0 | 1 | 3
+// Unit scale         | 0 | 1 | 3
 Number unpack_scale(ScaleType type,unsigned raw) {
   Number n; n.exponent=scale_bias; n.fraction=scale_fraction_bits;
   if(type==ScaleType::NONE) n.magnitude=1u<<scale_fraction_bits;
@@ -80,7 +93,11 @@ Number unpack_scale(ScaleType type,unsigned raw) {
   if(n.category!=Class::NaN) n.category=n.magnitude==0?Class::Zero:Class::Finite;
   return n;
 }
-// S5 SM output: FP32 S1I1F31 (S0I1F23 padded by 8 zeros), INT32 S1I32F0.
+// S5 C token (SM). FP32 appends 8 low zeros; sign is separate.
+// Precision / signal | S | I  | F
+// ------------------ | - | -- | --
+// FP32               | 1 | 1  | 31
+// INT32              | 1 | 32 | 0
 Token unpack_c(CType type,std::uint32_t raw) {
   Token t; t.width=int32_bits;
   if(type==CType::INT32) {

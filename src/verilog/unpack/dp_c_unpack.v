@@ -1,8 +1,12 @@
 `include "dp_defs.vh"
 // S5 combinational C decode. Raw C travels through S1-S4 without decoding.
 // Both FP32 and INT32 produce sign plus M32; FP32 adds eight structural low zeros.
-// FP32 M24 S0I1F23 -> M32 S0I1F31. INT32 absolute value S0I32F0.
-// Both carry a separate sign. Anchor and LZD count are integer sidebands.
+// S5 C magnitude. Sign travels separately.
+// Precision / signal | S | I  | F
+// ------------------ | - | -- | --
+// FP32 natural M24   | 0 | 1  | 23
+// FP32 padded M32    | 0 | 1  | 31
+// INT32 absolute M32 | 0 | 32 | 0
 module dp_c_unpack #(
   parameter integer ANCHOR_W = 10
 ) (

@@ -11,6 +11,12 @@
 
 当前首批要求已写入 [spec](../src/spec/README.md)：TensorCore 为 16×4 个 DP，由四个 4×4 广播 DP-Group 竖直拼接，组内无脉动；DP 支持 FP16 基准 K4/K8/K16 和 TF32/FP16/BF16/MXFP8/6/4/NVFP4/HiF4/INT8，HiF8 暂不支持。精度目标为主浮点模式至少 25 位、MXFP4/NVFP4 35 位、HiF4 约 37 位并复用 NVFP4 通路；INT8 并行度等于 MXFP8。DP 不超过 8 级，目标 1.41 GHz，功耗优先、面积其次。尚无实现或验收结果。
 
+### E 类专用 DP 候选（2026-11-05）
+
+当前多精度单 DP 的 CModel、两版 RTL 和 N12 DC 流程已建立；EDA 执行以 AGENTS.md 的本机授权为准。新增 [dp_lane_E](../src/spec/dp/dp_lane_E.md) 与 [dp_group_E](../src/spec/dp/dp_group_E.md) 仅讨论 MXFP4/NVFP4/HiF4 专用 E64 单元，保留现有多精度设计作比较。
+
+待用户确认：采用 E0 的现有 S3/S4 切点，还是进一步将 HiF4 移位合并到 lane 树后；group 使用兼容 M31 还是紧凑 M22 接口。建议先 E0+M22，局部位宽精确压缩，S6 保留可配 40 位窗口及 FP32 C/D。方案确认后再开发专用 CModel/RTL、建立等价验证和同条件 PPA，当前不执行新综合或功耗实验。
+
 ### DP spec 闭合清单（CModel 前）
 
 已确定 T2H4Q8E16 基本组、两个 T1H2Q4E8 lane，1/2/4 个基本组构成 FP16 K4/K8/K16。A/B/C 原子接收、DP 内 FP32 C 合并、无输出背压已写入接口；独立移位对齐留作后续探索。

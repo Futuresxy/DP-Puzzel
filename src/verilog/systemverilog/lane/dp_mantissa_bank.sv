@@ -1,13 +1,24 @@
 // S2 combinational lane multiplier bank: exactly two HH/HL/LH/LL sets.
 // Muxes isolate unused multiplier operands. T/H partial products, Q/E independent
 // products and the second INT8 split product share these physical instances.
-// Unsigned multiplier operands -> logical products (zero-extended in the bus):
-// TF32/FP16 S0I1F10 -> S0I2F20. HH uses I1F6 halves, LL I0F4;
-// HH/HL/LH/LL partial products are I2F12/I1F10/I1F10/I0F8.
-// BF16 S0I1F7 -> S0I2F14. MXFP8 E4M3/E5M2 and MXFP6 E3M2/E2M3
-// S0I1F3 -> S0I2F6. MXFP4/NVFP4 S0I3F1 -> S0I6F2.
-// HiF4 S0I2F2 -> S0I4F4. INT8 S0I8F0 -> S0I16F0, with the
-// split operand treated as two I4F0 digits (upper digit weighted by 2^4).
+// S2 unsigned mantissa operands A/B -> product Y. Sign is separate.
+// Precision     | A/B S | A/B I | A/B F | Y S | Y I | Y F
+// ------------- | ----- | ----- | ----- | --- | --- | ---
+// TF32 / FP16   | 0     | 1     | 10    | 0   | 2   | 20
+// BF16          | 0     | 1     | 7     | 0   | 2   | 14
+// MXFP8 / MXFP6 | 0     | 1     | 3     | 0   | 2   | 6
+// MXFP4 / NVFP4 | 0     | 3     | 1     | 0   | 6   | 2
+// HiF4          | 0     | 2     | 2     | 0   | 4   | 4
+// INT8          | 0     | 8     | 0     | 0   | 16  | 0
+// TF32/FP16 unsigned partial products before weighted recombination.
+// Precision / signal | S | I | F
+// ------------------ | - | - | --
+// HH                 | 0 | 2 | 12
+// HL                 | 0 | 1 | 10
+// LH                 | 0 | 1 | 10
+// LL                 | 0 | 0 | 8
+// HH operands use I=1,F=6; LL operands use I=0,F=4.
+// INT8 splits an operand into I4F0 digits; the upper digit has weight 2^4.
 module dp_mantissa_bank(
   input wire [dp_pkg::TYPE_W-1:0] in_datatype,
   input wire in_enable,

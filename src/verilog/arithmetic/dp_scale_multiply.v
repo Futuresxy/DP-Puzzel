@@ -1,6 +1,10 @@
 `include "dp_defs.vh"
-// Shared S5 unsigned magnitude multiply. NVFP4 S0I10F4 or HiF4 S0I8F6
-// times S0I2F6 yields S0I12F10 or S0I10F12. Sign travels separately.
+// S5 unsigned scale multiply. A=magnitude, B=scale pair, Y=product.
+// Precision | A S | A I | A F | B S | B I | B F | Y S | Y I | Y F
+// --------- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+// NVFP4     | 0   | 10  | 4   | 0   | 2   | 6   | 0   | 12  | 10
+// HiF4      | 0   | 8   | 6   | 0   | 2   | 6   | 0   | 10  | 12
+// Sign travels separately.
 module dp_scale_multiply #(
   parameter integer MAG_W   = `DP_SCALE_SOP_W - 1,
   parameter integer COEFF_W = 2 * `DP_SCALE_M
