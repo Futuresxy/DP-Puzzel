@@ -77,10 +77,17 @@ def campaign(name,k,local,glob,requests,exe,source=None,expected=None,stress=Fal
     sched=dest/'schedule.txt'; sched.write_text('\n'.join(schedule)+'\n')
     command=([str(exe)] if SIMULATOR=='verilator' else ['vvp',str(exe)])
     out=run(command+([f'+CUTPOINTS={dest / "cutpoints.txt"}'] if stress else [])+[f'+INPUTS={inp}',f'+GOLDEN={gold}',f'+SCHEDULE={sched}',f'+OUTPUT={dest / "results.txt"}'],dest/'simulation.log')
-    line=next(s for s in out.splitlines() if s.startswith('PASS'))
+    line=next((s for s in out.splitlines() if s.startswith('PASS cycles=')),None)
+    if line is None:
+        raise RuntimeError(f'{name} FAIL: see {dest / "simulation.log"}')
     check_schedule(schedule,requests,expected,(dest/'results.txt').read_text())
     cutpoints=check_cutpoints(dest/'cutpoints.txt',expected,requests) if stress else 0
-    print(name,line,flush=True)
+    if stress:
+        print(f'  {name:<21} {line.replace(" cancelled=", " reset_cancelled=")}',flush=True)
+    else:
+        counts=dict(item.split('=',1) for item in line.split()[1:])
+        precision=name.upper().replace('_',' ')
+        print(f'  {precision:<16} PASS  {counts["checked"]}/{counts["accepted"]} outputs matched',flush=True)
     return dict(export_id=EXPORT.name,simulator=SIMULATOR,implementation=IMPLEMENTATION,name=name,k_fp16=k,local_width=local,global_width=glob,cutpoints_checked=cutpoints,simulation_log=str((dest/'simulation.log').relative_to(ROOT)), lint_log=str((exe.parent/'lint.log').relative_to(ROOT)), compile_log=str((exe.parent/'compile.log').relative_to(ROOT)), results_path=str((dest/'results.txt').relative_to(ROOT)), input_path=str(inp.relative_to(ROOT)), golden_path=str(gold.relative_to(ROOT)), schedule_path=str(sched.relative_to(ROOT)), output_sha256=hashlib.sha256((dest/"results.txt").read_bytes()).hexdigest(),input_sha256=hashlib.sha256(inp.read_bytes()).hexdigest(),result=line)
 
 def legal_tuple(r):
@@ -147,12 +154,15 @@ def main():
     for IMPLEMENTATION in implementations:
         EXPORT,SOURCE_LIST=snapshot(IMPLEMENTATION)
         if args.phase in ('existing','all'):
+            print(f'\n{SIMULATOR} / {IMPLEMENTATION}: per-precision results (K_FP16=16, LOCAL_W=27, GLOBAL_W=40)',flush=True)
             exe=compile_tb(16,27,40)
             for inp in sorted((ROOT/'test/data/dp').glob('*/*/*/inputs.txt')):
                 k,req=read_inputs(inp)
                 golden=[json.loads(s) for s in inp.with_name('expected.jsonl').read_text().splitlines()]
                 report.append(campaign(inp.parts[-4],k,27,40,req,exe,inp,golden))
         if args.phase in ('parameters','all'):
+            print(f'\n{SIMULATOR} / {IMPLEMENTATION}: mixed-format parameter checks',flush=True)
+            print('  reset_cancelled counts accepted requests cleared by reset before output.',flush=True)
             rng=random.Random(20271105)
             for k,local,glob in [(4,27,40),(8,27,40),(16,27,40),(4,28,48),(8,32,64),(16,32,64)]:
                 req=[random_request(mode,rng,k,ident=i*len(DTYPES)+j) for i in range(48) for j,mode in enumerate(DTYPES)]
@@ -172,6 +182,8 @@ def main():
                           phase=args.phase,started=started,run_dir=RUN,
                           command=[sys.executable,*sys.argv],
                           simulator_version=subprocess.check_output([VERILATOR,'--version'] if SIMULATOR=='verilator' else ['iverilog','-V'],text=True,stderr=subprocess.STDOUT).splitlines()[0])
-    (RUN/f'{SIMULATOR}-{args.implementation}-{args.phase}-summary.json').write_text(json.dumps(report,indent=2)+'\n')
+    summary=RUN/f'{SIMULATOR}-{args.implementation}-{args.phase}-summary.json'
+    summary.write_text(json.dumps(report,indent=2)+'\n')
+    print(f'\nReport: {summary.relative_to(ROOT)}',flush=True)
 
 if __name__=='__main__': main()
