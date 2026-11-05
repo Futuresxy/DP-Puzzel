@@ -1,4 +1,18 @@
-# 单 DP 手写 RTL 验证 · v1.4
+# 单 DP 手写 RTL 验证
+
+## 14×8 无符号 scale 回归（v1.5.1）
+
+2026-11-05，本机 Verilator 5.030，默认 K16/28/40。Verilog 和 SystemVerilog 各通过 10,747 笔固定输入，六组参数混跑各输出 2,922 笔并匹配 231,654 个 S1–S7 数值断点。与上一版 15×9 有符号实现相比，两版 RTL 各 17 组输出流指纹一致，按请求、阶段和信号比较的断点数值也一致。CModel 通过独立有限窗口参考及 10 项定向和协议单元测试，11 份逐笔 golden 的内容相同。
+
+S5 定向检查覆盖 NVFP4 和 HiF4 的最大负紧凑组和、负组和乘零系数、全负零和正负抵消。两版 RTL 各通过这 5 笔补充向量及其流水断点，末三例的 FP32 结果依次为 −0、−0、+0。
+
+```sh
+python3 test/run_cmodel.py --phase all
+python3 -m unittest discover -s test/tests -v
+python3 test/run_verilog.py --implementation both --phase all
+```
+
+本地验证回执和摘要位于 `test/runs/verilog/20261105T033734459391Z/`，定向向量及日志位于该目录的 `unsigned-scale-directed/`。导出为 `DP_verilog_3fa3420882896719` 和 `DP_systemverilog_07f403aa53bb9b91`。纯 Verilog 通过 `dc_syn.sh check`。面积与时序的 N12 对照综合待测。
 
 ## 28/40 默认窗口回归（v1.4.4）
 

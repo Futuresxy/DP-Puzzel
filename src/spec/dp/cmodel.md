@@ -1,4 +1,4 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[模型 API](../../cmodel/include/dp/model.hpp)、[参数](../../cmodel/include/dp/config.hpp)、[执行器](../../cmodel/lib/model.cpp)、[测试入口](../../../test/run_cmodel.py)；Chisel/手写 RTL 未实现。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.1；修改时间：2026-11-05 11:37:59 +08:00；对应代码：[模型 API](../../cmodel/include/dp/model.hpp)、[参数](../../cmodel/include/dp/config.hpp)、[执行器](../../cmodel/lib/model.cpp)、[测试入口](../../../test/run_cmodel.py)；Chisel/手写 RTL 未实现。
 
 # DP CModel 合同
 
@@ -12,7 +12,7 @@
 | include/dp/model.hpp、lib/detail.hpp | 请求、结果、flags、逐级状态与 group token |
 | lib/unpack.cpp | S1 A/B/scale 解包为 E/M/S 与分类；S5 C 解包辅助 |
 | lib/lane.cpp | T1H2Q4E8：S2 乘法重构/指数和/MAX，S3 幅值 RTZ/E pair，S4 lane 树 |
-| lib/group.cpp | T2H4Q8E16 的 S5 合并/scale/abs/LZD；顶层 S6 双向对齐、S7 树、S8 RNE/INT32 |
+| lib/group.cpp | T2H4Q8E16 的 S5 合并/abs/scale/LZD；顶层 S6 双向对齐、S7 树、S8 RNE/INT32 |
 | lib/arithmetic.cpp | 整数宽度断言、平衡加法树、RTZ、RNE、特殊值摘要 |
 | lib/model.cpp | 事务 evaluate 与逐级 Pipeline；二者使用同一 stage 函数 |
 | lib/json_io.cpp、main.cpp | JSONL 协议、固定宽度 hex/枚举检查、CLI |
@@ -27,13 +27,13 @@ C++ 使用 Boost cpp_int 保存精确整数，**在规定截断点显式 RTZ，�
 
 格式常量、E guard、scale 窗口和每模式 F 见 [数值布局](numeric-layout.md)、[逐级出口](stage-formats.md)。S2 raw 元素指数不去 bias；S5 形成无偏原 anchor。C 同样在 S5 去 FP32 bias。S6 用 signed 真实指数 MAX 和完整 unsigned d；S8 仅为最终 FP32 编码加一次 127。
 
-v1.4.4 CModel 中 NVFP4/HiF4 共享 **signed15×positive signed9**，公共 raw24/useful23。v1.5 无符号实现按 [scale 合同](scale.md) 更新。S5 乘法完成后取幅值/LZD 计数，不左移；S6 net=z−d 一次双向移位。模型逐笔携带控制，last 只透传。
+S5 先分离符号和幅值。NVFP4/HiF4 共用 **14×8 无符号 scale 乘法**，22 位乘积补零后用于 LZD 计数。S6 net=z−d 一次双向移位后恢复补码。详见 [scale 合同](scale.md)。模型逐笔携带控制，last 只透传。
 
 ## 3. 逐级数值与周期 API
 
 `evaluate(config, request, trace)` 返回一笔完整结果。`Pipeline(config, trace).step(request, a_valid, b_valid, c_valid, reset)` 返回本时钟沿前可见输出，再推进各级。三路都有效、类型元组合法且非 reset 时原子接收；气泡和非法类型不阻塞在途结果。全局 reset 丢弃全部在途请求。
 
-沿 n 接收，S1 在 n 更新，S8 在 n+7 更新，step(n+8) 返回结果，因此报告 L8。每拍均可接收，输出无 ready。可选 L9 的 S5 仍完成 scale/abs/原 anchor/C 解包，新增一级只做 LZD，后三级整体顺延；默认测试数据和期望采用 L8，L9 仅作数值/寄存边界探索，未因模型存在而自动选择 RTL L9。
+沿 n 接收，S1 在 n 更新，S8 在 n+7 更新，step(n+8) 返回结果，因此报告 L8。每拍均可接收，输出无 ready。可选 L9 的 S5 仍完成 abs/scale/原 anchor/C 解包，新增一级只做 LZD，后三级整体顺延；默认测试数据和期望采用 L8，L9 仅作数值/寄存边界探索，未因模型存在而自动选择 RTL L9。
 
 `id` 为验证器侧关联编号，不新增 DUT tag 端口。`protocol_error` 为驱动诊断，不新增 DUT 错误端口。all_valid 下非法类型拒绝握手；超宽数据、TF32/FP6 非零填充、错误 scale 广播/负 NV scale 等源违反 payload 合同会抛异常，且在周期状态更新前检查。partial-valid 时不解读无效请求内容。
 

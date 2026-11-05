@@ -1,8 +1,8 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与 SystemVerilog 对照、L8、源码快照；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[dp_top.sv](../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与 SystemVerilog 对照、L8、源码快照；版本：v1.5.1；修改时间：2026-11-05 11:37:59 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[dp_top.sv](../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
-本页记录已验证的 v1.4.4 手写 RTL。v1.5 的 14×8 无符号乘法及符号旁带以 [scale 合同](scale.md) 为准，实现待更新。主要交付采用 IEEE 1364-2005 Verilog；按用户要求保留 SystemVerilog 对照。仅实现一个 DP，未进入计算阵列。
+本页记录 v1.5 手写 RTL，S5 采用 [scale 合同](scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户要求保留 SystemVerilog 对照。仅实现一个 DP，未进入计算阵列。
 
 ## 1. 文件组织与实现边界
 
@@ -22,7 +22,7 @@
 | MAX | [dp_max_tree.v](../../verilog/arithmetic/dp_max_tree.v) | 组合；lane/group/global 分别实例化 |
 | 局部幅值右移 | [dp_rtz_shift.v](../../verilog/arithmetic/dp_rtz_shift.v) | 组合；每 lane 四路 |
 | SOP 规约 | [dp_sum_tree.v](../../verilog/arithmetic/dp_sum_tree.v) | 组合；lane/group/top 三个层级分别注册 |
-| scale 注入 | [dp_scale_multiply.v](../../verilog/arithmetic/dp_scale_multiply.v) | 组合；公共 signed15×positive-signed9 |
+| scale 注入 | [dp_scale_multiply.v](../../verilog/arithmetic/dp_scale_multiply.v) | 组合；公共 14×8 无符号，输出 22 位幅值 |
 | LZD | [dp_lzd.v](../../verilog/arithmetic/dp_lzd.v) | 组合；S5 group/C、S8 output 独立实例 |
 | 全局对齐 | [dp_global_align.v](../../verilog/top/dp_global_align.v) | 组合；MAX、net、符号恢复归入本模块 |
 | 双向幅值移位 | [dp_bidir_shift.v](../../verilog/arithmetic/dp_bidir_shift.v) | 组合；方向 bit reversal + 一个右移核心 |
@@ -60,7 +60,7 @@ S5 仍为 `value=(-1)^sign × magnitude × 2^(A_raw-(M-1))`。不同格式 F 在
 
 三路原子 ready、逐请求 type、无输出背压和 last 透传完全遵循 [接口](interface.md)。缺失输入只产生 bubble，不冻结已接受请求。非法 datatype 元组不握手；合法 NaN/Inf 必须按正常 L8 输出。
 
-S2 bank 对未使用乘法器输入清零；T 只使用一套，BF16、Q、INT 按路由隔离其余单元。S5 scale 单元仅在 NV/HiF 模式使能，使用共同 15×9，不增加格式专用紧凑输入。INT8 在 S6 旁路指数移位，并在 S8 旁路浮点舍入；所有格式仍为 L8。
+S2 bank 对未使用乘法器输入清零；T 只使用一套，BF16、Q、INT 按路由隔离其余单元。S5 scale 单元仅在 NVFP4/HiF4 模式使能。幅值乘法与旁路共享组和 abs，符号与幅值同拍注册。INT8 在 S6 旁路指数移位，并在 S8 旁路浮点舍入；所有格式仍为 L8。
 
 ## 4. 验证、导出与范围
 

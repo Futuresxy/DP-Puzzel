@@ -1,9 +1,9 @@
-// T2H4Q8E16: two synchronized lanes, S2 common MAX, S5 scale/abs/LZD.
+// T2H4Q8E16: two synchronized lanes, S2 common MAX, S5 abs/scale/LZD.
 // Owns S1 scale decode and S2 scale-pair arithmetic; transport stops at S4.
 // Output is unnormalized sign/magnitude, A_raw=alpha-F+(M-1), plus z.
 // S5 group tree adds one integer bit to each S4 TC SOP, holding F.
 // Scale pair is S0I1F3 x S0I1F3 -> S0I2F6. Only NVFP4/HiF4
-// use the compact SOP multiply. See dp_scale_multiply for its formats.
+// use the compact magnitude multiply. See dp_scale_multiply for its formats.
 // With P=LOCAL_W-2, the S5 SM outputs are TF32 S1I3F(P+2),
 // FP16/BF16 S1I4F(P+1), MXFP8/6 S1I5F(P), MXFP4 S1I10F(P-5),
 // NVFP4 S1I12F(P-7), HiF4 S1I10F(P-5), INT8 S1I18F(P-13).
@@ -28,9 +28,9 @@ module dp_group #(
   output dp_pkg::special_t out_special
 );
   import dp_pkg::*;
-  localparam integer COEFF_W=2*SCALE_M, SCALE_PRODUCT_W=SCALE_SOP_W+COEFF_W+1,
-    USEFUL_SCALE_W=SCALE_PRODUCT_W-1, STRUCTURAL_DROP=GROUP_W-SCALE_SOP_W,
-    SCALE_LOW_PAD=GROUP_W-USEFUL_SCALE_W;
+  localparam integer COEFF_W=2*SCALE_M, SCALE_MAG_W=SCALE_SOP_W-1,
+    STRUCTURAL_DROP=GROUP_W-SCALE_SOP_W, SCALE_PRODUCT_W=SCALE_MAG_W+COEFF_W,
+    SCALE_LOW_PAD=MAG_W-SCALE_PRODUCT_W;
   reg [3:0] valid_q;
   reg [TYPE_W-1:0] type_q [0:3];
   wire [LANES*LANE_SOP_W-1:0] lane_sops;
@@ -71,19 +71,21 @@ module dp_group #(
   wire signed [GROUP_W-1:0] group_sum;
   dp_sum_tree #(.N(LANES),.W(LANE_SOP_W)) group_sop_add(.in_values(lane_sops),.out_sum(group_sum));
   wire inject_scale=(type_q[3]==DT_NVFP4 || type_q[3]==DT_HIF4) && valid_q[3];
-  wire signed [SCALE_SOP_W-1:0] compact_sop=inject_scale ? group_sum[STRUCTURAL_DROP+:SCALE_SOP_W] : '0;
-  wire signed [COEFF_W:0] compact_coeff=inject_scale ? {1'b0,coeff_q[3]} : '0;
-  wire signed [SCALE_PRODUCT_W-1:0] scale_product;
-  dp_scale_multiply group_scale_mul(.in_sop(compact_sop),.in_coefficient(compact_coeff),.out_product(scale_product));
-  wire signed [GROUP_W-1:0] selected_sop=inject_scale ? {scale_product[USEFUL_SCALE_W-1:0],{SCALE_LOW_PAD{1'b0}}} : group_sum;
-  wire [GROUP_W-1:0] absolute_sop=selected_sop[GROUP_W-1] ? -selected_sop : selected_sop;
-  wire [MAG_W-1:0] magnitude_d=absolute_sop[MAG_W-1:0];
+  // Both branches share the absolute value. NV/HiF compact the magnitude
+  // by slicing off structural low zeros; their legal group sums fit SCALE_MAG_W.
+  wire group_negative=group_sum[GROUP_W-1];
+  wire [GROUP_W-1:0] absolute_sop=group_negative ? -group_sum : group_sum;
+  wire [SCALE_MAG_W-1:0] compact_mag=inject_scale ? absolute_sop[STRUCTURAL_DROP+:SCALE_MAG_W] : '0;
+  wire [COEFF_W-1:0] compact_coeff=inject_scale ? coeff_q[3] : '0;
+  wire [SCALE_PRODUCT_W-1:0] scale_product;
+  dp_scale_multiply group_scale_mul(.in_magnitude(compact_mag),.in_coefficient(compact_coeff),.out_product(scale_product));
+  wire [MAG_W-1:0] magnitude_d=inject_scale ? {scale_product,{SCALE_LOW_PAD{1'b0}}} : absolute_sop[MAG_W-1:0];
+  wire negative_d=group_negative || (group_sum==0 && (&lane_negative));
   wire [$clog2(MAG_W+1)-1:0] z_d;
   wire magnitude_active;
   dp_lzd #(.W(MAG_W)) group_leading_detect(.in_magnitude(magnitude_d),.out_count(z_d),.out_active(magnitude_active));
   special_t special_d,special_q,lane0,lane1;
   reg signed [ANCHOR_W-1:0] anchor_d;
-  reg negative_d;
   assign out_special=special_q;
   always @* begin
     lane0=lane_special[0+:SPECIAL_W]; lane1=lane_special[SPECIAL_W+:SPECIAL_W];
@@ -92,7 +94,6 @@ module dp_group #(
     if(coeff_q[3]==0 && (special_d.positive_inf || special_d.negative_inf)) begin
       special_d.invalid=1; special_d.positive_inf=0; special_d.negative_inf=0;
     end
-    negative_d=selected_sop[GROUP_W-1] || (selected_sop==0 && (group_sum[GROUP_W-1] || (&lane_negative)));
     anchor_d=ANCHOR_W'(int'(lane_anchor[0])-2*element_bias(type_q[3])-group_fraction(type_q[3],LOCAL_W)+MAG_W-1);
     if(scale_type(type_q[3])!=SC_NONE)
       anchor_d=anchor_d+ANCHOR_W'(int'(scale_exp_q[3])-2*SCALE_BIAS);

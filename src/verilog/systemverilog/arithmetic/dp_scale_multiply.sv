@@ -1,15 +1,13 @@
-// Shared S5 signed15 x positive-signed9 scale multiplier, with parameter-derived
-// physical widths. Both NVFP4 and HiF4 use the same extraction, no compact mux.
-// NVFP4 S1I10F4 / HiF4 S1I8F6 x positive TC S1I2F6 ->
-// native TC S1I13F10 / S1I11F12. Removing the redundant high sign
-// extension gives S1I12F10 / S1I10F12 before the group low pad.
+// Shared S5 unsigned magnitude multiply. NVFP4 S0I10F4 or HiF4 S0I8F6
+// times S0I2F6 yields S0I12F10 or S0I10F12. Sign travels separately.
 module dp_scale_multiply #(
-  parameter integer SOP_W=dp_pkg::SCALE_SOP_W,
-  parameter integer COEFF_W=2*dp_pkg::SCALE_M+1
+  parameter integer MAG_W=dp_pkg::SCALE_SOP_W-1,
+  parameter integer COEFF_W=2*dp_pkg::SCALE_M
 )(
-  input wire signed [SOP_W-1:0] in_sop,
-  input wire signed [COEFF_W-1:0] in_coefficient,
-  output wire signed [SOP_W+COEFF_W-1:0] out_product
+  input wire [MAG_W-1:0] in_magnitude,
+  input wire [COEFF_W-1:0] in_coefficient,
+  output wire [MAG_W+COEFF_W-1:0] out_product
 );
-  assign out_product=in_sop*in_coefficient;
+
+  assign out_product=in_magnitude*in_coefficient;
 endmodule

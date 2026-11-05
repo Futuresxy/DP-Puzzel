@@ -1,8 +1,8 @@
-> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.5；修改时间：2026-11-05 11:30:43 +08:00；对应代码：[CModel lib/model.cpp](../../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.5.1；修改时间：2026-11-05 11:37:59 +08:00；对应代码：[CModel lib/model.cpp](../../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 分组共享 DP：八级流水
 
-默认所有格式共用 L8 寄存边界，目标 II=1。下表为 v1.5 逻辑切分。S5 的无符号 scale 为 v1.5 设计目标，当前 RTL/CModel 为 v1.4.4。 [架构图](draw.io/dp_arch.drawio)
+默认所有格式共用 L8 寄存边界，目标 II=1。下表为 v1.5 的 RTL/CModel 流水切分。 [架构图](draw.io/dp_arch.drawio)
 
 ## 1. 流水分工
 

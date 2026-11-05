@@ -1,4 +1,4 @@
-> 功能：汇总 DP 主方案与设计入口；范围：分组共享 DP、外部边界和后续独立对齐探索；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：汇总 DP 主方案与设计入口；范围：分组共享 DP、外部边界和后续独立对齐探索；版本：v1.5.1；修改时间：2026-11-05 11:37:59 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 多精度 DP 设计
 
@@ -18,7 +18,7 @@ T=TF32，H=FP16/BF16，Q=MXFP8/6，E=MXFP4/NVFP4/HiF4。INT8 与 Q 同并行度�
 
 S1 解包 A/B/scale → S2 尾数乘法与指数 MAX → S3 幅值 RTZ/E pair → S4 lane 树 → S5 组和/abs/无符号 scale/LZD 计数及 C 解包 → S6 一次双向对齐 → S7 总树 → S8 FP32 RNE 或 INT32 回绕。
 
-S5 保留未左移幅值、无偏原 anchor 和 z。S6 先求真实指数 MAX，再执行净位移 z−d。v1.5 中 NVFP4/HiF4 先分离符号与幅值，再共用 14×8 无符号 scale 乘法器。现有 CModel 与两版 RTL 为 v1.4.4 实现。 [八级架构图](draw.io/dp_arch.drawio)
+S5 保留未左移幅值、无偏原 anchor 和 z。S6 先求真实指数 MAX，再执行净位移 z−d。v1.5 中 NVFP4/HiF4 先分离符号与幅值，再共用 14×8 无符号 scale 乘法器。CModel 与两版 RTL 均实现此路径。 [八级架构图](draw.io/dp_arch.drawio)
 
 ## 3. 规范导航
 

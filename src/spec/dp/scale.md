@@ -1,4 +1,4 @@
-> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：v1.5 无符号乘法待实现；v1.4.4 基线 [CModel lib/group.cpp](../../cmodel/lib/group.cpp)；RTL 基线 [dp_scale_multiply.v](../../verilog/arithmetic/dp_scale_multiply.v)；Chisel 尚未实现。
+> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.5.1；修改时间：2026-11-05 11:37:59 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)、[dp_group.v](../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../verilog/arithmetic/dp_scale_multiply.v)；Chisel 尚未实现。
 
 # scale 统一 E8M3 数值表示
 
@@ -58,7 +58,7 @@ scale 后 LZD 只计数 z；e=A_raw-z 用于比较，d=MAX(e)-e 非负，但 net
 
 ## 6. S5 共享 14×8 无符号乘法
 
-组树的两路输入及输出仍为二补码。NVFP4/HiF4 先从组和去除 `W_group−15` 个结构低零，再提取符号并取绝对值。默认 W32 去除 17 个低零。两种模式共用同一条 14 位幅值输入及 8 位非负系数输入。其他模式使用完整组幅值旁路，符号独立随组 token 传递。
+组树的两路输入及输出仍为二补码。乘法与旁路共享组和的符号提取和绝对值。NVFP4/HiF4 从绝对值去除 `W_group−15` 个结构低零。默认 W32 去除 17 个低零。两种模式共用同一条 14 位幅值输入及 8 位非负系数输入。其他模式使用完整组幅值旁路，符号独立随组 token 传递。
 
 紧凑组和可以用 14 位幅值表示。NVFP4 的单元素幅值 coefficient 最大为 12，HiF4 融合 e1 后最大为 14。一个基本组有 16 个乘积，预置两位保护低零贡献最多 4 倍 coefficient，局部右移只会减小幅值。故紧凑组和绝对值上界分别为 `16×12²×4=9216` 与 `16×14²×4=12544`，均小于 `2^14`。取绝对值时应以足够宽的中间值检查合法范围，随后装入公共 14 位无符号槽。
 
@@ -82,4 +82,4 @@ F_group_scaled = F_group_unscaled - sop_low_drop + 2*scale_fraction_bits + produ
 
 ## 7. 主要版本变更（v1.4 → v1.5）
 
-~~组和经过 15×9 有符号乘法，随后取乘积幅值。~~ → **组和先分离符号与幅值，幅值经过 14×8 无符号乘法。** 对非负系数有 `abs(sop × coeff) = abs(sop) × coeff`，目标保持原有 F、补零、截断位置和 L8/II=1。当前 CModel、Verilog 和 SystemVerilog 仍为 v1.4.4 实现，功能与 PPA 验收须针对 v1.5 实现另行执行。
+~~组和经过 15×9 有符号乘法，随后取乘积幅值。~~ → **组和先分离符号与幅值，幅值经过 14×8 无符号乘法。** 对非负系数有 `abs(sop × coeff) = abs(sop) × coeff`，原有 F、补零、截断位置和 L8/II=1 由 [v1.5.1 功能回归](../../../test/results/verilog-v1.4.md) 核对。
