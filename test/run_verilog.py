@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from adapters.cmodel import ROOT, read_inputs, write_inputs, evaluate
 from cases.common import random_request, make
-from reference.exact import DTYPES
+from reference.exact import DTYPES, ulp_distance
 from adapters.rtl import snapshot, record_validation
 
 RUN=ROOT/'test/runs/verilog'
@@ -80,15 +80,36 @@ def campaign(name,k,local,glob,requests,exe,source=None,expected=None,stress=Fal
     line=next((s for s in out.splitlines() if s.startswith('PASS cycles=')),None)
     if line is None:
         raise RuntimeError(f'{name} FAIL: see {dest / "simulation.log"}')
-    check_schedule(schedule,requests,expected,(dest/'results.txt').read_text())
+    outputs=check_schedule(schedule,requests,expected,(dest/'results.txt').read_text())
     cutpoints=check_cutpoints(dest/'cutpoints.txt',expected,requests) if stress else 0
+    metrics={}
     if stress:
         print(f'  {name:<21} {line.replace(" cancelled=", " reset_cancelled=")}',flush=True)
     else:
-        counts=dict(item.split('=',1) for item in line.split()[1:])
+        metrics=precision_metrics(outputs,expected)
         precision=name.upper().replace('_',' ')
-        print(f'  {precision:<16} PASS  {counts["checked"]}/{counts["accepted"]} outputs matched',flush=True)
-    return dict(export_id=EXPORT.name,simulator=SIMULATOR,implementation=IMPLEMENTATION,name=name,k_fp16=k,local_width=local,global_width=glob,cutpoints_checked=cutpoints,simulation_log=str((dest/'simulation.log').relative_to(ROOT)), lint_log=str((exe.parent/'lint.log').relative_to(ROOT)), compile_log=str((exe.parent/'compile.log').relative_to(ROOT)), results_path=str((dest/'results.txt').relative_to(ROOT)), input_path=str(inp.relative_to(ROOT)), golden_path=str(gold.relative_to(ROOT)), schedule_path=str(sched.relative_to(ROOT)), output_sha256=hashlib.sha256((dest/"results.txt").read_bytes()).hexdigest(),input_sha256=hashlib.sha256(inp.read_bytes()).hexdigest(),result=line)
+        count=len(outputs)
+        max_ulp=metrics['max_ulp'] if metrics['max_ulp'] is not None else 'n/a'
+        print(f'  {precision:<16} PASS  golden_exact={count}/{count}  '
+              f'math_exact={metrics["math_exact"]}/{count}  max_ulp={max_ulp}',flush=True)
+    return dict(export_id=EXPORT.name,simulator=SIMULATOR,implementation=IMPLEMENTATION,name=name,k_fp16=k,local_width=local,global_width=glob,cutpoints_checked=cutpoints,simulation_log=str((dest/'simulation.log').relative_to(ROOT)), lint_log=str((exe.parent/'lint.log').relative_to(ROOT)), compile_log=str((exe.parent/'compile.log').relative_to(ROOT)), results_path=str((dest/'results.txt').relative_to(ROOT)), input_path=str(inp.relative_to(ROOT)), golden_path=str(gold.relative_to(ROOT)), schedule_path=str(sched.relative_to(ROOT)), output_sha256=hashlib.sha256((dest/"results.txt").read_bytes()).hexdigest(),input_sha256=hashlib.sha256(inp.read_bytes()).hexdigest(),result=line,**metrics)
+
+def precision_metrics(outputs,expected):
+    math_bits={r['id']:int(r['exact_fp32_or_int32'],16) for r in expected}
+    math_exact=0
+    distances=[]
+    nonfinite=0
+    for ident,bits,result_type,_ in outputs:
+        reference=math_bits[ident]
+        math_exact+=bits==reference
+        if result_type==0:
+            if any((value & 0x7f800000)==0x7f800000 for value in (bits,reference)):
+                nonfinite+=1
+            else:
+                distances.append(ulp_distance(bits,reference))
+    return dict(golden_exact=len(outputs),math_exact=math_exact,
+                max_ulp=max(distances,default=None),fp32_ulp_count=len(distances),
+                nonfinite_fp32_count=nonfinite)
 
 def legal_tuple(r):
     t=r['a_datatype']
@@ -109,6 +130,7 @@ def check_schedule(schedule,requests,expected,actual):
         if av and bv and cv and row>=0 and legal_tuple(requests[row]): pipeline[0]=row
     got=[(int(r[0]),int(r[1],16),int(r[2]),int(r[3])) for r in map(str.split,actual.splitlines())]
     if got!=want: raise AssertionError('RTL output stream differs from independent schedule oracle')
+    return got
 
 def check_cutpoints(path,results,requests):
     count=0
@@ -155,6 +177,8 @@ def main():
         EXPORT,SOURCE_LIST=snapshot(IMPLEMENTATION)
         if args.phase in ('existing','all'):
             print(f'\n{SIMULATOR} / {IMPLEMENTATION}: per-precision results (K_FP16=16, LOCAL_W=27, GLOBAL_W=40)',flush=True)
+            print('  golden_exact uses saved finite-width CModel results. '
+                  'math_exact and max_ulp use the exact mathematical reference.',flush=True)
             exe=compile_tb(16,27,40)
             for inp in sorted((ROOT/'test/data/dp').glob('*/*/*/inputs.txt')):
                 k,req=read_inputs(inp)
