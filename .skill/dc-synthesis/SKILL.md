@@ -19,4 +19,4 @@ description: Run evidence-gated single-DP Design Compiler synthesis and inspect 
 
 结果限于指定库/PVT/预算下的综合，不代表布线或多 corner 签核。功耗须另有活动与一致性证据；`power_ready=false`。records 只存精简结果与来源，PDK、私有路径、许可证不提交。
 
-软件维护后运行 `python3 -m unittest discover -s hw/test/unit -v` 和 `bash -n scripts/dc_syn.sh`。fixture 不能作为硬件或 EDA 通过证据。流程通用部分来源于本仓库 `be850fc04659c42ce65badde75557bae1776aa69`，此次接入新版 DP 合同；历史经验见 `references/machine-experience.md`，不继承旧 BF16 测量。
+软件维护后运行 `python3 -m unittest discover -s hw/dc_syn/tests -v` 和 `bash -n scripts/dc_syn.sh`。fixture 不能作为硬件或 EDA 通过证据。流程通用部分来源于本仓库 `be850fc04659c42ce65badde75557bae1776aa69`，此次接入新版 DP 合同；历史经验见 `references/machine-experience.md`，不继承旧 BF16 测量。

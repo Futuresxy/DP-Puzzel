@@ -1,22 +1,12 @@
-# hw：单阵列 / 单计算核心
+# 综合与功耗分析
 
-> 2026-11-04：新版设计已转至根目录 [src/](../src/README.md)，共用测试在 [test/](../test/README.md)。旧 Chisel 和 Mill 构建定义归档在 [legacy/](legacy/README.md)，仅供参考；以下描述为历史架构。`rtl/`、`dc_syn/`、`power/` 和 `characterization/` 保留其产物与分析职责，新版具体入口等待整体 spec 完成。
+[设计源码与规格](../src/README.md) 在 `src/`，[功能、数值和周期验证](../test/README.md) 在 `test/`。
 
-本部分提供真实硬件实现与测量证据，范围止于一个计算阵列或一个计算核心，不实现整颗多核心芯片。
+| 目录 | 内容 |
+| --- | --- |
+| [rtl/](rtl/README.md) | 每个分析对象的只读 RTL 快照、顶层、端口与验证来源 |
+| [dc_syn/](dc_syn/README.md) | DC 配置、面积/时序、工具流程测试和本机 run |
+| [power/](power/README.md) | 真实负载活动与功耗分析 |
+| [characterization/](characterization/README.md) | 面向 `ratio_dse` 的可追溯特征数据 |
 
-| 目录 | 责任 | 不负责 |
-| --- | --- | --- |
-| spec | 格式、缩放、累加、接口、流水、数据流和验收 | 芯片配比搜索 |
-| configs | 单阵列/单核参数与支持模式 | 芯片级阵列数量 |
-| chisel_src | 可综合的单阵列/单核设计及必要转换/缩放逻辑 | 全芯片调度 |
-| rtl | 每次导出的唯一设计文件和来源记录 | 手工修补 RTL |
-| test | Verilog/SystemVerilog testbench 精度和周期验证 | 以 Chisel 测试替代最终验证 |
-| dc_syn | 挂载 EDA 中的 DC 综合、面积和时序 | 无库条件下伪造面积 |
-| power | 同一硬件在真实负载与 idle 等状态下的活动和功耗 | 用随机 smoke 活动代替真实负载 |
-| characterization | 发布可追溯 profile、适用范围和误差 | 无来源地外推整芯片功耗 |
-
-主流程：spec → 参数 → Chisel → 唯一 RTL → RTL testbench → DC/时序 → 真实负载活动/功耗 → 硬件特征。
-
-单核 profile 必须列明是否包含 L0、阵列、缩放/转换、控制等，供芯片模型避免重复计费。阵列共享多个数值模式时，物理实现只计一次面积，每种模式分别测量性能和活动成本。
-
-当前实现五族六种基础PE及参数化K/MN单输出编排，见 [源码导航](legacy/chisel_src/README.md)、[设计](spec/six-pe-design.md)、[配置](configs/README.md)。H/Q采用16/32路全局对齐，HQE/QE/E保留分级复用，E_g2/g4输出小数点统一。四个对齐参数由集中默认、JSON和CLI传入。原Full迁移为历史记录；本轮只有结构和有限定向证据，没有完整RTL精度验证、DC、功耗或特征数据。
+RTL 从 `src/` 冻结到 `hw/rtl/<export-id>/`，由 `test/` 回归。DC 和功耗按显式 export ID 与真实通过回执选定输入。DC 的网表、完整报告和日志放在本机 `dc_syn/runs/`，可共享的精简结果进入 `records/`。

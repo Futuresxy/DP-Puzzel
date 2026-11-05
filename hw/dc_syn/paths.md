@@ -5,11 +5,12 @@ PROJECT_ROOT 从脚本位置解析；不依赖 shell 当前目录或“最新文
 | 对象 | 唯一位置 |
 | --- | --- |
 | 设计 RTL、清单和目录指纹 | `hw/rtl/<export-id>/`，DC 只读 |
-| 真实 RTL 回归证据 | 新版 DP：`test/runs/verilog/<UTC>/verification.json`；历史接口：`hw/test/runs/<verification-id>/verification.json` |
+| 真实 RTL 回归证据 | `test/runs/`，DP 位于 `test/runs/verilog/<UTC>/verification.json` |
 | 工艺/PVT | `hw/dc_syn/configs/technologies/*.json` |
 | 本机绑定 | `hw/dc_syn/configs/machines/machine.local.json`，忽略 |
 | 时序、门控及层级策略 | `hw/dc_syn/constraints/*.json` |
 | 模板 | `hw/dc_syn/templates/DC.tcl`、hierarchy.tcl、report.md.in |
+| DC 流程和门禁测试 | `hw/dc_syn/tests/` |
 | 运行目录 | `hw/dc_syn/runs/dc_<RTL-top>_<MMDDHHMM>/` |
 | 解析配置与实际脚本 | `<run>/inputs/` |
 | 官方面积、setup/hold、约束、门控报告 | `<run>/reports/` |

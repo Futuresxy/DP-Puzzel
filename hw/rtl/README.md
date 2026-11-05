@@ -1,25 +1,16 @@
-# 全项目唯一 RTL 来源
+# EDA 的 RTL 输入目录
 
-使用 [Generate](../spec/elaborate/Generate.md) 从版本化 JSON 参数导出，每次使用以下目录名：
+每次分析使用独立的 `hw/rtl/<export-id>/`。从 `src/` 导出或冻结待测 RTL，使用根 `test/` 的 testbench 验证，再将同一目录交给 DC 或功耗流程。分析入口显式选择 export ID。
 
-    K-PE_H16Q32E96_10241548/
-    MN-PE_H0Q32E0_10241548/
-    PE_E_g2_10241548/
-
-后缀为新加坡时区的月日时分（`MMddHHmm`）。K/MN目录显示H/Q/E容量，基础PE目录显示profile。目录不带hash或位宽后缀；完整配置、源码hash、年份和UTC时间保存在manifest。同名时拒绝覆盖，下一分钟再导出。旧格式导出仍通过其显式ID读取。
-
-| 文件 | 责任 |
+| 文件 | 内容 |
 | --- | --- |
-| README.md | 每次导出及验证状态更新的可读记录 |
-| manifest.json | 源码/Git/参数/工具指纹、模块映射、文件 hash、验证证据 |
-| files.f | 相对导出目录的设计文件清单 |
-| src/<Module>.sv | 一个 module 一个独立同名文件 |
-| export.log / test.log | 最小必要日志；大型产物在各 run 目录 |
+| `manifest.json` | 顶层模块、时钟/复位接口、来源、目录指纹、验证状态和回执路径 |
+| `files.f` | 相对该目录的有序文件清单和所需 include 路径 |
+| `src/` | 清单里的设计 RTL 和头文件 |
+| `README.md` | 导出命令、配置和验证范围 |
 
-生成入口已实现；生成成功只标记 generated，RTL 精度回归与 PPA 门禁仍在后续阶段。测试、DC、功耗均须显式引用 export ID 与同一份清单，不复制设计 RTL，不在导出后手工修补。参数特化和工具辅助模块列明与 Chisel 源的对应关系。
+单 DP 通过 `python3 test/run_verilog.py --implementation verilog --phase all` 冻结并验证 `DP_verilog_<fingerprint>/`。顶层为 `dp_top`，时钟为 `clock`，复位为同步高有效 `reset`。端口与协议见 [DP 接口](../../src/spec/dp/interface.md)。
 
-状态流：generated → passed（对应 RTL-verified）→ 可被综合/功耗引用。失败标记 failed；源码、参数或工具变化形成新导出；RTL hash 不符阻止分析，验证代码变化需要重测。分析 run 自身具有独立状态。当前生成器不实现验证升级，不能手改 manifest 冒充 passed。
+DC 使用 [显式约束](../dc_syn/README.md) 定义时钟周期、IO 延迟和负载。DP 的 `clock_port` 必须与 RTL 接口一致。功耗活动与综合网表必须绑定同一个 RTL 指纹和对应层级。
 
-README 每次记录时间、目的、参数、版本、命令、文件映射和状态。失效且无引用的 RTL 可删除，但保留原因与最小复现信息。被论文/characterization 引用的 RTL 应保留一份可核验的归档，不能因清理破坏复现链。
-
-完整导出目录默认忽略；核心可复现信息和小型摘要经整理后提交。未启用任何“最新 RTL”隐式入口。
+快照与本机 run 由 Git 忽略。先通过 [真实 RTL 门禁](../dc_syn/input-contract.md) 再使用，保留有下游引用的输入和证据。

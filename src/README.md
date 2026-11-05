@@ -10,6 +10,6 @@
 | [verilog/](verilog/README.md) | 单 DP Verilog 主实现与 SystemVerilog 对照 |
 | [test/](../test/README.md) | 共用packed数据、独立参考、协议检查和报告 |
 
-开发顺序为spec → CModel → 两套RTL → 共用RTL回归 → DC/功耗。生成RTL集中在hw/rtl/；旧hw/legacy/仅作参考，不继承其数值、周期或验证状态。
+开发顺序为spec → CModel → 两套RTL → 共用RTL回归 → DC/功耗。用于分析的 RTL 快照集中于 `hw/rtl/`。历史实现从 Git 查阅。
 
 文档正文只保留当前有效定义。相邻两个主要版本的核心变更保留简短删除线，其余历史通过Git查询；见[维护规则](spec/document-control.md)。

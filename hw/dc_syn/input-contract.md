@@ -4,7 +4,7 @@
 
 ## RTL 和真实验证证据
 
-export 位于 `hw/rtl/<export-id>/`，内含 README.md、manifest.json、files.f、src。ID 末尾 12 位来自同一个 RTL 目录指纹。导出与验证属于 hw/test；DC 只读消费，不内置 testbench 或精度测试。
+export 位于 `hw/rtl/<export-id>/`，内含 README.md、manifest.json、files.f、src。由 `test/` 生产验证回执，DC 只读消费快照与证据。下面为通用 schema v2，DP schema v1 见后文。
 
 ```json
 {
@@ -14,10 +14,10 @@ export 位于 `hw/rtl/<export-id>/`，内含 README.md、manifest.json、files.f
   "status": "generated 或 passed 或 failed",
   "rtl_fingerprint": "单个目录SHA-256",
   "module_map": {
-    "实际模块名": {"chisel_class": "package.Class", "source_file": "hw/chisel_src/...scala"}
+    "实际模块名": {"chisel_class": "package.Class", "source_file": "src/chisel/...scala"}
   },
   "files": [{"path": "src/实际模块.sv", "role": "source"}],
-  "verification": {"path": "hw/test/runs/实际ID/verification.json"}
+  "verification": {"path": "test/runs/实际ID/verification.json"}
 }
 ```
 
@@ -65,6 +65,8 @@ run ID 固定 `dc_<RTL顶层名>_<MMDDHHMM>`，使用 Asia/Shanghai（UTC+08）�
 每次回归开始撤销旧 eligibility；失败/部分回归不能启用后端。
 门禁独立复核 10747 默认数值输出、2922 混格式输出、231654 断点、日志及数据，
 不能通过直接修改 `ppa_eligible` 绕过。
+
+DP manifest 记录 `top=dp_top` 和 `interface`，其中 `clock_port=clock`，`reset_port=reset`，复位同步高有效。DC 检查时钟配置与接口一致，复位作为同步输入正常计时。
 
 当前后端准入参数仅为 `K_FP16=16, LOCAL_W=27, GLOBAL_W=40`。
 其余参数虽有功能覆盖，必须另行建立对应综合配置合同。DC 显式使用

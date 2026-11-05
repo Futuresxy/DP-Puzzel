@@ -105,11 +105,12 @@ def campaign(directories,run,write_goldens=False,binary=None):
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('--phase',choices=['existing','extensions','all'],default='existing')
-    ap.add_argument('--write-goldens',action='store_true'); ap.add_argument('--import-existing',action='store_true')
+    ap.add_argument('--write-goldens',action='store_true')
+    ap.add_argument('--import-existing',type=Path,metavar='SOURCE_ROOT',help='Import from an external legacy vector corpus')
     ap.add_argument('--binary',type=Path,default=ROOT/'src/cmodel/build/dp_cmodel_cli')
     ap.add_argument('--run-dir',type=Path)
     args=ap.parse_args(); run=args.run_dir or TEST/'runs/cmodel'/args.phase; run.mkdir(parents=True,exist_ok=True)
-    if args.import_existing: import_existing()
+    if args.import_existing: import_existing(args.import_existing)
     directories=sorted((TEST/'data/dp').glob('*/K*/correct_961')) if args.phase!='extensions' else []
     if args.phase!='existing': directories+=sorted((TEST/'data/dp').glob('*/K*/generated_v1'))
     if not directories: raise RuntimeError('no datasets; import/generate them first')

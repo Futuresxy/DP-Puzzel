@@ -1,4 +1,4 @@
-> 功能：定义固定 E/M/S 解包数值布局；范围：T/H/Q/E、HiF4 e1/e2 和 E6M2 块 scale；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/unpack.cpp](../../cmodel/lib/unpack.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义固定 E/M/S 解包数值布局；范围：T/H/Q/E、HiF4 e1/e2 和 E6M2 块 scale；版本：v1.4.2；修改时间：2026-11-05 09:35:11 +08:00；对应代码：[CModel lib/unpack.cpp](../../cmodel/lib/unpack.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 固定 E/M/S 解包布局
 
@@ -92,7 +92,7 @@ x_i = (-1)^s × mi × 2^(-2) × 2^e2[e2_index] × block_scale
 
 若共用内部 scale 的 bias=127 指数与 I1F3 幅值，可无损输出 `scale_exp=e+(127-48)`、`scale_mant={1,f[1:0],0}`；NaN 使用独立分类及安全占位。A/B scale 各自独立，主配置同侧块 scale 广播四份不意味着 A/B scale 相同。
 
-以上为本项目经用户指定的历史解包语义，来源：[DataUnpack_E](../../../hw/legacy/chisel_src/pe/PE_E/DataUnpack_E.scala)、[DecodePrimitives.unpackHiF4/unpackSF](../../../hw/legacy/chisel_src/Utils/DecodePrimitives.scala)、[metadata 位宽](../../../hw/legacy/chisel_src/Utils/Interfaces.scala)、[FPBias.e6Bias](../../../hw/legacy/chisel_src/config/Parameters.scala)。仅采用这些明确的字段/数值定义，不采用历史 11/18 级流水、保留窗口或模块命名。
+以上为本项目经用户指定的历史解包语义，来源：[DataUnpack_E](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/legacy/chisel_src/pe/PE_E/DataUnpack_E.scala)、[DecodePrimitives.unpackHiF4/unpackSF](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/legacy/chisel_src/Utils/DecodePrimitives.scala)、[metadata 位宽](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/legacy/chisel_src/Utils/Interfaces.scala)、[FPBias.e6Bias](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/legacy/chisel_src/config/Parameters.scala)。仅采用这些明确的字段/数值定义，不采用历史 11/18 级流水、保留窗口或模块命名。
 
 ## 8. 分类旁带与后续共享
 

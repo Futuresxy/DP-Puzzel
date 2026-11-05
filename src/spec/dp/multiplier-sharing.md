@@ -1,4 +1,4 @@
-> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/lane.cpp](../../cmodel/lib/lane.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.4.2；修改时间：2026-11-05 09:35:11 +08:00；对应代码：[CModel lib/lane.cpp](../../cmodel/lib/lane.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 两组尾数乘法器覆盖 T1H2Q4E8
 
@@ -66,7 +66,7 @@ A_scale×B_scale 的 I1F3 系数乘法另需每基本组一份 4×4 资源，可
 
 ## 7. 参考边界
 
-依据 [SubPE_HQE](../../../hw/legacy/chisel_src/pe/PE_HQE/SubPE_HQE.scala) 的四单元路由及部分积思路，新增 TF32/INT8；不继承其旧尾数落位、三级局部流水或输出位宽。
+依据 [SubPE_HQE](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/legacy/chisel_src/pe/PE_HQE/SubPE_HQE.scala) 的四单元路由及部分积思路，新增 TF32/INT8；不继承其旧尾数落位、三级局部流水或输出位宽。
 
 ## 8. 逐笔控制与统计边界
 

@@ -85,10 +85,10 @@ class FlowTests(unittest.TestCase):
         (self.export / "src/Fixture.sv").write_text("// Software gate fixture, never simulated\nmodule Fixture; endmodule\n")
         (self.export / "files.f").write_text("src/Fixture.sv\n")
         (self.export / "README.md").write_text("Software fixture; not verified project hardware\n")
-        self.evidence_path = self.root / "hw/test/runs/fixture/verification.json"
+        self.evidence_path = self.root / "test/runs/fixture/verification.json"
         self.inputs = []
-        for role, name in (("testbench", "hw/test/tb/fixture.sv"), ("reference", "hw/test/reference/fixture.txt"),
-                           ("vectors", "hw/test/vectors/fixture.txt"), ("log", "hw/test/runs/fixture/test.txt")):
+        for role, name in (("testbench", "test/tb/fixture.sv"), ("reference", "test/reference/fixture.txt"),
+                           ("vectors", "test/vectors/fixture.txt"), ("log", "test/runs/fixture/test.txt")):
             p = self.root / name
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text("SOFTWARE FIXTURE ONLY " + role)
@@ -127,7 +127,7 @@ class FlowTests(unittest.TestCase):
 
     def refresh_receipt(self):
         dump(self.evidence_path, self.evidence)
-        self.manifest["verification"] = {"path": "hw/test/runs/fixture/verification.json"}
+        self.manifest["verification"] = {"path": "test/runs/fixture/verification.json"}
         dump(self.export / "manifest.json", self.manifest)
 
     def cli(self, *args, **kwargs):

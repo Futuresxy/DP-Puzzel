@@ -8,8 +8,8 @@
 
 | 数据对象 | 生产方 → 消费方 | 核心字段与约束 |
 | --- | --- | --- |
-| FormatSpec | hw/spec → 实现、参考模型、DSE | format_id、来源版本、元素编码、block shape/scale 编码、累加/输出格式、舍入、特殊值、转换规则 |
-| HardwareConfig | hw/configs → Chisel、characterization | hardware_id、scope、参数、支持模式、资源共享、接口、目标时序；不含整芯片实例配比 |
+| FormatSpec | src/spec → 实现、参考模型、DSE | format_id、来源版本、元素编码、block shape/scale 编码、累加/输出格式、舍入、特殊值、转换规则 |
+| HardwareConfig | src/ 参数配置 → Chisel、characterization | hardware_id、scope、参数、支持模式、资源共享、接口、目标时序；不含整芯片实例配比 |
 | RTLExport | 导出流程 → RTL 仿真、EDA | export_id、module↔Chisel 来源映射、files.f、逐文件 SHA-256、配置/源码/工具指纹、README |
 | RTLVerification | SV testbench → EDA 门禁 | export/hash、testbench/参考/向量版本、精度判据、配置矩阵、周期检查、日志、状态 |
 | SynthesisResult | DC → profile、power | export/验证 ID、库/PVT、约束、面积、时序、未约束路径状态、netlist/SDC hash |

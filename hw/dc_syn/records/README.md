@@ -14,3 +14,5 @@ bash scripts/dc_syn.sh report --run-id dc_dp_top_11050024 \
 报告核验不通过时不会写正式记录。records 不包含机器私有路径、凭据、PDK 或大型产物；生成后审查 diff，再显式提交。
 
 新版 DP 记录另包含输入 RTL 的单个目录指纹、参数、关键路径/分级摘要、WNS/TNS 与 Vt 配额状态；不记录工具/库/报告/网表的逐文件指纹。实测明细见 [流水分析](dp_n12_timing_20261105.md)。
+
+本机 `runs/` 保留 1.41 GHz 的 `dc_dp_top_11050024` 和 1 GHz 最终的 `dc_dp_top_11050215`。可直接读取其中的 `REPORT.md`、`reports/` 和 `netlist/`。原工作树清理前，将 1 GHz 首轮 `dc_dp_top_11050052` 和原 RTL 回执、输入快照归档到本机 `.cache/dp-dc-12nm-evidence.tar.gz`，并保留归档校验和。若要重新生成最终 1 GHz 的摘要，需先恢复其首轮 run 依赖。原始报告和配置快照保留运行时路径。

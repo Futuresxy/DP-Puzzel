@@ -80,6 +80,8 @@ def load_inputs(args):
                                            "timing_max_paths", "clock_gating_min_bitwidth", "hierarchy"))
     require(set(constraints) == required, "Missing or unknown constraint keys")
     require(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", constraints["clock_port"]), "Invalid clock port")
+    require(constraints["clock_port"] == gate.get("clock_port", constraints["clock_port"]),
+            "Constraint clock does not match RTL snapshot")
     for key in TIME_KEYS:
         value = constraints[key]
         require(type(value) in (int, float) and math.isfinite(value), "Invalid numeric constraint: " + key)
