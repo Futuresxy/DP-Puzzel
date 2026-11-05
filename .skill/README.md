@@ -6,4 +6,6 @@
 
 硬件开发与审查使用 [chisel-design](chisel-design/SKILL.md)：维护 PE/MN-PE/K-PE 架构及 Scala/spec 一一对应，明确位宽、scale、资源复用和流水依据。
 
+单 DP 真实负载功耗的方案和测量使用 [power-analysis](power-analysis/SKILL.md)，包括 VCS 原生门级 SAIF、Power Compiler 注释验收和精度比较口径。
+
 已有 `.codex/`、`.agents/` 等设置保持不变。此目录名是项目统一存放约定；不假定应用会自动扫描任意自定义目录，下轮可显式指定技能文件使用。
