@@ -1,4 +1,4 @@
-> 功能：定义现用模型/RTL及未来实现的共用验收合同；范围：数值、周期、协议、配置覆盖与证据；版本：v1.5.5；修改时间：2026-11-05 14:34:46 +08:00；对应代码：[精度回归](../../test/run_cmodel.py)、[协议/边界测试](../../test/tests/test_existing.py)、[现用 Verilog TB](../../test/rtl_tb/dp_tb.v)。
+> 功能：定义现用模型/RTL及未来实现的共用验收合同；范围：数值、周期、协议、配置覆盖与证据；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[精度回归](../../test/run_cmodel.py)、[协议/边界测试](../../test/tests/test_existing.py)、[现用 Verilog TB](../../test/rtl_tb/dp_tb.v)。
 
 # 验证方法与验收边界
 
@@ -38,6 +38,8 @@ SystemVerilog 已冻结为 T8H16Q32E64 历史参考，默认回归只运行 Veri
 
 ## 4. 当前验证结果
 
-[首批报告](../../test/results/cmodel-v1.4.md)与[机器可读摘要](../../test/results/cmodel-v1.4.json)记录全部配置、指纹、来源与限制。九项定向/协议测试及全量 Address/UndefinedBehavior/LeakSanitizer 通过。
+[首批报告](../../test/results/cmodel-v1.4.md)与[机器可读摘要](../../test/results/cmodel-v1.4.json)记录全部配置、指纹、来源与限制。该历史报告记录了当时的定向/协议及 sanitizer 结果，不自动覆盖后续修改。
+
+E 前端新增 [6 项测试](../../test/tests/test_e_frontend.py)，检查独立逐级 Fraction 数值、全部元素编码乘积与 HiF4 e1/e2、scale/特殊值、K4/8/16、窗口及 L8/L9 协议；S5 检查坐标映射，S6–S8 对照多精度逐位一致。E64 三格式各 961 笔全部匹配既有结果与精确数学结果，max_ulp=0。两前端共 16 项单测及默认多精度 10747 笔通过。本次 sanitizer 链接因环境缺少 ASan 运行库未完成；新 E RTL/PPA 尚未执行。配置、命令与指纹随普通运行保存在 test/runs/cmodel/，按滚动保留规则管理。
 
 一个配置通过不覆盖全部参数；DP 通过不覆盖阵列。既有 RTL 及 N12 测量范围见 [RTL 报告](../../test/results/verilog-v1.4.md) 和 [时序记录](../../hw/dc_syn/records/dp_n12_timing_20261105.md)；新改动必须重新验证，真实负载功耗待实施。后续硬件证据顺序为：参数 → RTL 导出 → 同源 RTL 回归 → DC/时序 → 负载活动功耗。

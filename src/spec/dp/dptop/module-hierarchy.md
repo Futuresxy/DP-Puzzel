@@ -1,8 +1,8 @@
-> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.5.6；修改时间：2026-11-05 15:38:20 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 模块层级、所有权与 S6 扩展点
 
-状态：当前用户指定模块化层级 `T1H2Q4E8 → T2H4Q8E16 → H16Q32E64`；顶层名称省略 T，但保留 TF32 T8。只描述当前主配置，未来 Q/E/QE 专用源的功能与数据布局待单独批准；现用 CModel 与手写 Verilog 已实现 v1.5 的无符号 scale；SystemVerilog 保留该版本作为冻结的历史参考。Chisel 和未来专用源待实现。
+状态：当前用户指定模块化层级 `T1H2Q4E8 → T2H4Q8E16 → H16Q32E64`；顶层名称省略 T，但保留 TF32 T8。只描述当前主配置，未来 Q/E/QE 专用源的功能与数据布局待单独批准；现用 CModel 与手写 Verilog 已实现 v1.5 的无符号 scale；SystemVerilog 保留该版本作为冻结的历史参考。E 专用 CModel 已实现并复用公共 S5–S8，E RTL、Chisel 和其他未来专用源待实现。
 
 ## 1. 当前层级与周期所有权
 
@@ -71,7 +71,7 @@ CModel 应按同一模块边界提供 S1 解包、S2 MAX/产品、S3 移位、S4
 
 ## 9. DP 设计族的工程组织建议
 
-状态：以下为项目框架建议，尚未新增配置解析器或重构源码，也不把混合组合列为已实现配置。现有多精度主实现、E 类优先讨论方案与已冻结 SV 的范围保持不变。
+状态：CModel 已提供静态 frontend=multi/e 选择、独立 E lane/group 和共用后端；E64 配置位于 src/configs/dp/e64.json。下面的通用组合框架仍为建议，groups 列表、混合组和 RTL 重构尚未实施。已冻结 SV 的范围保持不变。
 
 建议统一为“共用基础库 + 分类型模块 + 组合配置”。multi/e 表示构建时选择的硬件实现类型；datatype 表示请求运行时的数值格式，二者分别管理。不同类型在同一仓库开发，共享基础模块与文档，顶层按静态 profile 组合；Git 分支继续用于经用户同意的并行任务。
 
@@ -83,7 +83,7 @@ CModel 应按同一模块边界提供 S1 解包、S2 MAX/产品、S3 移位、S4
 | dptop | 共用 C 路径、S6–S8 后端和请求组织 | 薄顶层按 profile 选择 group 类型、数量及路由 |
 | profiles | 单一来源的构建参数和模块组合 | 建议 src/configs/dp/，同时供 CModel、RTL 构建和测试读取 |
 
-以下为组合说明，不是本轮实施授权或验证声明：
+以下为组合说明；multi/e64 仅 CModel 已实现选择，混合组尚未实现，E RTL 未实施：
 
 | 示例 profile | 组构成 | 模式容量 |
 | --- | --- | --- |

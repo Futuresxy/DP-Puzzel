@@ -1,4 +1,4 @@
-> 功能：定义 group 规格目录与计算边界；范围：两个 lane、S2 公共指数、S5 组和/scale/LZD 及 E16 优化候选；版本：v1.5.5；修改时间：2026-11-05 14:36:37 +08:00；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)；E 专用 group 和 Chisel 尚未实现。
+> 功能：定义 group 规格目录与计算边界；范围：两个 lane、S2 公共指数、S5 组和/scale/LZD 及 E16 优化候选；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)、[E CModel group/e.cpp](../../../cmodel/lib/group/e.cpp)；E 专用 RTL 和 Chisel 尚未实现。
 
 # group：两 lane 协作、组和与 scale
 
@@ -21,9 +21,9 @@ S5 幅值保持未规格化状态，LZD 只计数。输出字段、默认 M31 �
 
 方案正文：[dp_group_E.md](dp_group_E.md)。对应两个 [E8 lane](../lane/dp_lane_E.md)，三格式在组规约前统一为 F4；HiF4 e2 已计入 lane coefficient，因此无跨 lane 元素指数 MAX/delta/右移。
 
-当前优先讨论的流水为 S2 乘法/pair、S3 lane 四项树、S4 两 lane TC 合并及一次组 abs、S5 scale/LZD。S4 仅需 14 位幅值+符号，S5 继续共用现有 14×8 数据乘法器；三种格式的边界、范围与 S/I/F 以专用方案为准。
+当前 E CModel 实现的流水为 S2 乘法/pair、S3 lane 四项树、S4 两 lane TC 合并及一次组 abs、S5 scale/LZD。S4 仅需 14 位幅值+符号，S5 继续共用现有 14×8 数据乘法器；三种格式的边界、范围与 S/I/F 以专用方案为准。
 
-用户已要求保持原 group 输出 layout 和 S5 到达拍：默认幅值 31 位、符号 1 位、anchor signed10、z 5 位、special 4 位。HiF4 融合 e2 后换用新的 coefficient/anchor/z 坐标，真实指数及 S6 对齐结果保持等价；MX/NV 的组输出坐标沿用原定义。专用 RTL/CModel 尚未建立。
+用户已要求保持原 group 输出 layout 和 S5 到达拍：默认幅值 31 位、符号 1 位、anchor signed10、z 5 位、special 4 位。HiF4 融合 e2 后换用新的 coefficient/anchor/z 坐标，真实指数及 S6 对齐结果保持等价；MX/NV 的组输出坐标沿用原定义。专用 CModel 已通过数值与周期测试，专用 RTL 尚未建立。
 
 ## 3. 模块边界
 

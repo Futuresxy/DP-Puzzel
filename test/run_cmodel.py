@@ -25,21 +25,23 @@ def fingerprint(paths):
 def model_fingerprint():
     root=ROOT/'src/cmodel'
     return fingerprint([root/'CMakeLists.txt',root/'main.cpp',
-                        *root.glob('lib/*.cpp'),*root.glob('lib/*.hpp'),
-                        *root.glob('include/dp/*.hpp')])
+                        *(root/'lib').rglob('*.cpp'),*(root/'lib').rglob('*.hpp'),
+                        *(root/'include').rglob('*.hpp')])
 
 
-def campaign(directories,run,write_goldens=False,binary=None):
+def campaign(directories,run,write_goldens=False,binary=None,frontend='multi'):
     reports=[]; failures=[]
     for directory in directories:
         manifest=json.loads((directory/'manifest.json').read_text()); k,requests=read_inputs(directory/'inputs.txt')
         cfg=DEFAULT_CONFIG | dict(k_fp16=k)
+        if frontend=='e': cfg['frontend']='e'
         results=evaluate(requests,config=cfg,run_dir=run,binary=binary)
         if manifest['count']!=len(requests) or manifest['input_sha256']!=sha256(directory/'inputs.txt'):
             raise ValueError('input manifest count/hash mismatch')
         saved=[]
         if not write_goldens and (directory/'expected.jsonl').exists():
-            if manifest['golden']['expected_sha256']!=sha256(directory/'expected.jsonl') or manifest['golden']['config']!=cfg:
+            saved_cfg={key:value for key,value in cfg.items() if key!='frontend'}
+            if manifest['golden']['expected_sha256']!=sha256(directory/'expected.jsonl') or manifest['golden']['config']!=saved_cfg:
                 raise ValueError('golden manifest hash/config mismatch')
             saved=[json.loads(line) for line in (directory/'expected.jsonl').read_text().splitlines()]
             if len(saved)!=len(requests): raise ValueError('golden count mismatch')
@@ -106,20 +108,29 @@ def campaign(directories,run,write_goldens=False,binary=None):
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('--phase',choices=['existing','extensions','all'],default='existing')
+    ap.add_argument('--frontend',choices=['multi','e'],default='multi')
     ap.add_argument('--write-goldens',action='store_true')
     ap.add_argument('--import-existing',type=Path,metavar='SOURCE_ROOT',help='Import from an external legacy vector corpus')
     ap.add_argument('--binary',type=Path,default=ROOT/'src/cmodel/build/dp_cmodel_cli')
     ap.add_argument('--run-dir',type=Path)
     args=ap.parse_args()
+    if args.frontend=='e' and args.write_goldens:
+        ap.error('E frontend checks the shared saved results; it must not overwrite multi goldens')
+    if args.frontend=='e' and args.phase=='extensions':
+        ap.error('E frontend uses the existing MXFP4/NVFP4/HiF4 datasets')
     run_id=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     run=args.run_dir or TEST/'runs/cmodel'/run_id
     run.mkdir(parents=True,exist_ok=args.run_dir is not None)
     if args.import_existing: import_existing(args.import_existing)
     directories=sorted((TEST/'data/dp').glob('*/K*/correct_961')) if args.phase!='extensions' else []
     if args.phase!='existing': directories+=sorted((TEST/'data/dp').glob('*/K*/generated_v1'))
+    if args.frontend=='e':
+        directories=[p for p in directories if p.parent.parent.name in ('mxfp4_e2m1','nvfp4','hif4')]
     if not directories: raise RuntimeError('no datasets; import/generate them first')
-    report=campaign(directories,run,args.write_goldens,args.binary)
-    report.update(config=DEFAULT_CONFIG,phase=args.phase,python=platform.python_version(),
+    print(f'Frontend: {args.frontend}',flush=True)
+    report=campaign(directories,run,args.write_goldens,args.binary,args.frontend)
+    config=DEFAULT_CONFIG | ({'frontend':'e'} if args.frontend=='e' else {})
+    report.update(config=config,phase=args.phase,frontend=args.frontend,python=platform.python_version(),
                   model_version=json.loads(subprocess.check_output([str(args.binary),'--version'],text=True)),
                   model_source_sha256=model_fingerprint(),
                   scope='CModel and independent mathematical checks; no RTL or EDA')

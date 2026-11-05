@@ -7,6 +7,16 @@
 namespace dp {
 void advance(const Config& c,State& s,unsigned stage) {
   s.stage=stage;
+  if(c.frontend==Frontend::E && stage<=5) {
+    switch(stage) {
+      case 1: stage_unpack(c,s); break;
+      case 2: e_frontend::stage_pairs(c,s); break;
+      case 3: e_frontend::stage_lane_sum(c,s); break;
+      case 4: e_frontend::stage_group_sum(c,s); break;
+      case 5: e_frontend::stage_scale(c,s,c.post_scale_norm_extra_stage==0); break;
+    }
+    return;
+  }
   if(stage<=4) {
     switch(stage) {
       case 1: stage_unpack(c,s); break;
@@ -37,7 +47,7 @@ Tick Pipeline::step(const std::optional<Request>& r,bool av,bool bv,bool cv,bool
   Tick tick;
   if(reset) { for(auto& s:stages_) s.reset(); return tick; }
   const bool all=av&&bv&&cv;
-  tick.protocol_error=all && (!r || !tuple_legal(*r));
+  tick.protocol_error=all && (!r || !tuple_legal(config_,*r));
   tick.ready=all && !tick.protocol_error; tick.accepted=tick.ready;
   // Payload violations are driver errors. Validate before mutating any pipeline state.
   if(tick.accepted) validate_payload(config_,*r);

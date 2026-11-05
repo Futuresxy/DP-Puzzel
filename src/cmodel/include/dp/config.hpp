@@ -7,6 +7,7 @@ enum class DataType { TF32, FP16, BF16, MXFP8_E4M3, MXFP8_E5M2,
   MXFP6_E3M2, MXFP6_E2M3, MXFP4, NVFP4, HIF4, INT8 };
 enum class CType { FP32, INT32 };
 enum class ScaleType { NONE, E8M0, E4M3, E6M2 };
+enum class Frontend { Multi, E };
 
 // Format/architecture constants are named here; adjustable windows are Config fields.
 struct Format {
@@ -32,6 +33,10 @@ constexpr unsigned mul_hi_bits = 8, mul_lo_bits = 4;
 constexpr unsigned mul_groups_per_lane = 2;
 constexpr unsigned scale_magnitude_bits = 4;
 constexpr unsigned e_compact_group_bits = e_pair_bits + e_guard_bits + 2 + 1;
+constexpr unsigned e_pairs_per_lane = e_elements_per_lane / 2;
+constexpr unsigned e_lane_raw_bits = e_pair_bits + 2;
+constexpr unsigned e_lane_fused_bits = e_lane_raw_bits + e_guard_bits;
+constexpr unsigned e_group_fraction_bits = 4;
 constexpr unsigned canonical_nan = 0x7fc00000u;
 unsigned ceil_log2(unsigned n);
 
@@ -42,16 +47,18 @@ struct Config {
   unsigned local_shift_mag_width = 28;
   unsigned global_signed_align_width = 40;
   unsigned post_scale_norm_extra_stage = 0;
+  Frontend frontend = Frontend::Multi;
   void validate() const;
   unsigned groups() const { return k_fp16 / fp16_per_group; }
   unsigned lanes() const { return groups() * lanes_per_group; }
   unsigned elements(DataType t) const { return lanes() * format(t).lane_elements; }
   unsigned packed_bits() const { return k_fp16 * 16; }
   unsigned local_fraction() const { return local_shift_mag_width - 2; } // S0I2F(local-2)
-  unsigned leaf_bits() const { return local_shift_mag_width + 1; }
-  unsigned lane_bits() const { return leaf_bits() + ceil_log2(q_elements_per_lane); }
-  unsigned group_bits() const { return lane_bits() + ceil_log2(lanes_per_group); }
-  unsigned group_mag_bits() const { return group_bits() - 1; }
+  unsigned leaf_bits() const { return frontend==Frontend::E?e_pair_bits:local_shift_mag_width+1; }
+  unsigned lane_bits() const { return frontend==Frontend::E?e_lane_raw_bits:leaf_bits()+ceil_log2(q_elements_per_lane); }
+  unsigned group_bits() const { return frontend==Frontend::E?e_compact_group_bits:group_mag_bits()+1; }
+  // S5's exported magnitude slot stays compatible across frontend types.
+  unsigned group_mag_bits() const { return local_shift_mag_width+ceil_log2(q_elements_per_lane)+ceil_log2(lanes_per_group); }
   unsigned global_mag_bits() const { return global_signed_align_width - 1; }
   unsigned sum_bits() const { return global_signed_align_width + ceil_log2(groups()+1); }
   unsigned latency() const { return base_latency + post_scale_norm_extra_stage; }

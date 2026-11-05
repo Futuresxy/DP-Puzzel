@@ -1,8 +1,8 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.6；修改时间：2026-11-05 15:38:20 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
 
 # DP CModel 合同
 
-用户已授权在现有 spec 上实现 CModel，并要求原九格式优先测试、随后扩展 TF32/INT8。模型实现当前分组共享方案；独立一次对齐、专用 Q/E/QE 增源、阵列和 EDA 不在本批范围。默认 T8H16Q32E64、L8、II=1。模型不以宿主 float/double 代替有限位宽运算。
+模型实现多精度分组共享前端和 E 专用前端，共用 S5 token 完成/C 路径及 S6–S8。默认 `multi` 为 T8H16Q32E64，`e` 为 E64，均为 L8、II=1。E 前端仅支持 MXFP4/NVFP4/HiF4，C/D 为 FP32；数学参考和请求接口复用。混合组组合、专用 Q/QE、阵列和 E RTL/EDA 尚未实施。模型不以宿主 float/double 代替有限位宽运算。
 
 ## 1. 实现与模块映射
 
@@ -12,7 +12,10 @@
 | include/dp/model.hpp、lib/detail.hpp | 请求、结果、flags、逐级状态与 group token |
 | lib/unpack.cpp | S1 A/B/scale 解包为 E/M/S 与分类；S5 C 解包辅助 |
 | lib/lane.cpp | T1H2Q4E8：S2 乘法重构/指数和/MAX，S3 幅值 RTZ/E pair，S4 lane 树 |
-| lib/group.cpp | T2H4Q8E16 的 S5 合并/abs/scale/LZD；顶层 S6 双向对齐、S7 树、S8 RNE/INT32 |
+| lib/group.cpp | 多精度 T2H4Q8E16 的 S5 合并/abs/scale |
+| lib/lane/e.cpp | E8：S2 无符号 4×4 与 signed10 pair，S3 四项树到 signed12 |
+| lib/group/e.cpp | E16：S4 融合 e2/固定补零、两 lane 合并/abs，S5 scale 与兼容 Token |
+| lib/top/backend.cpp | 共用 S5 LZD/C 解包、可选独立 LZD 级、S6 对齐、S7 树、S8 RNE/INT32 |
 | lib/arithmetic.cpp | 整数宽度断言、平衡加法树、RTZ、RNE、特殊值摘要 |
 | lib/model.cpp | 事务 evaluate 与逐级 Pipeline；二者使用同一 stage 函数 |
 | lib/json_io.cpp、main.cpp | JSONL 协议、固定宽度 hex/枚举检查、CLI |
@@ -21,9 +24,9 @@ C++ 使用 Boost cpp_int 保存精确整数，**在规定截断点显式 RTZ，�
 
 ## 2. 参数合同
 
-四项可配置量：k_fp16（4/8/16），local_shift_mag_width（默认 28、至少 27），global_signed_align_width（默认 40），post_scale_norm_extra_stage（0/1，默认 0）。配置是显式 JSON 对象；未知键、负数、小数、溢出值及非法组合报错，不通过环境变量隐式修改数值。
+四项数值参数：k_fp16（4/8/16），local_shift_mag_width（默认 28、至少 27），global_signed_align_width（默认 40），post_scale_norm_extra_stage（0/1，默认 0）。另有静态 `frontend`：`multi`（默认）或 `e`，不作为请求信号。配置是显式 JSON 对象；未知键、非法类型、负数、小数、溢出值及非法组合报错，不通过环境变量隐式修改数值。E64 的实际配置见 [e64.json](../../../configs/dp/e64.json)；兼容 k_fp16 只决定 G=K/4，不表示 E 前端支持 FP16。
 
-其他量由参数派生：G=K/4，leaf=local+1，lane=leaf+ceil_log2(4)，group=lane+ceil_log2(2)，group_mag=group−1，global_mag=global−1，sum=global+ceil_log2(G+1)。要求 global_mag≥max(group_mag,32)，所有静态 pad 非负。当前窗口扫描是建模探索，不把允许构建的每个窗口宣称满足用户 35/37 位精度目标；默认及已测配置单独记录。
+多精度前端派生量：G=K/4，leaf=local+1，lane=leaf+ceil_log2(4)，group=lane+ceil_log2(2)。两种前端的公共 S5 group_mag=local+3、global_mag=global−1、sum=global+ceil_log2(G+1)。E 的内部 pair/lane/group 为 10/12/15 位，14 位组幅值不随 LOCAL_W 增大；E 配置回显单列 pair_bits、lane_bits、group_internal_mag_bits 及兼容 group_mag_bits。要求 global_mag≥max(group_mag,32)，所有静态 pad 非负。当前窗口扫描是建模探索，不把允许构建的每个窗口宣称满足用户 35/37 位精度目标；默认及已测配置单独记录。
 
 格式常量、E guard、scale 窗口和每模式 F 见 [数值布局](../common/numeric-layout.md)、[逐级出口](../common/stage-formats.md)。S2 raw 元素指数不去 bias；S5 形成无偏原 anchor。C 同样在 S5 去 FP32 bias。S6 用 signed 真实指数 MAX 和完整 unsigned d；S8 仅为最终 FP32 编码加一次 127。
 
@@ -38,6 +41,8 @@ S5 先分离符号和幅值。NVFP4/HiF4 共用 **14×8 无符号 scale 乘法**
 `id` 为验证器侧关联编号，不新增 DUT tag 端口。`protocol_error` 为驱动诊断，不新增 DUT 错误端口。all_valid 下非法类型拒绝握手；超宽数据、TF32/FP6 非零填充、错误 scale 广播/负 NV scale 等源违反 payload 合同会抛异常，且在周期状态更新前检查。partial-valid 时不解读无效请求内容。
 
 trace 的每个 cutpoint 有 stage、operation、data。覆盖 S1 每元素及 packed E/M/S、S2 magnitude/exponent/F/r、S3 signed leaves/移位差、S4 lane SOP/F、S5 raw group/C token 与共享 scale 乘法操作数、S6 E_max/z/d/net/对齐值、S7 总和/F、S8 输出。token 保留 sign、m、width、F、anchor_raw、z、派生 e 与 zero/special。整数和特殊值未使用的浮点控制是安全占位，不作为数值指数。
+
+E 的 S2/S3/S4 观察点分别为 `e_multiply_and_pairs`、`e_lane_sop_tree`、`e_group_sum_and_abs`；S5 起共用原 token/trace 接口。HiF4 在 S4 消耗 p=e2_a+e2_b，输出 F 与原多精度路径不同；按 [E group 坐标合同](../group/dp_group_E.md#4-与原多精度-group-对齐的输出-layout) 检查 m/A/z 映射，S6 对齐叶子、S7、S8 逐位一致。S3 可提前准备 anchor 是硬件时序安排，当前 CModel 在 S2 保存 scale 指数和、S5 计算 anchor，不额外增加寄存级。
 
 模型可检查范围/等式和周期边界；逻辑阶段不能证明实际组合延迟符合 1.41GHz。S2 MAX 回传、S5 scale→LZD、S6 MAX→双向移位、S8 norm/RNE 都仍须 RTL/工艺时序验证。
 
@@ -63,9 +68,11 @@ trace 的每个 cutpoint 有 stage、operation、data。覆盖 S1 每元素及 p
 
 CModel、现用 Verilog 及未来 Chisel 使用共同数学合同；SV 历史目录按冻结版本解释。 C++ 文件不等于最终 RTL module 一一结构实例化；operand isolation、时钟门控、mux 门级共享和面积归属仍须实现和综合证据。现有 RTL 与历史 N12 DC 证据见 [实现合同](verilog.md)；新专用 E 单元尚无 RTL/PPA 证据，真实负载功耗仍待实施。
 
+E64 的三格式各 961 笔均匹配保存的多精度结果及独立精确数学结果，最大 ULP=0；6 项 E 专用单测覆盖独立逐级 Fraction 等式、全部 nibble 乘积/HiF4 元数据组合、特殊值/scale、K4/8/16 与窗口、L8/L9 和真实在途周期。普通运行的配置、指纹与摘要保存在 test/runs/cmodel/，按滚动保留规则管理。本次环境缺少可链接的 ASan 运行库，未完成 sanitizer 验证；历史 sanitizer 结论不扩大到新 E 实现。
+
 ## 7. 与 RTL 对应的设计族组织建议
 
-建议维持同一个模型工程和统一 evaluate/Pipeline 入口，按 common、lane、group、top 的职责组织实现，在 lane/group 内区分 multi/e 类型。以下是后续源码迁移目标，不是当前目录已经完成调整：
+当前维持一个模型工程和统一 evaluate/Pipeline 入口，已新增 lane/e.cpp、group/e.cpp，并把公共 S5 完成及 S6–S8 从 group.cpp 抽到 top/backend.cpp；保留原多精度文件名和共同基础函数。以下更完整的目录分层仍是后续迁移目标，不代表全部已经搬移：
 
 ~~~text
 src/cmodel/
@@ -84,9 +91,9 @@ src/cmodel/
 
 公共层复用 Big/Token/Special、位宽检查、scale/C 解码、规约和 FP32 舍入。multi/e 前端拥有各自的阶段状态与 trace，在 S5 产出公共 Token；类型差异集中在前端调度点，不在每个公共算术函数中散布 profile 分支。使用简单的具名结构和函数，不为每个精度建立深层继承框架。
 
-当前 group.cpp 同时包含 stage_group、stage_global_align、stage_total、stage_output，需要先按职责分离，保持既有配置的行为和周期不变。新增 E 路径使用真实 S2 pair/S3 规约/S4 组和/S5 scale 阶段，不能在输入时算完结果再补延迟。profile 的类型/数量在构建配置中确定，每笔请求继续携带 datatype。
+已抽出的公共后端保持原多精度配置的行为和周期。E 路径使用真实 S2 pair/S3 规约/S4 组和/S5 scale 阶段；每拍推进实际阶段，非预先计算后延迟输出。frontend 在构造 Config 时确定，每笔请求继续携带 datatype。
 
-配置入口拟与 [RTL 框架](verilog.md#6-分类型模块与组合配置建议) 共用 src/configs/dp/，当前 Config/CLI 尚未接入该 schema。保留现有配置的兼容入口，后续按组能力及实例数派生模式容量，不能仅把当前 k_fp16 改名就声称支持混合组合。
+src/configs/dp/e64.json 已作为 E64 CModel 配置接入现有 CLI，使用兼容四项数值参数加 frontend 字段。[RTL 框架](verilog.md#6-分类型模块与组合配置建议) 的 groups 列表及通用混合 profile schema 尚未接入 CModel/RTL；当前不支持同一 DP 混合 multi/E 组，不能仅把 k_fp16 改名就声称支持混合组合。
 
 数学 reference 与原始输入数据共用一份，按实际输入、模式 K 和 scale 关系计算精确数学结果；各 profile 的有限位宽架构期望、周期记录与内部 cutpoint 分别生成。禁止用 E 的新 trace 覆盖多精度 expected 作为绕过验证的方式。内部字段允许不同，先检查各自 RTL/CModel，再按数值坐标映射对照公共 S5/S6 边界及最终输出。数学 oracle 保持独立，不直接调用被测 CModel 的算术函数。
 

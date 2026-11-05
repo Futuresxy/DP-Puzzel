@@ -1,4 +1,4 @@
-> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.5.5；修改时间：2026-11-05 14:34:46 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 多精度 DP / Cube 设计规范
 
@@ -16,7 +16,7 @@
 | 理解共享资源 | [乘法器](dp/lane/multiplier-sharing.md) · [移位器](dp/lane/shifter-sharing.md) · [scale](dp/group/scale.md) · [组间对齐](dp/dptop/global-align.md) |
 | 运行与评估模型 | [CModel 合同](dp/implementation/cmodel.md) · [构建入口](../cmodel/README.md) · [测试报告](../../test/results/cmodel-v1.4.md) |
 | 手写 RTL | [实现合同](dp/implementation/verilog.md) · [源码](../verilog/README.md) · [验证报告](../../test/results/verilog-v1.4.md) |
-| 讨论 E 类专用 DP | [E8 lane](dp/lane/dp_lane_E.md) · [E16 group 与 FP32 后端接入](dp/group/dp_group_E.md)（e2 定点融合、兼容 group 输出；流水待讨论） |
+| 讨论 E 类专用 DP | [E8 lane](dp/lane/dp_lane_E.md) · [E16 group 与 FP32 后端接入](dp/group/dp_group_E.md)（e2 定点融合、兼容 group 输出；E CModel 已实现，RTL 待实施） |
 | 准备 PPA | [参数](06-configuration.md) · [验证](07-verification.md) · [实现与 PPA](08-implementation-ppa.md) · [功能块统计](dp/implementation/resource-accounting.md) |
 
 ## 2. 设计摘要

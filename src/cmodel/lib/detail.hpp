@@ -30,6 +30,16 @@ struct Token {
   Special special;
   bool active() const { return magnitude != 0 && !special.active(); }
 };
+// Only E-front-end register data. Old multi-mode intermediates are not repurposed.
+struct EFrontendState {
+  std::vector<std::vector<Big>> pairs;
+  std::vector<unsigned> lane_shift;
+  std::vector<bool> all_negative;
+  std::vector<Big> scale_coefficients;
+  std::vector<int> scale_exponents;
+  std::vector<Big> group_magnitudes;
+  std::vector<bool> group_negative;
+};
 struct State {
   Request request;
   bool tracing = false;
@@ -40,6 +50,7 @@ struct State {
   std::vector<Special> group_special;
   std::vector<std::vector<Big>> leaves;
   std::vector<Big> lanes;
+  EFrontendState e;
   std::vector<Token> groups;
   Token c;
   std::vector<Big> aligned;
@@ -73,9 +84,17 @@ void stage_products(const Config&, State&);
 void stage_local_align(const Config&, State&);
 void stage_lane_sum(const Config&, State&);
 void stage_group(const Config&, State&, bool detect);
+void detect_token(Token&);
+void finish_group_stage(State&, bool detect, const Json& scale_trace);
 void stage_detect(const Config&, State&);
 void stage_global_align(const Config&, State&);
 void stage_total(const Config&, State&);
 void stage_output(const Config&, State&);
 void advance(const Config&, State&, unsigned stage);
+namespace e_frontend {
+void stage_pairs(const Config&, State&);
+void stage_lane_sum(const Config&, State&);
+void stage_group_sum(const Config&, State&);
+void stage_scale(const Config&, State&, bool detect);
+}
 } // namespace dp

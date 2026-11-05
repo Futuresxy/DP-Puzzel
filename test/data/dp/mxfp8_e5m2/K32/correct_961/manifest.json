@@ -171,7 +171,7 @@
       "global_signed_align_width": 40,
       "post_scale_norm_extra_stage": 0
     },
-    "model_source_sha256": "ed83f16982506f19c29ddc3075db667949541bf1070c4392a4faa7a8d36d24e8",
+    "model_source_sha256": "3edc4dba7663df7ad5101f23a006590b63e84ca6328be3481bedca68072dfcd2",
     "expected_sha256": "1b1617690b258a9ddbcc8e8f7008e734c4450687db2b84f2930874138f760002",
     "reference": "independent Fraction finite-window oracle + exact mathematical reference",
     "status": "cmodel_verified_not_rtl"

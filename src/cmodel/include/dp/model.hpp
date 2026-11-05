@@ -35,6 +35,7 @@ struct Result {
 // Per-request computation uses the exact same stage transitions as Pipeline.
 Result evaluate(const Config&, const Request&, bool trace = false);
 bool tuple_legal(const Request&);
+bool tuple_legal(const Config&, const Request&);
 void validate_payload(const Config&, const Request&);
 struct State;
 struct Tick {

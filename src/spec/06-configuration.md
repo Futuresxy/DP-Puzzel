@@ -1,4 +1,4 @@
-> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel include/dp/config.hpp](../cmodel/include/dp/config.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[CModel include/dp/config.hpp](../cmodel/include/dp/config.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 参数与派生关系
 
@@ -8,7 +8,8 @@ CModel 参数入口为 [config.hpp](../cmodel/include/dp/config.hpp)，RTL 通�
 
 | 参数 | 默认值 | 合法性与作用 |
 | --- | ---: | --- |
-| `k_fp16` | 16 | 4、8、16；决定并行基本组数 |
+| `frontend`（仅 CModel） | `multi` | `multi` 或 `e`；静态前端选择，非请求 datatype |
+| `k_fp16` | 16 | 4、8、16；决定 G=1/2/4；E 前端为 E16/E32/E64，不启用 FP16 |
 | `local_shift_mag_width`（RTL `LOCAL_W`） | 28 | 至少 27；S3 幅值窗口，T/H/Q 的 F=width−2 |
 | `global_signed_align_width`（RTL `GLOBAL_W`） | 40 | S6 含符号窗口，实际幅值移位器为 width−1 |
 | `post_scale_norm_extra_stage` | 0 | 0 或 1；固定 L8 或备用 L9，不逐笔变化 |
@@ -32,6 +33,8 @@ CModel 参数入口为 [config.hpp](../cmodel/include/dp/config.hpp)，RTL 通�
 固定格式不意味着所有常量都可任意改变。构建参数、规格常量和派生量必须区分，不能为中间每条连线增加互相矛盾的自由旋钮。
 
 ## 3. 容量与自然增长
+
+以下 leaf/lane/group 为多精度主路径宽度；公共 S5 的 M_group、S6/S7 和容量推导也适用于 E 前端。E64 实际配置见 [e64.json](../configs/dp/e64.json)。
 
 ```text
 L(n) = ceil(log2(n)), L(1) = 0
@@ -67,7 +70,7 @@ W_product_magnitude = W_sop_magnitude + W_factor
 pad_scale_product = M_group - W_product_magnitude
 ```
 
-由此得到 guard=2、pair W10、紧凑 SOP W15、幅值 W14、系数 W8 及无符号积 W22。默认低补 9 位进入 M31。幅值上界与 F 见 [scale](dp/group/scale.md)。
+由此得到 guard=2、pair W10、紧凑 SOP W15、幅值 W14、系数 W8 及无符号积 W22。E 前端内部 S2 pair/S3 lane/S4 group 为 W10/W12/W15，LOCAL_W 仅决定公共输出 M_group=LOCAL_W+3 和补零；内部不增加移位精度损失。默认低补 9 位进入 M31。幅值上界与 F 见 [scale](dp/group/scale.md)。
 
 ## 5. 指数与控制宽度
 
@@ -77,4 +80,4 @@ pad_scale_product = M_group - W_product_magnitude
 
 ## 6. 阵列与未来扩展
 
-当前 DP-Group 为 4×4，竖直组数 4，因此 TensorCore 为 16×4、共 64 个 DP；这些阵列结构尚未实现。专用 Q/E/QE 源及额外 1–2 级需另定 profile，不能与 L9 备用自动叠加。
+当前 DP-Group 为 4×4，竖直组数 4，因此 TensorCore 为 16×4、共 64 个 DP；这些阵列结构尚未实现。专用 Q/QE、混合组及额外 1–2 级需另定 profile，不能与 L9 备用自动叠加。

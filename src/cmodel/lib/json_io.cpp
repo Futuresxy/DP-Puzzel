@@ -32,6 +32,12 @@ Config config_from_json(const Json& j) {
     else if(key=="local_shift_mag_width") c.local_shift_mag_width=field(j,key.c_str());
     else if(key=="global_signed_align_width") c.global_signed_align_width=field(j,key.c_str());
     else if(key=="post_scale_norm_extra_stage") c.post_scale_norm_extra_stage=field(j,key.c_str());
+    else if(key=="frontend") {
+      const auto value=it.value().get<std::string>();
+      if(value=="multi") c.frontend=Frontend::Multi;
+      else if(value=="e") c.frontend=Frontend::E;
+      else throw std::invalid_argument("frontend must be multi or e");
+    }
     else throw std::invalid_argument("unknown configuration key: "+key);
   }
   c.validate(); return c;
@@ -53,10 +59,18 @@ Request request_from_json(const Json& j) {
   return r;
 }
 Json config_json(const Config& c) {
-  return {{"k_fp16",c.k_fp16},{"local_shift_mag_width",c.local_shift_mag_width},
+  Json result={{"frontend",c.frontend==Frontend::E?"e":"multi"},
+    {"k_fp16",c.k_fp16},{"local_shift_mag_width",c.local_shift_mag_width},
     {"global_signed_align_width",c.global_signed_align_width},{"post_scale_norm_extra_stage",c.post_scale_norm_extra_stage},
     {"latency",c.latency()},{"groups",c.groups()},{"leaf_bits",c.leaf_bits()},
     {"lane_bits",c.lane_bits()},{"group_mag_bits",c.group_mag_bits()},{"sum_bits",c.sum_bits()}};
+  if(c.frontend==Frontend::E) {
+    result.erase("leaf_bits");
+    result["pair_bits"]=c.leaf_bits();
+    result["group_internal_mag_bits"]=e_compact_group_bits-1;
+    result["k_e"]=c.elements(DataType::MXFP4);
+  }
+  return result;
 }
 Json result_json(const Result& r) {
   std::ostringstream hex; hex<<std::hex<<std::setfill('0')<<std::setw(8)<<r.bits;

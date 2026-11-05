@@ -5,7 +5,8 @@
 | 入口 | 内容 |
 | --- | --- |
 | [spec/](spec/README.md) | 架构、接口、数值和验证规范 |
-| [cmodel/](cmodel/README.md) | C++整数位精确与逐级周期模型 |
+| [cmodel/](cmodel/README.md) | 多精度/E 前端，共用 C 路径及 S6–S8 的整数位精确/逐级周期模型 |
+| [configs/dp/](configs/dp/e64.json) | CModel 构建配置；E64 使用 frontend=e，混合组配置待实施 |
 | [chisel/](chisel/README.md) | 后续Chisel实现 |
 | [verilog/](verilog/README.md) | 单 DP Verilog 主实现；SystemVerilog 历史参考 |
 | [test/](../test/README.md) | 共用packed数据、独立参考、协议检查和报告 |

@@ -22,9 +22,12 @@ python3 test/run_cmodel.py --phase existing
 python3 -m unittest discover -s test/tests -p test_existing.py -v
 python3 test/run_cmodel.py --phase extensions
 python3 -m unittest discover -s test/tests -v
+python3 test/run_cmodel.py --frontend e --phase all
 ```
 
 回归分别要求：C++对独立有限窗口参考逐位一致、数学误差落在逐例推导上界内、INT8精确回绕；另外比对已保存golden。TF32同时记录FP64近似参考。`--phase all` 可重跑全部10747笔，默认每次生成独立的 `test/runs/cmodel/<UTC-run-id>/`。
+
+E 前端复用 MXFP4/NVFP4/HiF4 三种各 961 笔数据，分别与保存的多精度结果和精确数学参考比较。`test_e_frontend.py` 检查 E 内部切点、HiF4 坐标映射及共用后端，E 回归禁止 `--write-goldens`，不覆盖多精度期望。E RTL 尚未实施，下面的 RTL 回归仍验证多精度主实现。
 
 ## 手写 RTL 回归
 

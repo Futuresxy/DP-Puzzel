@@ -14,7 +14,8 @@ int main(int argc,char** argv) {
         std::ifstream f(argv[++i]); if(!f) throw std::invalid_argument("cannot read config");
         dp::Json j; f>>j; config=dp::config_from_json(j);
       } else if(arg=="--version") {
-        std::cout<<dp::Json({{"model","dp-cmodel-1"},{"architecture","dp-cube/v1.5"},
+        std::cout<<dp::Json({{"model","dp-cmodel-2"},{"architecture","dp-cube/v1.5"},
+          {"frontends",dp::Json::array({"multi","e"})},
           {"boost",BOOST_LIB_VERSION},{"json",NLOHMANN_JSON_VERSION_MAJOR*10000+NLOHMANN_JSON_VERSION_MINOR*100+NLOHMANN_JSON_VERSION_PATCH}}).dump()<<'\n'; return 0;
       } else throw std::invalid_argument("usage: dp_cmodel_cli [--config FILE] [--trace] [--version]");
     }

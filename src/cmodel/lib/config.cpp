@@ -27,6 +27,7 @@ unsigned ceil_log2(unsigned n) {
   unsigned v=0; for(--n;n;n>>=1) ++v; return v;
 }
 void Config::validate() const {
+  if(frontend!=Frontend::Multi && frontend!=Frontend::E) throw std::invalid_argument("unknown frontend");
   if(k_fp16!=4 && k_fp16!=8 && k_fp16!=16) throw std::invalid_argument("k_fp16 must be 4,8,16");
   if(local_shift_mag_width<27) throw std::invalid_argument("local window requires F>=25");
   if(local_shift_mag_width>static_cast<unsigned>(std::numeric_limits<int>::max()/4) ||
@@ -37,6 +38,11 @@ void Config::validate() const {
   if(post_scale_norm_extra_stage>1) throw std::invalid_argument("only L8/L9 profiles supported");
 }
 unsigned Config::lane_fraction(DataType t) const {
+  if(frontend==Frontend::E) {
+    if(t!=DataType::MXFP4 && t!=DataType::NVFP4 && t!=DataType::HIF4)
+      throw std::invalid_argument("unsupported E frontend datatype");
+    return t==DataType::HIF4?4:2;
+  }
   const auto n=format(t).lane_elements;
   if(t==DataType::INT8) return lane_bits()-(int_product_bits+ceil_log2(n));
   if(n==e_elements_per_lane) {
@@ -52,8 +58,12 @@ bool tuple_legal(const Request& r) {
   return r.c_type==(r.a_type==DataType::INT8?CType::INT32:CType::FP32) &&
     r.a_scale_type==format(r.a_type).scale && r.b_scale_type==format(r.b_type).scale;
 }
+bool tuple_legal(const Config& c,const Request& r) {
+  return tuple_legal(r) && (c.frontend==Frontend::Multi || (c.frontend==Frontend::E &&
+    (r.a_type==DataType::MXFP4 || r.a_type==DataType::NVFP4 || r.a_type==DataType::HIF4)));
+}
 void validate_payload(const Config& c, const Request& r) {
-  if(!tuple_legal(r)) throw std::invalid_argument("illegal datatype tuple");
+  if(!tuple_legal(c,r)) throw std::invalid_argument("illegal datatype tuple for frontend");
   check_unsigned(r.a,c.packed_bits(),"packed A"); check_unsigned(r.b,c.packed_bits(),"packed B");
   check_unsigned(r.a_scale,8*c.groups(),"A scales"); check_unsigned(r.b_scale,8*c.groups(),"B scales");
   check_unsigned(r.a_e1,4*c.groups(),"A e1"); check_unsigned(r.b_e1,4*c.groups(),"B e1");

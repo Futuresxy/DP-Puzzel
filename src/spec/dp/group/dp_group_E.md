@@ -1,8 +1,8 @@
-> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.5.5；修改时间：2026-11-05 14:36:37 +08:00；对应代码：专用实现尚未建立；推导基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
+> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[E CModel group/e.cpp](../../../cmodel/lib/group/e.cpp)、[公共后端](../../../cmodel/lib/top/backend.cpp)；专用 RTL 尚未建立；多精度基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
 
-# E 类专用 group 讨论稿
+# E 类专用 group 设计与 CModel
 
-用户已明确 group 输出 layout 与现有多精度版本对齐，group 外计算部分复用；HiF4 e2 在 lane 内融合，MX/NV 无元素指数差。以下采用这些边界，提出 E64 的流水分工。专用 RTL/CModel 未实现，用户已选定优先讨论 S2 乘法+pair、S3 四项树的候选，最终时序待验证；没有专用 PPA 或时序结论。
+用户已明确 group 输出 layout 与现有多精度版本对齐，group 外计算部分复用；HiF4 e2 在 lane 内融合，MX/NV 无元素指数差。CModel 已按这些边界实现 E64 的 S2 乘法+pair、S3 四项树、S4 组和/abs、S5 scale/LZD，直接复用公共后端函数。专用 RTL 未实现，最终时序待验证；没有专用 PPA 或时序结论。
 
 ## 1. 统一定点 E16 组
 
@@ -19,7 +19,7 @@ value_before_scale = Q_group * 2^-4
 
 两 lane 可直接在同一小数点下相加。HiF4 e2 的作用全部计入 coefficient，group 无须比较、回传或保存元素公共指数 r；group 的外部指数只来自块 scale。HiF4 的 e1 仍在 S1 融入元素幅值。
 
-## 2. E64 当前优先讨论的八级流水
+## 2. E64 当前 CModel 的八级流水
 
 | 级 | 数据计算 | 寄存结果/接口 |
 | --- | --- | --- |
@@ -121,4 +121,4 @@ net = A_raw-E_max
 
 验证要求：对旧模型的 MX/NV 检查同坐标组 token；对 HiF4 检查上面的 m/A/z 转换，再检查 S6/S7/S8 bit-exact。覆盖三精度、scale 分类、HiF4 e1/e2、lane/组抵消、零符号、FP32 C、逐拍换型及复位，并按每个合法参数分别导出验证。新专用 RTL 未通过前不能用于 PPA。
 
-PPA 对比保持相同 E64 吞吐、L8、N12 工艺/PVT、工具/约束及同一真实负载；分别报告前端与整 DP 面积/功耗。下一步围绕 S2 pair/S3 四项树收敛时序、控制和接口细节，再开发专用 CModel 与纯 Verilog。SV 历史参考不接收新 E 单元。
+PPA 对比保持相同 E64 吞吐、L8、N12 工艺/PVT、工具/约束及同一真实负载；分别报告前端与整 DP 面积/功耗。CModel 的三格式各 961 笔与原结果一致，数学 max_ulp=0；独立逐级检查和 S5 坐标/S6–S8 对照见 [E 前端测试](../../../../test/tests/test_e_frontend.py)。当前只完成 CModel；专用纯 Verilog、综合与功耗分析仍待实施。SV 历史参考不接收新 E 单元。
