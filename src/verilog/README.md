@@ -36,6 +36,20 @@ dp_top                         单个 DP，C 传递/解包及 S6–S8
 
 每个 module 单独同名文件。组合模块不暗加寄存器；S1 寄存器由 lane 内 `dp_lane_unpack` 持有，其余流水由 lane、group、top 三层持有。同步高有效 `reset` 清除有效控制并取消在途请求；数据寄存器以有效使能保持，不进行全数据复位。握手、阶段映射、源文件和统计归属见 [RTL 实现合同](../spec/dp/verilog.md)。
 
+## 纯 Verilog 排版
+
+`*.v` 使用两空格缩进、LF 换行和 100 列目标行宽。共享一条端口声明的信号同排，例如 ``input wire [K_FP16*`DP_HALF_W-1:0] in_a,in_b,``。对含这类声明的端口列表，用 `verilog_format: off/on` 保留分组，其余代码由 Verible 格式化。
+
+从仓库根目录使用 Verible `v0.0-4298-g085eef05` 批量整理已跟踪的 `*.v` 文件。
+
+```sh
+git ls-files -z -- ':(glob)src/verilog/**/*.v' |
+  xargs -0 -r verible-verilog-format --inplace --failsafe_success=false \
+    --indentation_spaces=2 --wrap_spaces=2 --column_limit=100 --try_wrap_long_lines \
+    --formal_parameters_indentation=indent --port_declarations_indentation=indent \
+    --named_parameter_indentation=indent --named_port_indentation=indent
+```
+
 ## 验证
 
 先按 [CModel 说明](../cmodel/README.md) 构建参考模型，然后从仓库根目录运行：
