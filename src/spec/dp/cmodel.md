@@ -1,4 +1,4 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[模型 API](../../cmodel/include/dp/model.hpp)、[参数](../../cmodel/include/dp/config.hpp)、[执行器](../../cmodel/lib/model.cpp)、[测试入口](../../../test/run_cmodel.py)；Chisel/手写 RTL 未实现。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[模型 API](../../cmodel/include/dp/model.hpp)、[参数](../../cmodel/include/dp/config.hpp)、[执行器](../../cmodel/lib/model.cpp)、[测试入口](../../../test/run_cmodel.py)；Chisel/手写 RTL 未实现。
 
 # DP CModel 合同
 
@@ -27,7 +27,7 @@ C++ 使用 Boost cpp_int 保存精确整数，**在规定截断点显式 RTZ，�
 
 格式常量、E guard、scale 窗口和每模式 F 见 [数值布局](numeric-layout.md)、[逐级出口](stage-formats.md)。S2 raw 元素指数不去 bias；S5 形成无偏原 anchor。C 同样在 S5 去 FP32 bias。S6 用 signed 真实指数 MAX 和完整 unsigned d；S8 仅为最终 FP32 编码加一次 127。
 
-NVFP4/HiF4 固定共享 **signed15×positive signed9**，公共 raw24/useful23，详见 [scale](scale.md)。S5 乘法完成后取幅值/LZD 计数，不左移；S6 net=z−d 一次双向移位。模型逐笔携带控制，last 只透传。
+v1.4.4 CModel 中 NVFP4/HiF4 共享 **signed15×positive signed9**，公共 raw24/useful23。v1.5 无符号实现按 [scale 合同](scale.md) 更新。S5 乘法完成后取幅值/LZD 计数，不左移；S6 net=z−d 一次双向移位。模型逐笔携带控制，last 只透传。
 
 ## 3. 逐级数值与周期 API
 

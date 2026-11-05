@@ -1,4 +1,4 @@
-> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：v1.5 无符号乘法待实现；v1.4.4 基线 [CModel lib/group.cpp](../../cmodel/lib/group.cpp)；RTL 基线 [dp_scale_multiply.v](../../verilog/arithmetic/dp_scale_multiply.v)；Chisel 尚未实现。
 
 # scale 统一 E8M3 数值表示
 
@@ -26,7 +26,7 @@ bias 和字段宽度集中在格式参数中。8 位指数相加产生 9 位结�
 
 ## 2. 应用顺序与旁路
 
-每个基本组已经接收按原量化块广播的 A/B scale。局部乘积先按基本组公共元素 anchor 对齐并求和；HiF4 e1 在 S1 融入元素幅值、e2 在 S3 完成局部对齐。S5 对基本组部分和乘 A/B 的 scale 系数积，再输出 sign/magnitude 组 token。
+每个基本组已经接收按原量化块广播的 A/B scale。局部乘积先按基本组公共元素 anchor 对齐并求和；HiF4 e1 在 S1 融入元素幅值、e2 在 S3 完成局部对齐。S5 合并两 lane 的有符号部分和，再分离符号与幅值。NVFP4/HiF4 对幅值乘 A/B 的 scale 系数积，其他模式旁路系数乘法。
 
 MX 的 E8M0 系数积恒为 64，解释为 I2F6 即 1.0，省去数据乘法，只把 scale 指数计入 anchor。NVFP4/HiF4 需要系数乘法。scale 为零或 NaN 时仍按特殊值合同处理；不能用零系数屏蔽非法 0×Inf。
 
@@ -37,7 +37,7 @@ MX 的 E8M0 系数积恒为 64，解释为 I2F6 即 1.0，省去数据乘法，�
 ```text
 alpha_group = r - element_bias_a - element_bias_b
               + scale_exp_a + scale_exp_b - 2*scale_common_bias
-value_group = signed_coefficient × 2^(alpha_group - F_group)
+value_group = (-1)^sign × magnitude × 2^(alpha_group - F_group)
 ```
 
 T/BF16 元素 bias 为 127，FP16 为 15，Q 在重编码后统一为 15，E 定点元素 bias 为 0；HiF4 的 r 是两侧剩余 e2 的和及其组公共最大值。INT8 无浮点 bias。
@@ -50,39 +50,36 @@ CModel 在 S5 形成已去 bias 的 A_raw，S6 直接比较统一坐标。后续
 
 每侧独立 in_scale_a_datatype/in_scale_b_datatype，每个请求的全部同侧槽共用一个类型。支持 E8M0、E4M3、E6M2 及无 scale 的 NONE；NVFP4 仍需要 E4M3，不能从接口遗漏。首版两侧格式相同，scale 类型按 [合法矩阵](interface.md) 对应，但 scale 数值可不同。S1 解包后，scale 系数/指数和控制与请求同步，不从后续输入格式取值。
 
-## 5. 去 bias、MAX 与 unsigned 差值
+## 5. 去 bias、MAX 与净移位
 
-S5 组 token 的 A 已完成元素/scale bias 与定点坐标修正，C 的 A_c 同样无偏。先对有限非零源做 signed MAX，再在足够宽的 signed 临时量中计算 MAX-anchor，确认非负后转 unsigned 移位量；不能用 unsigned 比较负的无偏指数。S2/S3 的同格式产品相减中，相同的元素双 bias 抵消，因此可以保留 r/p 的带偏置无符号表示。
+S5 组 token 的 A 已完成元素/scale bias 与定点坐标修正，C 的 A_c 同样无偏。先对有限非零源的实际指数做 signed MAX。右对齐距离 d 为非负数，合并规格化后的净移位 net 用带符号差值计算。S2/S3 的同格式产品相减中，相同的元素双 bias 抵消，因此可以保留 r/p 的带偏置无符号表示。
 
 scale 后 LZD 只计数 z；e=A_raw-z 用于比较，d=MAX(e)-e 非负，但 net=z-d 有符号。已选 [一次双向移位](group-normalization-options.md) 为当前首选；bias 不重复扣除。
 
-## 6. 当前资源：统一 signed15 × positive signed9
+## 6. S5 共享 14×8 无符号乘法
 
-用户要求保留完整共享高位宽乘法，不再按 NVFP4/HiF4 分别缩位后输入 mux。每组一套 signed SOP × 非负系数乘法，两种模式使用同一物理输入宽度；仅允许单位系数模式的旁路/使能控制，不增加 13×9 / 15×7 格式专用压缩选择。
+组树的两路输入及输出仍为二补码。NVFP4/HiF4 先从组和去除 `W_group−15` 个结构低零，再提取符号并取绝对值。默认 W32 去除 17 个低零。两种模式共用同一条 14 位幅值输入及 8 位非负系数输入。其他模式使用完整组幅值旁路，符号独立随组 token 传递。
 
-W_group 位组和统一精确去除 W_group−15 个结构低零，默认 W32 去除 17 位，得到 W15 TC SOP。NVFP4 的 F=4，HiF4 的 F=6。统一 scale coefficient 为 U8/F6，补一个恒零符号位进入 W9。原生乘积 W24，其最高位在合法非负系数范围内为冗余符号扩展；公共检查后取 signed W23，低补 W_group−23 个零回组槽，默认补 9 个零。默认 NVFP4/HiF4 的原幅值分别为 F19/F21，其中末尾 9 位是结构低零。
+紧凑组和可以用 14 位幅值表示。NVFP4 的单元素幅值 coefficient 最大为 12，HiF4 融合 e1 后最大为 14。一个基本组有 16 个乘积，预置两位保护低零贡献最多 4 倍 coefficient，局部右移只会减小幅值。故紧凑组和绝对值上界分别为 `16×12²×4=9216` 与 `16×14²×4=12544`，均小于 `2^14`。取绝对值时应以足够宽的中间值检查合法范围，随后装入公共 14 位无符号槽。
 
-| 模式 | 同一 SOP 输入 | 同一 scale 输入 | 公共有用乘积 | 原生 W24 乘积 | 默认 W32 落位 |
+| 模式 | 紧凑组和（TC） | 乘法器幅值输入 | 系数输入 | 22 位无符号乘积 | 默认 M31 幅值槽 |
 | --- | --- | --- | --- | --- | --- |
-| NVFP4 | TC S1I10F4 W15 | 正 TC S1I2F6 W9 | TC S1I12F10 W23 | TC S1I13F10 | 补 9 零，S1I12F19 |
-| HiF4 | TC S1I8F6 W15 | 正 TC S1I2F6 W9 | TC S1I10F12 W23 | TC S1I11F12 | 补 9 零，S1I10F21 |
+| NVFP4 | S1I10F4 | S0I10F4 | S0I2F6 | S0I12F10 | 低补 9 零，S0I12F19 |
+| HiF4 | S1I8F6 | S0I8F6 | S0I2F6 | S0I10F12 | 低补 9 零，S0I10F21 |
 
 ```text
-W_sop_shared = E_pair_signed_width + e_exact_guard_bits
-               + ceil_log2(E_pairs_per_lane) + ceil_log2(lanes_per_group)
-W_factor_unsigned = 2*scale_magnitude_bits
-W_factor_signed = W_factor_unsigned+1
-W_product_native = W_sop_shared+W_factor_signed
-W_product_useful = W_sop_shared+W_factor_unsigned
-sop_low_drop = W_group-W_sop_shared
-product_low_pad = W_group-W_product_useful
-F_group_scaled = F_group_unscaled-sop_low_drop + 2*scale_fraction_bits + product_low_pad
+W_sop_tc = E_pair_signed_width + e_exact_guard_bits
+           + ceil(log2(E_pairs_per_lane)) + ceil(log2(lanes_per_group))
+W_sop_magnitude = W_sop_tc - 1
+W_factor = 2 * scale_magnitude_bits
+W_product = W_sop_magnitude + W_factor
+sop_low_drop = W_group - W_sop_tc
+product_low_pad = M_group - W_product
+F_group_scaled = F_group_unscaled - sop_low_drop + 2*scale_fraction_bits + product_low_pad
 ```
 
-两模式均不去掉各自额外的结构零。相同的 low-drop 和 high-sign 检查属于公共精确表示变换，不是新的精度截断。CModel 对整除及乘积有符号范围断言，trace 记录 15/9/24/23。乘法后才 abs/LZD，S5 不左移；S6 仍按 z-d 一次双向移位。
+乘积静态补零后送 LZD，S5 只输出计数 z 和原始幅值。负号及零符号按原组和与特殊值规则传递，包括负组和乘零系数的情况。S6 对无符号幅值进行一次双向移位，在进入 S7 有符号累加树前恢复二补码。
 
-用户反馈缩位 mux 的面积收益不足，因此当前按完整资源建模；本仓库本轮无对应新 RTL/EDA 数据，不把该反馈转换为本项目实测面积、功耗或时序结论。
+## 7. 主要版本变更（v1.4 → v1.5）
 
-## 7. 主要版本变更：v1.3 → v1.4
-
-~~分别压缩 NV 的 SOP 与 HiF 的 scale 系数，再由格式 mux 接入共享乘法器。~~ → **统一 15×9 输入，不增加模式专用缩位 mux。** 公共 W24→W23 冗余符号处理与静态低零落位保持精确。变更依据为用户对资源设计的最新选择。
+~~组和经过 15×9 有符号乘法，随后取乘积幅值。~~ → **组和先分离符号与幅值，幅值经过 14×8 无符号乘法。** 对非负系数有 `abs(sop × coeff) = abs(sop) × coeff`，目标保持原有 F、补零、截断位置和 L8/II=1。当前 CModel、Verilog 和 SystemVerilog 仍为 v1.4.4 实现，功能与 PPA 验收须针对 v1.5 实现另行执行。

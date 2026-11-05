@@ -1,4 +1,4 @@
-> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel lib/lane.cpp](../../cmodel/lib/lane.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义尾数乘法器共享和模式路由；范围：两组乘法器/每 lane、TF32/H/Q/E/INT8、隔离与重构；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[CModel lib/lane.cpp](../../cmodel/lib/lane.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 两组尾数乘法器覆盖 T1H2Q4E8
 
@@ -74,4 +74,4 @@ A_scale×B_scale 的 I1F3 系数乘法另需每基本组一份 4×4 资源，可
 
 ## 9. S5 scale 乘法器的模式共享
 
-两模式使用同一 signed15 × positive signed9 scale 乘法器，不增加模式专用缩位 mux。公共 W24→W23 冗余符号处理、补 `W_group-23` 个低零及各模式 F 见 [scale 合同](scale.md)。S5 LZD 位于乘法器输出之后。
+NVFP4 和 HiF4 共用 14×8 无符号 scale 乘法器。组和的符号走旁带，紧凑幅值乘非负系数，W22 乘积低补 `M_group−22` 位后供 LZD 计数。范围及各模式 F 见 [scale 合同](scale.md)。

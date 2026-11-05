@@ -1,4 +1,4 @@
-> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel include/dp/config.hpp](../cmodel/include/dp/config.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义参数及其合法派生关系；范围：构建参数、模式容量、位宽和频率规格常量；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[CModel include/dp/config.hpp](../cmodel/include/dp/config.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 参数与派生关系
 
@@ -61,13 +61,13 @@ K4/K8/K16 对应 G=1/2/4，含 C 的总树为 2/3/5 项，深度 1/2/3，默认�
 E_guard = 2 * (2^hif_e2_bits - 1)
 W_E_pair = 2*E_magnitude_bits + 1 + L(2)
 W_sop_scale = W_E_pair + E_guard + L(E_pairs_per_lane) + L(lanes_per_group)
-W_factor_unsigned = 2 * scale_magnitude_bits
-W_factor_signed = W_factor_unsigned + 1
-W_native_product = W_sop_scale + W_factor_signed
-W_useful_product = W_sop_scale + W_factor_unsigned
+W_sop_magnitude = W_sop_scale - 1
+W_factor = 2 * scale_magnitude_bits
+W_product_magnitude = W_sop_magnitude + W_factor
+pad_scale_product = M_group - W_product_magnitude
 ```
 
-默认得到 guard=2、pair W10、SOP W15、positive-signed 系数 W9、原生积 W24 及公共有用积 W23。低零提取、补零和 F 见[scale](dp/scale.md)，不增加 NV/HiF 专用缩位参数。
+由此得到 guard=2、pair W10、紧凑 SOP W15、幅值 W14、系数 W8 及无符号积 W22。默认低补 9 位进入 M31。幅值上界与 F 见 [scale](dp/scale.md)。
 
 ## 5. 指数与控制宽度
 

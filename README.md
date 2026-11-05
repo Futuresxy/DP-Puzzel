@@ -1,6 +1,6 @@
 # DAC 2027 · 多精度张量计算算力配比 DSE
 
-**当前阶段：DP spec v1.4 / 实现映射 v1.4.4，单 DP 手写 RTL 与共用验证已建立。** 当前主方案为 T8H16Q32E64 分组共享八级 DP；提供 Verilog 主实现与 SystemVerilog 对照，当前默认局部/全局窗口为 28/40。历史 27/40 的 N12 TT DC 在 1.41GHz setup 未通过，1GHz 经独立 hold 修复后 setup/hold 均通过，见 [时序分析](hw/dc_syn/records/dp_n12_timing_20261105.md)。Chisel、Cube 阵列尚未实施。
+**当前阶段：DP spec v1.5 / 实现映射 v1.4.4，单 DP 手写 RTL 与共用验证已建立。** 当前主方案为 T8H16Q32E64 分组共享八级 DP；提供 Verilog 主实现与 SystemVerilog 对照，当前默认局部/全局窗口为 28/40。v1.5 的 S5 14×8 无符号 scale 乘法待实现。历史 27/40 的 N12 TT DC 在 1.41GHz setup 未通过，1GHz 经独立 hold 修复后 setup/hold 均通过，见 [时序分析](hw/dc_syn/records/dp_n12_timing_20261105.md)。Chisel、Cube 阵列尚未实施。
 
 | 入口 | 内容 |
 | --- | --- |

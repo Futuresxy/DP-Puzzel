@@ -1,8 +1,8 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与 SystemVerilog 对照、L8、源码快照；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[dp_top.sv](../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与 SystemVerilog 对照、L8、源码快照；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[dp_top.sv](../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
-本次将已确认的 v1.4 算术落地为独立手写 RTL，不改变分组、截断位置、乘法共享或八级边界。主要交付采用 IEEE 1364-2005 Verilog；按用户要求保留 SystemVerilog 对照。仅实现一个 DP，未进入计算阵列。
+本页记录已验证的 v1.4.4 手写 RTL。v1.5 的 14×8 无符号乘法及符号旁带以 [scale 合同](scale.md) 为准，实现待更新。主要交付采用 IEEE 1364-2005 Verilog；按用户要求保留 SystemVerilog 对照。仅实现一个 DP，未进入计算阵列。
 
 ## 1. 文件组织与实现边界
 

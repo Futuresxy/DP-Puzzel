@@ -1,4 +1,4 @@
-> 功能：定义 scale 后实际指数检测与合并对齐；范围：S5/S6 主方案及对照、LZD、合并移位、粗粒度检测、指数范围和特殊值；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 scale 后实际指数检测与合并对齐；范围：S5/S6 主方案及对照、LZD、合并移位、粗粒度检测、指数范围和特殊值；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 组结果的真实指数与合并对齐
 
@@ -19,7 +19,7 @@ A_raw 是原容器最高物理位的权重，e 才是实际最高非零位的指
 
 ## 2. S5/S6 合同
 
-S5 顺序为两 lane 合并→scale 乘法/旁路→安全 abs→LZD 计数。出口保留`sign,m_raw,A_raw,z,zero/special,ctrl,valid/last`，幅值不动态左移。默认组 M31、A_raw signed10、z unsigned5。
+S5 顺序为两 lane 合并→分离符号和幅值→无符号 scale 乘法或旁路→LZD 计数。符号旁带在 S6 对齐后用于恢复补码。出口保留`sign,m_raw,A_raw,z,zero/special,ctrl,valid/last`，幅值不动态左移。默认组 M31、A_raw signed10、z unsigned5。
 
 C 在 S5 独立解包。FP32 自然 M24 低补 8 个结构零进入 M32/F31，正规 z=0，非正规非零 z=1..23；A_raw 为有效无偏指数。INT32 C 为 M32/F0，旁路浮点检测。
 

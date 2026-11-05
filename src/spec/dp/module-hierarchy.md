@@ -1,8 +1,8 @@
-> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel lib/detail.hpp](../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.5；修改时间：2026-11-05 11:30:43 +08:00；对应代码：[CModel lib/detail.hpp](../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 模块层级、所有权与 S6 扩展点
 
-状态：当前用户指定模块化层级 `T1H2Q4E8 → T2H4Q8E16 → H16Q32E64`；顶层名称省略 T，但保留 TF32 T8。只描述当前主配置，未来 Q/E/QE 专用源的功能与数据布局待单独批准；DP CModel 及手写 Verilog/SystemVerilog 主方案已实现；Chisel 和未来专用源尚未实现。
+状态：当前用户指定模块化层级 `T1H2Q4E8 → T2H4Q8E16 → H16Q32E64`；顶层名称省略 T，但保留 TF32 T8。只描述当前主配置，未来 Q/E/QE 专用源的功能与数据布局待单独批准；现有 CModel 与手写 Verilog/SystemVerilog 为 v1.4.4。v1.5 的无符号 scale、Chisel 和未来专用源待实现。
 
 ## 1. 当前层级与周期所有权
 
@@ -14,7 +14,7 @@ H16Q32E64（TF32=T8；参数化 K4/K8/K16 的顶层 DP）
 │   ├── 基本组共同指数 MAX（S2），返回两条 lane
 │   ├── T1H2Q4E8 lane[0]（A/B S1 解包；S2–S4 局部计算）
 │   ├── T1H2Q4E8 lane[1]（相同边界）
-│   └── 两 lane 合并、scale 注入、sign/magnitude 组输出（S5）
+│   └── 两 lane 合并、符号/幅值分离、无符号 scale、组输出（S5）
 ├── S6：组 token + C 的有效 anchor MAX、幅值 RTZ 与符号恢复
 ├── S7：group_count+1 项共享规约树
 └── S8：FP32 RNE / INT32 回绕，valid/last 输出
@@ -67,4 +67,4 @@ CModel 应按同一模块边界提供 S1 解包、S2 MAX/产品、S3 移位、S4
 
 ## 8. 基本组与全局边界更新
 
-基本组 S5 拥有 scale 后安全 abs/LZD 计数，输出原幅值/A_raw/z；顶层 C 解包与子正规计数并行。顶层 S6 生成 e、MAX 和 net 并一次双向移位，S7 树、S8 编码。未来专用源也须声明原坐标及 z 或可转换等价字段；不得接错已规格化/未规格化 token。必要时 L9 拆检测/指数准备，原 S6 接入边界顺延，详见[流水](pipeline.md)。
+基本组 S5 先分离组和的符号与幅值，再做 scale 或旁路并用 LZD 计数，输出原幅值/A_raw/z；顶层 C 解包与子正规计数并行。顶层 S6 生成 e、MAX 和 net 并一次双向移位，S7 树、S8 编码。未来专用源也须声明原坐标及 z 或可转换等价字段；不得接错已规格化/未规格化 token。必要时 L9 拆检测/指数准备，原 S6 接入边界顺延，详见[流水](pipeline.md)。

@@ -1,4 +1,4 @@
-> 功能：推导逐级位宽和统一对齐坐标；范围：参数化局部/全局窗口、sign/magnitude、S5 C 和 INT32；版本：v1.4.4；修改时间：2026-11-05 11:20:02 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：推导逐级位宽和统一对齐坐标；范围：参数化局部/全局窗口、sign/magnitude、S5 C 和 INT32；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[CModel lib/group.cpp](../../cmodel/lib/group.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 逐级位宽、符号/幅值与 anchor
 
@@ -22,7 +22,7 @@ E_group_compact_width = E_pair_signed_width + e_exact_guard_bits
                         + L(pair_count_E) + L(lanes_per_base_group)
 ```
 
-默认 `local_align_fraction_bits=26`、乘积整数位=2，得到无符号 W28=S0I2F26，符号化后为 W29。E 元素幅值四位、e2 一位、两侧相乘，推导 pair W10、guard=2、四个 pair 的 lane 和 W14、两个 lane 的基本组和 W15；15 已含符号，不能将它当作任意模式的统一精度常量。
+默认 `local_align_fraction_bits=26`、乘积整数位=2，得到无符号 W28=S0I2F26，符号化后为 W29。E 元素幅值四位、e2 一位、两侧相乘，推导 pair W10、guard=2、四个 pair 的 lane 和 W14、两个 lane 的基本组和 W15；W15 是 E 的紧凑二补码组和。NVFP4/HiF4 的合法范围允许将其绝对值放入公共 14 位幅值槽。
 
 对 n 个叶节点的平衡树，由参数生成每层两两相加，未配对叶节点直传，层数 L(n)；各节点按输入宽度与增长推导。顶层参与数为 `group_count+1`（包括 C），K4/K8/K16 对应 2/3/5 项，树深 1/2/3；三组或其他未来非二次幂也遵循该规则，但当前合法构建 K 仍为 4/8/16。
 
@@ -56,7 +56,7 @@ Q 四路在 S4 通过两层加法；H 两路复用最后一层；T 单项通过�
 | HiF4，非单位 scale 系数 | 23 | 21 |
 | INT8，结构低零 | 13 | 13 |
 
-S5 只检测 z，不左移，原幅值 F 保持。NV/HiF 统一 W15×W9，公共 W23 有用积默认补 9 零；不用每模式缩位选择。S6 合并完成规格化及对齐。
+S5 只检测 z，不左移，原幅值 F 保持。NVFP4/HiF4 先取幅值，再做公共 14×8 无符号乘法，W22 幅值积默认补 9 零。S6 合并完成规格化及对齐。
 
 ## 4. 共享槽与 F 的构造公式
 
@@ -75,16 +75,16 @@ F_lane(mode) = F_lane_natural(mode) + pad_lane(mode)
 F_group_unscaled(mode) = F_lane(mode)
 W_scale_product = 2 * scale_mantissa_bits
 F_scale_product = 2 * scale_mantissa_fraction_bits
-W_compact_scaled = E_group_compact_width + W_scale_product
+W_compact_scaled_mag = (E_group_compact_width - 1) + W_scale_product
 F_group_scaled(E) = e_product_fraction_bits(mode) + e_exact_guard_bits
-                    + F_scale_product + W_group - W_compact_scaled
+                    + F_scale_product + M_group - W_compact_scaled_mag
 ```
 
 signed_width_from_product_range 从完整合法输入范围推导，包括 -128；不用浮点尾数的 sign+自然无符号宽度估计代替。所有 pad 均须非负，按模式裁剪高符号扩展或低结构零必须有范围/整除证明；不适用的公式分支不生成硬件。E8M0 单位系数旁路直接使用 F_group_unscaled，不让虚拟系数人为移动小数点。
 
 ## 5. S5：scale 后幅值与 LZD 计数
 
-S5 完成两 lane 组和、适用 scale 乘法/旁路、安全 abs，再对最终 m_raw 求 z=clz_M(m_raw)，**只输出计数，不左移**。组幅值默认 M31，A_raw=alpha_raw-F_raw+(M-1)已去 bias；正式出口保持各模式原 F_raw。接口输出 m_raw/negative/A_raw/z/zero/special 及同行控制。e=A_raw-z 是 MAX 用的真实指数，不能单独用 e 解释未左移幅值。
+S5 完成两 lane 组和、符号/幅值分离及无符号 scale 乘法或旁路，再对最终 m_raw 求 z=clz_M(m_raw)，**只输出计数，不左移**。组幅值默认 M31，A_raw=alpha_raw-F_raw+(M-1)已去 bias；正式出口保持各模式原 F_raw。接口输出 m_raw/negative/A_raw/z/zero/special 及同行控制。e=A_raw-z 是 MAX 用的真实指数，不能单独用 e 解释未左移幅值。
 
 C 仍 S1–S4 raw32、S5 并行解包。FP32 自然 M24 低补 8 零到 M32/F31，子正规仅检测 z_c，不左移；A_raw_c 为有效无偏指数，e_c=A_raw_c-z_c。INT32 仍 M32/F0；零/特殊源不做普通非零公式。
 
@@ -136,4 +136,4 @@ S5 改传 anchor_raw=A_raw、z 及未左移 M31 幅值；S6 计算 e/MAX，按 z
 
 ## 13. 宽度公式的适用范围
 
-采用公共 W_compact_scaled=E_group_compact_width+W_scale_product，即有用 W23；signed×positive-signed 原生 W24 的最高冗余符号位按范围检查处理。S5 F 按组槽参数派生，LZD 计数含义不变，见 [scale](scale.md)。
+NVFP4/HiF4 的公共幅值积宽度为 W22，末尾低补 `M_group−22` 位。14 位幅值的范围依据见 [scale](scale.md)。

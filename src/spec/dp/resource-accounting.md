@@ -1,4 +1,4 @@
-> 功能：定义可统计的功能模块边界；范围：当前 DP 的资源层级、面积/功耗归属、导出与后端报告映射；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[Chisel](../../chisel/README.md)、[手写 Verilog](../../verilog/README.md)、[DC](../../../hw/dc_syn/README.md)、[功耗](../../../hw/power/README.md)（手写模块已建立，后端统计流程尚未接入）。
+> 功能：定义可统计的功能模块边界；范围：当前 DP 的资源层级、面积/功耗归属、导出与后端报告映射；版本：v1.5；修改时间：2026-11-05 11:30:00 +08:00；对应代码：[Chisel](../../chisel/README.md)、[手写 Verilog](../../verilog/README.md)、[DC](../../../hw/dc_syn/README.md)、[功耗](../../../hw/power/README.md)（手写模块已建立，后端统计流程尚未接入）。
 
 # 功能块边界与面积、功耗统计
 
@@ -26,8 +26,8 @@ T1H2Q4E8、T2H4Q8E16 和 H16Q32E64 是架构层级；下表为其内部应可识
 | group_sop_add | 基本组 / S5 | 两 lane 的 SOP 合并 |
 | scale_pair_mul | 基本组 / S2 | 两侧 4-bit scale coefficient 的乘积 |
 | scale_exponent | 基本组 / S2–S5 | scale 指数和、去 bias、组 top-anchor 标量处理 |
-| group_scale_mul（v1.4） | 基本组 / S5 | 公共 signed15×positive signed9；不按 NV/HiF 缩位加 mux。分别统计乘法核心、公共接线/使能及寄存 |
-| group_sign_magnitude | 基本组 / S5 | 安全 abs、zero 与组 token 输出 |
+| group_scale_mul（v1.5） | 基本组 / S5 | NVFP4/HiF4 共用 14×8 无符号幅值乘法。分别统计乘法核心、公共接线/使能及寄存 |
+| group_sign_magnitude | 基本组 / S5 | 组和安全 abs、独立符号旁带、zero 与组 token 输出 |
 | global_anchor_max | 顶层 / S6 | 原 anchor 减 z 形成 e 后，组与 C 取 signed MAX；零/特殊屏蔽 |
 | global_delta / global_net_shift | 顶层 / S6 | e/d/net 语义及移位范围控制；可直接 A_raw-E_max，避免冗余串行减法 |
 | global_align_shift | 顶层 / S6 | N 个固定 W 位双向幅值单元；右移核心、方向 mux 和路由分别可统计 |
@@ -45,7 +45,7 @@ T1H2Q4E8、T2H4Q8E16 和 H16Q32E64 是架构层级；下表为其内部应可识
 
 令 G 为基本组数、lanes=2G。每 lane 两套四单元乘法器：总套数=4G、算术乘法单元数=16G；主配置分别 16 套/64 单元。局部四路移位器总数=8G，主配置 32。每组一份 scale-pair 乘法和一份 group-scale 乘法；组 SOP 输出 G 个，全局移位源和最终树扇入为 G+1。输出转换与 C 支路在顶层各共享一份，不按组复制。
 
-这些是当前 RTL 结构预期，不能用门数量或乘法器尺寸乘常数冒充面积。仅在明确输入 mux、输出重构和隔离成本后比较复用收益。综合可能把算术映射为通用门、DSP 或被常量优化，报告保留逻辑资源与物理映射两种视图。
+上述实例数适用于 v1.4.4 基线与 v1.5 目标，S5 scale 位宽及 abs 的位置分别按各自实现统计。仅在明确输入 mux、输出重构和隔离成本后比较复用收益。综合可能把算术映射为通用门、DSP 或被常量优化，报告保留逻辑资源与物理映射两种视图。
 
 ## 3. 寄存器、mux 与时钟的归属
 

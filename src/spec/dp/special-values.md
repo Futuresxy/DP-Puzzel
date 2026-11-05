@@ -1,4 +1,4 @@
-> 功能：定义浮点分类与特殊值传播；范围：NaN/Inf/零/非正规数、scale、规约和 C 合并；版本：v1.4.2；修改时间：2026-11-04 23:42:09 +08:00；对应代码：[CModel lib/arithmetic.cpp](../../cmodel/lib/arithmetic.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义浮点分类与特殊值传播；范围：NaN/Inf/零/非正规数、scale、规约和 C 合并；版本：v1.5；修改时间：2026-11-05 11:30:43 +08:00；对应代码：[CModel lib/arithmetic.cpp](../../cmodel/lib/arithmetic.cpp)；分组主方案手写 RTL：[dp_top.v](../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 浮点分类、特殊值传播与 FP32 输出
 
@@ -83,7 +83,3 @@ RNE 下精确非零相消为 +0；仅当所有参与相加的零项均为负零�
 invalid 汇总 sNaN、0×Inf、异号 Inf 规约等；overflow/inexact/underflow 描述 S8 对规定有限位宽总和的转换。tininess 在舍入后判断，只有结果仍小于最小正规且 inexact 才置 underflow。S3/S6 丢位独立记录 local_truncated/global_truncated，不把丢失值补回 S8，也不将这两个记录冒充整个理想点积的 IEEE flags。integer_overflow 独立记录回绕前越界。
 
 这些 flags 是 CModel/验证诊断，未增加 DUT 输出端口。NaN/Inf 最终 mux 优先于有限数转换，不因被屏蔽的数值支路溢出而产生 S8 overflow。
-
-## 8. 主要版本变更：v1.3 → v1.4
-
-~~NaN 编码、零符号细节及 tininess 策略待冻结。~~ → **采用 canonical qNaN、RNE 零符号、渐进下溢和舍入后 tininess，异常仅记 trace。** 依据为用户首版策略确认。
