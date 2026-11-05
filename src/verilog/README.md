@@ -5,6 +5,7 @@
 | 实现 | 编译清单 | 顶层 |
 | --- | --- | --- |
 | **Verilog-2005，主要交付** | [files.f](files.f) | [dp_top.v](top/dp_top.v) |
+| **E-only Verilog-2005** | [files_e.f](files_e.f) | [dp_top_e.v](top/dp_top_e.v) |
 | SystemVerilog，冻结的历史参考 | [systemverilog/files.f](systemverilog/files.f) | [dp_top.sv](systemverilog/top/dp_top.sv) |
 
 当前维护纯 Verilog。SystemVerilog 仅保留当前 T8H16Q32E64 历史源码，冻结来源和边界见 [历史参考说明](systemverilog/README.md)；后续新功能和 E 专用设计不再同步 SV。两套源码的 module 名相同，历史重放必须分开编译。Verilog 版使用 `wire/reg`、显式端口、具名 `generate`、头文件常量及 Verilog 函数，不使用 package、struct、logic、always_ff、always_comb 或 SV cast。SystemVerilog 版保留 packed token 与 package，不能当作 Chisel 生成 RTL。两版没有运行时软件计算/DPI、real 运算或黄金结果查表。
@@ -60,6 +61,9 @@ git ls-files -z -- ':(glob)src/verilog/**/*.v' |
 # 默认：Verilator + 纯 Verilog DUT；不运行历史 SV
 python3 test/run_verilog.py --phase all
 
+# E-only：MXFP4/NVFP4/HiF4，E64，L8/II1
+python3 test/run_verilog.py --frontend e --phase all
+
 # 显式选择主实现；Verilator 可通过参数或 VERILATOR 环境变量指定
 python3 test/run_verilog.py --implementation verilog --verilator /path/to/verilator
 
@@ -75,6 +79,14 @@ RTL 单独执行 `-Wall` lint，位宽、锁存器、组合环类警告不豁免
 
 ## 当前边界
 
-当前主实现只开放 L8；CModel 的 L9 备用探索未在主 RTL 中开放。冻结 SV 的范围由其历史说明定义。未实现 Chisel、DP-Group、TensorCore/Cube、专用 Q/E/QE 扩展或独立对齐方案。历史 27/40 的 N12 TT 在 1.41 GHz setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/dp_n12_timing_20261105.md)。尚无布局布线或真实活动功耗。
+当前两种前端只开放 L8；CModel 的 L9 探索未在 RTL 中开放。冻结 SV 的范围由其历史说明定义。未实现 Chisel、DP-Group、TensorCore/Cube、Q/QE、混合组或独立对齐方案。历史 27/40 的 N12 TT 在 1.41 GHz setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/dp_n12_timing_20261105.md)。E64 与当前 28/40 多精度单元的同工况测量见 [DC 对比](../../hw/dc_syn/records/e64_n12_comparison_20261105.md)。尚无布局布线或真实活动功耗。
 
 DC 接入使用 [统一门禁与流程](../../hw/dc_syn/README.md)。Verilog 的运行时 `lane_fraction` 已改为等价常量选择以兼容 DC；新快照重新完整回归，不继承旧 snapshot 的通过状态。
+
+## E64 专用层级
+
+`dp_top_e → dp_group_e ×4 → dp_lane_e ×2/group`。E lane/group 不实例化原多精度 bank 或宽局部移位器：S1 FP4/e1 解码，S2 4×4＋pair10，S3 lane12，S4 lane 小左移/组和/abs 至幅值14，S5 scale14×8 或 MX 旁路后补零到 M31。SIF 在相应源码中按精度分行列示。
+
+顶层保持原请求端口和 K_FP16/LOCAL_W/GLOBAL_W 参数，便于接口复用；只接受三个 E datatype 和 FP32 C。K_FP16 仅为容量索引，4/8/16 对应 E16/E32/E64。LOCAL_W 影响公共 token 容器和补零，E 的内部自然位宽不随其扩大。后端复用已有 C 解包、全局移位、树和 FP32 舍入模块定义，流水寄存器由两个 top 分别持有；没有额外 dp_backend.v 或通用混合组实现。
+
+[完整测试结果](../../test/results/e64-v1.5.8.md)按用户要求长期保留；原始输入/输出、断点、编译与仿真日志放在显式 run，快照放在 hw/rtl，网表保留在 DC run，不提交大型产物。

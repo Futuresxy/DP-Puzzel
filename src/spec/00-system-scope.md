@@ -1,4 +1,4 @@
-> 功能：定义系统边界和设计目标；范围：层级、硬约束、优化顺序和交付边界；版本：v1.4.1；修改时间：2026-11-05 09:35:11 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
+> 功能：定义系统边界和设计目标；范围：层级、硬约束、优化顺序和交付边界；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[CModel](../cmodel/README.md)、[Chisel](../chisel/README.md)、[Verilog](../verilog/README.md)（对应模块文件未建，文件映射待定义）。
 
 # 系统范围与设计目标
 
@@ -30,4 +30,4 @@
 
 设计位于 `src/{spec,cmodel,chisel,verilog}`，共同测试位于根 `test/`。生成 RTL 继续进入 `hw/rtl/`，后续综合和功耗进入 `hw/dc_syn/`、`hw/power/`。芯片级组合由 `ratio_dse/` 负责。
 
-当前已实现并验证单 DP CModel 与手写 RTL，并完成 N12 DC 综合。Chisel、Cube 与专用 Q/E/QE 增源尚未实施。历史实现从 Git 查阅。C 的依赖由指令层处理，DP 不持有跨请求 accumulator。
+当前已实现并验证多精度及 E-only 单 DP CModel 与手写 RTL，并建立 N12 DC 综合。Chisel、Cube、Q/QE 与混合组增源尚未实施。历史实现从 Git 查阅。C 的依赖由指令层处理，DP 不持有跨请求 accumulator。

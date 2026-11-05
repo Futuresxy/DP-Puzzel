@@ -1,4 +1,4 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top.sv](../../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
@@ -28,7 +28,7 @@
 | 双向幅值移位 | [dp_bidir_shift.v](../../../verilog/arithmetic/dp_bidir_shift.v) | 组合；方向 bit reversal + 一个右移核心 |
 | FP32 输出 | [dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v) | 组合；S8 结果由 top 注册 |
 
-各路径命名可用于后续层级统计。E pair、符号恢复、组 abs、特殊摘要与 transport 寄存器仍属于直接拥有它们的 lane/group/top；不能把它们在父子统计中重复计数。没有为了统计添加 `dont_touch`、时钟域或额外寄存级。28/40 的工艺映射、面积与功耗待测。
+各路径命名可用于层级统计。E pair、符号恢复、组 abs、特殊摘要与 transport 寄存器仍属于直接拥有它们的 lane/group/top；不能把它们在父子统计中重复计数。没有为了统计添加 `dont_touch`、时钟域或额外寄存级。28/40 同工况面积/时序见 [E64 DC 对比](../../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)，真实活动功耗待测。
 
 S1 每侧实际复用两份 E10/M16/S4 寄存器，按 T/H/Q/E/INT8 打包和展开；没有为各格式单独保存一套宽尾数。分类旁带独立，TF32 只启用第一个 atom。M/E/S 布局也纳入 CModel 断点比对。
 
@@ -82,7 +82,7 @@ Verilog 的 `lane_fraction` 使用 datatype 对常量进行选择，避免对运
 
 ## 6. 分类型模块与组合配置建议
 
-以下是目标目录示意，尚未搬移现用 RTL 或建立这些模块。继续按 lane/group/top 分层，在存在实现差异的层内用 multi/e 区分，共用算术模块只保留一份：
+当前已新增 lane/dp_lane_e.v、group/dp_group_e.v、top/dp_top_e.v 和 files_e.f，保留原多精度路径。下面更完整的子目录布局及 dp_backend.v 仍为后续目标，尚未实施；共用算术模块只保留一份：
 
 ~~~text
 src/verilog/
@@ -123,6 +123,22 @@ src/configs/dp/e64.json 已用于 CModel 的兼容参数+frontend 选择；RTL �
 
 公共后端当前尚未完整抽取：dp_global_align/dp_sum_tree/dp_fp32_round 已是组合模块，但 S6–S8 寄存器和相关控制仍在 dp_top 中。拟抽取的 dp_backend 必须同时承接这些寄存器、valid/last、特殊值与零符号规约；C 的 S1–S5 路径只保留一份。组边界仍保持原 S5 layout，经静态补零适配送入后端，不暗增周期。
 
-迁移建议先以原多精度配置抽取公共后端并回归到原有结果/周期，再增加 E 类型模块及 e64 profile，最后讨论混合组合。源清单、层级观察点与 DC 归属映射随真实代码迁移更新；RTL 仍仅记录框架，不执行重构或综合。CModel 已先抽出公共后端并新增 E 路径，其验证不能替代 E RTL 验收。
+本批 E 路径复用已有算术模块，S6–S8 寄存器继续由各自 top 持有；没有为实现 E64 先重构原 dp_top。两种前端分别验证，原多精度回归保持原结果/周期。未来通用后端寄存模块或混合组迁移仍须独立回归，不能把 CModel 的函数抽取当作 RTL 已完成相同重构。
 
 各 profile 的 export ID、源指纹、参数、CModel 指纹与验证回执分别保存。共享模块修改后重验依赖它的活动 profile；SV 历史参考不加入同步维护。按实际实例统计 PPA，不能把源码复用当成跨并发流水级的物理算术复用。
+
+## 7. E-only 实现与验收
+
+顶层 [dp_top_e.v](../../../verilog/top/dp_top_e.v)，显式清单 [files_e.f](../../../verilog/files_e.f) 仅编译 14 个纯 Verilog 源，不含多精度 lane/group/top 或历史 SV。默认 E64=4×E16=8×E8；参数及外部请求接口沿用 K_FP16/LOCAL_W/GLOBAL_W，K_FP16 在此仅为兼容容量索引，4/8/16 对应 E16/E32/E64。只接受 MXFP4/NVFP4/HiF4 及其合法 scale、FP32 C；其他元组拒收且不阻塞在途输出。
+
+| 模块 | 计算/寄存边界 |
+| --- | --- |
+| [dp_lane_e](../../../verilog/lane/dp_lane_e.v) | S1 专用 FP4 解码/e1，S2 8 个 4×4 和四个 signed10 pair，S3 两层树到 signed12；末端 S4 组合小左移至 signed14 |
+| [dp_group_e](../../../verilog/group/dp_group_e.v) | S1 scale 解包、S2 系数预乘、S3 anchor 准备、S4 两 lane 组和/abs 至幅值14+sign、S5 14×8 scale 或 MX 旁路/LZD/token |
+| dp_top_e | 一份 C raw S1–S4、C S5；共用 dp_c_unpack/dp_global_align/dp_sum_tree/dp_fp32_round，S6/S7/S8 寄存与 valid/last 由自身持有；没有 INT32 数据路径 |
+
+E 前端无元素指数 MAX/差值/右移对齐；HiF4 e2 已融入 lane coefficient。MX/NV 两个低零是静态连线，S6 组间及 C 的全局移位保持 GLOBAL_W=40。输出 S5 保持 M=LOCAL_W+3 的字段宽度及到达拍。HiF4 的 F/anchor/z 使用 [专用坐标](../group/dp_group_E.md)，不能套用原多精度 HiF4 的字段原值。
+
+`python3 test/run_verilog.py --frontend e --phase all` 使用相同 DP_INPUTS_V1 读取、原子 ready/预沿 L8 scoreboard、独立调度队列和数学精度统计；`DP_E_FRONTEND` 只选择 TB 的 DUT 与观察适配，不作为设计宏。S1–S7 的 E 观察点见 [dp_tb_e_trace.vh](../../../../test/rtl_tb/dp_tb_e_trace.vh)。每次验证创建 `DP_verilog_e_<fingerprint>`，由门禁完整检查 3×961、5288 定向与六组参数，成功后真实生成回执。多精度 snapshot 的通过状态不授予 E snapshot。
+
+完整结果、来源、配置及长期保留声明见 [E64 验证报告](../../../../test/results/e64-v1.5.8.md)。时序/面积使用独立 DC 报告；没有真实负载功耗或布线后结论。

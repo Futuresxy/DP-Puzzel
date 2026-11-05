@@ -1,4 +1,4 @@
-> 功能：定义 DP 顶层规格目录与后端边界；范围：请求/分发、C、S6 全局对齐、S7 规约、S8 输出和 E64 接入；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_global_align.v](../../../verilog/top/dp_global_align.v)、[dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v)、[共用 CModel 后端](../../../cmodel/lib/top/backend.cpp)；E 专用 RTL 接入和 Chisel 尚未实现。
+> 功能：定义 DP 顶层规格目录与后端边界；范围：请求/分发、C、S6 全局对齐、S7 规约、S8 输出和 E64 接入；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_global_align.v](../../../verilog/top/dp_global_align.v)、[dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v)、[共用 CModel 后端](../../../cmodel/lib/top/backend.cpp)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)；Chisel 尚未实现。
 
 # dptop：接口、全局对齐与输出
 
@@ -30,7 +30,7 @@ GLOBAL_W 独立控制 S6 含符号窗口，默认 40；幅值网络宽 GLOBAL_W�
 
 [E8 lane](../lane/dp_lane_E.md) 和 [E16 group](../group/dp_group_E.md) 提出 4×E16 的 E64 前端。用户已明确兼容 group 输出字段、默认 M31 和 S5 到达拍，因此 S5 C 解包及 S6–S8 的算法、补零和寄存位置可复用。
 
-E-only 接入口限制合法格式为 MXFP4/NVFP4/HiF4、C/D 为 FP32；HiF4 新坐标由 group 生成正确的 magnitude/A_raw/z。该前端已通过 CModel 的静态 frontend 配置接入，S5 起调用相同的公共后端函数；没有新增专用 RTL。后端复用不构成新的频率/PPA 通过证据。
+E-only 接入口限制合法格式为 MXFP4/NVFP4/HiF4、C/D 为 FP32；HiF4 新坐标由 group 生成正确的 magnitude/A_raw/z。该前端通过 CModel 的静态 frontend 配置及 RTL 顶层 dp_top_e 接入。CModel 共用后端函数；RTL 共用 C 解包、全局对齐、平衡树及 FP32 舍入模块定义，流水寄存器由各自 top 持有。E 顶层删除整数落位、类型寄存和 INT32 输出选择。后端复用不构成新的频率/PPA 通过证据。
 
 ## 4. 候选与验证入口
 

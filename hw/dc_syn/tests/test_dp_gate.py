@@ -53,6 +53,21 @@ class DPGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Full DP campaign'):
             validate_scopes([],self.root,0,1)
 
+    def test_e_identity_and_unverified_evidence_are_checked(self):
+        with patch.object(adapter,'ROOT',self.root):
+            export,_=adapter.snapshot('verilog','e')
+        manifest,_,_=payload(export,self.root)
+        self.assertEqual(manifest['top'],'dp_top_e')
+        with self.assertRaisesRegex(ValueError,'no backend-eligible'):
+            verify_dp_export(export.name,self.root)
+        p=export/'manifest.json'; manifest['top']='dp_top'; p.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError,'identity mismatch'):
+            payload(export,self.root)
+
+    def test_partial_e_campaign_cannot_enable_ppa(self):
+        with self.assertRaisesRegex(ValueError,'Full DP campaign'):
+            validate_scopes([],self.root,0,1,'e')
+
     def test_stage_classification_preserves_top_and_lane_distinction(self):
         script='source {'+str(ROOT/'hw/dc_syn/templates/dp_stages.tcl')+'}\n'
         cases={'g_group_0__group_unit/g_lane_0__lane/operand_unpack_a/mantissa_q_reg[0][1]':'S1',
@@ -60,7 +75,11 @@ class DPGateTests(unittest.TestCase):
                'g_group_0__group_unit/g_lane_0__lane/leaves_q_reg[0]':'S3',
                'g_group_0__group_unit/g_lane_0__lane/out_sop_reg[0]':'S4',
                'g_group_0__group_unit/out_z_reg[0]':'S5',
-               'leaves_q_reg[0]':'S6','sum_q_reg[0]':'S7','out_d_reg[0]':'S8', 'c_type_q_reg_6_':'S7', 'g_group_0__group_unit/type_q_reg_3__2_':'S4'}
+               'leaves_q_reg[0]':'S6','sum_q_reg[0]':'S7','out_d_reg[0]':'S8', 'c_type_q_reg_6_':'S7', 'g_group_0__group_unit/type_q_reg_3__2_':'S4',
+               'g_group_0__group_unit/g_lane_0__lane/a_mantissa_s1_q_reg[0]':'S1',
+               'g_group_0__group_unit/g_lane_0__lane/pairs_s2_q_reg[0]':'S2',
+               'g_group_0__group_unit/g_lane_0__lane/sop_s3_q_reg[0]':'S3',
+               'g_group_0__group_unit/magnitude_s4_q_reg[0]':'S4'}
         for name,stage in cases.items():
             script+='if {[dp_stage {'+name+'}] ne "'+stage+'"} {error "wrong stage"}\n'
         result=subprocess.run(['tclsh'],input=script,text=True,capture_output=True)

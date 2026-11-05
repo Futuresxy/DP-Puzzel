@@ -101,12 +101,15 @@ if {$source_ddc eq ""} {
   compile -incr -only_design_rule
 }
 if {$hold_fix} {
+  # compile/optimize_netlist can invalidate earlier collection handles.
+  # Resolve the clock by its stable name after each mapping operation.
+  set clk [get_clocks $clock_port]
   set_fix_hold $clk
   # Repair runs temporarily tighten hold by 1 ps; final reports/SDC retain the
   # original budget. This adds real delay instead of waiving a small violation.
   set_clock_uncertainty -hold [expr {$hold_uncertainty_ns + $hold_repair_guardband_ns}] $clk
   compile -incremental_mapping -only_hold_time
-  set_clock_uncertainty -hold $hold_uncertainty_ns $clk
+  set_clock_uncertainty -hold $hold_uncertainty_ns [get_clocks $clock_port]
 }
 change_names -rules verilog -hierarchy
 redirect -file reports/check_design.rpt { set design_ok [check_design] }
@@ -122,7 +125,7 @@ report_area -hierarchy -nosplit > reports/area_hierarchy.rpt
 report_qor -significant_digits 9 > reports/qor.rpt
 report_timing -delay_type max -max_paths $timing_max_paths -significant_digits 9 > reports/timing_setup.rpt
 report_timing -delay_type min -max_paths $timing_max_paths -significant_digits 9 > reports/timing_hold.rpt
-if {$top eq "dp_top"} {
+if {$top eq "dp_top" || $top eq "dp_top_e"} {
   source inputs/dp_stages.tcl
   report_dp_stages
 }

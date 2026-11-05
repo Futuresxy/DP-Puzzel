@@ -4,7 +4,7 @@
 
 用户已明确旧 DP 设计过时，由用户重新定义整体架构 spec。新设计统一放在根目录 `src/spec/`、`src/cmodel/`、`src/chisel/`、`src/verilog/`，共用测试放在根目录 `test/`。先逐项完善并确认整体 spec，再编写 CModel，之后开发 Chisel 和独立手写可综合 Verilog；用户已授权实现单 DP 手写 Verilog，SystemVerilog 已冻结为当前 T8H16Q32E64 的历史参考，不再同步维护；CModel 与单 DP RTL 已建立共用验证，Chisel、阵列尚未实施，单 DP 已完成 N12 DC 综合。首批要求已写入 [新 spec 索引](src/spec/README.md)：TensorCore → DP-Group → DP，16×4 阵列由四个竖直 4×4 广播组组成；组内无脉动。具体格式、精度、K、≤8级流水、1.41 GHz 和功耗优先约束以新版 spec 为准，未决口径不得从旧设计补齐。
 
-E 专用前端已按所选 E64 方案实现 CModel（S2 pair、S3 lane 树、S4 组和/abs、S5 scale），与多精度前端共用 S5 Token/C 解包及 S6–S8。配置为 src/configs/dp/e64.json；E RTL、混合组组合与 E PPA 尚未实施，不把 CModel 通过作为 RTL/时序证据。
+E 专用前端已按所选 E64 方案实现 CModel（S2 pair、S3 lane 树、S4 组和/abs、S5 scale），与多精度前端共用 S5 Token/C 解包及 S6–S8。配置为 src/configs/dp/e64.json；E 纯 Verilog 顶层为 src/verilog/top/dp_top_e.v，专用 dp_lane_e/dp_group_e 使用 files_e.f，--frontend e 完成独立 Verilator/lint/断点/协议验证。混合组尚未实施；本轮用户明确授权 DC 综合并要求此次验证、综合及比较基线长期保留，精简证据见 test/results/e64-v1.5.8.md 与 hw/dc_syn/records/e64_n12_comparison_20261105.md，不把仿真通过作为时序/功耗证据。
 
 历史 PE 实现及其规格、配置和验证从 Git 历史查阅。新版设计由 `src/spec/` 的共用合同和源码映射定义。
 

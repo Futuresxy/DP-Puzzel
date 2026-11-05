@@ -1,8 +1,8 @@
-> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[E CModel group/e.cpp](../../../cmodel/lib/group/e.cpp)、[公共后端](../../../cmodel/lib/top/backend.cpp)；专用 RTL 尚未建立；多精度基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
+> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[E CModel group/e.cpp](../../../cmodel/lib/group/e.cpp)、[公共后端](../../../cmodel/lib/top/backend.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；多精度基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
 
-# E 类专用 group 设计与 CModel
+# E 类专用 group 设计与实现
 
-用户已明确 group 输出 layout 与现有多精度版本对齐，group 外计算部分复用；HiF4 e2 在 lane 内融合，MX/NV 无元素指数差。CModel 已按这些边界实现 E64 的 S2 乘法+pair、S3 四项树、S4 组和/abs、S5 scale/LZD，直接复用公共后端函数。专用 RTL 未实现，最终时序待验证；没有专用 PPA 或时序结论。
+用户已明确 group 输出 layout 与现有多精度版本对齐，group 外计算部分复用；HiF4 e2 在 lane 内融合，MX/NV 无元素指数差。CModel 已按这些边界实现 E64 的 S2 乘法+pair、S3 四项树、S4 组和/abs、S5 scale/LZD，直接复用公共后端函数。专用 RTL 已实现并通过完整 Verilator 回归；DC 采用与多精度基线相同的 N12 TT、1GHz 预算，实测结论见 [E64 综合对比](../../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)。
 
 ## 1. 统一定点 E16 组
 
@@ -19,7 +19,7 @@ value_before_scale = Q_group * 2^-4
 
 两 lane 可直接在同一小数点下相加。HiF4 e2 的作用全部计入 coefficient，group 无须比较、回传或保存元素公共指数 r；group 的外部指数只来自块 scale。HiF4 的 e1 仍在 S1 融入元素幅值。
 
-## 2. E64 当前 CModel 的八级流水
+## 2. E64 当前 CModel / RTL 的八级流水
 
 | 级 | 数据计算 | 寄存结果/接口 |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ S 与 I 分开计数。SM 为独立符号+无符号幅值；表中 unsigned 行�
 | S5 scale 乘积 | NVFP4/HiF4 | unsigned | 0 | 12 | 10 | 22 |
 | MX 旁路幅值 | MXFP4 | unsigned | 0 | 10 | 4 | 14 |
 
-NV/MX 的组幅值上界 16×12²×4=9216，HiF4 上界 16×14²×4=12544，均小于 2^14。NV/HiF 共用现有 14×8 无符号 scale 乘法器；本提案进一步统一它们的输入和乘积小数点，不增大乘法器。
+NV/MX 的组幅值上界 16×12²×4=9216，HiF4 上界 16×14²×4=12544，均小于 2^14。NV/HiF 共用现有 14×8 无符号 scale 乘法器；本实现进一步统一它们的输入和乘积小数点，不增大乘法器。
 
 ## 4. 与原多精度 group 对齐的输出 layout
 
@@ -79,7 +79,7 @@ pad_scale = M_group - 22               // 默认 9
 | NVFP4 | SM | 1 | 12 | `M_group`−12 | 19 | `alpha_scale`+11 |
 | HiF4，e2 已融合 | SM | 1 | 12 | `M_group`−12 | 19 | `alpha_scale`+11 |
 
-HiF4 的默认 coefficient 从原 S1I10F21 换为 S1I12F19，表示同一个真实数值；对外字段 layout 和通用 token 语义保持一致。后端只需读取 magnitude/`A_raw`/z，不按 datatype 猜测固定 F，因此无需更改 S6 算术。原多精度主实现的 HiF4 格式仍按其 [逐级格式表](../common/stage-formats.md) 定义，本提案单独声明专用源的坐标。
+HiF4 的默认 coefficient 从原 S1I10F21 换为 S1I12F19，表示同一个真实数值；对外字段 layout 和通用 token 语义保持一致。后端只需读取 magnitude/`A_raw`/z，不按 datatype 猜测固定 F，因此无需更改 S6 算术。原多精度主实现的 HiF4 格式仍按其 [逐级格式表](../common/stage-formats.md) 定义，本实现单独声明专用源的坐标。
 
 设原通用组公共元素指数为 r∈{0,1,2}，k=2−r。对同笔非零有限 HiF4 组有：
 
@@ -115,10 +115,10 @@ net = A_raw-E_max
 
 删除元素指数阵列、跨 lane MAX/差值/右移对齐，乘法专用化为 64 个 unsigned 4×4；S3 使用窄树，S4 以 14 位组幅值寄存，S5 直接 scale/LZD。HiF4 只在 8 个 lane 内各做一次小左移，MX/NV 完全没有元素可变移位。S6 的组+C 全局对齐仍保留。
 
-当前优先候选已将第一层 pair 放在 S2，S3 只做四项规约。S2 的乘法/符号注入/pair、S4 的组加法/abs、S5 的 scale/LZD 都需要检查时序。若 S2 过紧，再讨论回退切分；保持 S4/S5 和外部 token 不动，不把功能等价推导当作频率通过证据。
+当前实现已将第一层 pair 放在 S2，S3 只做四项规约。S2 的乘法/符号注入/pair、S4 的组加法/abs、S5 的 scale/LZD 都需要检查时序。若 S2 过紧，再讨论回退切分；保持 S4/S5 和外部 token 不动，不把功能等价推导当作频率通过证据。
 
 无效周期用有效使能保持寄存器，MX 请求对 scale 数据乘法隔离，MX/NV 请求对 HiF4 控制路径隔离。是否采用额外 operand isolation，应比较 mux 的面积/延迟及实际活动功耗。不使用未经验证的生成时钟。
 
 验证要求：对旧模型的 MX/NV 检查同坐标组 token；对 HiF4 检查上面的 m/A/z 转换，再检查 S6/S7/S8 bit-exact。覆盖三精度、scale 分类、HiF4 e1/e2、lane/组抵消、零符号、FP32 C、逐拍换型及复位，并按每个合法参数分别导出验证。新专用 RTL 未通过前不能用于 PPA。
 
-PPA 对比保持相同 E64 吞吐、L8、N12 工艺/PVT、工具/约束及同一真实负载；分别报告前端与整 DP 面积/功耗。CModel 的三格式各 961 笔与原结果一致，数学 max_ulp=0；独立逐级检查和 S5 坐标/S6–S8 对照见 [E 前端测试](../../../../test/tests/test_e_frontend.py)。当前只完成 CModel；专用纯 Verilog、综合与功耗分析仍待实施。SV 历史参考不接收新 E 单元。
+PPA 对比保持相同 E64 吞吐、L8、N12 工艺/PVT、工具/约束及同一真实负载；分别报告前端与整 DP 面积/功耗。CModel 的三格式各 961 笔与原结果一致，数学 max_ulp=0；独立逐级检查和 S5 坐标/S6–S8 对照见 [E 前端测试](../../../../test/tests/test_e_frontend.py)。专用纯 Verilog 与测试已建立，综合证据见上述对比记录；真实负载功耗仍待实施。SV 历史参考不接收新 E 单元。

@@ -7,7 +7,11 @@ module dp_tb;
   parameter integer K_FP16=`DP_DEFAULT_K, LOCAL_W=`DP_DEFAULT_LOCAL_W, GLOBAL_W=`DP_DEFAULT_GLOBAL_W;
   // Largest current campaign has 1053 requests; retain a checked 2048-row buffer.
   // This is testbench storage only; no DUT capacity/parameters are changed.
+`ifdef DP_E_FRONTEND
+  localparam integer G=K_FP16/`DP_GROUP_H, CAPACITY=8192;
+`else
   localparam integer G=K_FP16/`DP_GROUP_H, CAPACITY=2048;
+`endif
   reg clock=0;
   always #5 clock=~clock;
   reg reset=1,in_a_valid=0,in_b_valid=0,in_c_valid=0,in_c_datatype=0,in_last=0;
@@ -20,7 +24,11 @@ module dp_tb;
   reg [`DP_FP32_W-1:0] in_c=0;
   wire out_a_ready,out_b_ready,out_c_ready,out_valid,out_d_datatype,out_last;
   wire [`DP_FP32_W-1:0] out_d;
+`ifdef DP_E_FRONTEND
+  dp_top_e #(.K_FP16(K_FP16),.LOCAL_W(LOCAL_W),.GLOBAL_W(GLOBAL_W)) dut(
+`else
   dp_top #(.K_FP16(K_FP16),.LOCAL_W(LOCAL_W),.GLOBAL_W(GLOBAL_W)) dut(
+`endif
     .clock(clock),
     .reset(reset),
     .in_a_valid(in_a_valid),
@@ -99,6 +107,9 @@ module dp_tb;
       legal=(in_a_datatype<=`DP_DT_INT8 && in_a_datatype==in_b_datatype &&
         in_c_datatype==(in_a_datatype==`DP_DT_INT8) &&
         in_scale_a_datatype==scale_type(in_a_datatype) && in_scale_b_datatype==scale_type(in_a_datatype));
+`ifdef DP_E_FRONTEND
+      legal=legal && (in_a_datatype==`DP_DT_MXFP4 || in_a_datatype==`DP_DT_NVFP4 || in_a_datatype==`DP_DT_HIF4);
+`endif
       if({out_a_ready,out_b_ready,out_c_ready} !== {3{!reset && av!=0 && bv!=0 && cv!=0 && legal!=0}})
         begin $display("FAIL "); $display("atomic ready mismatch cycle %0d",cycle); $finish; end
       if(reset) begin
@@ -135,6 +146,9 @@ module dp_tb;
   // Observational only: values are sampled halfway after the updating edge.
   // Generic packed fields work for both plain Verilog vectors and packed SV structs.
   genvar group_index,lane_index;
+`ifdef DP_E_FRONTEND
+  `include "dp_tb_e_trace.vh"
+`else
   generate for(group_index=0;group_index<G;group_index=group_index+1) begin: g_trace_group
     for(lane_index=0;lane_index<`DP_LANES;lane_index=lane_index+1) begin: g_trace_lane
       integer element_index;
@@ -174,6 +188,7 @@ module dp_tb;
         dut.g_group[group_index].magnitude,$signed(dut.g_group[group_index].anchor),dut.g_group[group_index].leading,
         dut.g_group[group_index].sign_value,dut.g_group[group_index].special_value);
   end endgenerate
+`endif
   integer source_index;
   always @(negedge clock) if(trace_fd) begin
     if(dut.valid_q[4]) $fdisplay(trace_fd,"%0d 5 c 0 %h %0d %0d %0d %h",pending[4],dut.c_magnitude_q,

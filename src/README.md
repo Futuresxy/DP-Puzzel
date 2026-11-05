@@ -8,7 +8,7 @@
 | [cmodel/](cmodel/README.md) | 多精度/E 前端，共用 C 路径及 S6–S8 的整数位精确/逐级周期模型 |
 | [configs/dp/](configs/dp/e64.json) | CModel 构建配置；E64 使用 frontend=e，混合组配置待实施 |
 | [chisel/](chisel/README.md) | 后续Chisel实现 |
-| [verilog/](verilog/README.md) | 单 DP Verilog 主实现；SystemVerilog 历史参考 |
+| [verilog/](verilog/README.md) | 多精度 dp_top / E-only dp_top_e；SystemVerilog 历史参考 |
 | [test/](../test/README.md) | 共用packed数据、独立参考、协议检查和报告 |
 
 当前开发顺序为 spec → CModel → 手写 Verilog → 共用 RTL 回归 → DC/功耗。未来 Chisel 路径另行实施，SV 历史目录不接收新特性。用于分析的 RTL 快照集中于 `hw/rtl/`。历史实现从 Git 查阅。

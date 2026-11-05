@@ -20,7 +20,7 @@ python3 test/run_cmodel.py --frontend e --phase all
 
 已提交 packed 数据可直接测试，无需旧目录可用。重新导入已有源数据执行 `python3 test/cases/import_legacy.py --source-root /path/to/legacy-corpus`；这会重建新版数据/manifest，之后通过 `--write-goldens` 重建已验证期望。扩展数据用 `python3 test/cases/generate_extensions.py` 重建。不要手改 expected 来消除失败。
 
-E 回归复用三种精度各 961 笔输入，同时比较已有多精度结果和独立精确数学参考；不覆盖或重写原有 golden。`test_e_frontend.py` 另检查各级数值、HiF4 坐标转换、特殊值和周期。E 专用 RTL 尚未实施，这些结果仅验证 CModel。
+E 回归复用三种精度各 961 笔输入，同时比较已有多精度结果和独立精确数学参考；不覆盖或重写原有 golden。`test_e_frontend.py` 另检查各级数值、HiF4 坐标转换、特殊值和周期。这些运行仅验证 CModel；E 专用 RTL 另由 [E64 Verilator 回归](../../test/results/e64-v1.5.8.md) 验证。
 
 sanitizer 构建位于已忽略的 build/ 内：
 

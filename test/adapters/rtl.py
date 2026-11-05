@@ -13,15 +13,18 @@ ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT/'scripts'))
 from dp_rtl_gate import DP_INTERFACE, PARAMETERS, payload, validate_scopes, verification_inputs
 
-def snapshot(implementation):
+def snapshot(implementation,frontend='multi'):
     base=ROOT/'src/verilog'
-    source_list=base/('files.f' if implementation=='verilog' else 'systemverilog/files.f')
+    if frontend not in ('multi','e') or (frontend=='e' and implementation!='verilog'):
+        raise ValueError('E frontend requires maintained pure Verilog')
+    top='dp_top_e' if frontend=='e' else 'dp_top'
+    source_list=base/('files_e.f' if frontend=='e' else 'files.f' if implementation=='verilog' else 'systemverilog/files.f')
     sources=[ROOT/line for line in source_list.read_text().splitlines() if line and not line.startswith('+')]
     # The plain-Verilog TB also consumes this same encoding header in SV runs.
     sources+=list(sorted((base/'parameter').glob('*.vh')))
     source_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
     fingerprint=hashlib.sha256(json.dumps(source_hashes,sort_keys=True).encode()).hexdigest()
-    export_id=f'DP_{implementation}_{fingerprint[:16]}'
+    export_id=f'DP_{implementation}_{"e_" if frontend=="e" else ""}{fingerprint[:16]}'
     dest=ROOT/'hw/rtl'/export_id
     if not dest.exists():
         dest.mkdir(parents=True)
@@ -33,13 +36,13 @@ def snapshot(implementation):
         canonical=['+incdir+src/src/verilog/parameter']+[str(Path('src')/p.relative_to(ROOT)) for p in sources if p.suffix in ('.v','.sv')]
         (dest/'files.f').write_text('\n'.join(canonical)+'\n')
         (dest/'manifest.json').write_text(json.dumps(dict(schema_version=1,export_id=export_id,
-            implementation=implementation,source_fingerprint=fingerprint,source_sha256=source_hashes,
+            implementation=implementation,frontend=frontend,source_fingerprint=fingerprint,source_sha256=source_hashes,
             exported_sha256=exported,status='generated',verified_scopes=[],
-            created_utc=datetime.now(timezone.utc).isoformat(),top='dp_top',
+            created_utc=datetime.now(timezone.utc).isoformat(),top=top,
             specialization='parameterized source snapshot; parameters recorded per simulation',ppa_eligible=False),indent=2)+'\n')
-        (dest/'README.md').write_text(f'# {export_id}\n\nFrozen hand-written RTL sources for DP v1.4.\n\n'
+        (dest/'README.md').write_text(f'# {export_id}\n\nFrozen hand-written RTL sources for DP v1.5, frontend={frontend}.\n\n'
             'Created by `test/adapters/rtl.py`; no flattening or source editing. '
-            'Top: `dp_top`. Clock: `clock`. Synchronous active-high reset: `reset`. '
+            f'Top: `{top}`. Clock: `clock`. Synchronous active-high reset: `reset`. '
             'Compile `files.f` relative to this export directory. Parameters and verified scopes are in the regression report. '
             'No DC, timing or power analysis was performed.\n')
     manifest=json.loads((dest/'manifest.json').read_text())
@@ -80,10 +83,11 @@ def record_validation(dest,scopes,test_fingerprint,*,phase,started,run_dir,comma
         start_time=datetime.fromisoformat(started).timestamp()
         if any(p.stat().st_mtime>start_time for p in inputs):
             raise RuntimeError('verification input changed during regression')
-        validate_scopes(scopes,ROOT,start_time,datetime.fromisoformat(finished).timestamp())
+        frontend=manifest.get('frontend','multi')
+        validate_scopes(scopes,ROOT,start_time,datetime.fromisoformat(finished).timestamp(),frontend)
         receipt=dict(schema_version=1,verification_id=run_dir.name,export_id=dest.name,
             rtl_fingerprint=fingerprint,status='passed',method='verilog_testbench',
-            numerical_pass=True,protocol_pass=True,phase=phase,parameters=PARAMETERS,
+            numerical_pass=True,protocol_pass=True,phase=phase,parameters=PARAMETERS,frontend=frontend,
             latency=8,ii=1,seeds=[20271105],command=command,
             simulator=dict(name='verilator',version=simulator_version),
             started_utc=started,finished_utc=finished,scopes=scopes,

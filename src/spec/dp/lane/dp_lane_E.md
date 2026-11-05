@@ -1,8 +1,8 @@
-> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[E CModel lane/e.cpp](../../../cmodel/lib/lane/e.cpp)；专用 RTL 尚未建立；多精度基线为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)。
+> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[E CModel lane/e.cpp](../../../cmodel/lib/lane/e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；多精度基线为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)。
 
-# E 类专用 lane 设计与 CModel
+# E 类专用 lane 设计与实现
 
-用户已确认采用 HiF4 先求和再移位，并使 group 输出兼容现有多精度版本；进一步明确可将 HiF4 e2 融入定点 coefficient，删除两 lane 间的指数 MAX/差值/右移对齐。按用户授权，CModel 已实现所选 S2 乘法+第一层 pair、S3 四项规约切分，S4/S5 接口拍数保持不变。专用 RTL 尚未实现，时序和 PPA 尚未测量；现有多精度主实现保持 v1.5 架构及 v1.5.1 实现映射。
+用户已确认采用 HiF4 先求和再移位，并使 group 输出兼容现有多精度版本；进一步明确可将 HiF4 e2 融入定点 coefficient，删除两 lane 间的指数 MAX/差值/右移对齐。按用户授权，CModel 已实现所选 S2 乘法+第一层 pair、S3 四项规约切分，S4/S5 接口拍数保持不变。专用 RTL 已实现并通过 Verilator 回归；时序和面积按对应 DC 结果解释；现有多精度主实现保持 v1.5 架构及 v1.5.1 实现映射。
 
 ## 1. E64 组织与 e2 融合
 
@@ -19,9 +19,9 @@ HiF4 lane:   sum_i(q_i << p) = sum_i(q_i) << p
 
 因此 group 可以在固定二进制小数点下直接累加，无需共同元素 anchor、lane candidate active 或两 lane 间 MAX/delta。HiF4 p 是 lane 内部的局部控制，在 coefficient 中消耗，不传给 group 作为指数。
 
-代数上等价于将 e2 融入每个 product。建议物理实现为 lane 求和后一次左移：S2 乘法后两两形成 10 位 TC pair 并寄存，S3 采用四项窄树，S4 在 lane 末端组合左移 0/1/2 位。MX/NV 仅静态补两个低零，以便统一成相同的 F4；静态补零是连线，无可变移位器。
+代数上等价于将 e2 融入每个 product。当前物理实现为 lane 求和后一次左移：S2 乘法后两两形成 10 位 TC pair 并寄存，S3 采用四项窄树，S4 在 lane 末端组合左移 0/1/2 位。MX/NV 仅静态补两个低零，以便统一成相同的 F4；静态补零是连线，无可变移位器。
 
-## 2. 当前 CModel 的 S1–S5 划分
+## 2. 当前 CModel / RTL 的 S1–S5 划分
 
 | 级 | lane 数据路径 | group/旁带 | 主要寄存数据 |
 | --- | --- | --- | --- |
@@ -78,7 +78,7 @@ p、datatype、scale、valid、特殊值和零符号信息必须跟随本笔数�
 
 ## 5. 寄存成本与时序待验收项
 
-用户选择优先讨论的切分为：S2 元素乘法+第一层 pair，S3 四项 TC 树，S4 小左移+两 lane TC 合并+组 abs，S5 scale+LZD。S3 由完整八项树缩为四项树；S2 增加符号注入与 pair 加法，必须检查乘法后串联算术的组合预算。
+当前采用的切分为：S2 元素乘法+第一层 pair，S3 四项 TC 树，S4 小左移+两 lane TC 合并+组 abs，S5 scale+LZD。S3 由完整八项树缩为四项树；S2 增加符号注入与 pair 加法，必须检查乘法后串联算术的组合预算。
 
 | S2 数值寄存候选 | 每 lane 数据位 | E64 八个 lane 数据位 |
 | --- | --- | --- |
@@ -95,6 +95,6 @@ p、datatype、scale、valid、特殊值和零符号信息必须跟随本笔数�
 
 后续专用实现先验证 product 级融合与 lane 和后融合的等价，再验证 group token 的数值坐标及 S6/S7/S8 结果。S3/S4 内部切点改变后，应建立新的 trace 对照，不能继续要求旧切点原始比特相同。group 的字段宽度和语义保持原接口，HiF4 的数值坐标换算见配套文档。
 
-覆盖所有元素编码乘积、HiF4 e1/e2 组合、严重抵消、正负零、scale 分类、C 特殊值、逐拍换型、气泡和复位；G=1/2/4 及原合法窗口分别验证。当前 CModel 已通过三格式各 961 笔及 6 项 E 前端测试：独立 Fraction 检查 pair/lane/group 数值、同多精度模型比较兼容 S5 坐标和 S6–S8；覆盖 K4/8/16、27/40、28/48、32/64 及 L8/L9。测试入口为 [test_e_frontend.py](../../../../test/tests/test_e_frontend.py)。专用 RTL 验收尚未发生。
+覆盖所有元素编码乘积、HiF4 e1/e2 组合、严重抵消、正负零、scale 分类、C 特殊值、逐拍换型、气泡和复位；G=1/2/4 及原合法窗口分别验证。当前 CModel 已通过三格式各 961 笔及 6 项 E 前端测试：独立 Fraction 检查 pair/lane/group 数值、同多精度模型比较兼容 S5 坐标和 S6–S8；覆盖 K4/8/16、27/40、28/48、32/64 及 L8/L9。测试入口为 [test_e_frontend.py](../../../../test/tests/test_e_frontend.py)。专用 RTL 已通过同源 Verilator 检查；完整覆盖、断点及结果见 [E64 报告](../../../../test/results/e64-v1.5.8.md)。
 
-专用 CModel 已实现；后续 RTL 仅开发纯 Verilog；冻结的 SystemVerilog 历史目录不添加 E-only 模块，详见 [维护边界](../../../verilog/systemverilog/README.md)。
+专用 CModel 与纯 Verilog 已实现；冻结的 SystemVerilog 历史目录不添加 E-only 模块，详见 [维护边界](../../../verilog/systemverilog/README.md)。

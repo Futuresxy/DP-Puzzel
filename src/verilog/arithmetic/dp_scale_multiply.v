@@ -3,7 +3,8 @@
 // Precision | A S | A I | A F | B S | B I | B F | Y S | Y I | Y F
 // --------- | --- | --- | --- | --- | --- | --- | --- | --- | ---
 // NVFP4     | 0   | 10  | 4   | 0   | 2   | 6   | 0   | 12  | 10
-// HiF4      | 0   | 8   | 6   | 0   | 2   | 6   | 0   | 10  | 12
+// HiF4 multi| 0   | 8   | 6   | 0   | 2   | 6   | 0   | 10  | 12
+// HiF4 E   | 0   | 10  | 4   | 0   | 2   | 6   | 0   | 12  | 10
 // Sign travels separately.
 module dp_scale_multiply #(
   parameter integer MAG_W   = `DP_SCALE_SOP_W - 1,

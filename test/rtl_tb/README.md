@@ -15,3 +15,5 @@ TB 在上升沿 NBA 更新前检查结果和握手；输入在下降沿驱动。
 复位压力用例中已接收但取消的请求不计入数值通过笔数。非法 datatype 元组应保持三路 ready=0；源填充位、广播、非负 scale 等 payload 约束由用例构造器保证，不要求 DUT 添加 ready 路径检查器。
 
 [run_verilog.py](../run_verilog.py) 管理快照、Verilator lint/build/sim、四态 Icarus 交叉检查、CModel trace；仅显式 `--implementation both` 时做历史双版对比。新功能不要求 SV 同步。所有生成文件位于 `test/runs/verilog/`。TB 的 10ns 时钟只定义仿真事件，不能作为 1.41GHz 时序证据。
+
+`--frontend e` 编译 `DP_E_FRONTEND` TB 选择，驱动 dp_top_e 并加入 [E 观察适配](dp_tb_e_trace.vh)，共用输入读取、调度、L8 scoreboard 和结果输出。E-only 拒收其他 datatype/INT32 C。普通多精度 campaign 缓冲上限 2048 行；E 编码/边界 campaign 为 5288 行，E TB 使用检查过的 8192 行容量，超限仍拒绝，不丢弃测试。DUT 容量保持 E64。长期证据见 [E64 验证报告](../results/e64-v1.5.8.md)。

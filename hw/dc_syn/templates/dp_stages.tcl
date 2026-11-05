@@ -4,6 +4,8 @@ proc dp_stage {name} {
   if {[regexp {operand_unpack_[ab]/} $name]} {return S1}
   if {[regexp {valid_q_reg(?:\[|_)([0-7])(?:\]|_)} $name -> index]} {return S[expr {$index+1}]}
   if {[regexp {(type_s|anchor_s|special_s|all_negative_s)([1-7])_q} $name -> stem stage]} {return S$stage}
+  # E frontend registers carry their actual arithmetic capture stage in the name.
+  if {[regexp {_s([1-4])_q_reg} $name -> stage]} {return S$stage}
   if {[regexp {lane/} $name]} {
     if {[regexp {/(products|exponents|negative|active)_q_reg} $name]} {return S2}
     if {[regexp {/leaves_q_reg} $name]} {return S3}

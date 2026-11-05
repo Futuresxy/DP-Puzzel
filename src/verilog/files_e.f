@@ -1,0 +1,15 @@
++incdir+src/verilog/parameter
+src/verilog/arithmetic/dp_bidir_shift.v
+src/verilog/arithmetic/dp_fp32_round.v
+src/verilog/arithmetic/dp_lzd.v
+src/verilog/arithmetic/dp_max_tree.v
+src/verilog/arithmetic/dp_mul_unsigned.v
+src/verilog/arithmetic/dp_rtz_shift.v
+src/verilog/arithmetic/dp_scale_multiply.v
+src/verilog/arithmetic/dp_sum_tree.v
+src/verilog/lane/dp_lane_e.v
+src/verilog/group/dp_group_e.v
+src/verilog/top/dp_global_align.v
+src/verilog/top/dp_top_e.v
+src/verilog/unpack/dp_c_unpack.v
+src/verilog/unpack/dp_scale_unpack.v

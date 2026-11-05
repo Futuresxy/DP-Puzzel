@@ -1,4 +1,4 @@
-> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/e.cpp](../../../cmodel/lib/lane/e.cpp)；E 专用 RTL 和 Chisel 尚未实现。
+> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/e.cpp](../../../cmodel/lib/lane/e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
 
 # lane：解包、元素乘法与局部规约
 
@@ -22,7 +22,7 @@
 
 方案正文：[dp_lane_E.md](dp_lane_E.md)。三种 E 格式保留 8 个 unsigned 4×4；删除 T/H/Q/INT8 路由及宽指数阵列。HiF4 p=e2_a+e2_b 在 lane 求和后局部左移融合，MX/NV 仅静态补零，无元素可变移位。
 
-建议 lane 持有 S1/S2/S3 寄存器：S2 乘法后先形成四个 10 位 TC pair，S3 四项规约为 12 位 TC，S4 组合输出融合后的 14 位 TC 给 group；S4 寄存器由 group 持有。CModel 已实现这一切分，原多精度 lane 的 S4 寄存边界不因此改变。专用单元尚无 RTL 或时序测量。
+建议 lane 持有 S1/S2/S3 寄存器：S2 乘法后先形成四个 10 位 TC pair，S3 四项规约为 12 位 TC，S4 组合输出融合后的 14 位 TC 给 group；S4 寄存器由 group 持有。CModel 已实现这一切分，原多精度 lane 的 S4 寄存边界不因此改变。专用 RTL 已完成同源 Verilator 验证；时序由独立 DC 报告验收。
 
 ## 3. 阅读和验证边界
 

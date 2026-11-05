@@ -1,4 +1,4 @@
-> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 已实现，E RTL 和 Chisel 尚未实现。
+> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
 
 # DP 规格导航
 
@@ -57,7 +57,7 @@ dp/
 
 ## 3. E 类优化方案入口
 
-[E8 lane 优化](lane/dp_lane_E.md) 与 [E16 group / E64 接入](group/dp_group_E.md) 已纳入对应模块目录。用户已明确 HiF4 e2 在 lane 内融合、先求和后局部左移、删除组内元素指数对齐，以及保持多精度 group 输出 layout 和 S5 到达拍。用户已选择优先讨论 E64 的 S2 乘法/pair、S3 四项 lane 树、S4 group 合并/abs、S5 scale/LZD 切分，专用 CModel 已实现并通过测试，E RTL 与 PPA 尚未建立。
+[E8 lane 优化](lane/dp_lane_E.md) 与 [E16 group / E64 接入](group/dp_group_E.md) 已纳入对应模块目录。用户已明确 HiF4 e2 在 lane 内融合、先求和后局部左移、删除组内元素指数对齐，以及保持多精度 group 输出 layout 和 S5 到达拍。用户已选择优先讨论 E64 的 S2 乘法/pair、S3 四项 lane 树、S4 group 合并/abs、S5 scale/LZD 切分，专用 CModel 与 RTL 已实现并通过测试；面积/时序见 [同工况 DC 对比](../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)。
 
 E 专用候选通过兼容 token 接入既有 S6–S8；默认保留 40 位全局窗口。HiF4 融合 e2 后的定点坐标及 anchor/z 换算以专用 group 文档为准，不能套用多精度主实现的逐级字段值。
 
@@ -65,10 +65,10 @@ E 专用候选通过兼容 token 接入既有 S6–S8；默认保留 40 位全�
 
 主实现 S1 解包 → S2 元素乘法/指数 MAX → S3 局部对齐/E pair → S4 lane 树 → S5 组和/abs/无符号 scale/LZD 及 C 解包 → S6 一次双向对齐 → S7 总树 → S8 FP32 RNE 或 INT32 回绕。[八级架构图](draw.io/dp_arch.drawio)
 
-A/B 同格式，合法请求可逐拍换型；last 只透传，无输出背压，全局复位取消在途请求。默认 L8，L9 为静态备用探索。独立整体对齐、E 专用 RTL、Chisel 和阵列尚未实现；频率与功耗结论必须关联实际冻结输入与测量证据。
+A/B 同格式，合法请求可逐拍换型；last 只透传，无输出背压，全局复位取消在途请求。默认 L8，L9 为静态备用探索。独立整体对齐、Chisel 和阵列尚未实现；频率与功耗结论必须关联实际冻结输入与测量证据。
 
 ## 5. 不同 DP 类型的项目框架建议
 
 将多精度与 E 专用组织为同一设计族：共用基础库，lane/group 内区分 multi/e，dptop 复用后端并按静态 profile 装配。当前模块目录保持功能分层；变体增加后可在 lane/group 内分别建立 multi/e 子目录，共用数值合同与 scale/后端说明只维护一份，各类型文档记录自身的数据通路、S/I/F、周期和适用范围。
 
-建议的配置、能力矩阵及组合边界见 [模块层级第 9 节](dptop/module-hierarchy.md#9-dp-设计族的工程组织建议)，源码目标布局分别见 [RTL](implementation/verilog.md#6-分类型模块与组合配置建议) 与 [CModel](implementation/cmodel.md#7-与-rtl-对应的设计族组织建议)。CModel 已新增 lane/e.cpp、group/e.cpp，抽取 top/backend.cpp，接入 src/configs/dp/e64.json；现用 RTL 未重构，通用混合组配置仍是讨论稿。默认多精度请求和数值接口保持兼容。
+建议的配置、能力矩阵及组合边界见 [模块层级第 9 节](dptop/module-hierarchy.md#9-dp-设计族的工程组织建议)，源码目标布局分别见 [RTL](implementation/verilog.md#6-分类型模块与组合配置建议) 与 [CModel](implementation/cmodel.md#7-与-rtl-对应的设计族组织建议)。CModel 已新增 lane/e.cpp、group/e.cpp，抽取 top/backend.cpp，接入 src/configs/dp/e64.json；RTL 增加 dp_lane_e/dp_group_e/dp_top_e 和 files_e.f；原多精度顶层保留，通用混合组配置仍是讨论稿。默认多精度请求和数值接口保持兼容。

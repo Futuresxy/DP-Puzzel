@@ -123,3 +123,11 @@ CModel GCC 8.5.0、Verilator 5.030、仿真器编译 GCC 10.3.1。
 可在相同 `prepare` 选项上增加 `--hold-repair-from SOURCE_RUN`，在新 run 内载入有效源 DDC 只做 hold 优化；
 门禁、库、机器绑定和最终约束必须相同。优化时临时增加 1 ps hold uncertainty，报告/SDC 恢复原值，
 并重新检查 setup/hold 与 Vt；不会把修复成功作为前提。源 run 保留，不覆盖原始失败证据。
+
+## E64 与多精度同工况比较
+
+E64 顶层为 dp_top_e，选择 `python3 test/run_verilog.py --frontend e --phase all`，门禁接受 `DP_verilog_e_<fingerprint>`。多精度顶层仍为 dp_top，使用默认回归。两者分别核对源清单、数值/协议、断点与回执，见 [输入合同](input-contract.md) 和 [E64 RTL 报告](../../test/results/e64-v1.5.8.md)。
+
+本批用户明确授权 E64 综合，并要求验证、DC 及比较基线作为重要结果长期保留。使用相同 N12 TT 0.7V/85°C、K16/28/40、L8/II1、dp-1000mhz.json、门控、层级和 Vt 预算，分别综合当前 E-only 和多精度设计；历史 27/40 数据只作背景，不能混入同参数面积百分比。[正式结果与路径](records/e64_n12_comparison_20261105.md)统一追踪两类测量。
+
+DC 在 compile/optimize_netlist 后可能使此前缓存的 collection 失效。hold 修复前及修复编译后按稳定的 clock_port 名重新获取时钟；不复用过期的 `_sel...` 句柄，不更改时钟或 uncertainty。首轮若出现 CMD-036/UID-95，门禁判为无效，在新 run 重跑并保留原始诊断；不能引用该 run 的面积冒充有效测量。

@@ -406,6 +406,30 @@ foreach row [hierarchy_plan $rows {} {} {} 2] { puts [join $row |] }
         path.write_text('set f [open [lindex $argv 0]]\nset s [read $f]\nclose $f\nif {![info complete $s]} {exit 2}\n')
         self.assertEqual(subprocess.call(["tclsh", str(path), str(ROOT / "hw/dc_syn/templates/DC.tcl")]), 0)
 
+    def test_hold_reacquires_clock_after_mapping(self):
+        # A real DC collection can expire when compile rebuilds the clock graph.
+        # Execute the production hold block against handles with that lifetime.
+        text=(ROOT/'hw/dc_syn/templates/DC.tcl').read_text()
+        block=text[text.index('if {$hold_fix} {'):text.index('change_names -rules')]
+        script='''
+set generation 1
+set clk clock_generation_0
+set clock_port clock
+set hold_fix true
+set hold_uncertainty_ns 0.03
+set hold_repair_guardband_ns 0
+proc get_clocks {name} {global generation; return clock_generation_$generation}
+proc check_clock {value} {
+  global generation
+  if {$value ne "clock_generation_$generation"} {error "stale clock handle"}
+}
+proc set_fix_hold {clock} {check_clock $clock}
+proc set_clock_uncertainty {kind value clock} {check_clock $clock}
+proc compile {args} {global generation; incr generation}
+''' + block
+        result=subprocess.run(['tclsh'],input=script,text=True,capture_output=True)
+        self.assertEqual(result.stderr,'')
+
 
 if __name__ == "__main__":
     unittest.main()

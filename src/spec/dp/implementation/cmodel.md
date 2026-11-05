@@ -1,8 +1,8 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.7；修改时间：2026-11-05 17:20:00 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
 
 # DP CModel 合同
 
-模型实现多精度分组共享前端和 E 专用前端，共用 S5 token 完成/C 路径及 S6–S8。默认 `multi` 为 T8H16Q32E64，`e` 为 E64，均为 L8、II=1。E 前端仅支持 MXFP4/NVFP4/HiF4，C/D 为 FP32；数学参考和请求接口复用。混合组组合、专用 Q/QE、阵列和 E RTL/EDA 尚未实施。模型不以宿主 float/double 代替有限位宽运算。
+模型实现多精度分组共享前端和 E 专用前端，共用 S5 token 完成/C 路径及 S6–S8。默认 `multi` 为 T8H16Q32E64，`e` 为 E64，均为 L8、II=1。E 前端仅支持 MXFP4/NVFP4/HiF4，C/D 为 FP32；数学参考和请求接口复用。混合组组合、专用 Q/QE、阵列尚未实施；E RTL 及其 DC 另有验证证据。模型不以宿主 float/double 代替有限位宽运算。
 
 ## 1. 实现与模块映射
 
@@ -66,9 +66,9 @@ E 的 S2/S3/S4 观察点分别为 `e_multiply_and_pairs`、`e_lane_sop_tree`、`
 
 执行说明见 [CModel](../../../cmodel/README.md)；首批结果见 [报告](../../../../test/results/cmodel-v1.4.md)。单测覆盖 K4/K8/K16、2/3/5 项树、三组窗口、L8/L9、相邻换型、reset、气泡、无效类型、输入填充/广播、small-code 与 scale 编码、特殊值/RNE 边界、INT 极值及回绕。只对已列组合作覆盖声明；不是所有 A/B 编码笛卡尔积穷举。
 
-CModel、现用 Verilog 及未来 Chisel 使用共同数学合同；SV 历史目录按冻结版本解释。 C++ 文件不等于最终 RTL module 一一结构实例化；operand isolation、时钟门控、mux 门级共享和面积归属仍须实现和综合证据。现有 RTL 与历史 N12 DC 证据见 [实现合同](verilog.md)；新专用 E 单元尚无 RTL/PPA 证据，真实负载功耗仍待实施。
+CModel、现用 Verilog 及未来 Chisel 使用共同数学合同；SV 历史目录按冻结版本解释。 C++ 文件不等于最终 RTL module 一一结构实例化；operand isolation、时钟门控、mux 门级共享和面积归属仍须实现和综合证据。现有 RTL 与历史 N12 DC 证据见 [实现合同](verilog.md)；新专用 E 单元的 RTL/DC 证据见 [E64 报告](../../../../test/results/e64-v1.5.8.md)，真实负载功耗仍待实施。
 
-E64 的三格式各 961 笔均匹配保存的多精度结果及独立精确数学结果，最大 ULP=0；6 项 E 专用单测覆盖独立逐级 Fraction 等式、全部 nibble 乘积/HiF4 元数据组合、特殊值/scale、K4/8/16 与窗口、L8/L9 和真实在途周期。普通运行的配置、指纹与摘要保存在 test/runs/cmodel/，按滚动保留规则管理。本次环境缺少可链接的 ASan 运行库，未完成 sanitizer 验证；历史 sanitizer 结论不扩大到新 E 实现。
+E64 的三格式各 961 笔均匹配保存的多精度结果及独立精确数学结果，最大 ULP=0；6 项 E 专用单测覆盖独立逐级 Fraction 等式、全部 nibble 乘积/HiF4 元数据组合、特殊值/scale、K4/8/16 与窗口、L8/L9 和真实在途周期。普通运行的配置、指纹与摘要保存在 test/runs/cmodel/，按滚动保留规则管理。本次环境缺少可链接的 ASan 运行库，未完成 sanitizer 验证；历史 sanitizer 结论不扩大到新 E 实现。E RTL 已按独立模块与专用 cutpoint 接入共用回归，不以 CModel 通过替代 RTL 仿真。
 
 ## 7. 与 RTL 对应的设计族组织建议
 

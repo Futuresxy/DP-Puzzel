@@ -71,3 +71,5 @@ DP manifest 记录 `top=dp_top` 和 `interface`，其中 `clock_port=clock`，`r
 当前后端准入参数为 `K_FP16=16, LOCAL_W=28, GLOBAL_W=40`。历史综合记录的局部窗口为 27。
 其余参数虽有功能覆盖，必须另行建立对应综合配置合同。DC 显式使用
 `analyze -format verilog` 与 `elaborate -parameters`，只消费主实现 19 个 `.v` 与两份头文件。
+
+E-only 使用 `DP_verilog_e_<16 hex>`、top=dp_top_e 和 src/verilog/files_e.f（14 个 `.v`，共用两份头文件）。接口、K16/28/40、L8/II1 和目录指纹规则相同，frontend=e 单独记录。E 完整门禁要求三格式各 961 笔、5288 笔定向输出、六组参数各 137 笔有效输出与 7 笔复位取消、1106924 个 S1–S7 断点。未知前端、top/清单混用、部分回归及源漂移均拒绝；不继承 multi 的验证回执。
