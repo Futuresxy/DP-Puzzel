@@ -1,4 +1,4 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.5；修改时间：2026-11-05 14:34:46 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.6；修改时间：2026-11-05 15:38:20 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
 
 # DP CModel 合同
 
@@ -62,3 +62,32 @@ trace 的每个 cutpoint 有 stage、operation、data。覆盖 S1 每元素及 p
 执行说明见 [CModel](../../../cmodel/README.md)；首批结果见 [报告](../../../../test/results/cmodel-v1.4.md)。单测覆盖 K4/K8/K16、2/3/5 项树、三组窗口、L8/L9、相邻换型、reset、气泡、无效类型、输入填充/广播、small-code 与 scale 编码、特殊值/RNE 边界、INT 极值及回绕。只对已列组合作覆盖声明；不是所有 A/B 编码笛卡尔积穷举。
 
 CModel、现用 Verilog 及未来 Chisel 使用共同数学合同；SV 历史目录按冻结版本解释。 C++ 文件不等于最终 RTL module 一一结构实例化；operand isolation、时钟门控、mux 门级共享和面积归属仍须实现和综合证据。现有 RTL 与历史 N12 DC 证据见 [实现合同](verilog.md)；新专用 E 单元尚无 RTL/PPA 证据，真实负载功耗仍待实施。
+
+## 7. 与 RTL 对应的设计族组织建议
+
+建议维持同一个模型工程和统一 evaluate/Pipeline 入口，按 common、lane、group、top 的职责组织实现，在 lane/group 内区分 multi/e 类型。以下是后续源码迁移目标，不是当前目录已经完成调整：
+
+~~~text
+src/cmodel/
+├── include/dp/              # 公共请求/结果/token 与配置 API
+└── lib/
+    ├── common/              # 格式、整数算术、解包与特殊值
+    ├── lane/
+    │   ├── multi/           # 多精度前端阶段
+    │   └── e/               # E pair/树/e2 融合阶段
+    ├── group/
+    │   ├── multi/           # 多精度组阶段
+    │   └── e/               # E 组阶段
+    ├── top/                 # 公共后端阶段与 profile 组合调度
+    └── json_io.cpp          # 公共序列化入口
+~~~
+
+公共层复用 Big/Token/Special、位宽检查、scale/C 解码、规约和 FP32 舍入。multi/e 前端拥有各自的阶段状态与 trace，在 S5 产出公共 Token；类型差异集中在前端调度点，不在每个公共算术函数中散布 profile 分支。使用简单的具名结构和函数，不为每个精度建立深层继承框架。
+
+当前 group.cpp 同时包含 stage_group、stage_global_align、stage_total、stage_output，需要先按职责分离，保持既有配置的行为和周期不变。新增 E 路径使用真实 S2 pair/S3 规约/S4 组和/S5 scale 阶段，不能在输入时算完结果再补延迟。profile 的类型/数量在构建配置中确定，每笔请求继续携带 datatype。
+
+配置入口拟与 [RTL 框架](verilog.md#6-分类型模块与组合配置建议) 共用 src/configs/dp/，当前 Config/CLI 尚未接入该 schema。保留现有配置的兼容入口，后续按组能力及实例数派生模式容量，不能仅把当前 k_fp16 改名就声称支持混合组合。
+
+数学 reference 与原始输入数据共用一份，按实际输入、模式 K 和 scale 关系计算精确数学结果；各 profile 的有限位宽架构期望、周期记录与内部 cutpoint 分别生成。禁止用 E 的新 trace 覆盖多精度 expected 作为绕过验证的方式。内部字段允许不同，先检查各自 RTL/CModel，再按数值坐标映射对照公共 S5/S6 边界及最终输出。数学 oracle 保持独立，不直接调用被测 CModel 的算术函数。
+
+测试入口按 profile 选择对应模块与观测适配，共用数据读取、事务协议、参考和结果统计；每个新 profile 独立记录覆盖及导出/验证证据，单一配置通过不代表整个设计族通过。

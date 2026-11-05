@@ -1,4 +1,4 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.5.5；修改时间：2026-11-05 14:34:46 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top.sv](../../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：单 DP、Verilog 主实现与冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.5.6；修改时间：2026-11-05 15:38:20 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top.sv](../../../verilog/systemverilog/top/dp_top.sv)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
@@ -79,3 +79,50 @@ Verilog 的 `lane_fraction` 使用 datatype 对常量进行选择，避免对运
 | 版本 | 时间（+08:00） | 修改 |
 | --- | --- | --- |
 | v1.4.2 | 2026-11-04 23:05:38 | 新增单 DP Verilog 实现和 SystemVerilog 对照映射，落实同步复位与 L8；增加标准 Verilog TB、快照和 Verilator 验证。数值合同不变。 |
+
+## 6. 分类型模块与组合配置建议
+
+以下是目标目录示意，尚未搬移现用 RTL 或建立这些模块。继续按 lane/group/top 分层，在存在实现差异的层内用 multi/e 区分，共用算术模块只保留一份：
+
+~~~text
+src/verilog/
+├── arithmetic/               # 共用固定功能算术库，沿用现有目录
+├── unpack/                   # 共用解码；必要的专用解码另有唯一模块名
+├── parameter/                # 共用格式常量与数值函数
+├── lane/
+│   ├── multi/                # 现有多精度 lane 及其专属 bank
+│   └── e/                    # E lane、pair 与局部 e2 融合
+├── group/
+│   ├── multi/                # 多精度 group
+│   └── e/                    # E group
+├── top/
+│   ├── dp_backend.v          # 拟抽出的公共 S6–S8 寄存及计算
+│   ├── dp_top.v              # 保持现有多精度对外入口
+│   └── dp_top_e.v            # E-only 薄装配入口；混合入口按需增加
+├── filelists/                # 每种组合有明确 top 和源清单
+└── systemverilog/            # 已冻结的历史参考
+~~~
+
+模块定义全局唯一，例如 E 新模块用 dp_lane_e/dp_group_e；现有多精度模块可保留 dp_lane/dp_group 名称。目录区分不允许两个同名 module 混编。算术库按参数实例化，例如两个前端共用 dp_sum_tree 的源码，但项数/位宽、实例和寄存归属分别明确。专用 E 解包不依赖整个多精度大模块保留所有格式通路；固定功能的格式解码、scale 和后端算术适合共用。
+
+建议新增 src/configs/dp/ 作为组合配置的单一来源；例如以下仅示意独立参数，不是现有命令已支持的 schema：
+
+~~~json
+{
+  "profile_id": "mixed_t4h8q16e64",
+  "groups": [
+    {"kind": "multi", "count": 2},
+    {"kind": "e", "count": 2}
+  ],
+  "local_w": 28,
+  "global_w": 40
+}
+~~~
+
+构建入口据此选择模块、顶层、静态参数和文件清单，CModel/测试读取同一 profile。datatype 仍逐笔输入，不通过运行时选择两套完整 DP 来实现 profile。前端模块数量与类型在 elaboration 时确定，未实例化的计算通路不进入该设计。
+
+公共后端当前尚未完整抽取：dp_global_align/dp_sum_tree/dp_fp32_round 已是组合模块，但 S6–S8 寄存器和相关控制仍在 dp_top 中。拟抽取的 dp_backend 必须同时承接这些寄存器、valid/last、特殊值与零符号规约；C 的 S1–S5 路径只保留一份。组边界仍保持原 S5 layout，经静态补零适配送入后端，不暗增周期。
+
+迁移建议先以原多精度配置抽取公共后端并回归到原有结果/周期，再增加 E 类型模块及 e64 profile，最后讨论混合组合。源清单、层级观察点与 DC 归属映射随真实代码迁移更新；本次仅记录框架，不执行重构或综合。
+
+各 profile 的 export ID、源指纹、参数、CModel 指纹与验证回执分别保存。共享模块修改后重验依赖它的活动 profile；SV 历史参考不加入同步维护。按实际实例统计 PPA，不能把源码复用当成跨并发流水级的物理算术复用。
