@@ -61,6 +61,12 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 8. 组合逻辑完整赋值，避免锁存器、组合环和多驱动；禁止以 `DontCare` 掩盖未实现功能。提交的模块必须具备完整可运行实现，未实现方案只放在 spec。
 9. 修改 Chisel 前读取 [.skill/chisel-design/SKILL.md](.skill/chisel-design/SKILL.md)。源码与对应 `src/spec/` 合同在同一批次更新。规格解释架构、位宽、共享资源、接口、周期和验收。
 
+## 2a. 手写 RTL 风格与流水寄存器
+
+设计、修改或审查维护中的 Verilog 前读取 [.skill/rtl-design/SKILL.md](.skill/rtl-design/SKILL.md)。用户于 2026-11-06 确认：每条声明只定义一个变量，端口逐行重复完整方向/类型/位宽，`parameter/localparam` 等同样拆开；这取代之前合并同类变量的排版约定。时钟保留 `clock`，复位采用**同步低有效 `rst_n`**；所有流水寄存器统一实例化参数化 DFF 模块，区分带同步复位的控制寄存器和无复位、带使能的数据寄存器。valid 每拍推进以传递气泡，payload 仅在有效时更新，不增加流水级数。
+
+本次先建立规范，现有高有效 `reset` 和功能模块内时序块尚待整批迁移；实施时同步接口 spec、TB、导出及 EDA 入口，重新验证，不将旧快照视为新规范已验收。冻结 SystemVerilog 不迁移，Chisel 默认端口约定保持原范围。
+
 ## 3. 面积、时序与功耗
 
 - 工作负载功耗的方案和实测流程见 [power-analysis](.skill/power-analysis/SKILL.md)。实际测量遵循当前任务的授权范围。

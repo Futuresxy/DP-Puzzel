@@ -41,17 +41,27 @@ dp_top                         单个 DP，C 传递/解包及 S6–S8
 
 ## 纯 Verilog 排版
 
-`*.v` 使用两空格缩进、LF 换行和 100 列目标行宽。共享一条端口声明的信号同排，例如 ``input wire [K_FP16*`DP_HALF_W-1:0] in_a,in_b,``。对含这类声明的端口列表，用 `verilog_format: off/on` 保留分组，其余代码由 Verible 格式化。
+遵循 [rtl-design skill](../../.skill/rtl-design/SKILL.md)。`*.v` 使用两空格缩进、LF 换行、100 列目标行宽，**每条声明只定义一个变量**。端口每行重复完整方向、类型和位宽；`wire/reg/parameter/localparam` 等也分别声明，取代此前同类变量合并的约定。
 
-从仓库根目录使用 Verible `v0.0-4298-g085eef05` 批量整理已跟踪的 `*.v` 文件。
+```verilog
+input wire in_a_valid,
+input wire in_b_valid,
+input wire in_c_valid,
+input wire [K_FP16*`DP_HALF_W-1:0] in_a,
+input wire [K_FP16*`DP_HALF_W-1:0] in_b,
+```
+
+先拆分声明，再用 Verible `v0.0-4298-g085eef05` 格式化本次涉及的维护文件。下面命令中的文件路径替换为本次修改的文件，不批量触及冻结 SV、历史快照或用户无关改动。formatter 不保证自动拆开多变量声明，不再用 `verilog_format: off/on` 保护旧式合并声明。
 
 ```sh
-git ls-files -z -- ':(glob)src/verilog/**/*.v' |
-  xargs -0 -r verible-verilog-format --inplace --failsafe_success=false \
-    --indentation_spaces=2 --wrap_spaces=2 --column_limit=100 --try_wrap_long_lines \
-    --formal_parameters_indentation=indent --port_declarations_indentation=indent \
-    --named_parameter_indentation=indent --named_port_indentation=indent
+verible-verilog-format --inplace --failsafe_success=false \
+  --indentation_spaces=2 --wrap_spaces=2 --column_limit=100 --try_wrap_long_lines \
+  --formal_parameters_indentation=indent --port_declarations_indentation=indent \
+  --named_parameter_indentation=indent --named_port_indentation=indent \
+  src/verilog/top/dp_top.v
 ```
+
+2026-11-06 已确认的新设计规则为**同步低有效 `rst_n`**和**参数化 DFF 模块统一承载流水寄存器**。控制复位、数据使能和气泡传播要求见 [寄存器合同](../../.skill/rtl-design/references/registers.md)。当前 RTL 仍是上述同步高有效 `reset`，本次只建立规范；源码、接口 spec、TB、导出和 EDA 入口尚待一起迁移并重新验证，不能将新规则视为现有实现状态。
 
 ## 验证
 
