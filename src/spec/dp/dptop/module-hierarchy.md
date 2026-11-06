@@ -1,4 +1,4 @@
-> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.6.1；修改时间：2026-11-06 12:54:42 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 模块层级、所有权与 S6 扩展点
 
@@ -64,6 +64,20 @@ CModel 应按同一模块边界提供 S1 解包、S2 MAX/产品、S3 移位、S4
 ## 7. 功能模块边界与源码映射
 
 [DP 接口](interface.md) 统一列出顶层信号、datatype 编码与内部同拍 token；[功能统计](../implementation/resource-accounting.md) 定义乘法、指数/MAX、移位、树、scale、解包和 LZD/norm/RNE 等逻辑模块 ID。后续各功能模块单独映射 Chisel、手写 RTL 和网表实例，统计区域明确拥有的寄存/mux，保留八级边界；当前已有 CModel 与 [手写 RTL 源码映射](../implementation/verilog.md)。S3 按 [移位器共享](../lane/shifter-sharing.md) 由输入 mux 驱动四个固定 W-bit 实例。
+
+### 7.1 当前 RTL 的阅读顺序（v1.6.1）
+
+功能模块描述完整计算步骤；流水级由 DFF 捕获边界决定，两者不要求一一对应。此次只整理组合边界和注释，不改变数值合同、同步低有效复位、L8 或 II=1。
+
+| 层级 | 多精度主路 | E 专用主路 | 保存位置 |
+| --- | --- | --- | --- |
+| lane 解包 | dp_lane_unpack / dp_operand_unpack | dp_lane_unpack_e | S1，分别由解包模块/E lane 保存 |
+| lane 产品 | dp_mantissa_bank、dp_exponent_bank | dp_mul_unsigned + dp_sum_tree(N=2) pair | S2 lane |
+| lane 局部规约 | dp_lane_align：E pair/幅值落位/RTZ/符号恢复 → dp_sum_tree | dp_sum_tree 四项规约 → dp_lane_e_shift 精确左移 | 主路 S3 叶/S4 和；E S3 和，左移结果进入 group S4 |
+| group | 两 lane 的 dp_sum_tree → abs → dp_scale_multiply/旁路 → dp_lzd | 两 lane 的 dp_sum_tree → abs；下一拍 scale/旁路/LZD | 主路 S5 token；E S4 幅值/符号、S5 token |
+| top | dp_global_align → dp_sum_tree → dp_fp32_round | 同一组公共组合模块 | top 分别保存 S6/S7/S8 |
+
+从 lane/group 源码中的“功能边界”和 `[Sx ...]` 注释开始阅读，再进入算术模块查看符号扩展、树增长、移位截断及 RNE。符号在幅值移位/scale 乘法旁路传递，进入补码树前恢复；LZD 只计数，不提前移动幅值。SIF 表区分静态补零增加的小数位容器和实际保留的有效精度。
 
 ## 8. 基本组与全局边界更新
 

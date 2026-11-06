@@ -14,6 +14,9 @@ module dp_rtz_shift #(
   output wire [W-1:0] out_magnitude
 );
 
+  // [幅值右移] W 是调用者的幅值窗口，符号在外部传递；移出低位直接丢弃。
+  // 先用完整移位量判断 >=W，再截取桶形移位控制位；否则大移位会回绕成小移位。
+  // 输出宽度与输入相同，模块不打拍；输出二进制点由调用者共同 anchor 定义。
   // Compare the full amount against W even if W cannot fit in SHIFT_W.
   // Only the barrel-control bits are shortened, after the saturation decision.
   localparam integer WINDOW_COUNT_W = ($clog2(W) < 1) ? 1 : $clog2(W);

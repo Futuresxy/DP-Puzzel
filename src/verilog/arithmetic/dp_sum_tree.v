@@ -15,6 +15,9 @@ module dp_sum_tree #(
 );
   genvar pair_index;
 
+  // [完整组合树] 输入第 k 项位于 [k*W+:W]，每项都是含符号的 W 位补码。
+  // N>=1、W>=1。每层相邻两项先符号扩展到 W+1 再相加；无需时钟/使能。
+  // 调用者决定在哪一级 DFF 保存输出；同一个模块用于 pair、lane、group 和 top。
   generate
     if (N == 1) begin : g_leaf
       assign out_sum = $signed(in_values);
@@ -33,6 +36,8 @@ module dp_sum_tree #(
             {pair_right[W-1], pair_right}
           );
         end else begin : g_odd
+          // 奇数最后一项只符号扩展带入下一层，不能丢掉或零扩展负数。
+          // 递归每次将项数降到 ceil(N/2)，因此是平衡树，不是 N 项串行加法。
           assign next_values[pair_index*(W+1)+:W+1] = {pair_left[W-1], pair_left};
         end
       end

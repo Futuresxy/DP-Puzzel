@@ -12,6 +12,10 @@
 // ------------ | - | -- | ----
 // MXFP4        | 1 | 10 | M-10
 // NVFP4/HiF4   | 1 | 12 | M-12
+// 阅读顺序 / 功能边界：
+// 数据主路：两个 E lane -> S4 两项树/abs -> S5 scale 或旁路/LZD -> token。
+// 旁带：S1 scale 解包，S2 系数积/指数和，S3 anchor 预计算，按级延迟到 S5。
+// E lane 已将 e2 融入 F4 coefficient；这里不需要 lane 间指数 MAX 或右对齐。
 module dp_group_e #(
   parameter integer LOCAL_W = `DP_DEFAULT_LOCAL_W,
   parameter integer MAG_W = LOCAL_W + 3,
@@ -54,6 +58,8 @@ module dp_group_e #(
   wire [`DP_LANES-1:0] lane_group_all_negative;
   wire [`DP_LANES-1:0] lane_group_valid;
   genvar lane_index;
+  // [lane 分发] 每 lane 接收连续 32 位 A/B 切片和对应 HiF4 e1/e2。
+  // 同一 group 的 scale 在父层只解包一份 A 和一份 B，由两个 lane 的合并结果共用。
   generate
     for (lane_index = 0; lane_index < `DP_LANES; lane_index = lane_index + 1) begin : g_lane
       dp_lane_e u_lane (
@@ -94,6 +100,8 @@ module dp_group_e #(
   wire [`DP_PRODUCT_EXP_W-1:0] scale_exp_s2_q;
   wire signed [ANCHOR_W-1:0] anchor_s3_q;
   wire signed [ANCHOR_W-1:0] anchor_s4_q;
+  // [scale 旁路准备：S1 -> S2] 解包为统一无符号 I1F3 尾数与 biased 指数。
+  // S2 尾数相乘形成 I2F6 系数，同时指数相加；NaN 分类独立传递，不靠零幅值推断。
   dp_scale_unpack u_scale_unpack_a (
     .in_data(in_scale_a),
     .in_datatype(in_scale_datatype),
@@ -116,6 +124,8 @@ module dp_group_e #(
     .in_b(scale_b_magnitude_s1_q),
     .out_product(coefficient_d)
   );
+  // [S4 组规约] 两个已经移位到 F4 的 signed14 lane 和，用一层树增长到 signed15。
+  // 取绝对值后保存 magnitude_s4_q 和 negative_s4_q，S5 再做 scale。
   wire signed [GROUP_W-1:0] group_sum;
   dp_sum_tree #(
     .N(`DP_LANES),
@@ -136,6 +146,8 @@ module dp_group_e #(
   wire [COEFF_W-1:0] scale_coefficient;
   assign scale_coefficient = inject_scale ? coeff_s4_q : 0;
   wire [PRODUCT_W-1:0] scale_product;
+  // [S5 scale 注入] 仅 NVFP4/HiF4 启用 14x8 无符号乘法，22 位输出完整保留。
+  // 旁路和乘法结果都补零放入同宽 S5 magnitude 容器；MX 的 2^scale 由 anchor 表达。
   dp_scale_multiply u_group_scale_mul (
     .in_magnitude(scale_magnitude),
     .in_coefficient(scale_coefficient),
@@ -146,6 +158,8 @@ module dp_group_e #(
     {scale_product, {(MAG_W - PRODUCT_W) {1'b0}}} : {magnitude_s4_q, {(MAG_W - COMPACT_W) {1'b0}}};
   wire [$clog2(MAG_W+1)-1:0] leading_d;
   wire magnitude_active;
+  // [S5 LZD] 只检测补零后幅值的 leading-zero count，不移动 magnitude。
+  // S6 使用 A_raw-z 选全局 MAX，再做一次合并移位，避免这里先移一次再右移一次。
   dp_lzd #(
     .W(MAG_W)
   ) u_group_leading_detect (
@@ -154,10 +168,15 @@ module dp_group_e #(
     .out_active(magnitude_active)
   );
   wire signed [31:0] anchor_work;
+  // [S3 anchor 预计算] e2 已融入 lane 数值，不在此重复加指数。
+  // alpha=scale_exp_sum-2*bias；F=M-10(MX) 或 M-12(NV/HiF)，所以偏移为 9 或 11。
+  // 此坐标提前算出并延迟到 S5，与 magnitude/符号属于同一笔数据。
   // alpha - F + M-1; F=M-10 (MX), M-12 (NV/HiF).
   assign anchor_work = {{(32 - `DP_PRODUCT_EXP_W) {1'b0}}, scale_exp_s2_q} - 2 * `DP_SCALE_BIAS +
     (type_s2_q == `DP_DT_MXFP4 ? 9 : 11);
 
+  // [流水保存] valid_q[0..3] 是 S1..S4，out_valid 是 S5；scale/类型随数据同行。
+  // DFF 是捕获边界；上方树、乘法器和 LZD 全是组合模块，不暗含额外一级。
   // S0 -> S1: valid.
   dp_lib_DFFRU #(
     .WIDTH(1)

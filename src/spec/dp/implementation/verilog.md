@@ -1,8 +1,8 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.6.1；修改时间：2026-11-06 12:54:42 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
-本页记录 v1.6 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
+本页记录 v1.6.1 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
 
 ## 1. 文件组织与实现边界
 
@@ -20,6 +20,8 @@
 | 乘法叶 | [dp_mul_unsigned.v](../../../verilog/arithmetic/dp_mul_unsigned.v) | 组合；HH/HL/LH/LL 和 scale-pair 分实例 |
 | 指数共享 bank / 加法叶 | [dp_exponent_bank.v](../../../verilog/lane/dp_exponent_bank.v)、[dp_exponent_add.v](../../../verilog/arithmetic/dp_exponent_add.v) | 组合；两套宽/窄加法器，E 共用一份 e2 和 |
 | MAX | [dp_max_tree.v](../../../verilog/arithmetic/dp_max_tree.v) | 组合；lane/group/global 分别实例化 |
+| S3 完整局部对齐 | [dp_lane_align.v](../../../verilog/lane/dp_lane_align.v) | E pair、模式落位、四路 RTZ、符号恢复；S3 DFF 由 lane 持有 |
+| E lane 坐标左移 | [dp_lane_e_shift.v](../../../verilog/lane/dp_lane_e_shift.v) | S3 和先扩展再左移；组和由 group 的 S4 DFF 捕获 |
 | 局部幅值右移 | [dp_rtz_shift.v](../../../verilog/arithmetic/dp_rtz_shift.v) | 组合；每 lane 四路 |
 | SOP 规约 | [dp_sum_tree.v](../../../verilog/arithmetic/dp_sum_tree.v) | 组合；lane/group/top 三个层级分别注册 |
 | scale 注入 | [dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v) | 组合；公共 14×8 无符号，输出 22 位幅值 |
@@ -28,7 +30,7 @@
 | 双向幅值移位 | [dp_bidir_shift.v](../../../verilog/arithmetic/dp_bidir_shift.v) | 组合；方向 bit reversal + 一个右移核心 |
 | FP32 输出 | [dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v) | 组合；S8 结果由 top 注册 |
 
-各路径命名可用于层级统计。E pair、符号恢复、组 abs、特殊摘要与 transport 寄存器仍属于直接拥有它们的 lane/group/top；不能把它们在父子统计中重复计数。没有为了统计添加 `dont_touch`、时钟域或额外寄存级。v1.5 旧快照的 28/40 同工况面积/时序见 [E64 DC 对比](../../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)，v1.6 新快照尚未重跑 DC/功耗，旧结果不授予新 RTL。
+各路径命名可用于层级统计。多精度 S3 的 E pair/符号恢复归入 dp_lane_align，E 的 S2 pair 复用 N=2 的 dp_sum_tree；组 abs、特殊摘要与 transport 寄存器仍属于直接拥有它们的 lane/group/top；不能把它们在父子统计中重复计数。没有为了统计添加 `dont_touch`、时钟域或额外寄存级。v1.5 旧快照的 28/40 同工况面积/时序见 [E64 DC 对比](../../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)，v1.6 新快照尚未重跑 DC/功耗，旧结果不授予新 RTL。
 
 S1 每侧实际复用两份 E10/M16/S4 寄存器，按 T/H/Q/E/INT8 打包和展开；没有为各格式单独保存一套宽尾数。分类旁带独立，TF32 只启用第一个 atom。M/E/S 布局也纳入 CModel 断点比对。
 
@@ -135,7 +137,7 @@ src/configs/dp/e64.json 已用于 CModel 的兼容参数+frontend 选择；RTL �
 
 ## 7. E-only 实现与验收
 
-顶层 [dp_top_e.v](../../../verilog/top/dp_top_e.v)，显式清单 [files_e.f](../../../verilog/files_e.f) 仅编译 15 个纯 Verilog 源，不含多精度 lane/group/top 或历史 SV。默认 E64=4×E16=8×E8；参数及外部请求接口沿用 K_FP16/LOCAL_W/GLOBAL_W，K_FP16 在此仅为兼容容量索引，4/8/16 对应 E16/E32/E64。只接受 MXFP4/NVFP4/HiF4 及其合法 scale、FP32 C；其他元组拒收且不阻塞在途输出。
+顶层 [dp_top_e.v](../../../verilog/top/dp_top_e.v)，显式清单 [files_e.f](../../../verilog/files_e.f) 只编译显式列出的纯 Verilog 源，不含多精度 lane/group/top 或历史 SV。默认 E64=4×E16=8×E8；参数及外部请求接口沿用 K_FP16/LOCAL_W/GLOBAL_W，K_FP16 在此仅为兼容容量索引，4/8/16 对应 E16/E32/E64。只接受 MXFP4/NVFP4/HiF4 及其合法 scale、FP32 C；其他元组拒收且不阻塞在途输出。
 
 | 模块 | 计算/寄存边界 |
 | --- | --- |

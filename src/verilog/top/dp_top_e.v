@@ -12,6 +12,11 @@
 // ------------------ | - | ---- | -----------
 // All floating modes | 1 | 1+L  | GLOBAL_W-2
 // S8 encodes FP32 with sign/exponent/fraction widths 1/8/23.
+// 阅读顺序 / 功能边界：
+// 前端 group 完成 S1-S5；C raw 经 S1-S4 透传，到 S5 才解包为同拍 token。
+// S6 u_global_alignment -> S7 u_final_sop_tree -> S8 u_fp32_output/特殊值选择。
+// 下面先列组合功能区，再列 ff_sN_sM_*；寄存器位置而非源码行序决定流水。
+// 所有 group 同步接收一个 req_fire，外部仅一次原子 A/B/C 握手，无输出反压。
 module dp_top_e #(
   parameter integer K_FP16   = `DP_DEFAULT_K,
   parameter integer LOCAL_W  = `DP_DEFAULT_LOCAL_W,
@@ -55,6 +60,8 @@ module dp_top_e #(
   localparam integer SUM_W = GLOBAL_W + $clog2(N);
   localparam integer ANCHOR_W = anchor_width(GLOBAL_MAG_W);
   localparam integer Z_W = $clog2(GLOBAL_MAG_W + 1);
+  // [输入协议] 只有三路 valid 同时有效、datatype/scale 元组合法且 rst_n=1 才接收。
+  // 缺一路只注入 bubble，不冻结已接收的事务；ready 表示本拍三路共同接收。
   wire tuple_legal;
   assign tuple_legal = (in_a_datatype == `DP_DT_MXFP4 | in_a_datatype == `DP_DT_NVFP4 |
                         in_a_datatype == `DP_DT_HIF4) &
@@ -74,6 +81,9 @@ module dp_top_e #(
   assign out_valid = valid_q[`DP_BASE_LATENCY-1];
   assign out_last = last_q[`DP_BASE_LATENCY-1] & out_valid;
   assign out_d_datatype = 1'b0;
+  // [S1-S5 group 前端] G=K_FP16/4，每 group 消费两个连续 32 位 lane。
+  // K16 时为四个 group；source 槽 0..G-1 放组结果，槽 G 放 C。
+  // 低位补零将各来源幅值放入 GLOBAL_MAG_W；不是新增有效精度或动态移位。
   wire [N*GLOBAL_MAG_W-1:0] source_magnitude;
   wire [N*ANCHOR_W-1:0] source_anchor;
   wire [N*Z_W-1:0] source_z;
@@ -132,6 +142,8 @@ module dp_top_e #(
   wire [`DP_FP32_W-1:0] c_magnitude_q;
   wire signed [ANCHOR_W-1:0] c_anchor_q;
   wire [$clog2(`DP_FP32_W+1)-1:0] c_z_q;
+  // [S5 C 解包] 使用 c_raw_q[3]，而非当前 in_c，保证与五级前端同请求对齐。
+  // C 的符号/幅值/anchor/z/特殊值在 S5 独立保存，随后与所有 group 一起参加 S6。
   dp_c_unpack #(
     .ANCHOR_W(ANCHOR_W)
   ) u_c_unpack (
@@ -161,6 +173,8 @@ module dp_top_e #(
   wire [`DP_SPECIAL_W-1:0] special_d;
   wire [`DP_SPECIAL_W-1:0] special_s6_q;
   wire [`DP_SPECIAL_W-1:0] special_s7_q;
+  // [S6 全局对齐] 完整模块内完成有效源 MAX、净移位、恢复补码与特殊值归约。
+  // leaves_d/common_d 等在 S6 DFF 同时捕获；不能将新 anchor 配给上一拍叶子。
   dp_global_align #(
     .N(N),
     .MAG_W(GLOBAL_MAG_W),
@@ -180,6 +194,8 @@ module dp_top_e #(
   );
   wire signed [SUM_W-1:0] sum_d;
   wire signed [SUM_W-1:0] sum_q;
+  // [S7 最终累加树] G 个组结果加 C，共 G+1 项；K4/K8/K16 对应 2/3/5 项。
+  // 平衡树保留 ceil(log2(G+1)) 个增长位，小数位数及 common anchor 不改变。
   dp_sum_tree #(
     .N(N),
     .W(GLOBAL_W)
@@ -188,6 +204,8 @@ module dp_top_e #(
     .out_sum  (sum_d)
   );
   wire [`DP_FP32_W-1:0] finite_result;
+  // [S8 有限结果转换] 对 S7 总和做 abs/LZD/归一化和唯一一次 FP32 RNE。
+  // NaN/invalid/Inf 的最终选择在输出 DFF 输入完成，不在这里伪装成普通有限值。
   dp_fp32_round #(
     .SUM_W(SUM_W),
     .ANCHOR_W(ANCHOR_W),
@@ -199,6 +217,9 @@ module dp_top_e #(
     .out_bits(finite_result)
   );
 
+  // [流水保存与输出] valid/last 每拍推进；数据仅在前一级 valid 有效时更新。
+  // 同步低有效 rst_n 清除控制并取消在途事务；无效 payload 可保持旧值。
+  // S1 在接收沿 n 捕获，S8 在 n+7 更新，外部在 n+8 沿前观察，L8/II=1。
   // S0 -> S1: valid.
   dp_lib_DFFRU #(
     .WIDTH(1)

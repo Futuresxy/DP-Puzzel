@@ -1,6 +1,6 @@
 # 多精度 DP · 手写 RTL
 
-实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **spec v1.5 / 实现映射 v1.5.1**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
+实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **架构 v1.6 / 实现映射 v1.6.1**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
 
 | 实现 | 编译清单 | 顶层 |
 | --- | --- | --- |
@@ -21,18 +21,18 @@
 `GROUPS` 等派生参数不可独立改变。组宽、树深、自然增长位、LZD 计数与 anchor 宽度从格式常量、项数和窗口推导。固定编码字段与共享粒度集中在 [dp_defs.vh](parameter/dp_defs.vh)，数值坐标公式在 [dp_functions.vh](parameter/dp_functions.vh)。这些是架构常量，不是允许任意改变输入编码的旋钮。
 
 ```text
-dp_top                         单个 DP，C 传递/解包及 S6–S8
-├── g_group[g].group_unit       T2H4Q8E16，scale 与共同 MAX，S5
-│   └── g_lane[l].lane          T1H2Q4E8，S1–S4
-│       ├── operand_unpack_a/b 每侧两份 E10/M16/S4 物理寄存布局
-│       ├── mantissa_mul_bank   两套 HH/HL/LH/LL
-│       ├── exponent_add       两套 8-bit/5-bit 指数加法器
-│       ├── g_align[j]          四个 LOCAL_W 固定移位器
-│       └── lane_sop_tree       平衡有符号规约
-├── c_unpack                    S5 独立一份
-├── global_alignment            G+1 个双向移位器
-├── final_sop_tree               G+1 项，自然增长
-└── fp32_output                 RNE、渐进下溢与 FP32 打包
+dp_top                              单个 DP，C 传递/解包及 S6–S8
+├── g_group[g].u_group_unit               T2H4Q8E16，scale 与共同 MAX，S5
+│   └── g_lane[l].u_lane             T1H2Q4E8，S1–S4
+│       ├── u_operand_unpack_a/b     每侧两份 E10/M16/S4 物理寄存布局
+│       ├── u_mantissa_mul_bank      两套 HH/HL/LH/LL
+│       ├── u_exponent_add           两套宽/窄指数加法器
+│       ├── u_local_alignment       完整 S3：E pair/落位/四路 RTZ/符号恢复
+│       └── u_lane_sop_tree          S4 平衡有符号规约
+├── u_c_unpack                      S5 独立一份
+├── u_global_alignment              S6 完整 MAX/双向移位/符号恢复
+├── u_final_sop_tree                 S7 G+1 项，自然增长
+└── u_fp32_output                   S8 RNE、渐进下溢与 FP32 打包
 ```
 
 每个 module 单独同名文件。组合模块不暗加寄存器；S1 寄存器由 lane 内 `dp_lane_unpack` 持有，其余流水由 lane、group、top 三层持有。同步低有效 `rst_n` 清除有效控制并取消在途请求；数据寄存器以有效使能保持，不进行全数据复位。握手、阶段映射、源文件和统计归属见 [RTL 实现合同](../spec/dp/implementation/verilog.md)。
@@ -104,3 +104,5 @@ DC 接入使用 [统一门禁与流程](../../hw/dc_syn/README.md)。Verilog 的
 [完整测试结果](../../test/results/e64-v1.5.8.md)按用户要求长期保留；原始输入/输出、断点、编译与仿真日志放在显式 run，快照放在 hw/rtl，网表保留在 DC run，不提交大型产物。
 
 E 元素解包独立位于 [unpack/dp_lane_unpack_e.v](unpack/dp_lane_unpack_e.v)，每份组合模块处理一侧32位操作数、HiF4 e1并输出幅值/符号；S1 寄存器继续在 dp_lane_e，e2 控制也由 lane 持有，不增加延迟。显式 files_e.f 包含15个 `.v`。多精度 dp_lane_unpack 保持原样。模块化后的新快照需重新验证，历史 DC 测量仅属于原快照。
+
+主要计算注释与当前模块映射见 [功能分区](../spec/dp/dptop/module-hierarchy.md#71-当前-rtl-的阅读顺序v161)。E lane 使用 `g_pair[].u_pair_sum`、`u_lane_sop_tree` 和独立 `u_lane_coordinate_shift`；S2/S3 保存规约结果，S4 左移与组和由 group 捕获。完整局部对齐见 [dp_lane_align.v](lane/dp_lane_align.v)，E 坐标融合见 [dp_lane_e_shift.v](lane/dp_lane_e_shift.v)。

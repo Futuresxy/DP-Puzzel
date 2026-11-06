@@ -14,6 +14,9 @@ module dp_lzd #(
   output wire out_active
 );
 
+  // [组合 LZD] 优先检查高半区；高半区全零时，计数=高半区宽度+低半区计数。
+  // 全零输出 active=0/count=0 是占位约定，调用者必须屏蔽该源，不能当成实际指数。
+  // 此模块只计数，不做归一化移位；支持奇数 W，符号不包含在输入幅值中。
   generate
     if (W == 1) begin : g_bit
       assign out_count  = 0;

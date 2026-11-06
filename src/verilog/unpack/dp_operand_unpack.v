@@ -21,6 +21,9 @@ module dp_operand_unpack #(
 );
 
   `include "dp_functions.vh"
+  // [组合元素译码] INDEX 为 elaboration 常量；无效元素输出零 token。
+  // 普通浮点分离符号/指数域/fraction 域，处理 hidden bit 与特殊分类；Q 重编码到共用坐标。
+  // E/HiF4 是定点幅值编码，HiF4 e1 融入幅值，e2 仍作为独立指数字段输出。
   wire is_tf32;
   wire is_fp16;
   wire is_bf16;

@@ -21,6 +21,10 @@
 // HiF4               | 1 | 10 | P-5
 // INT8               | 1 | 18 | P-13
 // LZD reads the listed I/F as unsigned magnitude (S=0).
+// 阅读顺序 / 功能边界：
+// 数据主路：两个多精度 lane -> S5 两项树/abs -> scale 或旁路/LZD -> token。
+// 旁带：S1 scale 解包，S2 系数积/指数和，再延迟到 S5；S2 公共 MAX 回送两 lane。
+// 两个 lane 共享 valid 和时钟，没有独立握手；MAX 只产生共同坐标，不等待 lane 结果。
 module dp_group #(
   parameter integer LOCAL_W = `DP_DEFAULT_LOCAL_W,
   parameter integer LANE_SOP_W = LOCAL_W + 1 + $clog2(`DP_Q_LANES),
@@ -67,6 +71,8 @@ module dp_group #(
   wire [`DP_PRODUCT_EXP_W-1:0] lane_group_anchor[0:`DP_LANES-1];
   wire signed [`DP_PRODUCT_EXP_W:0] exponent_max_lane_anchor;
   wire max_active;
+  // [lane 分发] 每 lane 接收连续 32 位 A/B 切片和对应 HiF4 e1/e2。
+  // 同一 group 的 scale 在父层只解包一份 A 和一份 B，由两个 lane 的合并结果共用。
   generate
     for (lane_index = 0; lane_index < `DP_LANES; lane_index = lane_index + 1) begin : g_lane
       wire [`DP_PRODUCT_EXP_W-1:0] candidate;
@@ -99,6 +105,8 @@ module dp_group #(
       assign lane_group_special[lane_index*`DP_SPECIAL_W+:`DP_SPECIAL_W] = special_value;
     end
   endgenerate
+  // [S2 公共 MAX] 从两 lane 的有限非零候选选同一个原始指数和。
+  // 该组合值在各 lane 的 S2 DFF 捕获，与产品同时到达；并非跨事务反馈环。
   dp_max_tree #(
     .N(`DP_LANES),
     .W(`DP_PRODUCT_EXP_W + 1)
@@ -123,6 +131,8 @@ module dp_group #(
   wire [COEFF_W-1:0] coeff_q[1:3];
   wire [`DP_PRODUCT_EXP_W-1:0] scale_exp_q[1:3];
   wire scale_nan_q[1:3];
+  // [scale 旁路准备：S1 -> S2] 解包为统一无符号 I1F3 尾数与 biased 指数。
+  // S2 尾数相乘形成 I2F6 系数，同时指数相加；NaN 分类独立传递，不靠零幅值推断。
   dp_scale_unpack u_scale_unpack_a (
     .in_data(in_scale_a),
     .in_datatype(in_scale_datatype),
@@ -145,6 +155,8 @@ module dp_group #(
     .in_b(scale_b_magnitude_q),
     .out_product(coeff_d)
   );
+  // [S5 组规约] 两个 S4 lane 和已有相同 anchor/F；用一层树扩展一位后相加。
+  // 先完成两 lane 的抵消再取绝对值，后续 14x8 乘法只处理幅值，符号独立旁传。
   wire signed [GROUP_W-1:0] group_sum;
   dp_sum_tree #(
     .N(`DP_LANES),
@@ -166,6 +178,8 @@ module dp_group #(
   wire [COEFF_W-1:0] compact_coeff;
   assign compact_coeff = inject_scale ? coeff_q[3] : 0;
   wire [SCALE_PRODUCT_W-1:0] scale_product;
+  // [S5 scale 注入] 仅 NVFP4/HiF4 启用 14x8 无符号乘法，22 位输出完整保留。
+  // 旁路和乘法结果都补零放入同宽 S5 magnitude 容器；MX 的 2^scale 由 anchor 表达。
   dp_scale_multiply u_group_scale_mul (
     .in_magnitude(compact_mag),
     .in_coefficient(compact_coeff),
@@ -178,6 +192,8 @@ module dp_group #(
   assign negative_d = group_negative | (group_sum == 0 & (&lane_group_all_negative));
   wire [$clog2(MAG_W+1)-1:0] z_d;
   wire magnitude_active;
+  // [S5 LZD] 只检测补零后幅值的 leading-zero count，不移动 magnitude。
+  // S6 使用 A_raw-z 选全局 MAX，再做一次合并移位，避免这里先移一次再右移一次。
   dp_lzd #(
     .W(MAG_W)
   ) u_group_leading_detect (
@@ -203,6 +219,9 @@ module dp_group #(
   assign special_d[`DP_SP_INVALID] = merged_special[`DP_SP_INVALID] | zero_scale_infinity;
   assign special_d[`DP_SP_POS_INF] = merged_special[`DP_SP_POS_INF] & ~zero_scale_infinity;
   assign special_d[`DP_SP_NEG_INF] = merged_special[`DP_SP_NEG_INF] & ~zero_scale_infinity;
+  // [S5 指数坐标] A_raw = 元素公共指数 - 双 bias + scale 实指数 - F + (M-1)。
+  // group_fraction 已计入系数乘法与补零；S6 不能再次扣除同一小数位数。
+  // 零、特殊值、INT8 的 anchor 为占位零，不参与浮点 MAX。
   assign anchor_work = {{(32 - `DP_PRODUCT_EXP_W) {1'b0}}, lane_group_anchor[0]} - 2 * element_bias(
     type_q[3]
   ) - group_fraction(
@@ -213,6 +232,8 @@ module dp_group #(
   assign anchor_d = (~magnitude_active | (special_d != 0) | (type_q[3] == `DP_DT_INT8)) ? 0 :
     anchor_work[ANCHOR_W-1:0];
 
+  // [流水保存] valid_q[0..3] 是 S1..S4，out_valid 是 S5；scale/类型随数据同行。
+  // DFF 是捕获边界；上方树、乘法器和 LZD 全是组合模块，不暗含额外一级。
   // S0 -> S1: valid.
   dp_lib_DFFRU #(
     .WIDTH(1)

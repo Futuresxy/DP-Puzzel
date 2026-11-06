@@ -19,6 +19,8 @@ module dp_c_unpack #(
   output wire [`DP_SPECIAL_W-1:0] out_special
 );
 
+  // [S5 C token] FP32 分离符号与 24 位有效数后低补零到 M32；INT32 取完整绝对值。
+  // 浮点 subnormal 使用有效指数 1-bias；NaN/Inf 单独分类；零 anchor 为占位值。
   localparam signed [ANCHOR_W-1:0] EXPONENT_BIAS = `DP_FP32_BIAS;
   wire [`DP_FP32_E-1:0] exponent_field;
   wire [`DP_FP32_F-1:0] fraction_field;

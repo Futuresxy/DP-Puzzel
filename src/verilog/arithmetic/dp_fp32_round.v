@@ -22,6 +22,8 @@ module dp_fp32_round #(
   `include "dp_functions.vh"
   localparam integer COUNT_W = $clog2(SUM_W + 1);
   localparam integer ROUND_W = SUM_W + 1;
+  // [S8 符号/幅值] 普通负数取 abs；精确零使用 S7 传入的 negative_zero 旁带。
+  // SUM_W 包含规约增长位；本模块不处理 NaN/Inf 输入，特殊路径由 top 选择。
   wire sign_value;
   assign sign_value = in_sum[SUM_W-1] | (in_sum == 0 & in_negative_zero);
   wire [SUM_W-1:0] magnitude;
@@ -56,6 +58,8 @@ module dp_fp32_round #(
   wire normal_result;
   wire [`DP_FP32_W-1:0] finite_bits;
   genvar bit_index;
+  // [S8 规格化坐标] LSB 指数=anchor-(GLOBAL_MAG_W-1)，再加最高有效位索引。
+  // 正规数对齐到 24 位有效数；非正规数固定对齐到 FP32 的 2^-149 坐标。
   assign highest_bit_index = SUM_W - 1 - {{(32 - COUNT_W) {1'b0}}, leading};
   assign lsb_value = $signed({in_anchor[ANCHOR_W-1], in_anchor}) - WINDOW_OFFSET;
   assign exponent_value = lsb_value + $signed(highest_bit_index[EXP_CALC_W-1:0]);
@@ -66,6 +70,8 @@ module dp_fp32_round #(
   );
   assign shifted_magnitude = shift_value <= 0 ?
     {1'b0, magnitude} << (-shift_value) : {1'b0, magnitude} >> shift_value;
+  // [RNE 决策] guard 是首个丢弃位，sticky 是更低位 OR；恰好半 ULP 时看保留 LSB。
+  // 只有右移才可能进位；左移是补零，不制造舍入误差。
   generate
     for (bit_index = 0; bit_index < SUM_W; bit_index = bit_index + 1) begin : g_round_bits
       assign guard_candidates[bit_index]  = magnitude[bit_index] & (bit_index == shift_value - 1);
@@ -75,6 +81,8 @@ module dp_fp32_round #(
   assign round_increment = (shift_value > 0) & (|guard_candidates) &
     ((|sticky_candidates) | shifted_magnitude[0]);
   assign rounded = shifted_magnitude + {{(ROUND_W - 1) {1'b0}}, round_increment};
+  // [进位/打包] 24 位尾数舍入溢出时右规一位并增加指数；超出最大指数输出 Inf。
+  // 非正规数舍入到最小正规数由位模式自然过渡；正负号与幅值最后合并。
   assign normalized = (normal_result & rounded[`DP_FP32_M]) ? rounded >> 1 : rounded;
   assign exponent_after_carry = exponent_value +
     {{(EXP_CALC_W - 1) {1'b0}}, (normal_result & rounded[`DP_FP32_M])};

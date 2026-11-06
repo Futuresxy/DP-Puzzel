@@ -36,6 +36,8 @@ module dp_global_align #(
   wire any_active;
   wire [`DP_SPECIAL_W-1:0] special_comb;
   assign out_special = special_comb;
+  // [S6 特殊旁带] 所有源分类归约；正负 Inf 同现置 invalid。
+  // 特殊值不进入数值 MAX/移位，最终输出仍依旁带在 S8 选择，不能被零幅值屏蔽。
   wire [N-1:0] nan_sources;
   wire [N-1:0] invalid_sources;
   wire [N-1:0] positive_inf_sources;
@@ -58,6 +60,8 @@ module dp_global_align #(
   assign special_comb[`DP_SP_NEG_INF] = |negative_inf_sources;
   assign special_comb[`DP_SP_INVALID] = (|invalid_sources) |
     ((|positive_inf_sources) & (|negative_inf_sources));
+  // [S6 共同坐标] 对有限非零源计算 e=A_raw-z，并取 signed E_max。
+  // 输入幅值已由 top 静态补零到共同 MAG_W；符号独立，C 与 group 同等参与。
   dp_max_tree #(
     .N(N),
     .W(ANCHOR_W)
@@ -75,6 +79,8 @@ module dp_global_align #(
       assign leading = in_z[source_index*Z_W+:Z_W];
       wire [MAG_W-1:0] magnitude;
       assign magnitude = in_magnitude[source_index*MAG_W+:MAG_W];
+      // [净移位] d=E_max-(A_raw-z)，所以 net=z-d=A_raw-E_max。
+      // 一次双向移位同时完成规格化和组间对齐；NET_W 多一位防止有符号差溢出。
       wire signed [NET_W-1:0] net_shift;
       assign net_shift = $signed(
         {raw_anchor[ANCHOR_W-1], raw_anchor}
@@ -99,6 +105,8 @@ module dp_global_align #(
         .in_net(net_shift),
         .out_magnitude(shifted)
       );
+      // [恢复补码] 幅值移位结束后再加符号位并取负，供 S7 补码累加树使用。
+      // 负零单独保留；仅当所有叶子都为负零且总和为零时，最终结果选择负零。
       assign out_leaves[source_index*(MAG_W+1)+:MAG_W+1] = in_negative[source_index] ? -$signed(
         {1'b0, result_magnitude}
       ) : $signed(

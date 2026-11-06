@@ -16,6 +16,9 @@ module dp_lane_unpack (
   input wire in_e2,
   output wire [`DP_E_LANES*`DP_NUM_W-1:0] out_numbers
 );
+  // [S1 固定布局] 每侧两个 atom，每 atom 复用 M16/E10/S4；class/signaling 另存。
+  // 先按当前 datatype 打包到容器，再由 DFF 保存；读端按已寄存 datatype 展开。
+  // 不能用当前 in_datatype 解读旧寄存器，否则连续换型会造成字段错位。
   localparam integer ATOM_E = 2 * `DP_Q_EXP_W;
   localparam integer ATOM_S = `DP_E_LANES / `DP_LANES;
   wire [`DP_E_LANES*`DP_NUM_W-1:0] decoded;
@@ -166,6 +169,7 @@ module dp_lane_unpack (
     for (
       element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
     ) begin : g_expand
+      // S1 出口展开只增加连线视图，不为各格式复制寄存器。
       wire [`DP_NUM_W-1:0] h_number;
       wire [`DP_NUM_W-1:0] q_number;
       wire [`DP_NUM_W-1:0] e_number;

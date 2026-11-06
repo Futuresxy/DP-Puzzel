@@ -9,6 +9,8 @@ module dp_exponent_bank (
   input wire [`DP_E_LANES*`DP_EXP_W-1:0] in_b,
   output wire [`DP_E_LANES*`DP_PRODUCT_EXP_W-1:0] out_exponents
 );
+  // [S2 指数路径] 和尾数 bank 并行工作：T/H 使用宽和，Q 使用宽/窄两路。
+  // HiF4 只需公共 e2 和；MX/NV 元素是定点，指数为零。MAX 不依赖乘法结果数值。
   wire [`DP_PRODUCT_EXP_W-1:0] wide_sum[0:`DP_MUL_BANKS-1];
   wire [`DP_Q_EXP_W:0] narrow_sum[0:`DP_MUL_BANKS-1];
   genvar bank_index;

@@ -11,6 +11,9 @@ module dp_max_tree #(
   output wire out_active
 );
 
+  // [带活动掩码的组合 MAX] 只比较 in_active 标记的有符号坐标。
+  // 子树都无有效项时输出 active=0/max=0；占位零不能压过合法的负指数。
+  // 左右递归减少比较深度；S2/S6 分别由父模块选择捕获边界。
   generate
     if (N == 1) begin : g_leaf
       assign out_active = in_active[0];

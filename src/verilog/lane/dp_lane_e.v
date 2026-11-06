@@ -8,6 +8,10 @@
 // MXFP4/NVFP4   | 0       | 3 | 1 | 0         | 6 | 2 | 1      | 7 | 2 | 1      | 9 | 2
 // HiF4 (e1 in)  | 0       | 2 | 2 | 0         | 4 | 4 | 1      | 5 | 4 | 1      | 7 | 4
 // All E after S4 lane shift: TC S1I9F4, 14 bits. No exponent MAX/right shifter.
+// 阅读顺序 / 功能边界：
+// S1 解包并保存幅值/符号；S2 八个 4x4 乘法 + 四个两项规约；S3 四项树。
+// S4 u_lane_coordinate_shift 在 lane 出口融合 e2，group 的 S4 寄存器捕获组和。
+// 本模块仅保存 S1-S3；出口无额外 DFF，故不能把 S4 组合移位误算为新增周期。
 module dp_lane_e (
   input wire clock,
   input wire rst_n,
@@ -63,6 +67,8 @@ module dp_lane_e (
     .out_magnitude(b_mantissa_d),
     .out_negative(b_sign_d)
   );
+  // [S2 产品] 4 位幅值乘法得到 unsigned8；符号异或后用 signed9 容器恢复补码。
+  // 随后的 u_pair_sum 为第一层规约，S2 只保存四个 signed10 pair，减少产品寄存位。
   genvar element_index;
   generate
     for (
@@ -89,13 +95,19 @@ module dp_lane_e (
       assign pair_left = signed_products[2*element_index*(PRODUCT_W+1)+:PRODUCT_W+1];
       wire signed [PRODUCT_W:0] pair_right;
       assign pair_right = signed_products[(2*element_index+1)*(PRODUCT_W+1)+:PRODUCT_W+1];
-      assign pairs_d[element_index*PAIR_W+:PAIR_W] = $signed(
-        {pair_left[PRODUCT_W], pair_left}
-      ) + $signed(
-        {pair_right[PRODUCT_W], pair_right}
+      // S2 第一层规约：两个 signed9 产品 -> signed10 pair，显式保留进位。
+      // N=2 的 dp_sum_tree 是单层加法器，没有寄存器；S2 DFF 在父层保存结果。
+      dp_sum_tree #(
+        .N(2),
+        .W(PRODUCT_W + 1)
+      ) u_pair_sum (
+        .in_values({pair_right, pair_left}),
+        .out_sum  (pairs_d[element_index*PAIR_W+:PAIR_W])
       );
     end
   endgenerate
+  // [S3 lane 累加树] 四个 signed10 pair 经两层树得到 signed12。
+  // 此处不做右移和舍入；HiF4 的 e1 已在解包中融合，e2 留到出口精确左移。
   dp_sum_tree #(
     .N(PAIRS),
     .W(PAIR_W)
@@ -103,13 +115,21 @@ module dp_lane_e (
     .in_values(pairs_s2_q),
     .out_sum  (lane_sum_d)
   );
-  // Sign extension precedes the exact shift. MX/NV use a constant two low zeros.
-  wire signed [FUSED_W-1:0] extended_sop;
-  assign extended_sop = {{`DP_E_GUARD{sop_s3_q[LANE_W-1]}}, sop_s3_q};
-  assign out_sop = extended_sop <<< shift_s3_q;
+  // [S4 坐标融合] 已寄存的 S3 和进入独立精确左移模块，group 在 S4 捕获。
+  // HiF4 移位量=e2_a+e2_b；MX/NV 固定补两个低零，将 F2 变成共同 F4。
+  dp_lane_e_shift #(
+    .IN_W (LANE_W),
+    .OUT_W(FUSED_W)
+  ) u_lane_coordinate_shift (
+    .in_sum  (sop_s3_q),
+    .in_shift(shift_s3_q),
+    .out_sum (out_sop)
+  );
   assign out_valid = valid_q[2];
   assign out_all_negative = all_negative_s3_q;
 
+  // [流水保存] valid/产品符号/shift 同请求推进；S2 pair 与 S3 SOP 分别捕获。
+  // shift_s3_q 必须与 sop_s3_q 对应同一请求；不能从当前输入 e2 直接驱动 S4。
   // S0 -> S1: valid.
   dp_lib_DFFRU #(
     .WIDTH(1)

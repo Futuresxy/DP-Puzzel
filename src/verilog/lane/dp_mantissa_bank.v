@@ -31,6 +31,8 @@ module dp_mantissa_bank (
   genvar element_index;
 
   `include "dp_functions.vh"
+  // [共享结构] 两个 bank 各有 HH/HL/LH/LL 四个无符号乘法叶。
+  // H/L 表示操作数的高/低分段，具体宽度来自 DP_MUL_HI/LO；符号不参与乘法。
   wire [`DP_PRODUCT_W-1:0] result[0:`DP_MUL_BANKS-1][0:3];
   generate
     for (bank_index = 0; bank_index < `DP_MUL_BANKS; bank_index = bank_index + 1) begin : g_bank
@@ -75,6 +77,8 @@ module dp_mantissa_bank (
       wire select_int8;
       wire select_e;
       wire select_q;
+      // [输入选择/隔离] 同一笔 datatype 只激活一种路由；unused 乘法输入置零。
+      // TF32 仅 bank0，FP16 分两 bank；BF16、Q、E、INT8 按各自粒度共享这组叶。
       assign select_th = in_enable &
         ((in_datatype == `DP_DT_FP16) | ((in_datatype == `DP_DT_TF32) & (bank_index == 0)));
       assign select_bf16 = in_enable & (in_datatype == `DP_DT_BF16);
@@ -142,6 +146,8 @@ module dp_mantissa_bank (
         .in_b(ll_b),
         .out_product(ll)
       );
+      // [乘积重构] T/FP16 使用 HH*2^(2L)+(HL+LH)*2^L+LL，保留完整 22 位产品。
+      // Q/E 的乘法叶是独立元素产品，不按分段权重相加；INT8 奇元素使用分段重构。
       assign product_first = ((in_datatype == `DP_DT_TF32) | (in_datatype == `DP_DT_FP16)) ?
         (hh_extended << (2 * `DP_MUL_LO)) + ((hl_extended + lh_extended) << `DP_MUL_LO) +
         ll_extended : ((in_datatype == `DP_DT_BF16) | (in_datatype == `DP_DT_INT8) | (elements(

@@ -15,6 +15,9 @@ module dp_scale_unpack (
   output wire out_nan
 );
 
+  // [scale 统一编码] 输出非负 I1F3 幅值及公共 bias=127 的指数。
+  // E8M0 的幅值恒为1；E6M2 补一个低零；E4M3 需区分正规/非正规 hidden bit。
+  // NaN 以 out_nan 表达；out_magnitude=0 只是数值隔离，不表示把 NaN 当作零。
   wire is_e8m0;
   wire is_e6m2;
   wire is_e4m3;

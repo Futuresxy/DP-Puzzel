@@ -18,6 +18,7 @@ src/verilog/arithmetic/dp_mul_unsigned.v
 src/verilog/arithmetic/dp_rtz_shift.v
 src/verilog/arithmetic/dp_scale_multiply.v
 src/verilog/arithmetic/dp_sum_tree.v
+src/verilog/lane/dp_lane_e_shift.v
 src/verilog/lane/dp_lane_e.v
 src/verilog/group/dp_group_e.v
 src/verilog/top/dp_global_align.v

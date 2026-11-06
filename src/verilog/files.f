@@ -21,6 +21,7 @@ src/verilog/arithmetic/dp_scale_multiply.v
 src/verilog/arithmetic/dp_sum_tree.v
 src/verilog/group/dp_group.v
 src/verilog/lane/dp_exponent_bank.v
+src/verilog/lane/dp_lane_align.v
 src/verilog/lane/dp_lane.v
 src/verilog/lane/dp_mantissa_bank.v
 src/verilog/top/dp_global_align.v

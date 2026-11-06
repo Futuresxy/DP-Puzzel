@@ -17,6 +17,9 @@ module dp_bidir_shift #(
 );
   genvar bit_index;
 
+  // [双向合并移位] net>=0 表示左移，net<0 表示幅值 RTZ 右移。
+  // 左移利用 reverse(reverse(x)>>amount) 实现，与右移共用一个右移核心。
+  // 合法全局对齐中 net<=z，左移只消耗前导零；通用超宽移位按有限窗口清零。
   wire left_direction;
   assign left_direction = ~in_net[NET_W-1];
   wire [NET_W-1:0] amount;

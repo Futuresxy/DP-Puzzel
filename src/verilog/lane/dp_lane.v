@@ -25,6 +25,12 @@
 // HiF4               | 1 | 7  | P-3
 // INT8               | 1 | 17 | P-13
 // TF32/FP16/BF16 append 2/1/1 low zeros after the tree.
+// 阅读顺序 / 功能边界：
+// S1 u_operand_unpack_a/b 保存复用解包字段。
+// S2 u_mantissa_mul_bank 产生幅值产品，u_exponent_add/MAX 同时准备对齐坐标。
+// S3 u_local_alignment 完成 pair/落位/RTZ/符号恢复；S4 u_lane_sop_tree 规约。
+// 末尾 ff_sN_sM_* 是这些组合区的捕获边界；valid_q[k] 对应 S(k+1)。
+// 层内没有独立 ready；两 lane 的公共 MAX 在同拍组合完成，随产品一起进入 S2。
 module dp_lane #(
   parameter integer LOCAL_W = `DP_DEFAULT_LOCAL_W,
   parameter integer LEAF_W = LOCAL_W + 1,
@@ -50,7 +56,6 @@ module dp_lane #(
   output wire out_all_negative
 );
   genvar element_index;
-  genvar pair_index;
 
   `include "dp_functions.vh"
   wire [3:0] valid_q;
@@ -86,6 +91,8 @@ module dp_lane #(
   wire signed [LANE_SOP_W-1:0] lane_sum;
   assign out_valid   = valid_q[3];
   assign out_special = special_s4_q;
+  // [S1 解包] A/B 各一份模块，内部拥有 S1 寄存器；展开的 Number 只是组合视图。
+  // type_s1_q 与这些视图同拍，不能用当前输入 datatype 解释上一笔已寄存的 payload。
   dp_lane_unpack u_operand_unpack_a (
     .clock(clock),
     .rst_n(rst_n),
@@ -108,6 +115,8 @@ module dp_lane #(
     .in_e2(in_e2_b),
     .out_numbers(unpack_b_lane_numbers)
   );
+  // [S2 元素旁带] 从 Number 取幅值/指数，符号异或；分类信息独立于数值路径。
+  // active 只包含当前格式的有限非零乘积，用于指数 MAX，不是整个事务的 valid。
   generate
     for (
       element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
@@ -164,6 +173,7 @@ module dp_lane #(
     .out_active(out_candidate_active)
   );
   assign out_candidate = lane_max[`DP_PRODUCT_EXP_W-1:0];
+  // [S2 尾数乘法] bank 只计算无符号幅值；产品符号、指数、分类另行同拍寄存。
   dp_mantissa_bank u_mantissa_mul_bank (
     .in_datatype(type_s1_q),
     .in_enable(valid_q[0]),
@@ -171,6 +181,8 @@ module dp_lane #(
     .in_b(lane_mantissa_mul_b_magnitude),
     .out_products(products_d)
   );
+  // [S2 特殊值与零符号] 聚合 NaN/Inf/invalid；正负 Inf 同时出现产生 invalid。
+  // all_negative 包括零乘积，用于最终精确零的符号；不能只归约 active 产品。
   wire [`DP_E_LANES-1:0] included_negative;
   wire [`DP_E_LANES-1:0] nan_sources;
   wire [`DP_E_LANES-1:0] invalid_sources;
@@ -203,62 +215,23 @@ module dp_lane #(
   assign special_d[`DP_SP_INVALID] = (|invalid_sources) |
     ((|positive_inf_sources) & (|negative_inf_sources));
   assign all_negative_d = &included_negative;
-  generate
-    for (pair_index = 0; pair_index < `DP_Q_LANES; pair_index = pair_index + 1) begin : g_align
-      wire [LOCAL_W-1:0] shift_input;
-      wire [`DP_PRODUCT_EXP_W-1:0] delta;
-      wire sign_value;
-      wire signed [`DP_E_PAIR_W-1:0] pair_a;
-      wire signed [`DP_E_PAIR_W-1:0] pair_b;
-      wire signed [`DP_E_PAIR_W-1:0] pair_sum;
-      wire [`DP_E_PAIR_W-1:0] pair_abs;
-      wire [LOCAL_W-1:0] shifted;
-      wire [`DP_PRODUCT_W-1:0] product_value;
-      assign product_value = products_q[pair_index*`DP_PRODUCT_W+:`DP_PRODUCT_W];
-      wire select_pair;
-      wire select_element;
-      wire select_float;
-      wire [`DP_E_PAIR_W-1:0] pair_magnitude_a;
-      wire [`DP_E_PAIR_W-1:0] pair_magnitude_b;
-      assign select_pair = valid_q[1] & (elements(type_s2_q) == `DP_E_LANES);
-      assign select_element = valid_q[1] & ~select_pair & (pair_index < elements(type_s2_q));
-      assign select_float = select_element & (type_s2_q != `DP_DT_INT8) & active_q[pair_index];
-      assign pair_magnitude_a = products_q[(2*pair_index)*`DP_PRODUCT_W+:`DP_E_PAIR_W];
-      assign pair_magnitude_b = products_q[(2*pair_index+1)*`DP_PRODUCT_W+:`DP_E_PAIR_W];
-      assign pair_a = select_pair ?
-        (negative_q[2*pair_index] ? -pair_magnitude_a : pair_magnitude_a) : 0;
-      assign pair_b = select_pair ?
-        (negative_q[2*pair_index+1] ? -pair_magnitude_b : pair_magnitude_b) : 0;
-      assign pair_sum = pair_a + pair_b;
-      assign pair_abs = pair_sum[`DP_E_PAIR_W-1] ? -pair_sum : pair_sum;
-      assign sign_value = select_pair ? pair_sum[`DP_E_PAIR_W-1] :
-        select_element & negative_q[pair_index];
-      // Structural guard zeros make the HiF4 e2 shift (0..2) exact.
-      assign shift_input = select_pair ? {{(LOCAL_W - `DP_E_PAIR_W) {1'b0}}, pair_abs} <<
-        (LEAF_W - `DP_E_PAIR_W) : (select_element & (type_s2_q == `DP_DT_INT8)) ?
-        {{(LOCAL_W - `DP_PRODUCT_W) {1'b0}}, product_value} << (LEAF_W - `DP_INT_PRODUCT_W) :
-        select_float ?
-        {{(LOCAL_W - `DP_PRODUCT_W) {1'b0}}, product_value} << (LOCAL_W - 2 - product_fraction(
-        type_s2_q
-      )) : 0;
-      assign delta = (select_pair & (type_s2_q == `DP_DT_HIF4) & (pair_abs != 0)) ? anchor_s2_q -
-        exponents_q[(2*pair_index)*`DP_PRODUCT_EXP_W+:`DP_PRODUCT_EXP_W] : select_float ?
-        anchor_s2_q - exponents_q[pair_index*`DP_PRODUCT_EXP_W+:`DP_PRODUCT_EXP_W] : 0;
-      dp_rtz_shift #(
-        .W(LOCAL_W),
-        .SHIFT_W(`DP_PRODUCT_EXP_W)
-      ) u_local_align_shift (
-        .in_magnitude(shift_input),
-        .in_shift(delta),
-        .out_magnitude(shifted)
-      );
-      assign leaves_d[pair_index*LEAF_W+:LEAF_W] = sign_value ? -$signed(
-        {1'b0, shifted}
-      ) : $signed(
-        {1'b0, shifted}
-      );
-    end
-  endgenerate
+  // [S3 局部对齐] 整个选择/pair/幅值移位/符号恢复由一个组合模块负责。
+  // 输入是 S2 寄存器；输出在 ff_s2_s3_leaves 捕获，随后进入 S4 累加树。
+  dp_lane_align #(
+    .LOCAL_W(LOCAL_W),
+    .LEAF_W (LEAF_W)
+  ) u_local_alignment (
+    .in_valid(valid_q[1]),
+    .in_datatype(type_s2_q),
+    .in_products(products_q),
+    .in_negative(negative_q),
+    .in_active(active_q),
+    .in_anchor(anchor_s2_q),
+    .in_exponents(exponents_q),
+    .out_leaves(leaves_d)
+  );
+  // [S4 lane 累加树] 四个 S3 补码叶子平衡相加，每层增长一位，F 不变。
+  // T/H 的低位静态补零在 S4 输出 DFF 输入完成，以统一 lane 容器坐标。
   dp_sum_tree #(
     .N(`DP_Q_LANES),
     .W(LEAF_W)
@@ -267,6 +240,9 @@ module dp_lane #(
     .out_sum  (lane_sum)
   );
 
+  // [流水保存] 下面按字段组织 DFF，不代表组合逻辑的执行先后。
+  // valid 每拍推进；payload 在源级 valid 且 rst_n=1 时更新，bubble 保持旧数据。
+  // S4 输出仅在 out_valid=1 时可解释；数据寄存器无需复位清零。
   // S0 -> S1: valid.
   dp_lib_DFFRU #(
     .WIDTH(1)

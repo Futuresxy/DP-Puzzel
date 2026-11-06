@@ -8,6 +8,10 @@
 // ------------ | ----------- | - | - | ------------------------------
 // MXFP4/NVFP4  | 0           | 3 | 1 | 1
 // HiF4 (e1 in) | 0           | 2 | 2 | 1
+// [S1 解包] 一个 32 位 lane 容器拆为八个 FP4；A/B 各实例化一份本模块。
+// MX/NV 按 E2M1 查表得到 F1 coefficient；HiF4 payload 以 F2 解释，
+// 每四个元素共享 e1 并在此左移，输出仍是 F2，表示实际数值乘 2^e1。
+// e2 不在此应用，留给 S4 的 dp_lane_e_shift；符号独立传递以保留负零语义。
 module dp_lane_unpack_e (
   input wire [`DP_LANE_W-1:0] in_data,
   input wire [`DP_TYPE_W-1:0] in_datatype,
