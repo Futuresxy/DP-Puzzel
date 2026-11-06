@@ -13,6 +13,12 @@ description: >
 
 先读根目录 `AGENTS.md`、相关 spec 和 [dp-rtl-code-style](../dp-rtl-code-style/SKILL.md)。本 skill 管命名含义，code-style 管声明、组合/时序结构和 DFF 选型。新增/修改命名须遵守本规范；现有接口迁移须连同引用和验证一起完成。现用 CModel/Verilog 的 v1.6 迁移见 test/results/dp-style-v1.6.md；新增修改继续按本规范同步引用与验证。
 
+## 当前流水变量优先约定
+
+按用户最新要求，明确流水级的寄存值使用 `rN_<功能>`，例如 `r1_valid`、`r1_datatype`、`r2_product_magnitudes`，不用 `valid_q[index]` 隐藏级号，也不在同一变量重复 `_q`。组合候选值继续用有意义的 `<功能>_d`。解包视图用 `a_decoded_data/b_decoded_data` 等名称，不能用 `a_q/b_q` 代替数据含义。固定的 DFF 库端口 `in_d/out_q` 和边界实例 `ff_sN_sM_*` 保持。
+
+本轮先应用于 `dp_lane.v`，其他模块及下文旧示例按各自任务范围迁移；不得据此改动冻结 SV。涉及内部观察点时同步 TB 的当前/历史映射。
+
 ## 一、`dp_` 前缀原则与文件组织
 
 ### 1.1 命名维度对照表

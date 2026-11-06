@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.6.2；修改时间：2026-11-06 13:54:29 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.6.3；修改时间：2026-11-06 15:05:16 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -19,6 +19,8 @@ v1.6.1：补充主/E RTL 关键计算注释，抽取完整局部对齐 dp_lane_a
 
 当前小修：DFF 按“本级计算→捕获→下一级使用”就地组织，固定端口紧凑同行并作局部格式保护；算术 `product` 中文统一为“乘积”。仅组织/排版和术语修订，数值与流水合同不变。175 个 DFF 的类型/参数/连接保持一致；三个长输入表达式移到同宽具名 wire，展开后与原表达式相同。主/E 各 6 组严格 lint 通过，Verible 重跑保持紧凑格式；本次未重跑数值回归或签发新快照回执。
 
+dp_lane 阅读性修订 v1.6.3：用 rN 显式表示寄存级，标明参数及变量含义，保持完整表达式换行及同组对齐；同步主/历史 TB 探针。验收见 [lane 风格回归](../../test/results/dp-lane-style-v1.6.3.md)。
+
 ## 3. 当前文件索引
 
 | 文档 | 当前版本 | 功能 |
@@ -31,7 +33,7 @@ v1.6.1：补充主/E RTL 关键计算注释，抽取完整局部对齐 dp_lane_a
 | [06-configuration.md](06-configuration.md) | v1.5.7 | 定义参数及其合法派生关系 |
 | [07-verification.md](07-verification.md) | v1.5.8 | 定义现用模型/RTL及未来实现的共用验收合同 |
 | [08-implementation-ppa.md](08-implementation-ppa.md) | v1.5.5 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.6.2 | 维护整体架构与文档版本时间线 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.6.3 | 维护整体架构与文档版本时间线 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.5.4 | 定义规格版本和历史修订规则 |
 | [dp/README.md](dp/README.md) | v1.6 | 按模块与共用合同组织 DP 规格 |
@@ -57,6 +59,6 @@ v1.6.1：补充主/E RTL 关键计算注释，抽取完整局部对齐 dp_lane_a
 | [dp/common/stage-formats.md](dp/common/stage-formats.md) | v1.5.4 | 列出每级数值出口的定点格式与指数范围 |
 | [dp/implementation/cmodel.md](dp/implementation/cmodel.md) | v1.6 | 定义 DP CModel、模块映射及共用测试接口 |
 | [dp/implementation/resource-accounting.md](dp/implementation/resource-accounting.md) | v1.5.6 | 定义可统计的功能模块边界 |
-| [dp/implementation/verilog.md](dp/implementation/verilog.md) | v1.6.2 | 定义手写 RTL 实现映射及验证合同 |
+| [dp/implementation/verilog.md](dp/implementation/verilog.md) | v1.6.3 | 定义手写 RTL 实现映射及验证合同 |
 | [dp-group/README.md](dp-group/README.md) | v1.4.1 | 定义广播计算组规格 |
 | [tensorcore/README.md](tensorcore/README.md) | v1.4.1 | 定义 TensorCore 阵列规格 |

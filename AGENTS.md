@@ -67,6 +67,8 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 
 参考 SN 风格适配后的项目规范采用模块 `dp_`、宏 `DP_`、DFF 实例 `ff_<源阶段>_<目标阶段>_<功能>` 命名；字段布局集中定义，内部寄存打包紧邻解包。DFF 生产实现位于 src/verilog/common/；skill assets 保留参考模板，不能同时加入生产清单。 用户进一步要求尽量保留 SN 完整规范：主体包含详细规则、示例、六种 DFF/组合单元说明及逐项自检；新功能组合使用 assign（FSM 次态例外）、条件先归约后按位组合、动态选择显式组织 MUX。DFF 统一紧凑两行：模块类型/参数一行，实例名及全部端口一行（豁免 100 列）；连续 DFF 区块局部关闭 Verible 排版保护，声明仍每行一个。DFF 紧随本级计算、置于下一级使用之前，旁带就地同行；不得将各级 DFF 统一集中到文件末尾。
 
+最新流水变量约定先在 dp_lane.v 落实：寄存值用 rN_<功能>（r1_valid、r2_product_magnitudes），组合候选用功能名_d；同组赋值按等号对齐，完整函数/分支不机械拆行，参数及变量首次声明前说明作用。其他模块按任务范围逐步迁移，冻结 SV 不改。
+
 命名相关设计、修改和审查同时读取 [.skill/dp-naming-convention/SKILL.md](.skill/dp-naming-convention/SKILL.md)。文件/module/实例/变量需表达实际功能，禁止局部数值使用裸 e/f/a 等不明缩写；指数域、指数值、域宽、定点小数位数分别命名。父层互联使用 driver_receiver_function，复用模块端口保持 in_/out_，本地变量不重复端点；数学操作数 in_a/in_b/in_c、E 前端后缀 _e 和库端口 in_d/out_q 是已定义例外。循环索引使用 lane_index/element_index 等角色名。现用 CModel/Verilog 已按任务迁移命名，稳定的数学操作数及 JSON trace 字段保留其已定义语义。
 
 v1.6 已迁移现用 Verilog 为同步低有效 `rst_n` 和显式 DFF，并同步接口 spec、TB、导出及 EDA 阶段识别；当前验收见 test/results/dp-style-v1.6.md，不将旧快照/PPA 视为新实现验收。冻结 SystemVerilog 不迁移，Chisel 默认端口约定保持原范围。

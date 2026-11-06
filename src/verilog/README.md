@@ -1,6 +1,6 @@
 # 多精度 DP · 手写 RTL
 
-实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **架构 v1.6 / 实现映射 v1.6.2**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
+实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **架构 v1.6 / 实现映射 v1.6.3**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
 
 | 实现 | 编译清单 | 顶层 |
 | --- | --- | --- |
@@ -106,3 +106,5 @@ DC 接入使用 [统一门禁与流程](../../hw/dc_syn/README.md)。Verilog 的
 E 元素解包独立位于 [unpack/dp_lane_unpack_e.v](unpack/dp_lane_unpack_e.v)，每份组合模块处理一侧32位操作数、HiF4 e1并输出幅值/符号；S1 寄存器继续在 dp_lane_e，e2 控制也由 lane 持有，不增加延迟。显式 files_e.f 包含15个 `.v`。多精度 dp_lane_unpack 保持原样。模块化后的新快照需重新验证，历史 DC 测量仅属于原快照。
 
 主要计算注释与当前模块映射见 [功能分区](../spec/dp/dptop/module-hierarchy.md#71-当前-rtl-的阅读顺序v161)。E lane 使用 `g_pair[].u_pair_sum`、`u_lane_sop_tree` 和独立 `u_lane_coordinate_shift`；S2/S3 保存规约结果，S4 左移与组和由 group 捕获。完整局部对齐见 [dp_lane_align.v](lane/dp_lane_align.v)，E 坐标融合见 [dp_lane_e_shift.v](lane/dp_lane_e_shift.v)。
+
+`dp_lane.v` 使用 `r1_valid`～`r4_valid` 明确阶段，寄存数据使用 `rN_<功能>`；参数、端口和局部变量在声明前解释作用。完整条件/函数调用按语义换行，同组赋值按等号对齐。其他模块暂保留已有命名。TB 通过 dp_tb_trace_names.vh 分别映射当前 lane 和冻结 SV 的内部观察点。

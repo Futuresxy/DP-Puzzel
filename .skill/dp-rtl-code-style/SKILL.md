@@ -241,7 +241,7 @@ localparam integer N = GROUPS + 1;
 
 **DFF 基础单元例化统一采用紧凑两行格式**：第一行是模块类型和 `#(...)` 参数，第二行是 `ff_*` 实例名与全部固定端口，末尾 `);`。DFF 端口行豁免 100 列目标，不因行宽把 clock/rst_n/in_en/in_d/out_q 再拆开；复杂输入表达式优先在外部以具名连线表达。每个变量声明仍须单独一行。
 
-连续 DFF 区块用 `// verilog_format: off` 与 `// verilog_format: on` 成对保护，避免 Verible 将固定端口展开；保护只覆盖 DFF 区块，不覆盖普通模块端口或组合逻辑。
+连续 DFF 区块用 `// verilog_format: off` 与 `// verilog_format: on` 成对保护，避免 Verible 将固定端口展开；默认保护 DFF 区块；对已手工对齐的声明或完整语义表达式，也可局部保护，不能为省事关闭整份文件的排版。
 
 **按流水级就地放置 DFF**：每级采用“组合计算 → 本级 DFF 捕获 → 下一级使用”的源码顺序，valid/类型/符号等旁带放在对应级。禁止把各级寄存器按字段全部集中到文件末尾；纯延迟路径也按 S1、S2…分别标注。解包子模块拥有的寄存器保留原所有权，不在父层重复打拍。
 
@@ -272,6 +272,14 @@ ff_data (.clock(clock), .in_d(d), .out_q(q));
 dp_lib_DFFRE #(.WIDTH(8))
 ff_data (.clock(clock), .rst_n(rst_n), .in_en(en), .in_d(d), .out_q(q));
 ```
+
+### 7a. dp_lane 可读性示范与新优先要求
+
+- 寄存值按 `rN_<功能>` 命名，例如 `r1_valid/r2_datatype`；本轮只迁移 dp_lane，其余模块按任务范围逐步采用。
+- 参数、端口、变量在首次声明前解释作用、阶段/接口归属和必要的位宽语义；模块间的输入输出信号按功能分组，组之间留空行。
+- 同组 assign 按等号对齐；声明的变量名和模块具名连接对齐。普通模块端口仍逐行，DFF 保持紧凑两行。
+- 按完整条件、分支结果、算术项换行，不把 `elements(r1_datatype)`、`$clog2(DP_Q_LANES)` 或一个完整移位表达式拆成多行。完整表达式可超过 100 列目标，不为满足列宽破坏逻辑阅读顺序。
+- Verible 可使用 assignment_statement_alignment/named_port_alignment/named_parameter_alignment=align 辅助；仍需人工检查。若工具重新拆开已整理的表达式，以局部 verilog_format: off/on 保留手工语义换行。
 
 ### 8. 寄存器类型选择原则
 

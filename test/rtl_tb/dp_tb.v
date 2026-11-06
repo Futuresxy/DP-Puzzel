@@ -176,14 +176,14 @@ module dp_tb;
         if(dut.valid_q[1]) begin
           for(element_index=0;element_index<elements(ats[pending[1]][`DP_TYPE_W-1:0]);element_index=element_index+1)
             $fdisplay(trace_fd,"%0d 2 product %0d %h",pending[1],(group_index*`DP_LANES+lane_index)*elements(ats[pending[1]][`DP_TYPE_W-1:0])+element_index,
-              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.products_q[element_index*`DP_PRODUCT_W+:`DP_PRODUCT_W]);
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_LANE_PRODUCTS[element_index*`DP_PRODUCT_W+:`DP_PRODUCT_W]);
           $fdisplay(trace_fd,"%0d 2 anchor %0d %h",pending[1],group_index,
-              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.anchor_s2_q);
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_LANE_ANCHOR);
         end
         if(dut.valid_q[2]) begin
           for(element_index=0;element_index<`DP_Q_LANES;element_index=element_index+1)
             $fdisplay(trace_fd,"%0d 3 leaf %0d %0d",pending[2],(group_index*`DP_LANES+lane_index)*`DP_Q_LANES+element_index,
-              $signed(dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.leaves_q[element_index*(LOCAL_W+1)+:LOCAL_W+1]));
+              $signed(dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_LANE_LEAVES[element_index*(LOCAL_W+1)+:LOCAL_W+1]));
         end
         if(dut.valid_q[3]) $fdisplay(trace_fd,"%0d 4 lane %0d %0d",pending[3],group_index*`DP_LANES+lane_index,
               $signed(dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.out_sop));
