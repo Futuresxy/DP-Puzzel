@@ -35,35 +35,27 @@ module dp_lane_e (
   wire [`DP_E_LANES*(PRODUCT_W+1)-1:0] signed_products;
   wire [PAIRS*PAIR_W-1:0] pairs_d;
   wire signed [LANE_W-1:0] lane_sum_d;
-  function [MANT_W-1:0] decode_magnitude;
-    input [3:0] raw;
-    input hif, e1;
-    begin
-      if (hif) decode_magnitude = {1'b0, raw[2:0]} << e1;
-      else
-        case (raw[2:0])
-          3'd0: decode_magnitude = 4'd0;
-          3'd1: decode_magnitude = 4'd1;
-          3'd2: decode_magnitude = 4'd2;
-          3'd3: decode_magnitude = 4'd3;
-          3'd4: decode_magnitude = 4'd4;
-          3'd5: decode_magnitude = 4'd6;
-          3'd6: decode_magnitude = 4'd8;
-          default: decode_magnitude = 4'd12;
-        endcase
-    end
-  endfunction
+  // Dedicated operand decoders; S1 registers remain owned by this lane.
+  wire [`DP_E_LANES-1:0] a_sign_d, b_sign_d;
+  dp_lane_unpack_e operand_unpack_a (
+    .in_data(in_a),
+    .in_datatype(in_datatype),
+    .in_e1(in_e1_a),
+    .out_magnitude(a_mantissa_d),
+    .out_negative(a_sign_d)
+  );
+  dp_lane_unpack_e operand_unpack_b (
+    .in_data(in_b),
+    .in_datatype(in_datatype),
+    .in_e1(in_e1_b),
+    .out_magnitude(b_mantissa_d),
+    .out_negative(b_sign_d)
+  );
   genvar j;
   generate
     for (j = 0; j < `DP_E_LANES; j = j + 1) begin : g_product
       wire [PRODUCT_W-1:0] magnitude;
       wire signed [PRODUCT_W:0] positive_product = {1'b0, magnitude};
-      assign a_mantissa_d[j*MANT_W+:MANT_W] = decode_magnitude(
-        in_a[j*4+:4], in_datatype == `DP_DT_HIF4, in_e1_a[j/4]
-      );
-      assign b_mantissa_d[j*MANT_W+:MANT_W] = decode_magnitude(
-        in_b[j*4+:4], in_datatype == `DP_DT_HIF4, in_e1_b[j/4]
-      );
       dp_mul_unsigned #(
         .A_W(MANT_W),
         .B_W(MANT_W)
@@ -75,11 +67,6 @@ module dp_lane_e (
       assign product_negative[j] = a_sign_s1_q[j] ^ b_sign_s1_q[j];
       assign signed_products[j*(PRODUCT_W+1)+:PRODUCT_W+1] = product_negative[j] ?
         -positive_product : positive_product;
-      always @(posedge clock)
-        if (!reset && in_valid) begin
-          a_sign_s1_q[j] <= in_a[j*4+3];
-          b_sign_s1_q[j] <= in_b[j*4+3];
-        end
     end
     for (j = 0; j < PAIRS; j = j + 1) begin : g_pair
       wire signed [PRODUCT_W:0] a = signed_products[2*j*(PRODUCT_W+1)+:PRODUCT_W+1];
@@ -104,6 +91,8 @@ module dp_lane_e (
     else begin
       valid_q <= {valid_q[1:0], in_valid};
       if (in_valid) begin
+        a_sign_s1_q <= a_sign_d;
+        b_sign_s1_q <= b_sign_d;
         a_mantissa_s1_q <= a_mantissa_d;
         b_mantissa_s1_q <= b_mantissa_d;
         shift_s1_q <= in_datatype == `DP_DT_HIF4 ? {1'b0, in_e2_a} + {1'b0, in_e2_b} : 2'd2;

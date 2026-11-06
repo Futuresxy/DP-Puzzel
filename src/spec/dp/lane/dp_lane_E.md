@@ -1,4 +1,4 @@
-> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[E CModel lane/e.cpp](../../../cmodel/lib/lane/e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；多精度基线为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)。
+> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.5.9；修改时间：2026-11-06 09:36:04 +08:00；对应代码：[E CModel lane/e.cpp](../../../cmodel/lib/lane/e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)、[dp_lane_unpack_e.v](../../../verilog/unpack/dp_lane_unpack_e.v)；多精度基线为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)。
 
 # E 类专用 lane 设计与实现
 
@@ -34,6 +34,14 @@ HiF4 lane:   sum_i(q_i << p) = sum_i(q_i) << p
 S2 pair 与 S3 四项树共同完成 E8 lane 规约；S4 完成 E16 group 规约及一次组 abs。S4 的组幅值已经准备好，S5 不再串联组加法及 abs。S6–S8 与 C 路径继续使用原后端，见 [group 接入合同](../group/dp_group_E.md)。
 
 模块边界也随之调整：lane 持有 S1/S2/S3 寄存器，其末端左移为 S4 组合逻辑；组模块在同一个 S4 边沿寄存两 lane 合并结果。不能先在 lane 内增加 S4 输出寄存器，再指望 group 合并仍属于 S4。对外 group 仍在 S5 输出，不改变原后端的到达拍数。
+
+### 独立 E 解包模块
+
+`dp_lane_e` 内分别实例化 `dp_lane_unpack_e operand_unpack_a/operand_unpack_b`；每份处理一个32位操作数（8个FP4元素）。组合输入为 `in_data[31:0]`、datatype和两个HiF4 e1位，输出为8×4位 unsigned magnitude及8位独立符号，保留负零符号。MX/NV 输出 S0I3F1，HiF4 e1 融合后输出 S0I2F2，数值合同不变。
+
+`dp_lane_unpack_e` 不持有时钟、复位、valid或寄存器，延迟为组合逻辑；调用者在原 S1 边界按有效使能采样。lane 继续持有 `a/b_mantissa_s1_q`、`a/b_sign_s1_q`，同步复位屏蔽采样，无效周期保持数据。HiF4 e2 的 p 生成/传递仍属于 lane，scale 解包仍属于 group。单独 module 不等于额外流水级，整个 DP 保持 L8/II1。
+
+多精度版原有 `dp_lane_unpack` 保持原实现（含其 S1 寄存器），不为结构对称而移动寄存器或混入多精度解码路径。新层级只改变 E 代码组织；已有 DC 面积/时序仅属于其原快照，不自动继承到新源文件指纹。
 
 ## 3. S/I/F 与自然增长
 

@@ -12,4 +12,5 @@ src/verilog/group/dp_group_e.v
 src/verilog/top/dp_global_align.v
 src/verilog/top/dp_top_e.v
 src/verilog/unpack/dp_c_unpack.v
+src/verilog/unpack/dp_lane_unpack_e.v
 src/verilog/unpack/dp_scale_unpack.v

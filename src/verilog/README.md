@@ -85,8 +85,10 @@ DC 接入使用 [统一门禁与流程](../../hw/dc_syn/README.md)。Verilog 的
 
 ## E64 专用层级
 
-`dp_top_e → dp_group_e ×4 → dp_lane_e ×2/group`。E lane/group 不实例化原多精度 bank 或宽局部移位器：S1 FP4/e1 解码，S2 4×4＋pair10，S3 lane12，S4 lane 小左移/组和/abs 至幅值14，S5 scale14×8 或 MX 旁路后补零到 M31。SIF 在相应源码中按精度分行列示。
+`dp_top_e → dp_group_e ×4 → dp_lane_e ×2/group → dp_lane_unpack_e ×2/lane`。E lane/group 不实例化原多精度 bank 或宽局部移位器：S1 FP4/e1 解码，S2 4×4＋pair10，S3 lane12，S4 lane 小左移/组和/abs 至幅值14，S5 scale14×8 或 MX 旁路后补零到 M31。SIF 在相应源码中按精度分行列示。
 
 顶层保持原请求端口和 K_FP16/LOCAL_W/GLOBAL_W 参数，便于接口复用；只接受三个 E datatype 和 FP32 C。K_FP16 仅为容量索引，4/8/16 对应 E16/E32/E64。LOCAL_W 影响公共 token 容器和补零，E 的内部自然位宽不随其扩大。后端复用已有 C 解包、全局移位、树和 FP32 舍入模块定义，流水寄存器由两个 top 分别持有；没有额外 dp_backend.v 或通用混合组实现。
 
 [完整测试结果](../../test/results/e64-v1.5.8.md)按用户要求长期保留；原始输入/输出、断点、编译与仿真日志放在显式 run，快照放在 hw/rtl，网表保留在 DC run，不提交大型产物。
+
+E 元素解包独立位于 [unpack/dp_lane_unpack_e.v](unpack/dp_lane_unpack_e.v)，每份组合模块处理一侧32位操作数、HiF4 e1并输出幅值/符号；S1 寄存器继续在 dp_lane_e，e2 控制也由 lane 持有，不增加延迟。显式 files_e.f 包含15个 `.v`。多精度 dp_lane_unpack 保持原样。模块化后的新快照需重新验证，历史 DC 测量仅属于原快照。
