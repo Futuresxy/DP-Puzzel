@@ -1,4 +1,4 @@
-> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/e.cpp](../../../cmodel/lib/lane/e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
+> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
 
 # lane：解包、元素乘法与局部规约
 

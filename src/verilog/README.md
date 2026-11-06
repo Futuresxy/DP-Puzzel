@@ -35,13 +35,13 @@ dp_top                         单个 DP，C 传递/解包及 S6–S8
 └── fp32_output                 RNE、渐进下溢与 FP32 打包
 ```
 
-每个 module 单独同名文件。组合模块不暗加寄存器；S1 寄存器由 lane 内 `dp_lane_unpack` 持有，其余流水由 lane、group、top 三层持有。同步高有效 `reset` 清除有效控制并取消在途请求；数据寄存器以有效使能保持，不进行全数据复位。握手、阶段映射、源文件和统计归属见 [RTL 实现合同](../spec/dp/implementation/verilog.md)。
+每个 module 单独同名文件。组合模块不暗加寄存器；S1 寄存器由 lane 内 `dp_lane_unpack` 持有，其余流水由 lane、group、top 三层持有。同步低有效 `rst_n` 清除有效控制并取消在途请求；数据寄存器以有效使能保持，不进行全数据复位。握手、阶段映射、源文件和统计归属见 [RTL 实现合同](../spec/dp/implementation/verilog.md)。
 
 尾数定点格式注释使用对齐表格，每行一种或一类精度，独立列出 S、I、F。表前说明 SM 独立符号或 TC 二补码，以及 P、L 等参数的定义。乘法器输入和输出分别列出各自的 S、I、F。解包和尾数乘法表列有效 coefficient 的格式；通用槽的高位零扩展不增加 F，树和级间输出表按数值通路宽度列示。
 
 ## 纯 Verilog 排版
 
-文件、模块、实例和信号命名遵循 [dp-naming-convention](../../.skill/dp-naming-convention/SKILL.md)。局部数值不得只叫 `e/f/a`，应按实际含义写 `exponent_field/fraction_field/product_even` 等；互联线明确驱动方和接收方，模块端口保留 `in_`/`out_`。现有代码尚待按范围迁移，规则不代表已批量改名。
+文件、模块、实例和信号命名遵循 [dp-naming-convention](../../.skill/dp-naming-convention/SKILL.md)。局部数值不得只叫 `e/f/a`，应按实际含义写 `exponent_field/fraction_field/product_even` 等；互联线明确驱动方和接收方，模块端口保留 `in_`/`out_`。维护中的主/E RTL 已按 v1.6 迁移；历史 SV 与旧快照保留原名。
 
 遵循 [dp-rtl-code-style skill](../../.skill/dp-rtl-code-style/SKILL.md)。`*.v` 使用两空格缩进、LF 换行、100 列目标行宽，**每条声明只定义一个变量**。端口每行重复完整方向、类型和位宽；`wire/reg/parameter/localparam` 等也分别声明，取代此前同类变量合并的约定。
 
@@ -63,7 +63,7 @@ verible-verilog-format --inplace --failsafe_success=false \
   src/verilog/top/dp_top.v
 ```
 
-2026-11-06 已确认的新设计规则为**同步低有效 `rst_n`**和**参数化 DFF 模块统一承载流水寄存器**。控制复位、数据使能和气泡传播要求见 [寄存器合同](../../.skill/dp-rtl-code-style/references/registers.md)。当前 RTL 仍是上述同步高有效 `reset`，本次只建立规范；源码、接口 spec、TB、导出和 EDA 入口尚待一起迁移并重新验证，不能将新规则视为现有实现状态。
+现用多精度与 E RTL 已采用同步低有效 `rst_n`，全部流水由 `common/` 参数化 DFF 保存。控制同步复位，payload 无复位、有效时更新；边界实例命名为 `ff_sN_sM_<field>`。详见 [寄存器合同](../../.skill/dp-rtl-code-style/references/registers.md) 和 [v1.6 验证](../../test/results/dp-style-v1.6.md)。冻结 SV 保留旧 reset 接口，旧快照及 PPA 结论不变。
 
 ## 验证
 

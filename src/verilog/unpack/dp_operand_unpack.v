@@ -17,127 +17,101 @@ module dp_operand_unpack #(
   input wire [`DP_TYPE_W-1:0] in_datatype,
   input wire [1:0] in_e1,
   input wire in_e2,
-  output reg [`DP_NUM_W-1:0] out_number
+  output wire [`DP_NUM_W-1:0] out_number
 );
 
   `include "dp_functions.vh"
-  localparam [31:0] HALF_MASK = (1 << `DP_HALF_W) - 1, QUARTER_MASK = (1 << `DP_QUARTER_W) - 1,
-    MX6_MASK = (1 << `DP_MX6_W) - 1, EIGHTH_MASK = (1 << `DP_EIGHTH_W) - 1;
-  integer eb, fb, bias, raw, e, f;
-  reg [31:0] magnitude_work, exponent_work;
-  reg ieee_encoding, finite_nan;
-  reg [`DP_NUM_W-1:0] n;
-  always @* begin
-    n = 0;
-    magnitude_work = 0;
-    exponent_work = 0;
-    raw = 0;
-    eb = 0;
-    fb = 0;
-    bias = 0;
-    e = 0;
-    f = 0;
-    ieee_encoding = 0;
-    finite_nan = 0;
-    case (in_datatype)
-      `DP_DT_TF32: begin
-        raw = in_data >> `DP_TF32_PAD;
-        eb = `DP_FP32_E;
-        fb = `DP_FP16_F;
-        bias = `DP_FP32_BIAS;
-        ieee_encoding = 1;
-      end
-      `DP_DT_FP16: begin
-        raw = (in_data >> (INDEX * `DP_HALF_W)) & HALF_MASK;
-        eb = `DP_FP16_E;
-        fb = `DP_FP16_F;
-        bias = `DP_FP16_BIAS;
-        ieee_encoding = 1;
-      end
-      `DP_DT_BF16: begin
-        raw = (in_data >> (INDEX * `DP_HALF_W)) & HALF_MASK;
-        eb = `DP_BF16_E;
-        fb = `DP_BF16_F;
-        bias = `DP_BF16_BIAS;
-        ieee_encoding = 1;
-      end
-      `DP_DT_MX8_E4M3: begin
-        raw = (in_data >> (INDEX * `DP_QUARTER_W)) & QUARTER_MASK;
-        eb = `DP_MX8_E4_E;
-        fb = `DP_MX8_E4_F;
-        bias = `DP_MX8_E4_BIAS;
-        finite_nan = 1;
-      end
-      `DP_DT_MX8_E5M2: begin
-        raw = (in_data >> (INDEX * `DP_QUARTER_W)) & QUARTER_MASK;
-        eb = `DP_MX8_E5_E;
-        fb = `DP_MX8_E5_F;
-        bias = `DP_MX8_E5_BIAS;
-        ieee_encoding = 1;
-      end
-      `DP_DT_MX6_E3M2: begin
-        raw  = (in_data >> (INDEX * `DP_QUARTER_W + `DP_MX6_PAD)) & MX6_MASK;
-        eb   = `DP_MX6_E3_E;
-        fb   = `DP_MX6_E3_F;
-        bias = `DP_MX6_E3_BIAS;
-      end
-      `DP_DT_MX6_E2M3: begin
-        raw  = (in_data >> (INDEX * `DP_QUARTER_W + `DP_MX6_PAD)) & MX6_MASK;
-        eb   = `DP_MX6_E2_E;
-        fb   = `DP_MX6_E2_F;
-        bias = `DP_MX6_E2_BIAS;
-      end
-      default: raw = (in_data >> (INDEX * `DP_EIGHTH_W)) & EIGHTH_MASK;
-    endcase
-    if (INDEX < elements(in_datatype)) begin
-      if (in_datatype == `DP_DT_INT8) begin
-        raw = (in_data >> (INDEX * `DP_QUARTER_W)) & QUARTER_MASK;
-        n[`DP_NUM_SIGN] = (raw & 128) != 0;
-        magnitude_work = (n[`DP_NUM_SIGN] ? 256 - raw : raw);
-      end else if (in_datatype == `DP_DT_HIF4) begin
-        n[`DP_NUM_SIGN] = (raw & 8) != 0;
-        magnitude_work  = ((raw & 7) << in_e1[INDEX/`DP_E1_GRAIN]);
-        exponent_work   = {31'b0, in_e2};
-      end else if (in_datatype == `DP_DT_MXFP4 || in_datatype == `DP_DT_NVFP4) begin
-        n[`DP_NUM_SIGN] = (raw & 8) != 0;
-        case (raw & 7)
-          0: magnitude_work = 0;
-          1: magnitude_work = 1;
-          2: magnitude_work = 2;
-          3: magnitude_work = 3;
-          4: magnitude_work = 4;
-          5: magnitude_work = 6;
-          6: magnitude_work = 8;
-          7: magnitude_work = 12;
-        endcase
-      end else begin
-        e = (raw >> fb) & ((1 << eb) - 1);
-        f = raw & ((1 << fb) - 1);
-        n[`DP_NUM_SIGN] = ((raw >> (eb + fb)) & 1) != 0;
-        exponent_work = (e == 0 ? 1 : e);
-        if ((ieee_encoding && e == ((1 << eb) - 1) && f != 0) ||
-            (finite_nan && e == ((1 << eb) - 1) && f == ((1 << fb) - 1))) begin
-          n[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] = `DP_CLASS_NAN;
-          exponent_work = 1;
-          n[`DP_NUM_SIGNAL] = ieee_encoding && ((f & (1 << (fb - 1))) == 0);
-        end else if (ieee_encoding && e == ((1 << eb) - 1)) begin
-          n[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] = `DP_CLASS_INF;
-          exponent_work = 1;
-        end else begin
-          magnitude_work = ((e != 0 ? (1 << fb) : 0) | f);
-          if (elements(in_datatype) == `DP_Q_LANES) begin
-            exponent_work  = ((exponent_work) + `DP_Q_BIAS - bias);
-            magnitude_work = magnitude_work << (`DP_SCALE_F - fb);
-          end
-        end
-      end
-      if (n[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] != `DP_CLASS_INF &&
-          n[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] != `DP_CLASS_NAN)
-        n[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] = (magnitude_work == 0) ? `DP_CLASS_ZERO :
-          `DP_CLASS_FINITE;
-    end
-    n[`DP_NUM_MAG_LO+:`DP_MANT_W] = magnitude_work[`DP_MANT_W-1:0];
-    n[`DP_NUM_EXP_LO+:`DP_EXP_W] = exponent_work[`DP_EXP_W-1:0];
-    out_number = n;
-  end
+  wire is_tf32;
+  wire is_fp16;
+  wire is_bf16;
+  wire is_mx8_e4;
+  wire is_mx8_e5;
+  wire is_mx6_e3;
+  wire is_mx6_e2;
+  wire is_fp4;
+  wire is_hif4;
+  wire is_int8;
+  wire is_binary_float;
+  wire is_ieee;
+  wire element_enabled;
+  wire [31:0] raw_encoding;
+  wire [31:0] exponent_field_width;
+  wire [31:0] fraction_field_width;
+  wire [31:0] exponent_bias;
+  wire [31:0] exponent_field;
+  wire [31:0] fraction_field;
+  wire [31:0] exponent_mask;
+  wire [31:0] fraction_mask;
+  wire [31:0] finite_exponent;
+  wire [31:0] finite_magnitude;
+  wire [31:0] magnitude_work;
+  wire [31:0] exponent_work;
+  wire [`DP_EIGHTH_W-1:0] fp4_magnitude;
+  wire negative;
+  wire is_nan;
+  wire is_inf;
+  wire is_signaling;
+  wire [`DP_NUM_CLASS_W-1:0] number_class;
+  assign is_tf32 = in_datatype == `DP_DT_TF32;
+  assign is_fp16 = in_datatype == `DP_DT_FP16;
+  assign is_bf16 = in_datatype == `DP_DT_BF16;
+  assign is_mx8_e4 = in_datatype == `DP_DT_MX8_E4M3;
+  assign is_mx8_e5 = in_datatype == `DP_DT_MX8_E5M2;
+  assign is_mx6_e3 = in_datatype == `DP_DT_MX6_E3M2;
+  assign is_mx6_e2 = in_datatype == `DP_DT_MX6_E2M3;
+  assign is_fp4 = (in_datatype == `DP_DT_MXFP4) | (in_datatype == `DP_DT_NVFP4);
+  assign is_hif4 = in_datatype == `DP_DT_HIF4;
+  assign is_int8 = in_datatype == `DP_DT_INT8;
+  assign is_binary_float = ~(is_fp4 | is_hif4 | is_int8);
+  assign is_ieee = is_tf32 | is_fp16 | is_bf16 | is_mx8_e5;
+  assign element_enabled = INDEX < elements(in_datatype);
+  // Constant-format selectors keep each encoding's field widths explicit.
+  assign raw_encoding = is_tf32 ? in_data >> `DP_TF32_PAD : (is_fp16 | is_bf16) ? (
+    in_data >> (INDEX * `DP_HALF_W)) & ((1 << `DP_HALF_W) - 1) : (is_mx8_e4 | is_mx8_e5 | is_int8) ?
+    (in_data >> (INDEX * `DP_QUARTER_W)) & ((1 << `DP_QUARTER_W) - 1) : (is_mx6_e3 | is_mx6_e2) ?
+    (in_data >> (INDEX * `DP_QUARTER_W + `DP_MX6_PAD)) &
+    ((1 << `DP_MX6_W) - 1) : (in_data >> (INDEX * `DP_EIGHTH_W)) & ((1 << `DP_EIGHTH_W) - 1);
+  assign exponent_field_width = (is_tf32 | is_bf16) ? `DP_FP32_E : (is_fp16 | is_mx8_e5) ?
+    `DP_FP16_E : is_mx8_e4 ? `DP_MX8_E4_E : is_mx6_e3 ? `DP_MX6_E3_E : is_mx6_e2 ? `DP_MX6_E2_E : 0;
+  assign fraction_field_width = (is_tf32 | is_fp16) ? `DP_FP16_F : is_bf16 ? `DP_BF16_F :
+    (is_mx8_e4 | is_mx6_e2) ? `DP_MX8_E4_F : (is_mx8_e5 | is_mx6_e3) ? `DP_MX8_E5_F : 0;
+  assign
+    exponent_bias = (is_tf32 | is_bf16) ? `DP_FP32_BIAS : (is_fp16 | is_mx8_e5) ? `DP_FP16_BIAS :
+    is_mx8_e4 ? `DP_MX8_E4_BIAS : is_mx6_e3 ? `DP_MX6_E3_BIAS : is_mx6_e2 ? `DP_MX6_E2_BIAS : 0;
+  assign exponent_mask = (32'd1 << exponent_field_width) - 1;
+  assign fraction_mask = (32'd1 << fraction_field_width) - 1;
+  assign exponent_field = (raw_encoding >> fraction_field_width) & exponent_mask;
+  assign fraction_field = raw_encoding & fraction_mask;
+  assign is_nan = is_binary_float & (exponent_field == exponent_mask) &
+    ((is_ieee & (fraction_field != 0)) | (is_mx8_e4 & (fraction_field == fraction_mask)));
+  assign is_inf = is_binary_float & is_ieee & (exponent_field == exponent_mask) & ~is_nan;
+  assign is_signaling = is_nan & is_ieee &
+    ((fraction_field & (32'd1 << (fraction_field_width - 1))) == 0);
+  assign negative = is_int8 ? raw_encoding[`DP_QUARTER_W-1] : (is_fp4 | is_hif4) ? raw_encoding[
+    `DP_EIGHTH_W-1] : ((raw_encoding >> (exponent_field_width + fraction_field_width)) & 1) != 0;
+  // E2M1 encoding magnitude table in F1: {0,1,2,3,4,6,8,12}.
+  assign fp4_magnitude = raw_encoding[`DP_E_PAYLOAD_W-1:0] < 3'd5 ?
+    {1'b0, raw_encoding[`DP_E_PAYLOAD_W-1:0]} : raw_encoding[`DP_E_PAYLOAD_W-1:0] == 3'd5 ? 4'd6 :
+    raw_encoding[`DP_E_PAYLOAD_W-1:0] == 3'd6 ? 4'd8 : 4'd12;
+  assign finite_exponent = (exponent_field == 0 ? 32'd1 : exponent_field) + (elements(
+    in_datatype
+  ) == `DP_Q_LANES ? `DP_Q_BIAS - exponent_bias : 0);
+  assign finite_magnitude = ((exponent_field != 0 ? 32'd1 << fraction_field_width : 0) |
+                             fraction_field) << (elements(
+    in_datatype
+  ) == `DP_Q_LANES ? `DP_SCALE_F - fraction_field_width : 0);
+  assign magnitude_work = ~element_enabled ? 0 :
+    is_int8 ? (negative ? (1 << `DP_QUARTER_W) - raw_encoding : raw_encoding) :
+    is_hif4 ? {{(32 - `DP_E_PAYLOAD_W) {1'b0}}, raw_encoding[`DP_E_PAYLOAD_W-1:0]} <<
+    in_e1[INDEX/`DP_E1_GRAIN] : is_fp4 ?
+    {{(32 - `DP_EIGHTH_W) {1'b0}}, fp4_magnitude} : (is_nan | is_inf) ? 0 : finite_magnitude;
+  assign exponent_work = ~element_enabled ? 0 :
+    is_hif4 ? {31'b0, in_e2} : (is_fp4 | is_int8) ? 0 : (is_nan | is_inf) ? 1 : finite_exponent;
+  assign number_class = ~element_enabled ? `DP_CLASS_ZERO : is_nan ? `DP_CLASS_NAN :
+    is_inf ? `DP_CLASS_INF : magnitude_work == 0 ? `DP_CLASS_ZERO : `DP_CLASS_FINITE;
+  assign out_number[`DP_NUM_MAG_LO+:`DP_MANT_W] = magnitude_work[`DP_MANT_W-1:0];
+  assign out_number[`DP_NUM_EXP_LO+:`DP_EXP_W] = exponent_work[`DP_EXP_W-1:0];
+  assign out_number[`DP_NUM_SIGN] = element_enabled & negative;
+  assign out_number[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] = number_class;
+  assign out_number[`DP_NUM_SIGNAL] = element_enabled & is_signaling;
 endmodule

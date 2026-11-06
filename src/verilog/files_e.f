@@ -1,4 +1,15 @@
 +incdir+src/verilog/parameter
+src/verilog/common/dp_dff_en.v
+src/verilog/common/dp_dff_sync_reset.v
+src/verilog/common/dp_lib_DFFE.v
+src/verilog/common/dp_lib_DFFRE.v
+src/verilog/common/dp_lib_DFFRU.v
+src/verilog/common/dp_lib_DFFSE.v
+src/verilog/common/dp_lib_DFFSU.v
+src/verilog/common/dp_lib_DFFU.v
+src/verilog/common/dp_lib_bin2onehot.v
+src/verilog/common/dp_lib_onehot2bin.v
+src/verilog/common/dp_lib_onehot_mux.v
 src/verilog/arithmetic/dp_bidir_shift.v
 src/verilog/arithmetic/dp_fp32_round.v
 src/verilog/arithmetic/dp_lzd.v

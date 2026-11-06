@@ -59,10 +59,12 @@ E64 配置为 [e64.json](../configs/dp/e64.json)。原始 CLI 可执行 `src/cmo
 - `lib/unpack.cpp`：E/M/S、scale 分类和 C 解包。
 - `lib/lane.cpp`：乘法重构、指数/MAX、局部 RTZ 与 lane 树。
 - `lib/group.cpp`：多精度 S5 组和、幅值分离与 scale。
-- `lib/lane/e.cpp`：E 的 S2 乘法/pair、S3 四项树。
-- `lib/group/e.cpp`：E 的 S4 lane 小左移/组和/abs、S5 scale 与兼容 token。
+- `lib/lane/lane_e.cpp`：E 的 S2 乘法/pair、S3 四项树。
+- `lib/group/group_e.cpp`：E 的 S4 lane 小左移/组和/abs、S5 scale 与兼容 token。
 - `lib/top/backend.cpp`：共用的 S5 C 解包/LZD、S6 一次双向全局对齐、S7 总树、S8 输出。
 - `lib/arithmetic.cpp`：显式有限窗口/自然增长断言及整数实现 RNE。
 - `lib/model.cpp`：事务/周期调度；`lib/json_io.cpp`：协议检查。
 
 [首批报告](../../test/results/cmodel-v1.4.md) 区分“匹配有限位宽架构”与“相对精确数学的误差”。CModel通过不等于RTL、1.41GHz或PPA通过。
+
+命名：内部数值变量区分 exponent_field/fraction_field/fractional_bits，状态采用 config/state/token 等职责名；C++ 每项声明独立，使用两空格缩进、100 列目标。JSON 字段兼容原协议，reset=true 表示软件复位事件，对应现用 RTL rst_n=0。

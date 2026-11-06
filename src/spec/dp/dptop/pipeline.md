@@ -1,8 +1,8 @@
-> 功能：定义分组共享 DP 的流水候选；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/model.cpp](../../../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义分组共享 DP 的流水边界；范围：S1–S8、INT32 共用输出和时序待决项；版本：v1.6；修改时间：2026-11-06 12:09:37 +08:00；对应代码：[CModel lib/model.cpp](../../../cmodel/lib/model.cpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 分组共享 DP：八级流水
 
-默认所有格式共用 L8 寄存边界，目标 II=1。下表为 v1.5 的 RTL/CModel 流水切分。 [架构图](../draw.io/dp_arch.drawio)
+默认所有格式共用 L8 寄存边界，目标 II=1。下表为 v1.6 的 RTL/CModel 流水切分。 [架构图](../draw.io/dp_arch.drawio)
 
 ## 1. 流水分工
 
@@ -55,3 +55,7 @@ S5 已经扣除元素与 scale 偏置，形成 A_raw，但实际指数还依赖 
 | S7 / S8 | 最多五项宽位规约；总和 abs/LZD/norm/RNE 进位 |
 
 功能块拆分不能暗增流水级。允许实现层进行等价组合优化，但必须保持截断点、位宽、公共指数及[逐级出口](../common/stage-formats.md)合同。
+
+## 流水寄存器命名
+
+两种前端均用 `ff_sN_sM_<field>` 显式保存级间数据；控制的复位入口为同步低有效 `rst_n`。valid/last 每拍推进，payload 仅在所属 source_valid 且 rst_n=1 时更新。时序仅在公共 DFF 原语中实现；主路径与 E 路径的既有 S1–S8 分工保持，详见 [RTL 实现合同](../implementation/verilog.md)。

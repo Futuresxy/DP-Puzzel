@@ -46,7 +46,7 @@ def compile_tb(k,local,glob):
     lint=['-Wall','-Wno-UNUSEDSIGNAL','-Wno-UNUSEDPARAM','-Wno-VARHIDDEN']
     language=['--language','1364-2005'] if IMPLEMENTATION=='verilog' else []
     top='dp_top_e' if FRONTEND=='e' else 'dp_top'
-    define=['-DDP_E_FRONTEND'] if FRONTEND=='e' else []
+    define=['-DDP_E_FRONTEND'] if FRONTEND=='e' else ['-DDP_LEGACY_SV'] if IMPLEMENTATION=='systemverilog' else []
     if SIMULATOR=='verilator':
         run([VERILATOR,'--lint-only',*lint,*language,'--top-module',top,'-f',files,
              f'-GK_FP16={k}',f'-GLOCAL_W={local}',f'-GGLOBAL_W={glob}'],build/'lint.log')

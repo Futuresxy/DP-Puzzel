@@ -11,7 +11,7 @@ description: >
 
 以用户指定的 `sn-naming-convention` 为基础，保留命名维度表、模块层级表、新增模块清单、驱动方/接收方互联规则、各类接口示例、CSV 文档格式和审查清单，再补充 DP 数值和流水变量规则。来源及移植对应见 [移植与现有命名审查](references/adaptation-and-audit.md)。
 
-先读根目录 `AGENTS.md`、相关 spec 和 [dp-rtl-code-style](../dp-rtl-code-style/SKILL.md)。本 skill 管命名含义，code-style 管声明、组合/时序结构和 DFF 选型。新增/修改命名须遵守本规范；现有接口迁移须连同引用和验证一起完成。本次只建立规则，没有批量重命名生产代码。
+先读根目录 `AGENTS.md`、相关 spec 和 [dp-rtl-code-style](../dp-rtl-code-style/SKILL.md)。本 skill 管命名含义，code-style 管声明、组合/时序结构和 DFF 选型。新增/修改命名须遵守本规范；现有接口迁移须连同引用和验证一起完成。现用 CModel/Verilog 的 v1.6 迁移见 test/results/dp-style-v1.6.md；新增修改继续按本规范同步引用与验证。
 
 ## 一、`dp_` 前缀原则与文件组织
 

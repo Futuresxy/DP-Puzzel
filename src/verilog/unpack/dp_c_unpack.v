@@ -12,46 +12,44 @@ module dp_c_unpack #(
 ) (
   input wire [`DP_FP32_W-1:0] in_data,
   input wire in_datatype,
-  output reg out_negative,
-  output reg [`DP_FP32_W-1:0] out_magnitude,
-  output reg signed [ANCHOR_W-1:0] out_anchor,
+  output wire out_negative,
+  output wire [`DP_FP32_W-1:0] out_magnitude,
+  output wire signed [ANCHOR_W-1:0] out_anchor,
   output wire [$clog2(`DP_FP32_W+1)-1:0] out_z,
   output wire [`DP_SPECIAL_W-1:0] out_special
 );
 
-  `include "dp_functions.vh"
-  reg [`DP_SPECIAL_W-1:0] special_d;
-  wire [`DP_FP32_E-1:0] exponent = in_data[`DP_FP32_F+:`DP_FP32_E];
-  wire [`DP_FP32_F-1:0] fraction = in_data[0+:`DP_FP32_F];
-  wire [$clog2(`DP_FP32_W+1)-1:0] count;
-  wire active;
-  assign out_special = special_d;
+  localparam signed [ANCHOR_W-1:0] EXPONENT_BIAS = `DP_FP32_BIAS;
+  wire [`DP_FP32_E-1:0] exponent_field;
+  wire [`DP_FP32_F-1:0] fraction_field;
+  wire signed [ANCHOR_W-1:0] exponent_unbiased;
+  wire is_integer;
+  wire is_special;
+  wire has_fraction;
+  wire magnitude_active;
+  wire [$clog2(`DP_FP32_W+1)-1:0] leading_zero_count;
+  assign exponent_field = in_data[`DP_FP32_F+:`DP_FP32_E];
+  assign fraction_field = in_data[0+:`DP_FP32_F];
+  assign is_integer = in_datatype == `DP_CT_INT32;
+  assign is_special = ~is_integer & (&exponent_field);
+  assign has_fraction = |fraction_field;
+  assign exponent_unbiased = (exponent_field == 0 ? {{(ANCHOR_W - 1) {1'b0}}, 1'b1} : $signed(
+    {{(ANCHOR_W - `DP_FP32_E) {1'b0}}, exponent_field}
+  )) - EXPONENT_BIAS;
+  assign out_negative = in_data[`DP_FP32_W-1];
+  assign out_magnitude = is_integer ? (out_negative ? -in_data : in_data) :
+    is_special ? 0 : {|exponent_field, fraction_field, {(`DP_FP32_W - `DP_FP32_M) {1'b0}}};
+  assign out_anchor = (~is_integer & ~is_special & (out_magnitude != 0)) ? exponent_unbiased : 0;
+  assign out_special[`DP_SP_NAN] = is_special & has_fraction;
+  assign out_special[`DP_SP_INVALID] = is_special & has_fraction & ~fraction_field[`DP_FP32_F-1];
+  assign out_special[`DP_SP_POS_INF] = is_special & ~has_fraction & ~out_negative;
+  assign out_special[`DP_SP_NEG_INF] = is_special & ~has_fraction & out_negative;
   dp_lzd #(
     .W(`DP_FP32_W)
-  ) c_subnormal_detect (
+  ) u_subnormal_detect (
     .in_magnitude(out_magnitude),
-    .out_count(count),
-    .out_active(active)
+    .out_count(leading_zero_count),
+    .out_active(magnitude_active)
   );
-  assign out_z = in_datatype == `DP_CT_FP32 && special_d == 0 ? count : 0;
-  reg signed [ANCHOR_W-1:0] exponent_unbiased;
-  localparam signed [ANCHOR_W-1:0] BIAS = `DP_FP32_BIAS;
-  always @* begin
-    exponent_unbiased = $signed({{(ANCHOR_W - `DP_FP32_E) {1'b0}}, exponent}) - BIAS;
-    if (exponent == 0) exponent_unbiased = 1 - BIAS;
-    out_negative = in_data[`DP_FP32_W-1];
-    out_magnitude = 0;
-    out_anchor = 0;
-    special_d = 0;
-    if (in_datatype == `DP_CT_INT32) out_magnitude = out_negative ? -in_data : in_data;
-    else if (&exponent) begin
-      special_d[`DP_SP_NAN] = |fraction;
-      special_d[`DP_SP_INVALID] = (|fraction) && !fraction[`DP_FP32_F-1];
-      special_d[`DP_SP_POS_INF] = !(|fraction) && !out_negative;
-      special_d[`DP_SP_NEG_INF] = !(|fraction) && out_negative;
-    end else begin
-      out_magnitude = {|exponent, fraction, {(`DP_FP32_W - `DP_FP32_M) {1'b0}}};
-      if (out_magnitude != 0) out_anchor = exponent_unbiased;
-    end
-  end
+  assign out_z = (~is_integer & (out_special == 0)) ? leading_zero_count : 0;
 endmodule

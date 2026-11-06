@@ -110,4 +110,12 @@
 `define DP_E2_GRAIN (8)
 `define DP_SCALE_MAX_E ((1<<`DP_SCALE_W)-2)
 `define DP_Q_GROUP_HEADROOM (2+$clog2(`DP_Q_LANES)+$clog2(`DP_LANES)-1)
+// Scale and E raw encoding fields (sign is carried separately).
+`define DP_NV_SCALE_E `DP_MX8_E4_E
+`define DP_NV_SCALE_F `DP_MX8_E4_F
+`define DP_NV_SCALE_BIAS `DP_MX8_E4_BIAS
+`define DP_HIF_SCALE_E (6)
+`define DP_HIF_SCALE_F (2)
+`define DP_E_PAYLOAD_W (`DP_EIGHTH_W-1)
+`define DP_E_SIGN_BIT (`DP_EIGHTH_W-1)
 `endif

@@ -1,4 +1,4 @@
-> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.5.9；修改时间：2026-11-06 09:36:04 +08:00；对应代码：[E CModel lane/e.cpp](../../../cmodel/lib/lane/e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)、[dp_lane_unpack_e.v](../../../verilog/unpack/dp_lane_unpack_e.v)；多精度基线为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)。
+> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)、[dp_lane_unpack_e.v](../../../verilog/unpack/dp_lane_unpack_e.v)；多精度基线为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)。
 
 # E 类专用 lane 设计与实现
 

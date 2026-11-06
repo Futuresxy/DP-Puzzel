@@ -1,4 +1,4 @@
-> 功能：定义 group 规格目录与计算边界；范围：两个 lane、S2 公共指数、S5 组和/scale/LZD 及 E16 优化候选；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)、[E CModel group/e.cpp](../../../cmodel/lib/group/e.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；Chisel 尚未实现。
+> 功能：定义 group 规格目录与计算边界；范围：两个 lane、S2 公共指数、S5 组和/scale/LZD 及 E16 优化候选；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)、[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；Chisel 尚未实现。
 
 # group：两 lane 协作、组和与 scale
 

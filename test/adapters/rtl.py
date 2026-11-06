@@ -17,6 +17,7 @@ def snapshot(implementation,frontend='multi'):
     base=ROOT/'src/verilog'
     if frontend not in ('multi','e') or (frontend=='e' and implementation!='verilog'):
         raise ValueError('E frontend requires maintained pure Verilog')
+    interface = DP_INTERFACE if implementation == 'verilog' else dict(DP_INTERFACE, reset_port='reset', reset_active='high')
     top='dp_top_e' if frontend=='e' else 'dp_top'
     source_list=base/('files_e.f' if frontend=='e' else 'files.f' if implementation=='verilog' else 'systemverilog/files.f')
     sources=[ROOT/line for line in source_list.read_text().splitlines() if line and not line.startswith('+')]
@@ -40,9 +41,9 @@ def snapshot(implementation,frontend='multi'):
             exported_sha256=exported,status='generated',verified_scopes=[],
             created_utc=datetime.now(timezone.utc).isoformat(),top=top,
             specialization='parameterized source snapshot; parameters recorded per simulation',ppa_eligible=False),indent=2)+'\n')
-        (dest/'README.md').write_text(f'# {export_id}\n\nFrozen hand-written RTL sources for DP v1.5, frontend={frontend}.\n\n'
+        (dest/'README.md').write_text(f'# {export_id}\n\nFrozen hand-written RTL sources for DP {"v1.6" if implementation == "verilog" else "v1.5 legacy"}, frontend={frontend}.\n\n'
             'Created by `test/adapters/rtl.py`; no flattening or source editing. '
-            f'Top: `{top}`. Clock: `clock`. Synchronous active-high reset: `reset`. '
+            f'Top: `{top}`. Clock: `clock`. Synchronous reset: `{interface["reset_port"]}` (active {interface["reset_active"]}). '
             'Compile `files.f` relative to this export directory. Parameters and verified scopes are in the regression report. '
             'No DC, timing or power analysis was performed.\n')
     manifest=json.loads((dest/'manifest.json').read_text())
@@ -50,7 +51,7 @@ def snapshot(implementation,frontend='multi'):
     for rel,digest in manifest['exported_sha256'].items():
         if hashlib.sha256((dest/rel).read_bytes()).hexdigest()!=digest:
             raise RuntimeError(f'modified snapshot: {dest/rel}')
-    manifest.update(status='generated',ppa_eligible=False,interface=DP_INTERFACE)
+    manifest.update(status='generated',ppa_eligible=False,interface=interface)
     (dest/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     # Build-tool adapter only; canonical manifest/list above use portable paths.
     resolved=[]

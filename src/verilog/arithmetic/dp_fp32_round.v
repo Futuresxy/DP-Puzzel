@@ -10,71 +10,77 @@
 // Input coordinate is in_anchor. Output FP32 encodes sign/exponent/fraction 1/8/23.
 module dp_fp32_round #(
   parameter integer SUM_W = 43,
-  ANCHOR_W = 10,
-  GLOBAL_MAG_W = 39
+  parameter integer ANCHOR_W = 10,
+  parameter integer GLOBAL_MAG_W = 39
 ) (
   input wire signed [SUM_W-1:0] in_sum,
   input wire signed [ANCHOR_W-1:0] in_anchor,
   input wire in_negative_zero,
-  output reg [`DP_FP32_W-1:0] out_bits
+  output wire [`DP_FP32_W-1:0] out_bits
 );
-  integer i;
 
   `include "dp_functions.vh"
-  localparam integer COUNT_W = $clog2(SUM_W + 1), ROUND_W = SUM_W + 1;
-  wire sign_value = in_sum[SUM_W-1] || (in_sum == 0 && in_negative_zero);
-  wire [SUM_W-1:0] magnitude = in_sum[SUM_W-1] ? -in_sum : in_sum;
+  localparam integer COUNT_W = $clog2(SUM_W + 1);
+  localparam integer ROUND_W = SUM_W + 1;
+  wire sign_value;
+  assign sign_value = in_sum[SUM_W-1] | (in_sum == 0 & in_negative_zero);
+  wire [SUM_W-1:0] magnitude;
+  assign magnitude = in_sum[SUM_W-1] ? -in_sum : in_sum;
   wire [COUNT_W-1:0] leading;
   wire active;
   dp_lzd #(
     .W(SUM_W)
-  ) output_leading_detect (
+  ) u_output_leading_detect (
     .in_magnitude(magnitude),
     .out_count(leading),
     .out_active(active)
   );
   localparam integer EXP_CALC_W = ANCHOR_W + 1;
   localparam integer WINDOW_OFFSET_INT = GLOBAL_MAG_W - 1;
-  localparam signed [EXP_CALC_W-1:0] WINDOW_OFFSET = WINDOW_OFFSET_INT[EXP_CALC_W-1:0],
-    MIN_EXP = `DP_FP32_MIN_E, MAX_EXP = `DP_FP32_MAX_E, BIAS = `DP_FP32_BIAS;
-  reg signed [EXP_CALC_W-1:0] exponent_value, lsb_value, biased_exponent;
-  integer shift_value, highest;
-  reg [ROUND_W-1:0] rounded;
-  reg guard_bit, sticky_bit;
-  always @* begin
-    highest = SUM_W - 1 - {{(32 - COUNT_W) {1'b0}}, leading};
-    lsb_value = $signed({in_anchor[ANCHOR_W-1], in_anchor}) - WINDOW_OFFSET;
-    exponent_value = lsb_value + $signed(highest[EXP_CALC_W-1:0]);
-    shift_value = exponent_value >= MIN_EXP ? highest - (`DP_FP32_M - 1) :
-      `DP_FP32_MIN_LSB - $signed({{(32 - EXP_CALC_W) {lsb_value[EXP_CALC_W-1]}}, lsb_value});
-    rounded = 0;
-    guard_bit = 0;
-    sticky_bit = 0;
-    if (shift_value <= 0) rounded = {1'b0, magnitude} << (-shift_value);
-    else begin
-      rounded = {1'b0, magnitude} >> shift_value;
-      for (i = 0; i < SUM_W; i = i + 1) begin
-        if (i == shift_value - 1) guard_bit = magnitude[i];
-        if (i < shift_value - 1) sticky_bit = sticky_bit | magnitude[i];
-      end
-      if (guard_bit && (sticky_bit || rounded[0])) rounded = rounded + 1'b1;
+  localparam signed [EXP_CALC_W-1:0] WINDOW_OFFSET = WINDOW_OFFSET_INT[EXP_CALC_W-1:0];
+  localparam signed [EXP_CALC_W-1:0] MIN_EXP = `DP_FP32_MIN_E;
+  localparam signed [EXP_CALC_W-1:0] MAX_EXP = `DP_FP32_MAX_E;
+  localparam signed [EXP_CALC_W-1:0] BIAS = `DP_FP32_BIAS;
+  wire signed [EXP_CALC_W-1:0] exponent_value;
+  wire signed [EXP_CALC_W-1:0] lsb_value;
+  wire signed [EXP_CALC_W-1:0] exponent_after_carry;
+  wire signed [EXP_CALC_W-1:0] biased_exponent;
+  wire signed [31:0] shift_value;
+  wire signed [31:0] highest_bit_index;
+  wire [ROUND_W-1:0] shifted_magnitude;
+  wire [ROUND_W-1:0] rounded;
+  wire [ROUND_W-1:0] normalized;
+  wire [SUM_W-1:0] guard_candidates;
+  wire [SUM_W-1:0] sticky_candidates;
+  wire round_increment;
+  wire normal_result;
+  wire [`DP_FP32_W-1:0] finite_bits;
+  genvar bit_index;
+  assign highest_bit_index = SUM_W - 1 - {{(32 - COUNT_W) {1'b0}}, leading};
+  assign lsb_value = $signed({in_anchor[ANCHOR_W-1], in_anchor}) - WINDOW_OFFSET;
+  assign exponent_value = lsb_value + $signed(highest_bit_index[EXP_CALC_W-1:0]);
+  assign normal_result = exponent_value >= MIN_EXP;
+  assign
+    shift_value = normal_result ? highest_bit_index - (`DP_FP32_M - 1) : `DP_FP32_MIN_LSB - $signed(
+    {{(32 - EXP_CALC_W) {lsb_value[EXP_CALC_W-1]}}, lsb_value}
+  );
+  assign shifted_magnitude = shift_value <= 0 ?
+    {1'b0, magnitude} << (-shift_value) : {1'b0, magnitude} >> shift_value;
+  generate
+    for (bit_index = 0; bit_index < SUM_W; bit_index = bit_index + 1) begin : g_round_bits
+      assign guard_candidates[bit_index]  = magnitude[bit_index] & (bit_index == shift_value - 1);
+      assign sticky_candidates[bit_index] = magnitude[bit_index] & (bit_index < shift_value - 1);
     end
-    biased_exponent = exponent_value + BIAS;
-    out_bits = 0;
-    out_bits[`DP_FP32_W-1] = sign_value;
-    if (active) begin
-      if (exponent_value >= MIN_EXP) begin
-        if (rounded[`DP_FP32_M]) begin
-          rounded = rounded >> 1;
-          exponent_value = exponent_value + 1'b1;
-        end
-        if (exponent_value > MAX_EXP) out_bits = out_bits | `DP_FP32_INF;
-        else begin
-          biased_exponent = exponent_value + BIAS;
-          out_bits[`DP_FP32_F+:`DP_FP32_E] = biased_exponent[`DP_FP32_E-1:0];
-          out_bits[0+:`DP_FP32_F] = rounded[0+:`DP_FP32_F];
-        end
-      end else out_bits = out_bits | rounded[`DP_FP32_W-1:0];
-    end
-  end
+  endgenerate
+  assign round_increment = (shift_value > 0) & (|guard_candidates) &
+    ((|sticky_candidates) | shifted_magnitude[0]);
+  assign rounded = shifted_magnitude + {{(ROUND_W - 1) {1'b0}}, round_increment};
+  assign normalized = (normal_result & rounded[`DP_FP32_M]) ? rounded >> 1 : rounded;
+  assign exponent_after_carry = exponent_value +
+    {{(EXP_CALC_W - 1) {1'b0}}, (normal_result & rounded[`DP_FP32_M])};
+  assign biased_exponent = exponent_after_carry + BIAS;
+  assign finite_bits = normal_result ?
+    (exponent_after_carry > MAX_EXP ? `DP_FP32_INF :
+     {1'b0, biased_exponent[`DP_FP32_E-1:0], normalized[`DP_FP32_F-1:0]}) : rounded[`DP_FP32_W-1:0];
+  assign out_bits = {sign_value, {(`DP_FP32_W - 1) {1'b0}}} | (active ? finite_bits : 0);
 endmodule

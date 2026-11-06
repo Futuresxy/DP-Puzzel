@@ -8,7 +8,7 @@
 // Product            | 0 | ia+ib | fa+fb
 module dp_mul_unsigned #(
   parameter integer A_W = 8,
-  B_W = 8
+  parameter integer B_W = 8
 ) (
   input wire [A_W-1:0] in_a,
   input wire [B_W-1:0] in_b,

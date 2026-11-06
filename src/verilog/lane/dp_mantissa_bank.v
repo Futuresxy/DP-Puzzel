@@ -21,100 +21,99 @@
 // HH operands use I=1,F=6; LL operands use I=0,F=4.
 // INT8 splits an operand into I4F0 digits; the upper digit has weight 2^4.
 module dp_mantissa_bank (
-  // verilog_format: off  // Keep ports sharing one declaration on the same line.
   input wire [`DP_TYPE_W-1:0] in_datatype,
   input wire in_enable,
-  input wire [`DP_E_LANES*`DP_MANT_W-1:0] in_a,in_b,
+  input wire [`DP_E_LANES*`DP_MANT_W-1:0] in_a,
+  input wire [`DP_E_LANES*`DP_MANT_W-1:0] in_b,
   output wire [`DP_E_LANES*`DP_PRODUCT_W-1:0] out_products
-  // verilog_format: on
 );
-  genvar bank, i;
+  genvar bank_index;
+  genvar element_index;
 
   `include "dp_functions.vh"
   wire [`DP_PRODUCT_W-1:0] result[0:`DP_MUL_BANKS-1][0:3];
   generate
-    for (bank = 0; bank < `DP_MUL_BANKS; bank = bank + 1) begin : g_bank
-      reg [`DP_MUL_HI-1:0] hh_a, hh_b, hl_a, lh_b;
-      reg [`DP_MUL_LO-1:0] hl_b, lh_a, ll_a, ll_b;
+    for (bank_index = 0; bank_index < `DP_MUL_BANKS; bank_index = bank_index + 1) begin : g_bank
+      wire [`DP_MUL_HI-1:0] hh_a;
+      wire [`DP_MUL_HI-1:0] hh_b;
+      wire [`DP_MUL_HI-1:0] hl_a;
+      wire [`DP_MUL_HI-1:0] lh_b;
+      wire [`DP_MUL_LO-1:0] hl_b;
+      wire [`DP_MUL_LO-1:0] lh_a;
+      wire [`DP_MUL_LO-1:0] ll_a;
+      wire [`DP_MUL_LO-1:0] ll_b;
       wire [2*`DP_MUL_HI-1:0] hh;
-      wire [`DP_MUL_HI+`DP_MUL_LO-1:0] hl, lh;
+      wire [`DP_MUL_HI+`DP_MUL_LO-1:0] hl;
+      wire [`DP_MUL_HI+`DP_MUL_LO-1:0] lh;
       wire [2*`DP_MUL_LO-1:0] ll;
-      reg [`DP_PRODUCT_W-1:0] p0, p1, p2, p3;
-      wire [`DP_PRODUCT_W-1:0] hh_extended = {{(`DP_PRODUCT_W - (2 * `DP_MUL_HI)) {1'b0}}, hh};
-      wire [`DP_PRODUCT_W-1:0] hl_extended = {
-        {(`DP_PRODUCT_W - (`DP_MUL_HI + `DP_MUL_LO)) {1'b0}}, hl
-      };
-      wire [`DP_PRODUCT_W-1:0] lh_extended = {
-        {(`DP_PRODUCT_W - (`DP_MUL_HI + `DP_MUL_LO)) {1'b0}}, lh
-      };
-      wire [`DP_PRODUCT_W-1:0] ll_extended = {{(`DP_PRODUCT_W - (2 * `DP_MUL_LO)) {1'b0}}, ll};
-      wire [`DP_MANT_W-1:0] a_h = in_a[bank*`DP_MANT_W+:`DP_MANT_W],
-        b_h = in_b[bank*`DP_MANT_W+:`DP_MANT_W];
-      wire [`DP_MANT_W-1:0] a_q0 = in_a[(bank*2)*`DP_MANT_W+:`DP_MANT_W],
-        b_q0 = in_b[(bank*2)*`DP_MANT_W+:`DP_MANT_W];
-      wire [`DP_MANT_W-1:0] a_q1 = in_a[(bank*2+1)*`DP_MANT_W+:`DP_MANT_W],
-        b_q1 = in_b[(bank*2+1)*`DP_MANT_W+:`DP_MANT_W];
-      always @* begin
-        hh_a = 0;
-        hh_b = 0;
-        hl_a = 0;
-        hl_b = 0;
-        lh_a = 0;
-        lh_b = 0;
-        ll_a = 0;
-        ll_b = 0;
-        if (in_enable) begin
-          case (in_datatype)
-            `DP_DT_TF32, `DP_DT_FP16:
-            if (in_datatype == `DP_DT_FP16 || bank == 0) begin
-              hh_a = {
-                {(`DP_MUL_HI - (`DP_MANT_W - `DP_MUL_LO)) {1'b0}}, a_h[`DP_MANT_W-1:`DP_MUL_LO]
-              };
-              hh_b = {
-                {(`DP_MUL_HI - (`DP_MANT_W - `DP_MUL_LO)) {1'b0}}, b_h[`DP_MANT_W-1:`DP_MUL_LO]
-              };
-              hl_a = hh_a;
-              hl_b = b_h[`DP_MUL_LO-1:0];
-              lh_a = a_h[`DP_MUL_LO-1:0];
-              lh_b = hh_b;
-              ll_a = a_h[`DP_MUL_LO-1:0];
-              ll_b = b_h[`DP_MUL_LO-1:0];
-            end
-            `DP_DT_BF16: begin
-              hh_a = a_h[`DP_MUL_HI-1:0];
-              hh_b = b_h[`DP_MUL_HI-1:0];
-            end
-            `DP_DT_INT8: begin
-              hh_a = a_q0[`DP_MUL_HI-1:0];
-              hh_b = b_q0[`DP_MUL_HI-1:0];
-              hl_a = a_q1[`DP_MUL_HI-1:0];
-              hl_b = b_q1[`DP_MUL_LO-1:0];
-              lh_a = b_q1[`DP_MUL_LO+:`DP_MUL_LO];
-              lh_b = a_q1[`DP_MUL_HI-1:0];
-            end
-            `DP_DT_MXFP4, `DP_DT_NVFP4, `DP_DT_HIF4: begin
-              hh_a = in_a[(bank*4)*`DP_MANT_W+:`DP_MUL_HI];
-              hh_b = in_b[(bank*4)*`DP_MANT_W+:`DP_MUL_HI];
-              hl_a = in_a[(bank*4+1)*`DP_MANT_W+:`DP_MUL_HI];
-              hl_b = in_b[(bank*4+1)*`DP_MANT_W+:`DP_MUL_LO];
-              lh_a = in_a[(bank*4+2)*`DP_MANT_W+:`DP_MUL_LO];
-              lh_b = in_b[(bank*4+2)*`DP_MANT_W+:`DP_MUL_HI];
-              ll_a = in_a[(bank*4+3)*`DP_MANT_W+:`DP_MUL_LO];
-              ll_b = in_b[(bank*4+3)*`DP_MANT_W+:`DP_MUL_LO];
-            end
-            default: begin
-              ll_a = a_q0[`DP_MUL_LO-1:0];
-              ll_b = b_q0[`DP_MUL_LO-1:0];
-              lh_a = a_q1[`DP_MUL_LO-1:0];
-              lh_b = b_q1[`DP_MUL_HI-1:0];
-            end
-          endcase
-        end
-      end
+      wire [`DP_PRODUCT_W-1:0] product_first;
+      wire [`DP_PRODUCT_W-1:0] product_second;
+      wire [`DP_PRODUCT_W-1:0] product_third;
+      wire [`DP_PRODUCT_W-1:0] product_fourth;
+      wire [`DP_PRODUCT_W-1:0] hh_extended;
+      assign hh_extended = {{(`DP_PRODUCT_W - (2 * `DP_MUL_HI)) {1'b0}}, hh};
+      wire [`DP_PRODUCT_W-1:0] hl_extended;
+      assign hl_extended = {{(`DP_PRODUCT_W - (`DP_MUL_HI + `DP_MUL_LO)) {1'b0}}, hl};
+      wire [`DP_PRODUCT_W-1:0] lh_extended;
+      assign lh_extended = {{(`DP_PRODUCT_W - (`DP_MUL_HI + `DP_MUL_LO)) {1'b0}}, lh};
+      wire [`DP_PRODUCT_W-1:0] ll_extended;
+      assign ll_extended = {{(`DP_PRODUCT_W - (2 * `DP_MUL_LO)) {1'b0}}, ll};
+      wire [`DP_MANT_W-1:0] h_magnitude_a;
+      assign h_magnitude_a = in_a[bank_index*`DP_MANT_W+:`DP_MANT_W];
+      wire [`DP_MANT_W-1:0] h_magnitude_b;
+      assign h_magnitude_b = in_b[bank_index*`DP_MANT_W+:`DP_MANT_W];
+      wire [`DP_MANT_W-1:0] q_even_magnitude_a;
+      assign q_even_magnitude_a = in_a[(bank_index*2)*`DP_MANT_W+:`DP_MANT_W];
+      wire [`DP_MANT_W-1:0] q_even_magnitude_b;
+      assign q_even_magnitude_b = in_b[(bank_index*2)*`DP_MANT_W+:`DP_MANT_W];
+      wire [`DP_MANT_W-1:0] q_odd_magnitude_a;
+      assign q_odd_magnitude_a = in_a[(bank_index*2+1)*`DP_MANT_W+:`DP_MANT_W];
+      wire [`DP_MANT_W-1:0] q_odd_magnitude_b;
+      assign q_odd_magnitude_b = in_b[(bank_index*2+1)*`DP_MANT_W+:`DP_MANT_W];
+      wire select_th;
+      wire select_bf16;
+      wire select_int8;
+      wire select_e;
+      wire select_q;
+      assign select_th = in_enable &
+        ((in_datatype == `DP_DT_FP16) | ((in_datatype == `DP_DT_TF32) & (bank_index == 0)));
+      assign select_bf16 = in_enable & (in_datatype == `DP_DT_BF16);
+      assign select_int8 = in_enable & (in_datatype == `DP_DT_INT8);
+      assign select_e = in_enable & ((in_datatype == `DP_DT_MXFP4) | (in_datatype == `DP_DT_NVFP4) |
+                                     (in_datatype == `DP_DT_HIF4));
+      assign select_q =
+        in_enable & ~((in_datatype == `DP_DT_TF32) | (in_datatype == `DP_DT_FP16) |
+                      (in_datatype == `DP_DT_BF16) | (in_datatype == `DP_DT_INT8) | (elements(
+        in_datatype
+      ) == `DP_E_LANES));
+      assign hh_a = select_th ? {{(`DP_MUL_HI - (`DP_MANT_W - `DP_MUL_LO)) {1'b0}},
+                                 h_magnitude_a[`DP_MANT_W-1:`DP_MUL_LO]} : select_bf16 ?
+        h_magnitude_a[`DP_MUL_HI-1:0] : select_int8 ? q_even_magnitude_a[`DP_MUL_HI-1:0] :
+        select_e ? in_a[(bank_index*4)*`DP_MANT_W+:`DP_MUL_HI] : 0;
+      assign hl_a = select_th ? hh_a : select_int8 ? q_odd_magnitude_a[`DP_MUL_HI-1:0] :
+        select_e ? in_a[(bank_index*4+1)*`DP_MANT_W+:`DP_MUL_HI] : 0;
+      assign hl_b = select_th ? h_magnitude_b[`DP_MUL_LO-1:0] : select_int8 ? q_odd_magnitude_b[
+        `DP_MUL_LO-1:0] : select_e ? in_b[(bank_index*4+1)*`DP_MANT_W+:`DP_MUL_LO] : 0;
+      assign lh_a = select_th ? h_magnitude_a[`DP_MUL_LO-1:0] : select_int8 ? q_odd_magnitude_b[
+        `DP_MUL_LO+:`DP_MUL_LO] : select_e ? in_a[(bank_index*4+2)*`DP_MANT_W+:`DP_MUL_LO] :
+        select_q ? q_odd_magnitude_a[`DP_MUL_LO-1:0] : 0;
+      assign lh_b = select_th ? hh_b : select_int8 ? q_odd_magnitude_a[`DP_MUL_HI-1:0] :
+        select_e ? in_b[(bank_index*4+2)*`DP_MANT_W+:`DP_MUL_HI] :
+        select_q ? q_odd_magnitude_b[`DP_MUL_HI-1:0] : 0;
+      assign ll_a = select_th ? h_magnitude_a[`DP_MUL_LO-1:0] :
+        select_e ? in_a[(bank_index*4+3)*`DP_MANT_W+:`DP_MUL_LO] :
+        select_q ? q_even_magnitude_a[`DP_MUL_LO-1:0] : 0;
+      assign ll_b = select_th ? h_magnitude_b[`DP_MUL_LO-1:0] :
+        select_e ? in_b[(bank_index*4+3)*`DP_MANT_W+:`DP_MUL_LO] :
+        select_q ? q_even_magnitude_b[`DP_MUL_LO-1:0] : 0;
+      assign hh_b = select_th ? {{(`DP_MUL_HI - (`DP_MANT_W - `DP_MUL_LO)) {1'b0}},
+                                 h_magnitude_b[`DP_MANT_W-1:`DP_MUL_LO]} : select_bf16 ?
+        h_magnitude_b[`DP_MUL_HI-1:0] : select_int8 ? q_even_magnitude_b[`DP_MUL_HI-1:0] :
+        select_e ? in_b[(bank_index*4)*`DP_MANT_W+:`DP_MUL_HI] : 0;
       dp_mul_unsigned #(
         .A_W(`DP_MUL_HI),
         .B_W(`DP_MUL_HI)
-      ) hh_mul (
+      ) u_hh_mul (
         .in_a(hh_a),
         .in_b(hh_b),
         .out_product(hh)
@@ -122,7 +121,7 @@ module dp_mantissa_bank (
       dp_mul_unsigned #(
         .A_W(`DP_MUL_HI),
         .B_W(`DP_MUL_LO)
-      ) hl_mul (
+      ) u_hl_mul (
         .in_a(hl_a),
         .in_b(hl_b),
         .out_product(hl)
@@ -130,7 +129,7 @@ module dp_mantissa_bank (
       dp_mul_unsigned #(
         .A_W(`DP_MUL_LO),
         .B_W(`DP_MUL_HI)
-      ) lh_mul (
+      ) u_lh_mul (
         .in_a(lh_a),
         .in_b(lh_b),
         .out_product(lh)
@@ -138,61 +137,52 @@ module dp_mantissa_bank (
       dp_mul_unsigned #(
         .A_W(`DP_MUL_LO),
         .B_W(`DP_MUL_LO)
-      ) ll_mul (
+      ) u_ll_mul (
         .in_a(ll_a),
         .in_b(ll_b),
         .out_product(ll)
       );
-      always @* begin
-        p0 = 0;
-        p1 = 0;
-        p2 = 0;
-        p3 = 0;
-        case (in_datatype)
-          `DP_DT_TF32, `DP_DT_FP16:
-          p0 = (hh_extended << (2 * `DP_MUL_LO)) + ((hl_extended + lh_extended) << `DP_MUL_LO) +
-            ll_extended;
-          `DP_DT_BF16: p0 = hh_extended;
-          `DP_DT_INT8: begin
-            p0 = hh_extended;
-            p1 = hl_extended + (lh_extended << `DP_MUL_LO);
-          end
-          `DP_DT_MXFP4, `DP_DT_NVFP4, `DP_DT_HIF4: begin
-            p0 = hh_extended;
-            p1 = hl_extended;
-            p2 = lh_extended;
-            p3 = ll_extended;
-          end
-          default: begin
-            p0 = ll_extended;
-            p1 = lh_extended;
-          end
-        endcase
-      end
-      assign result[bank][0] = p0;
-      assign result[bank][1] = p1;
-      assign result[bank][2] = p2;
-      assign result[bank][3] = p3;
+      assign product_first = ((in_datatype == `DP_DT_TF32) | (in_datatype == `DP_DT_FP16)) ?
+        (hh_extended << (2 * `DP_MUL_LO)) + ((hl_extended + lh_extended) << `DP_MUL_LO) +
+        ll_extended : ((in_datatype == `DP_DT_BF16) | (in_datatype == `DP_DT_INT8) | (elements(
+        in_datatype
+      ) == `DP_E_LANES)) ? hh_extended : ll_extended;
+      assign product_second = (in_datatype == `DP_DT_INT8) ?
+        hl_extended + (lh_extended << `DP_MUL_LO) : (elements(
+        in_datatype
+      ) == `DP_E_LANES) ? hl_extended : (elements(
+        in_datatype
+      ) == `DP_Q_LANES) ? lh_extended : 0;
+      assign product_third = (elements(in_datatype) == `DP_E_LANES) ? lh_extended : 0;
+      assign product_fourth = (elements(in_datatype) == `DP_E_LANES) ? ll_extended : 0;
+      assign result[bank_index][0] = product_first;
+      assign result[bank_index][1] = product_second;
+      assign result[bank_index][2] = product_third;
+      assign result[bank_index][3] = product_fourth;
     end
   endgenerate
   generate
-    for (i = 0; i < `DP_E_LANES; i = i + 1) begin : g_route
-      if (i < 2) begin : g_h
-        assign out_products[i*`DP_PRODUCT_W+:`DP_PRODUCT_W] = (elements(
+    for (
+      element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
+    ) begin : g_route
+      if (element_index < 2) begin : g_h
+        assign out_products[element_index*`DP_PRODUCT_W+:`DP_PRODUCT_W] = (elements(
           in_datatype
-        ) < `DP_Q_LANES) ? result[i][0] : (elements(
+        ) < `DP_Q_LANES) ? result[element_index][0] : (elements(
           in_datatype
-        ) == `DP_Q_LANES) ? result[i/2][i%2] : result[i/4][i%4];
-      end else if (i < `DP_Q_LANES) begin : g_q
-        assign out_products[i*`DP_PRODUCT_W+:`DP_PRODUCT_W] = (elements(
+        ) == `DP_Q_LANES) ? result[element_index/2][element_index%2] :
+          result[element_index/4][element_index%4];
+      end else if (element_index < `DP_Q_LANES) begin : g_q
+        assign out_products[element_index*`DP_PRODUCT_W+:`DP_PRODUCT_W] = (elements(
           in_datatype
         ) < `DP_Q_LANES) ? 0 : (elements(
           in_datatype
-        ) == `DP_Q_LANES) ? result[i/2][i%2] : result[i/4][i%4];
+        ) == `DP_Q_LANES) ? result[element_index/2][element_index%2] :
+          result[element_index/4][element_index%4];
       end else begin : g_e
-        assign out_products[i*`DP_PRODUCT_W+:`DP_PRODUCT_W] = (elements(
+        assign out_products[element_index*`DP_PRODUCT_W+:`DP_PRODUCT_W] = (elements(
           in_datatype
-        ) == `DP_E_LANES) ? result[i/4][i%4] : 0;
+        ) == `DP_E_LANES) ? result[element_index/4][element_index%4] : 0;
       end
     end
   endgenerate

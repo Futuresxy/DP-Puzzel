@@ -2,6 +2,8 @@
 `timescale 1ns/1ps
 // Shared DP_INPUTS_V1 reader and pre-edge, fixed-latency scoreboard.
 // Stimulus sidecar controls reset/independent valids without changing payload layout.
+
+`include "dp_tb_trace_names.vh"
 module dp_tb;
   `include "dp_functions.vh"
   parameter integer K_FP16=`DP_DEFAULT_K, LOCAL_W=`DP_DEFAULT_LOCAL_W, GLOBAL_W=`DP_DEFAULT_GLOBAL_W;
@@ -30,7 +32,11 @@ module dp_tb;
   dp_top #(.K_FP16(K_FP16),.LOCAL_W(LOCAL_W),.GLOBAL_W(GLOBAL_W)) dut(
 `endif
     .clock(clock),
+`ifdef DP_LEGACY_SV
     .reset(reset),
+`else
+    .rst_n(~reset),
+`endif
     .in_a_valid(in_a_valid),
     .in_b_valid(in_b_valid),
     .in_c_valid(in_c_valid),
@@ -157,36 +163,36 @@ module dp_tb;
           for(element_index=0;element_index<(ats[pending[0]]==`DP_DT_TF32 ? 1 : `DP_LANES);element_index=element_index+1) begin
             $fdisplay(trace_fd,"%0d 1 layout_a %0d %h %h %h",pending[0],
               (group_index*`DP_LANES+lane_index)*(ats[pending[0]]==`DP_DT_TF32 ? 1 : `DP_LANES)+element_index,
-              dut.g_group[group_index].group_unit.g_lane[lane_index].lane.operand_unpack_a.mantissa_q[element_index],
-              dut.g_group[group_index].group_unit.g_lane[lane_index].lane.operand_unpack_a.exponent_q[element_index],
-              dut.g_group[group_index].group_unit.g_lane[lane_index].lane.operand_unpack_a.signs_q[element_index]);
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_A.mantissa_q[element_index],
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_A.exponent_q[element_index],
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_A.signs_q[element_index]);
             $fdisplay(trace_fd,"%0d 1 layout_b %0d %h %h %h",pending[0],
               (group_index*`DP_LANES+lane_index)*(ats[pending[0]]==`DP_DT_TF32 ? 1 : `DP_LANES)+element_index,
-              dut.g_group[group_index].group_unit.g_lane[lane_index].lane.operand_unpack_b.mantissa_q[element_index],
-              dut.g_group[group_index].group_unit.g_lane[lane_index].lane.operand_unpack_b.exponent_q[element_index],
-              dut.g_group[group_index].group_unit.g_lane[lane_index].lane.operand_unpack_b.signs_q[element_index]);
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_B.mantissa_q[element_index],
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_B.exponent_q[element_index],
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_B.signs_q[element_index]);
           end
         end
         if(dut.valid_q[1]) begin
           for(element_index=0;element_index<elements(ats[pending[1]][`DP_TYPE_W-1:0]);element_index=element_index+1)
             $fdisplay(trace_fd,"%0d 2 product %0d %h",pending[1],(group_index*`DP_LANES+lane_index)*elements(ats[pending[1]][`DP_TYPE_W-1:0])+element_index,
-              dut.g_group[group_index].group_unit.g_lane[lane_index].lane.products_q[element_index*`DP_PRODUCT_W+:`DP_PRODUCT_W]);
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.products_q[element_index*`DP_PRODUCT_W+:`DP_PRODUCT_W]);
           $fdisplay(trace_fd,"%0d 2 anchor %0d %h",pending[1],group_index,
-              dut.g_group[group_index].group_unit.g_lane[lane_index].lane.anchor_s2_q);
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.anchor_s2_q);
         end
         if(dut.valid_q[2]) begin
           for(element_index=0;element_index<`DP_Q_LANES;element_index=element_index+1)
             $fdisplay(trace_fd,"%0d 3 leaf %0d %0d",pending[2],(group_index*`DP_LANES+lane_index)*`DP_Q_LANES+element_index,
-              $signed(dut.g_group[group_index].group_unit.g_lane[lane_index].lane.leaves_q[element_index*(LOCAL_W+1)+:LOCAL_W+1]));
+              $signed(dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.leaves_q[element_index*(LOCAL_W+1)+:LOCAL_W+1]));
         end
         if(dut.valid_q[3]) $fdisplay(trace_fd,"%0d 4 lane %0d %0d",pending[3],group_index*`DP_LANES+lane_index,
-              $signed(dut.g_group[group_index].group_unit.g_lane[lane_index].lane.out_sop));
+              $signed(dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.out_sop));
       end
     end
     always @(negedge clock) if(trace_fd && dut.valid_q[4])
       $fdisplay(trace_fd,"%0d 5 group %0d %h %0d %0d %0d %h",pending[4],group_index,
-        dut.g_group[group_index].magnitude,$signed(dut.g_group[group_index].anchor),dut.g_group[group_index].leading,
-        dut.g_group[group_index].sign_value,dut.g_group[group_index].special_value);
+        dut.g_group[group_index].`DP_TRACE_GROUP_MAGNITUDE,$signed(dut.g_group[group_index].`DP_TRACE_GROUP_ANCHOR),dut.g_group[group_index].`DP_TRACE_GROUP_LEADING,
+        dut.g_group[group_index].`DP_TRACE_GROUP_SIGN_VALUE,dut.g_group[group_index].`DP_TRACE_GROUP_SPECIAL_VALUE);
   end endgenerate
 `endif
   integer source_index;

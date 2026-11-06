@@ -10,39 +10,30 @@
 module dp_scale_unpack (
   input wire [`DP_SCALE_W-1:0] in_data,
   input wire [`DP_SCALE_TYPE_W-1:0] in_datatype,
-  output reg [`DP_SCALE_M-1:0] out_magnitude,
-  output reg [`DP_EXP_W-1:0] out_exponent,
-  output reg out_nan
+  output wire [`DP_SCALE_M-1:0] out_magnitude,
+  output wire [`DP_EXP_W-1:0] out_exponent,
+  output wire out_nan
 );
 
-  `include "dp_functions.vh"
-  localparam integer NV_E = 4, NV_F = 3, NV_BIAS = 7, HIF_F = 2;
-  reg [31:0] exponent_work;
-  always @* begin
-    out_magnitude = (1 << `DP_SCALE_F);
-    exponent_work = (`DP_SCALE_BIAS);
-    out_nan = 0;
-    case (in_datatype)
-      `DP_SC_E8M0: begin
-        exponent_work = {{(32 - `DP_SCALE_W) {1'b0}}, in_data};
-        out_nan = &in_data;
-      end
-      `DP_SC_E6M2: begin
-        exponent_work = (({{(32 - `DP_SCALE_W) {1'b0}}, in_data} >> HIF_F) + `DP_SCALE_BIAS -
-                         `DP_HIF_SCALE_BIAS);
-        out_magnitude = {1'b1, in_data[HIF_F-1:0], 1'b0};
-        out_nan = &in_data;
-      end
-      `DP_SC_E4M3: begin
-        exponent_work = ((in_data[NV_F+:NV_E] == 0 ? 1 :
-                          {{(32 - NV_E) {1'b0}}, in_data[NV_F+:NV_E]}) + `DP_SCALE_BIAS - NV_BIAS);
-        out_magnitude = {|in_data[NV_F+:NV_E], in_data[NV_F-1:0]};
-        out_nan = &in_data[NV_E+NV_F-1:0];
-      end
-      default: begin
-      end
-    endcase
-    out_exponent = exponent_work[`DP_EXP_W-1:0];
-    if (out_nan) out_magnitude = 0;
-  end
+  wire is_e8m0;
+  wire is_e6m2;
+  wire is_e4m3;
+  wire [31:0] exponent_work;
+  wire [`DP_SCALE_M-1:0] decoded_magnitude;
+  assign is_e8m0 = in_datatype == `DP_SC_E8M0;
+  assign is_e6m2 = in_datatype == `DP_SC_E6M2;
+  assign is_e4m3 = in_datatype == `DP_SC_E4M3;
+  assign exponent_work = is_e8m0 ? {{(32 - `DP_SCALE_W) {1'b0}}, in_data} : is_e6m2 ?
+    {{(32 - `DP_HIF_SCALE_E) {1'b0}}, in_data[`DP_HIF_SCALE_F+:`DP_HIF_SCALE_E]} + `DP_SCALE_BIAS -
+    `DP_HIF_SCALE_BIAS :
+    is_e4m3 ? (in_data[`DP_NV_SCALE_F+:`DP_NV_SCALE_E] == 0 ?
+               32'd1 : {{(32 - `DP_NV_SCALE_E) {1'b0}}, in_data[`DP_NV_SCALE_F+:`DP_NV_SCALE_E]}) +
+    `DP_SCALE_BIAS - `DP_NV_SCALE_BIAS : `DP_SCALE_BIAS;
+  assign out_nan = ((is_e8m0 | is_e6m2) & (&in_data)) |
+    (is_e4m3 & (&in_data[`DP_NV_SCALE_E+`DP_NV_SCALE_F-1:0]));
+  assign decoded_magnitude = is_e6m2 ? {1'b1, in_data[`DP_HIF_SCALE_F-1:0], 1'b0} :
+    is_e4m3 ? {|in_data[`DP_NV_SCALE_F+:`DP_NV_SCALE_E], in_data[`DP_NV_SCALE_F-1:0]} :
+    {1'b1, {`DP_SCALE_F{1'b0}}};
+  assign out_magnitude = out_nan ? 0 : decoded_magnitude;
+  assign out_exponent = exponent_work[`DP_EXP_W-1:0];
 endmodule

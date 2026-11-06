@@ -1,4 +1,4 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
 
 # DP CModel 合同
 
@@ -13,8 +13,8 @@
 | lib/unpack.cpp | S1 A/B/scale 解包为 E/M/S 与分类；S5 C 解包辅助 |
 | lib/lane.cpp | T1H2Q4E8：S2 乘法重构/指数和/MAX，S3 幅值 RTZ/E pair，S4 lane 树 |
 | lib/group.cpp | 多精度 T2H4Q8E16 的 S5 合并/abs/scale |
-| lib/lane/e.cpp | E8：S2 无符号 4×4 与 signed10 pair，S3 四项树到 signed12 |
-| lib/group/e.cpp | E16：S4 融合 e2/固定补零、两 lane 合并/abs，S5 scale 与兼容 Token |
+| lib/lane/lane_e.cpp | E8：S2 无符号 4×4 与 signed10 pair，S3 四项树到 signed12 |
+| lib/group/group_e.cpp | E16：S4 融合 e2/固定补零、两 lane 合并/abs，S5 scale 与兼容 Token |
 | lib/top/backend.cpp | 共用 S5 LZD/C 解包、可选独立 LZD 级、S6 对齐、S7 树、S8 RNE/INT32 |
 | lib/arithmetic.cpp | 整数宽度断言、平衡加法树、RTZ、RNE、特殊值摘要 |
 | lib/model.cpp | 事务 evaluate 与逐级 Pipeline；二者使用同一 stage 函数 |
@@ -34,7 +34,7 @@ S5 先分离符号和幅值。NVFP4/HiF4 共用 **14×8 无符号 scale 乘法**
 
 ## 3. 逐级数值与周期 API
 
-`evaluate(config, request, trace)` 返回一笔完整结果。`Pipeline(config, trace).step(request, a_valid, b_valid, c_valid, reset)` 返回本时钟沿前可见输出，再推进各级。三路都有效、类型元组合法且非 reset 时原子接收；气泡和非法类型不阻塞在途结果。全局 reset 丢弃全部在途请求。
+`evaluate(config, request, trace)` 返回一笔完整结果。`Pipeline(config, trace).step(request, a_valid, b_valid, c_valid, reset_requested)` 返回本时钟沿前可见输出，再推进各级。三路都有效、类型元组合法且非 reset 时原子接收；气泡和非法类型不阻塞在途结果。`reset_requested=true` 是软件复位事件，映射为 RTL `rst_n=0`；JSONL 仍保留 `reset` 布尔字段。该事件丢弃全部在途请求。
 
 沿 n 接收，S1 在 n 更新，S8 在 n+7 更新，step(n+8) 返回结果，因此报告 L8。每拍均可接收，输出无 ready。可选 L9 的 S5 仍完成 abs/scale/原 anchor/C 解包，新增一级只做 LZD，后三级整体顺延；默认测试数据和期望采用 L8，L9 仅作数值/寄存边界探索，未因模型存在而自动选择 RTL L9。
 
@@ -72,7 +72,7 @@ E64 的三格式各 961 笔均匹配保存的多精度结果及独立精确数�
 
 ## 7. 与 RTL 对应的设计族组织建议
 
-当前维持一个模型工程和统一 evaluate/Pipeline 入口，已新增 lane/e.cpp、group/e.cpp，并把公共 S5 完成及 S6–S8 从 group.cpp 抽到 top/backend.cpp；保留原多精度文件名和共同基础函数。以下更完整的目录分层仍是后续迁移目标，不代表全部已经搬移：
+当前维持一个模型工程和统一 evaluate/Pipeline 入口，已新增 lane/lane_e.cpp、group/group_e.cpp，并把公共 S5 完成及 S6–S8 从 group.cpp 抽到 top/backend.cpp；保留原多精度文件名和共同基础函数。以下更完整的目录分层仍是后续迁移目标，不代表全部已经搬移：
 
 ~~~text
 src/cmodel/
@@ -98,3 +98,7 @@ src/configs/dp/e64.json 已作为 E64 CModel 配置接入现有 CLI，使用兼�
 数学 reference 与原始输入数据共用一份，按实际输入、模式 K 和 scale 关系计算精确数学结果；各 profile 的有限位宽架构期望、周期记录与内部 cutpoint 分别生成。禁止用 E 的新 trace 覆盖多精度 expected 作为绕过验证的方式。内部字段允许不同，先检查各自 RTL/CModel，再按数值坐标映射对照公共 S5/S6 边界及最终输出。数学 oracle 保持独立，不直接调用被测 CModel 的算术函数。
 
 测试入口按 profile 选择对应模块与观测适配，共用数据读取、事务协议、参考和结果统计；每个新 profile 独立记录覆盖及导出/验证证据，单一配置通过不代表整个设计族通过。
+
+## 命名与可追溯字段
+
+内部使用 `config/state/datatype/format_info`，分别用 `exponent_field`、`fraction_field`、`fractional_bits` 区分编码字段与定点精度。`State` 的 `operands_a/operands_b/group_max_exponents/e_frontend/c_token` 表达具体职责，Token 使用 `leading_zero_count`。E 文件名为 `lane/lane_e.cpp` 与 `group/group_e.cpp`。请求的数学操作数 a/b/c 以及已有 JSON trace 的 m/e/f/z/r 保持协议兼容；短 JSON 键是已定义的序列化接口，不能作为新局部变量缩写的理由。

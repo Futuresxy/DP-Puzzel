@@ -6,147 +6,210 @@
 // Each packed M field carries the unsigned magnitude from dp_operand_unpack.
 // Its F follows datatype; E/M/S slots may include inactive fields.
 module dp_lane_unpack (
-  // verilog_format: off  // Keep ports sharing one declaration on the same line.
-  input wire clock,reset,in_valid,
-  input wire [`DP_TYPE_W-1:0] in_datatype,in_registered_datatype,
+  input wire clock,
+  input wire rst_n,
+  input wire in_valid,
+  input wire [`DP_TYPE_W-1:0] in_datatype,
+  input wire [`DP_TYPE_W-1:0] in_registered_datatype,
   input wire [`DP_LANE_W-1:0] in_data,
   input wire [1:0] in_e1,
   input wire in_e2,
   output wire [`DP_E_LANES*`DP_NUM_W-1:0] out_numbers
-  // verilog_format: on
 );
-  localparam integer ATOMS = `DP_LANES,
-    ATOM_M = `DP_HALF_W, ATOM_E = 2 * `DP_Q_EXP_W, ATOM_S = `DP_E_LANES / ATOMS;
+  localparam integer ATOM_E = 2 * `DP_Q_EXP_W;
+  localparam integer ATOM_S = `DP_E_LANES / `DP_LANES;
   wire [`DP_E_LANES*`DP_NUM_W-1:0] decoded;
-  reg [ATOM_M-1:0] mantissa_q[0:ATOMS-1];
-  reg [ATOM_E-1:0] exponent_q[0:ATOMS-1];
-  reg [ATOM_S-1:0] signs_q[0:ATOMS-1], signaling_q[0:ATOMS-1];
-  reg [ATOM_S*`DP_NUM_CLASS_W-1:0] classes_q[0:ATOMS-1];
-  genvar atom, j;
+  wire [`DP_HALF_W-1:0] mantissa_q[0:`DP_LANES-1];
+  wire [ATOM_E-1:0] exponent_q[0:`DP_LANES-1];
+  wire [ATOM_S-1:0] signs_q[0:`DP_LANES-1];
+  wire [ATOM_S-1:0] signaling_q[0:`DP_LANES-1];
+  wire [ATOM_S*`DP_NUM_CLASS_W-1:0] classes_q[0:`DP_LANES-1];
+  genvar atom_index;
+  genvar element_index;
   generate
-    for (j = 0; j < `DP_E_LANES; j = j + 1) begin : g_decode
+    for (
+      element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
+    ) begin : g_decode
       dp_operand_unpack #(
-        .INDEX(j)
-      ) decoder (
+        .INDEX(element_index)
+      ) u_decoder (
         .in_data(in_data),
         .in_datatype(in_datatype),
         .in_e1(in_e1),
         .in_e2(in_e2),
-        .out_number(decoded[j*`DP_NUM_W+:`DP_NUM_W])
+        .out_number(decoded[element_index*`DP_NUM_W+:`DP_NUM_W])
       );
     end
   endgenerate
   generate
-    for (atom = 0; atom < ATOMS; atom = atom + 1) begin : g_atom
+    for (atom_index = 0; atom_index < `DP_LANES; atom_index = atom_index + 1) begin : g_atom
       wire [`DP_NUM_W-1:0] h_value;
       wire [2*`DP_NUM_W-1:0] q_values;
       wire [ATOM_S*`DP_NUM_W-1:0] e_values;
-      reg [ATOM_M-1:0] mantissa_d;
-      reg [ATOM_E-1:0] exponent_d;
-      reg [ATOM_S-1:0] signs_d, signaling_d;
-      reg [ATOM_S*`DP_NUM_CLASS_W-1:0] classes_d;
-      integer slot;
-      assign h_value  = decoded[atom*`DP_NUM_W+:`DP_NUM_W];
-      assign q_values = decoded[(atom*2)*`DP_NUM_W+:2*`DP_NUM_W];
-      assign e_values = decoded[(atom*ATOM_S)*`DP_NUM_W+:ATOM_S*`DP_NUM_W];
-      always @* begin
-        mantissa_d = 0;
-        exponent_d = 0;
-        signs_d = 0;
-        classes_d = 0;
-        signaling_d = 0;
-        case (in_datatype)
-          `DP_DT_TF32, `DP_DT_FP16, `DP_DT_BF16:
-          if (in_datatype != `DP_DT_TF32 || atom == 0) begin
-            mantissa_d[0+:`DP_MANT_W] = h_value[`DP_NUM_MAG_LO+:`DP_MANT_W];
-            exponent_d[0+:`DP_EXP_W] = h_value[`DP_NUM_EXP_LO+:`DP_EXP_W];
-            signs_d[0] = h_value[`DP_NUM_SIGN];
-            classes_d[0+:`DP_NUM_CLASS_W] = h_value[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W];
-            signaling_d[0] = h_value[`DP_NUM_SIGNAL];
-          end
-          `DP_DT_MXFP4, `DP_DT_NVFP4, `DP_DT_HIF4: begin
-            exponent_d[0] = e_values[`DP_NUM_EXP_LO];
-            for (slot = 0; slot < ATOM_S; slot = slot + 1) begin
-              mantissa_d[slot*`DP_MUL_LO+:`DP_MUL_LO] =
-                e_values[slot*`DP_NUM_W+`DP_NUM_MAG_LO+:`DP_MUL_LO];
-              signs_d[slot] = e_values[slot*`DP_NUM_W+`DP_NUM_SIGN];
-              classes_d[slot*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] =
-                e_values[slot*`DP_NUM_W+`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W];
-              signaling_d[slot] = e_values[slot*`DP_NUM_W+`DP_NUM_SIGNAL];
-            end
-          end
-          default:
-          for (slot = 0; slot < 2; slot = slot + 1) begin
-            if (in_datatype == `DP_DT_INT8)
-              mantissa_d[slot*`DP_QUARTER_W+:`DP_QUARTER_W] =
-                q_values[slot*`DP_NUM_W+`DP_NUM_MAG_LO+:`DP_QUARTER_W];
-            else begin
-              mantissa_d[slot*`DP_MUL_LO+:`DP_MUL_LO] =
-                q_values[slot*`DP_NUM_W+`DP_NUM_MAG_LO+:`DP_MUL_LO];
-              exponent_d[slot*`DP_Q_EXP_W+:`DP_Q_EXP_W] =
-                q_values[slot*`DP_NUM_W+`DP_NUM_EXP_LO+:`DP_Q_EXP_W];
-            end
-            signs_d[slot] = q_values[slot*`DP_NUM_W+`DP_NUM_SIGN];
-            classes_d[slot*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] =
-              q_values[slot*`DP_NUM_W+`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W];
-            signaling_d[slot] = q_values[slot*`DP_NUM_W+`DP_NUM_SIGNAL];
-          end
-        endcase
-      end
-      always @(posedge clock)
-        if (!reset && in_valid) begin
-          mantissa_q[atom] <= mantissa_d;
-          exponent_q[atom] <= exponent_d;
-          signs_q[atom] <= signs_d;
-          classes_q[atom] <= classes_d;
-          signaling_q[atom] <= signaling_d;
+      wire [`DP_HALF_W-1:0] mantissa_d;
+      wire [ATOM_E-1:0] exponent_d;
+      wire [ATOM_S-1:0] signs_d;
+      wire [ATOM_S-1:0] signaling_d;
+      wire [ATOM_S*`DP_NUM_CLASS_W-1:0] classes_d;
+      wire select_h;
+      wire select_e;
+      wire [`DP_HALF_W-1:0] h_mantissa;
+      wire [`DP_HALF_W-1:0] e_mantissa;
+      wire [`DP_HALF_W-1:0] q_mantissa;
+      wire [ATOM_E-1:0] q_exponent;
+      wire [ATOM_S-1:0] e_signs;
+      wire [ATOM_S-1:0] q_signs;
+      wire [ATOM_S-1:0] e_signaling;
+      wire [ATOM_S-1:0] q_signaling;
+      wire [ATOM_S*`DP_NUM_CLASS_W-1:0] e_classes;
+      wire [ATOM_S*`DP_NUM_CLASS_W-1:0] q_classes;
+      assign h_value = decoded[atom_index*`DP_NUM_W+:`DP_NUM_W];
+      assign q_values = decoded[(atom_index*2)*`DP_NUM_W+:2*`DP_NUM_W];
+      assign e_values = decoded[(atom_index*ATOM_S)*`DP_NUM_W+:ATOM_S*`DP_NUM_W];
+      assign select_h = (in_datatype == `DP_DT_TF32) | (in_datatype == `DP_DT_FP16) |
+        (in_datatype == `DP_DT_BF16);
+      assign select_e = (in_datatype == `DP_DT_MXFP4) | (in_datatype == `DP_DT_NVFP4) |
+        (in_datatype == `DP_DT_HIF4);
+      assign h_mantissa = ((in_datatype != `DP_DT_TF32) | (atom_index == 0)) ?
+        {{(`DP_HALF_W - `DP_MANT_W) {1'b0}}, h_value[`DP_NUM_MAG_LO+:`DP_MANT_W]} : 0;
+      for (
+        element_index = 0; element_index < ATOM_S; element_index = element_index + 1
+      ) begin : g_pack_slot
+        assign e_mantissa[element_index*`DP_MUL_LO+:`DP_MUL_LO] =
+          e_values[element_index*`DP_NUM_W+`DP_NUM_MAG_LO+:`DP_MUL_LO];
+        assign e_signs[element_index] = e_values[element_index*`DP_NUM_W+`DP_NUM_SIGN];
+        assign e_signaling[element_index] = e_values[element_index*`DP_NUM_W+`DP_NUM_SIGNAL];
+        assign e_classes[element_index*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] =
+          e_values[element_index*`DP_NUM_W+`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W];
+        if (element_index < 2) begin : g_q_slot
+          assign q_signs[element_index] = q_values[element_index*`DP_NUM_W+`DP_NUM_SIGN];
+          assign q_signaling[element_index] = q_values[element_index*`DP_NUM_W+`DP_NUM_SIGNAL];
+          assign q_classes[element_index*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] =
+            q_values[element_index*`DP_NUM_W+`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W];
+          assign q_exponent[element_index*`DP_Q_EXP_W+:`DP_Q_EXP_W] = in_datatype == `DP_DT_INT8 ?
+            0 : q_values[element_index*`DP_NUM_W+`DP_NUM_EXP_LO+:`DP_Q_EXP_W];
+        end else begin : g_unused_q
+          assign q_signs[element_index] = 0;
+          assign q_signaling[element_index] = 0;
+          assign q_classes[element_index*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] = 0;
         end
+      end
+      assign q_mantissa = in_datatype == `DP_DT_INT8 ?
+        {q_values[`DP_NUM_W+`DP_NUM_MAG_LO+:`DP_QUARTER_W], q_values[`DP_NUM_MAG_LO+:`DP_QUARTER_W]}
+        : {{(`DP_HALF_W - 2 * `DP_MUL_LO) {1'b0}}, q_values[`DP_NUM_W+`DP_NUM_MAG_LO+:`DP_MUL_LO],
+           q_values[`DP_NUM_MAG_LO+:`DP_MUL_LO]};
+      assign mantissa_d = select_h ? h_mantissa : select_e ? e_mantissa : q_mantissa;
+      assign exponent_d = select_h ?
+        (((in_datatype != `DP_DT_TF32) | (atom_index == 0)) ?
+         {{(ATOM_E - `DP_EXP_W) {1'b0}}, h_value[`DP_NUM_EXP_LO+:`DP_EXP_W]} : 0) :
+        select_e ? {{(ATOM_E - 1) {1'b0}}, e_values[`DP_NUM_EXP_LO]} : q_exponent;
+      assign signs_d = select_h ? (((in_datatype != `DP_DT_TF32) | (atom_index == 0)) ?
+                                   {{(ATOM_S - 1) {1'b0}}, h_value[`DP_NUM_SIGN]} : 0) :
+        select_e ? e_signs : q_signs;
+      assign signaling_d = select_h ? (((in_datatype != `DP_DT_TF32) | (atom_index == 0)) ?
+                                       {{(ATOM_S - 1) {1'b0}}, h_value[`DP_NUM_SIGNAL]} : 0) :
+        select_e ? e_signaling : q_signaling;
+      assign classes_d = select_h ?
+        (((in_datatype != `DP_DT_TF32) | (atom_index == 0)) ?
+         {{((ATOM_S - 1) * `DP_NUM_CLASS_W) {1'b0}}, h_value[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W]} :
+         0) : select_e ? e_classes : q_classes;
+
+      // S0 -> S1: mantissa_q_atom.
+      dp_lib_DFFE #(
+        .WIDTH(`DP_HALF_W)
+      ) ff_s0_s1_mantissa_q_atom (
+        .clock(clock),
+        .in_en(rst_n & in_valid),
+        .in_d (mantissa_d),
+        .out_q(mantissa_q[atom_index])
+      );
+      // S0 -> S1: exponent_q_atom.
+      dp_lib_DFFE #(
+        .WIDTH(ATOM_E)
+      ) ff_s0_s1_exponent_q_atom (
+        .clock(clock),
+        .in_en(rst_n & in_valid),
+        .in_d (exponent_d),
+        .out_q(exponent_q[atom_index])
+      );
+      // S0 -> S1: signs_q_atom.
+      dp_lib_DFFE #(
+        .WIDTH(ATOM_S)
+      ) ff_s0_s1_signs_q_atom (
+        .clock(clock),
+        .in_en(rst_n & in_valid),
+        .in_d (signs_d),
+        .out_q(signs_q[atom_index])
+      );
+      // S0 -> S1: classes_q_atom.
+      dp_lib_DFFE #(
+        .WIDTH(ATOM_S * `DP_NUM_CLASS_W)
+      ) ff_s0_s1_classes_q_atom (
+        .clock(clock),
+        .in_en(rst_n & in_valid),
+        .in_d (classes_d),
+        .out_q(classes_q[atom_index])
+      );
+      // S0 -> S1: signaling_q_atom.
+      dp_lib_DFFE #(
+        .WIDTH(ATOM_S)
+      ) ff_s0_s1_signaling_q_atom (
+        .clock(clock),
+        .in_en(rst_n & in_valid),
+        .in_d (signaling_d),
+        .out_q(signaling_q[atom_index])
+      );
+
     end
   endgenerate
   generate
-    for (j = 0; j < `DP_E_LANES; j = j + 1) begin : g_expand
-      reg [`DP_NUM_W-1:0] number_value;
-      always @* begin
-        number_value = 0;
-        case (in_registered_datatype)
-          `DP_DT_TF32, `DP_DT_FP16, `DP_DT_BF16: begin
-            if (j < ATOMS && (in_registered_datatype != `DP_DT_TF32 || j == 0)) begin
-              number_value[`DP_NUM_MAG_LO+:`DP_MANT_W] = mantissa_q[j%ATOMS][0+:`DP_MANT_W];
-              number_value[`DP_NUM_EXP_LO+:`DP_EXP_W] = exponent_q[j%ATOMS][0+:`DP_EXP_W];
-              number_value[`DP_NUM_SIGN] = signs_q[j%ATOMS][0];
-              number_value[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] =
-                classes_q[j%ATOMS][0+:`DP_NUM_CLASS_W];
-              number_value[`DP_NUM_SIGNAL] = signaling_q[j%ATOMS][0];
-            end
-          end
-          `DP_DT_MXFP4, `DP_DT_NVFP4, `DP_DT_HIF4: begin
-            number_value[`DP_NUM_MAG_LO+:`DP_MUL_LO] =
-              mantissa_q[j/ATOM_S][(j%ATOM_S)*`DP_MUL_LO+:`DP_MUL_LO];
-            number_value[`DP_NUM_EXP_LO] = exponent_q[j/ATOM_S][0];
-            number_value[`DP_NUM_SIGN] = signs_q[j/ATOM_S][j%ATOM_S];
-            number_value[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] =
-              classes_q[j/ATOM_S][(j%ATOM_S)*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W];
-            number_value[`DP_NUM_SIGNAL] = signaling_q[j/ATOM_S][j%ATOM_S];
-          end
-          default:
-          if (j < `DP_Q_LANES) begin
-            if (in_registered_datatype == `DP_DT_INT8)
-              number_value[`DP_NUM_MAG_LO+:`DP_QUARTER_W] =
-                mantissa_q[(j/2)%ATOMS][(j%2)*`DP_QUARTER_W+:`DP_QUARTER_W];
-            else begin
-              number_value[`DP_NUM_MAG_LO+:`DP_MUL_LO] =
-                mantissa_q[(j/2)%ATOMS][(j%2)*`DP_MUL_LO+:`DP_MUL_LO];
-              number_value[`DP_NUM_EXP_LO+:`DP_Q_EXP_W] =
-                exponent_q[(j/2)%ATOMS][(j%2)*`DP_Q_EXP_W+:`DP_Q_EXP_W];
-            end
-            number_value[`DP_NUM_SIGN] = signs_q[(j/2)%ATOMS][j%2];
-            number_value[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] =
-              classes_q[(j/2)%ATOMS][(j%2)*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W];
-            number_value[`DP_NUM_SIGNAL] = signaling_q[(j/2)%ATOMS][j%2];
-          end
-        endcase
-      end
-      assign out_numbers[j*`DP_NUM_W+:`DP_NUM_W] = number_value;
+    for (
+      element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
+    ) begin : g_expand
+      wire [`DP_NUM_W-1:0] h_number;
+      wire [`DP_NUM_W-1:0] q_number;
+      wire [`DP_NUM_W-1:0] e_number;
+      wire select_h;
+      wire select_e;
+      assign select_h = (in_registered_datatype == `DP_DT_TF32) |
+        (in_registered_datatype == `DP_DT_FP16) | (in_registered_datatype == `DP_DT_BF16);
+      assign select_e = (in_registered_datatype == `DP_DT_MXFP4) |
+        (in_registered_datatype == `DP_DT_NVFP4) | (in_registered_datatype == `DP_DT_HIF4);
+      assign
+        h_number[`DP_NUM_MAG_LO+:`DP_MANT_W] = mantissa_q[element_index%`DP_LANES][0+:`DP_MANT_W];
+      assign
+        h_number[`DP_NUM_EXP_LO+:`DP_EXP_W] = exponent_q[element_index%`DP_LANES][0+:`DP_EXP_W];
+      assign h_number[`DP_NUM_SIGN] = signs_q[element_index%`DP_LANES][0];
+      assign h_number[`DP_NUM_SIGNAL] = signaling_q[element_index%`DP_LANES][0];
+      assign h_number[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] =
+        classes_q[element_index%`DP_LANES][0+:`DP_NUM_CLASS_W];
+      assign e_number[`DP_NUM_MAG_LO+:`DP_MANT_W] = {
+        {(`DP_MANT_W - `DP_MUL_LO) {1'b0}},
+        mantissa_q[element_index/ATOM_S][(element_index%ATOM_S)*`DP_MUL_LO+:`DP_MUL_LO]
+      };
+      assign e_number[`DP_NUM_EXP_LO+:`DP_EXP_W] = {
+        {(`DP_EXP_W - 1) {1'b0}}, exponent_q[element_index/ATOM_S][0]
+      };
+      assign e_number[`DP_NUM_SIGN] = signs_q[element_index/ATOM_S][element_index%ATOM_S];
+      assign e_number[`DP_NUM_SIGNAL] = signaling_q[element_index/ATOM_S][element_index%ATOM_S];
+      assign e_number[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] =
+        classes_q[element_index/ATOM_S][(element_index%ATOM_S)*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W];
+      assign q_number[`DP_NUM_MAG_LO+:`DP_MANT_W] = in_registered_datatype == `DP_DT_INT8 ?
+        {{(`DP_MANT_W - `DP_QUARTER_W) {1'b0}},
+         mantissa_q[(element_index/2)%`DP_LANES][(element_index%2)*`DP_QUARTER_W+:`DP_QUARTER_W]} :
+        {{(`DP_MANT_W - `DP_MUL_LO) {1'b0}},
+         mantissa_q[(element_index/2)%`DP_LANES][(element_index%2)*`DP_MUL_LO+:`DP_MUL_LO]};
+      assign q_number[`DP_NUM_EXP_LO+:`DP_EXP_W] = in_registered_datatype == `DP_DT_INT8 ?
+        0 : {{(`DP_EXP_W - `DP_Q_EXP_W) {1'b0}},
+             exponent_q[(element_index/2)%`DP_LANES][(element_index%2)*`DP_Q_EXP_W+:`DP_Q_EXP_W]};
+      assign q_number[`DP_NUM_SIGN] = signs_q[(element_index/2)%`DP_LANES][element_index%2];
+      assign q_number[`DP_NUM_SIGNAL] = signaling_q[(element_index/2)%`DP_LANES][element_index%2];
+      assign q_number[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] =
+        classes_q[(element_index/2)%`DP_LANES][(element_index%2)*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W];
+      assign out_numbers[element_index*`DP_NUM_W+:`DP_NUM_W] = select_h ?
+        (((element_index < `DP_LANES) &
+          ((in_registered_datatype != `DP_DT_TF32) | (element_index == 0))) ? h_number : 0) :
+        select_e ? e_number : element_index < `DP_Q_LANES ? q_number : 0;
     end
   endgenerate
 endmodule

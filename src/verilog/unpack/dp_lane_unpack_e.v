@@ -15,31 +15,22 @@ module dp_lane_unpack_e (
   output wire [`DP_E_LANES*`DP_MUL_LO-1:0] out_magnitude,
   output wire [`DP_E_LANES-1:0] out_negative
 );
-  function [`DP_MUL_LO-1:0] decode_magnitude;
-    input [3:0] raw;
-    input hif, e1;
-    begin
-      if (hif) decode_magnitude = {1'b0, raw[2:0]} << e1;
-      else
-        case (raw[2:0])
-          3'd0: decode_magnitude = 4'd0;
-          3'd1: decode_magnitude = 4'd1;
-          3'd2: decode_magnitude = 4'd2;
-          3'd3: decode_magnitude = 4'd3;
-          3'd4: decode_magnitude = 4'd4;
-          3'd5: decode_magnitude = 4'd6;
-          3'd6: decode_magnitude = 4'd8;
-          default: decode_magnitude = 4'd12;
-        endcase
-    end
-  endfunction
-  genvar j;
+  genvar element_index;
   generate
-    for (j = 0; j < `DP_E_LANES; j = j + 1) begin : g_element
-      assign out_magnitude[j*`DP_MUL_LO+:`DP_MUL_LO] = decode_magnitude(
-        in_data[j*4+:4], in_datatype == `DP_DT_HIF4, in_e1[j/4]
-      );
-      assign out_negative[j] = in_data[j*4+3];
+    for (
+      element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
+    ) begin : g_element
+      wire [`DP_EIGHTH_W-1:0] raw_encoding;
+      wire [`DP_EIGHTH_W-1:0] fp4_magnitude;
+      assign raw_encoding = in_data[element_index*`DP_EIGHTH_W+:`DP_EIGHTH_W];
+      // E2M1 encoding magnitude table in F1: {0,1,2,3,4,6,8,12}.
+      assign fp4_magnitude = raw_encoding[`DP_E_PAYLOAD_W-1:0] < 3'd5 ?
+        {1'b0, raw_encoding[`DP_E_PAYLOAD_W-1:0]} : raw_encoding[`DP_E_PAYLOAD_W-1:0] == 3'd5 ?
+        4'd6 : raw_encoding[`DP_E_PAYLOAD_W-1:0] == 3'd6 ? 4'd8 : 4'd12;
+      assign out_magnitude[element_index*`DP_MUL_LO+:`DP_MUL_LO] = in_datatype == `DP_DT_HIF4 ?
+        {1'b0, raw_encoding[`DP_E_PAYLOAD_W-1:0]} << in_e1[element_index/`DP_E1_GRAIN] :
+        fp4_magnitude;
+      assign out_negative[element_index] = in_data[element_index*`DP_EIGHTH_W+`DP_E_SIGN_BIT];
     end
   endgenerate
 endmodule

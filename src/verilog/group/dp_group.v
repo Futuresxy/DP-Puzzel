@@ -28,198 +28,441 @@ module dp_group #(
   parameter integer MAG_W = GROUP_W - 1,
   parameter integer ANCHOR_W = anchor_width(MAG_W)
 ) (
-  // verilog_format: off  // Keep ports sharing one declaration on the same line.
-  input wire clock,reset,in_valid,
+  input wire clock,
+  input wire rst_n,
+  input wire in_valid,
   input wire [`DP_TYPE_W-1:0] in_datatype,
-  input wire [`DP_LANES*`DP_LANE_W-1:0] in_a,in_b,
-  input wire [`DP_SCALE_W-1:0] in_scale_a,in_scale_b,
+  input wire [`DP_LANES*`DP_LANE_W-1:0] in_a,
+  input wire [`DP_LANES*`DP_LANE_W-1:0] in_b,
+  input wire [`DP_SCALE_W-1:0] in_scale_a,
+  input wire [`DP_SCALE_W-1:0] in_scale_b,
   input wire [`DP_SCALE_TYPE_W-1:0] in_scale_datatype,
-  input wire [3:0] in_e1_a,in_e1_b,
-  input wire [1:0] in_e2_a,in_e2_b,
-  output reg out_valid,out_negative,
-  output reg [MAG_W-1:0] out_magnitude,
-  output reg signed [ANCHOR_W-1:0] out_anchor,
-  output reg [$clog2(MAG_W+1)-1:0] out_z,
+  input wire [3:0] in_e1_a,
+  input wire [3:0] in_e1_b,
+  input wire [1:0] in_e2_a,
+  input wire [1:0] in_e2_b,
+  output wire out_valid,
+  output wire out_negative,
+  output wire [MAG_W-1:0] out_magnitude,
+  output wire signed [ANCHOR_W-1:0] out_anchor,
+  output wire [$clog2(MAG_W+1)-1:0] out_z,
   output wire [`DP_SPECIAL_W-1:0] out_special
-  // verilog_format: on
 );
-  genvar gen_i;
-  integer i;
+  genvar lane_index;
 
   `include "dp_functions.vh"
-  localparam integer COEFF_W = 2 * `DP_SCALE_M,
-    SCALE_MAG_W = `DP_SCALE_SOP_W - 1, STRUCTURAL_DROP = GROUP_W - `DP_SCALE_SOP_W,
-    SCALE_PRODUCT_W = SCALE_MAG_W + COEFF_W, SCALE_LOW_PAD = MAG_W - SCALE_PRODUCT_W;
-  reg [3:0] valid_q;
-  reg [`DP_TYPE_W-1:0] type_q[0:3];
-  wire [`DP_LANES*LANE_SOP_W-1:0] lane_sops;
-  wire [`DP_LANES*(`DP_PRODUCT_EXP_W+1)-1:0] lane_candidates;
-  wire [`DP_LANES-1:0] lane_active, lane_negative, lane_valid;
-  wire [`DP_LANES*`DP_SPECIAL_W-1:0] lane_special;
-  wire [`DP_PRODUCT_EXP_W-1:0] lane_anchor[0:`DP_LANES-1];
-  wire signed [`DP_PRODUCT_EXP_W:0] group_max;
+  localparam integer COEFF_W = 2 * `DP_SCALE_M;
+  localparam integer SCALE_MAG_W = `DP_SCALE_SOP_W - 1;
+  localparam integer STRUCTURAL_DROP = GROUP_W - `DP_SCALE_SOP_W;
+  localparam integer SCALE_PRODUCT_W = SCALE_MAG_W + COEFF_W;
+  localparam integer SCALE_LOW_PAD = MAG_W - SCALE_PRODUCT_W;
+  wire [3:0] valid_q;
+  wire [`DP_TYPE_W-1:0] type_q[0:3];
+  wire [`DP_LANES*LANE_SOP_W-1:0] lane_group_sum;
+  wire [`DP_LANES*(`DP_PRODUCT_EXP_W+1)-1:0] lane_exponent_max_candidates;
+  wire [`DP_LANES-1:0] lane_exponent_max_active;
+  wire [`DP_LANES-1:0] lane_group_all_negative;
+  wire [`DP_LANES-1:0] lane_group_valid;
+  wire [`DP_LANES*`DP_SPECIAL_W-1:0] lane_group_special;
+  wire [`DP_PRODUCT_EXP_W-1:0] lane_group_anchor[0:`DP_LANES-1];
+  wire signed [`DP_PRODUCT_EXP_W:0] exponent_max_lane_anchor;
   wire max_active;
   generate
-    for (gen_i = 0; gen_i < `DP_LANES; gen_i = gen_i + 1) begin : g_lane
+    for (lane_index = 0; lane_index < `DP_LANES; lane_index = lane_index + 1) begin : g_lane
       wire [`DP_PRODUCT_EXP_W-1:0] candidate;
       wire [`DP_SPECIAL_W-1:0] special_value;
       dp_lane #(
         .LOCAL_W(LOCAL_W)
-      ) lane (
+      ) u_lane (
         .clock(clock),
-        .reset(reset),
+        .rst_n(rst_n),
         .in_valid(in_valid),
         .in_datatype(in_datatype),
-        .in_a(in_a[gen_i*`DP_LANE_W+:`DP_LANE_W]),
-        .in_b(in_b[gen_i*`DP_LANE_W+:`DP_LANE_W]),
-        .in_e1_a(in_e1_a[gen_i*2+:2]),
-        .in_e1_b(in_e1_b[gen_i*2+:2]),
-        .in_e2_a(in_e2_a[gen_i]),
-        .in_e2_b(in_e2_b[gen_i]),
+        .in_a(in_a[lane_index*`DP_LANE_W+:`DP_LANE_W]),
+        .in_b(in_b[lane_index*`DP_LANE_W+:`DP_LANE_W]),
+        .in_e1_a(in_e1_a[lane_index*2+:2]),
+        .in_e1_b(in_e1_b[lane_index*2+:2]),
+        .in_e2_a(in_e2_a[lane_index]),
+        .in_e2_b(in_e2_b[lane_index]),
         .out_candidate(candidate),
-        .out_candidate_active(lane_active[gen_i]),
-        .in_group_max(group_max[`DP_PRODUCT_EXP_W-1:0]),
-        .out_valid(lane_valid[gen_i]),
-        .out_sop(lane_sops[gen_i*LANE_SOP_W+:LANE_SOP_W]),
-        .out_anchor(lane_anchor[gen_i]),
+        .out_candidate_active(lane_exponent_max_active[lane_index]),
+        .in_group_max(exponent_max_lane_anchor[`DP_PRODUCT_EXP_W-1:0]),
+        .out_valid(lane_group_valid[lane_index]),
+        .out_sop(lane_group_sum[lane_index*LANE_SOP_W+:LANE_SOP_W]),
+        .out_anchor(lane_group_anchor[lane_index]),
         .out_special(special_value),
-        .out_all_negative(lane_negative[gen_i])
+        .out_all_negative(lane_group_all_negative[lane_index])
       );
-      assign lane_candidates[gen_i*(`DP_PRODUCT_EXP_W+1)+:`DP_PRODUCT_EXP_W+1] = {1'b0, candidate};
-      assign lane_special[gen_i*`DP_SPECIAL_W+:`DP_SPECIAL_W] = special_value;
+      assign lane_exponent_max_candidates[lane_index*(`DP_PRODUCT_EXP_W+1)+:`DP_PRODUCT_EXP_W+1] = {
+        1'b0, candidate
+      };
+      assign lane_group_special[lane_index*`DP_SPECIAL_W+:`DP_SPECIAL_W] = special_value;
     end
   endgenerate
   dp_max_tree #(
     .N(`DP_LANES),
     .W(`DP_PRODUCT_EXP_W + 1)
-  ) group_exponent_max (
-    .in_values(lane_candidates),
-    .in_active(lane_active),
-    .out_max(group_max),
+  ) u_group_exponent_max (
+    .in_values(lane_exponent_max_candidates),
+    .in_active(lane_exponent_max_active),
+    .out_max(exponent_max_lane_anchor),
     .out_active(max_active)
   );
-  wire [`DP_SCALE_M-1:0] sa_d, sb_d;
-  wire [`DP_EXP_W-1:0] ea_d, eb_d;
-  wire na_d, nb_d;
-  reg [`DP_SCALE_M-1:0] sa_q, sb_q;
-  reg [`DP_EXP_W-1:0] ea_q, eb_q;
-  reg nan_s1_q;
+  wire [`DP_SCALE_M-1:0] scale_a_magnitude_d;
+  wire [`DP_SCALE_M-1:0] scale_b_magnitude_d;
+  wire [`DP_EXP_W-1:0] scale_a_exponent_d;
+  wire [`DP_EXP_W-1:0] scale_b_exponent_d;
+  wire scale_a_nan_d;
+  wire scale_b_nan_d;
+  wire [`DP_SCALE_M-1:0] scale_a_magnitude_q;
+  wire [`DP_SCALE_M-1:0] scale_b_magnitude_q;
+  wire [`DP_EXP_W-1:0] scale_a_exponent_q;
+  wire [`DP_EXP_W-1:0] scale_b_exponent_q;
+  wire nan_s1_q;
   wire [COEFF_W-1:0] coeff_d;
-  reg [COEFF_W-1:0] coeff_q[1:3];
-  reg [`DP_PRODUCT_EXP_W-1:0] scale_exp_q[1:3];
-  reg scale_nan_q[1:3];
-  dp_scale_unpack scale_unpack_a (
+  wire [COEFF_W-1:0] coeff_q[1:3];
+  wire [`DP_PRODUCT_EXP_W-1:0] scale_exp_q[1:3];
+  wire scale_nan_q[1:3];
+  dp_scale_unpack u_scale_unpack_a (
     .in_data(in_scale_a),
     .in_datatype(in_scale_datatype),
-    .out_magnitude(sa_d),
-    .out_exponent(ea_d),
-    .out_nan(na_d)
+    .out_magnitude(scale_a_magnitude_d),
+    .out_exponent(scale_a_exponent_d),
+    .out_nan(scale_a_nan_d)
   );
-  dp_scale_unpack scale_unpack_b (
+  dp_scale_unpack u_scale_unpack_b (
     .in_data(in_scale_b),
     .in_datatype(in_scale_datatype),
-    .out_magnitude(sb_d),
-    .out_exponent(eb_d),
-    .out_nan(nb_d)
+    .out_magnitude(scale_b_magnitude_d),
+    .out_exponent(scale_b_exponent_d),
+    .out_nan(scale_b_nan_d)
   );
   dp_mul_unsigned #(
     .A_W(`DP_SCALE_M),
     .B_W(`DP_SCALE_M)
-  ) scale_pair_mul (
-    .in_a(sa_q),
-    .in_b(sb_q),
+  ) u_scale_pair_mul (
+    .in_a(scale_a_magnitude_q),
+    .in_b(scale_b_magnitude_q),
     .out_product(coeff_d)
   );
   wire signed [GROUP_W-1:0] group_sum;
   dp_sum_tree #(
     .N(`DP_LANES),
     .W(LANE_SOP_W)
-  ) group_sop_add (
-    .in_values(lane_sops),
+  ) u_group_sop_add (
+    .in_values(lane_group_sum),
     .out_sum  (group_sum)
   );
-  wire inject_scale = (type_q[3] == `DP_DT_NVFP4 || type_q[3] == `DP_DT_HIF4) && valid_q[3];
+  wire inject_scale;
+  assign inject_scale = (type_q[3] == `DP_DT_NVFP4 | type_q[3] == `DP_DT_HIF4) & valid_q[3];
   // Both branches share the absolute value. NV/HiF compact the magnitude
   // by slicing off structural low zeros; their legal group sums fit SCALE_MAG_W.
-  wire group_negative = group_sum[GROUP_W-1];
-  wire [GROUP_W-1:0] absolute_sop = group_negative ? -group_sum : group_sum;
-  wire [SCALE_MAG_W-1:0]
-    compact_mag = inject_scale ? absolute_sop[STRUCTURAL_DROP+:SCALE_MAG_W] : 0;
-  wire [COEFF_W-1:0] compact_coeff = inject_scale ? coeff_q[3] : 0;
+  wire group_negative;
+  assign group_negative = group_sum[GROUP_W-1];
+  wire [GROUP_W-1:0] absolute_sop;
+  assign absolute_sop = group_negative ? -group_sum : group_sum;
+  wire [SCALE_MAG_W-1:0] compact_mag;
+  assign compact_mag = inject_scale ? absolute_sop[STRUCTURAL_DROP+:SCALE_MAG_W] : 0;
+  wire [COEFF_W-1:0] compact_coeff;
+  assign compact_coeff = inject_scale ? coeff_q[3] : 0;
   wire [SCALE_PRODUCT_W-1:0] scale_product;
-  dp_scale_multiply group_scale_mul (
+  dp_scale_multiply u_group_scale_mul (
     .in_magnitude(compact_mag),
     .in_coefficient(compact_coeff),
     .out_product(scale_product)
   );
-  wire [MAG_W-1:0]
+  wire [MAG_W-1:0] magnitude_d;
+  assign
     magnitude_d = inject_scale ? {scale_product, {SCALE_LOW_PAD{1'b0}}} : absolute_sop[MAG_W-1:0];
-  wire negative_d = group_negative || (group_sum == 0 && (&lane_negative));
+  wire negative_d;
+  assign negative_d = group_negative | (group_sum == 0 & (&lane_group_all_negative));
   wire [$clog2(MAG_W+1)-1:0] z_d;
   wire magnitude_active;
   dp_lzd #(
     .W(MAG_W)
-  ) group_leading_detect (
+  ) u_group_leading_detect (
     .in_magnitude(magnitude_d),
     .out_count(z_d),
     .out_active(magnitude_active)
   );
-  reg [`DP_SPECIAL_W-1:0] special_d, special_q, lane0, lane1;
-  reg signed [ANCHOR_W-1:0] anchor_d;
-  integer anchor_work;
+  wire [`DP_SPECIAL_W-1:0] special_d;
+  wire [`DP_SPECIAL_W-1:0] special_q;
+  wire [`DP_SPECIAL_W-1:0] lane0_special;
+  wire [`DP_SPECIAL_W-1:0] lane1_special;
+  wire signed [ANCHOR_W-1:0] anchor_d;
+  wire signed [31:0] anchor_work;
   assign out_special = special_q;
-  always @* begin
-    lane0 = lane_special[0+:`DP_SPECIAL_W];
-    lane1 = lane_special[`DP_SPECIAL_W+:`DP_SPECIAL_W];
-    special_d = merge_special(lane0, lane1);
-    special_d[`DP_SP_NAN] = special_d[`DP_SP_NAN] | scale_nan_q[3];
-    if (coeff_q[3] == 0 && (special_d[`DP_SP_POS_INF] || special_d[`DP_SP_NEG_INF])) begin
-      special_d[`DP_SP_INVALID] = 1;
-      special_d[`DP_SP_POS_INF] = 0;
-      special_d[`DP_SP_NEG_INF] = 0;
-    end
-    anchor_work = ({{(32 - `DP_PRODUCT_EXP_W) {1'b0}}, lane_anchor[0]} -
-                   2 * element_bias(type_q[3]) - group_fraction(type_q[3], LOCAL_W) + MAG_W - 1);
-    if (scale_type(type_q[3]) != `DP_SC_NONE)
-      anchor_work = anchor_work +
-        ({{(32 - `DP_PRODUCT_EXP_W) {1'b0}}, scale_exp_q[3]} - 2 * `DP_SCALE_BIAS);
-    anchor_d = anchor_work[ANCHOR_W-1:0];
-    if (!magnitude_active || special_d != 0 || type_q[3] == `DP_DT_INT8) anchor_d = 0;
-  end
-  always @(posedge clock) begin
-    if (reset) begin
-      valid_q   <= 0;
-      out_valid <= 0;
-    end else begin
-      valid_q   <= {valid_q[2:0], in_valid};
-      out_valid <= valid_q[3];
-      if (in_valid) begin
-        type_q[0] <= in_datatype;
-        sa_q <= sa_d;
-        sb_q <= sb_d;
-        ea_q <= ea_d;
-        eb_q <= eb_d;
-        nan_s1_q <= na_d | nb_d;
-      end
-      for (i = 1; i < 4; i = i + 1) if (valid_q[i-1]) type_q[i] <= type_q[i-1];
-      if (valid_q[0]) begin
-        coeff_q[1] <= coeff_d;
-        scale_exp_q[1] <= {1'b0, ea_q} + {1'b0, eb_q};
-        scale_nan_q[1] <= nan_s1_q;
-      end
-      for (i = 2; i < 4; i = i + 1)
-      if (valid_q[i-1]) begin
-        coeff_q[i] <= coeff_q[i-1];
-        scale_exp_q[i] <= scale_exp_q[i-1];
-        scale_nan_q[i] <= scale_nan_q[i-1];
-      end
-      if (valid_q[3]) begin
-        out_magnitude <= magnitude_d;
-        out_negative <= negative_d;
-        out_anchor <= anchor_d;
-        special_q <= special_d;
-        out_z <= (special_d == 0 && type_q[3] != `DP_DT_INT8) ? z_d : 0;
-      end
-    end
-  end
+  wire [`DP_SPECIAL_W-1:0] merged_special;
+  wire zero_scale_infinity;
+  assign lane0_special = lane_group_special[0+:`DP_SPECIAL_W];
+  assign lane1_special = lane_group_special[`DP_SPECIAL_W+:`DP_SPECIAL_W];
+  assign merged_special = merge_special(lane0_special, lane1_special);
+  assign zero_scale_infinity = (coeff_q[3] == 0) &
+    (merged_special[`DP_SP_POS_INF] | merged_special[`DP_SP_NEG_INF]);
+  assign special_d[`DP_SP_NAN] = merged_special[`DP_SP_NAN] | scale_nan_q[3];
+  assign special_d[`DP_SP_INVALID] = merged_special[`DP_SP_INVALID] | zero_scale_infinity;
+  assign special_d[`DP_SP_POS_INF] = merged_special[`DP_SP_POS_INF] & ~zero_scale_infinity;
+  assign special_d[`DP_SP_NEG_INF] = merged_special[`DP_SP_NEG_INF] & ~zero_scale_infinity;
+  assign anchor_work = {{(32 - `DP_PRODUCT_EXP_W) {1'b0}}, lane_group_anchor[0]} - 2 * element_bias(
+    type_q[3]
+  ) - group_fraction(
+    type_q[3], LOCAL_W
+  ) + MAG_W - 1 + (scale_type(
+    type_q[3]
+  ) != `DP_SC_NONE ? {{(32 - `DP_PRODUCT_EXP_W) {1'b0}}, scale_exp_q[3]} - 2 * `DP_SCALE_BIAS : 0);
+  assign anchor_d = (~magnitude_active | (special_d != 0) | (type_q[3] == `DP_DT_INT8)) ? 0 :
+    anchor_work[ANCHOR_W-1:0];
+
+  // S0 -> S1: valid.
+  dp_lib_DFFRU #(
+    .WIDTH(1)
+  ) ff_s0_s1_valid (
+    .clock(clock),
+    .rst_n(rst_n),
+    .in_d (in_valid),
+    .out_q(valid_q[0])
+  );
+  // S1 -> S2: valid.
+  dp_lib_DFFRU #(
+    .WIDTH(1)
+  ) ff_s1_s2_valid (
+    .clock(clock),
+    .rst_n(rst_n),
+    .in_d (valid_q[0]),
+    .out_q(valid_q[1])
+  );
+  // S2 -> S3: valid.
+  dp_lib_DFFRU #(
+    .WIDTH(1)
+  ) ff_s2_s3_valid (
+    .clock(clock),
+    .rst_n(rst_n),
+    .in_d (valid_q[1]),
+    .out_q(valid_q[2])
+  );
+  // S3 -> S4: valid.
+  dp_lib_DFFRU #(
+    .WIDTH(1)
+  ) ff_s3_s4_valid (
+    .clock(clock),
+    .rst_n(rst_n),
+    .in_d (valid_q[2]),
+    .out_q(valid_q[3])
+  );
+  // S4 -> S5: out_valid.
+  dp_lib_DFFRU #(
+    .WIDTH(1)
+  ) ff_s4_s5_out_valid (
+    .clock(clock),
+    .rst_n(rst_n),
+    .in_d (valid_q[3]),
+    .out_q(out_valid)
+  );
+  // S0 -> S1: type_q_0.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_TYPE_W)
+  ) ff_s0_s1_type_q_0 (
+    .clock(clock),
+    .in_en(rst_n & in_valid),
+    .in_d (in_datatype),
+    .out_q(type_q[0])
+  );
+  // S1 -> S2: type_q_1.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_TYPE_W)
+  ) ff_s1_s2_type_q_1 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[0]),
+    .in_d (type_q[0]),
+    .out_q(type_q[1])
+  );
+  // S2 -> S3: type_q_2.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_TYPE_W)
+  ) ff_s2_s3_type_q_2 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[1]),
+    .in_d (type_q[1]),
+    .out_q(type_q[2])
+  );
+  // S3 -> S4: type_q_3.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_TYPE_W)
+  ) ff_s3_s4_type_q_3 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[2]),
+    .in_d (type_q[2]),
+    .out_q(type_q[3])
+  );
+  // S0 -> S1: sa.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_SCALE_M)
+  ) ff_s0_s1_sa (
+    .clock(clock),
+    .in_en(rst_n & in_valid),
+    .in_d (scale_a_magnitude_d),
+    .out_q(scale_a_magnitude_q)
+  );
+  // S0 -> S1: sb.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_SCALE_M)
+  ) ff_s0_s1_sb (
+    .clock(clock),
+    .in_en(rst_n & in_valid),
+    .in_d (scale_b_magnitude_d),
+    .out_q(scale_b_magnitude_q)
+  );
+  // S0 -> S1: ea.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_EXP_W)
+  ) ff_s0_s1_ea (
+    .clock(clock),
+    .in_en(rst_n & in_valid),
+    .in_d (scale_a_exponent_d),
+    .out_q(scale_a_exponent_q)
+  );
+  // S0 -> S1: eb.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_EXP_W)
+  ) ff_s0_s1_eb (
+    .clock(clock),
+    .in_en(rst_n & in_valid),
+    .in_d (scale_b_exponent_d),
+    .out_q(scale_b_exponent_q)
+  );
+  // S0 -> S1: nan_s1.
+  dp_lib_DFFE #(
+    .WIDTH(1)
+  ) ff_s0_s1_nan_s1 (
+    .clock(clock),
+    .in_en(rst_n & in_valid),
+    .in_d (scale_a_nan_d | scale_b_nan_d),
+    .out_q(nan_s1_q)
+  );
+  // S1 -> S2: coeff_q_1.
+  dp_lib_DFFE #(
+    .WIDTH(COEFF_W)
+  ) ff_s1_s2_coeff_q_1 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[0]),
+    .in_d (coeff_d),
+    .out_q(coeff_q[1])
+  );
+  // S1 -> S2: scale_exp_q_1.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_PRODUCT_EXP_W)
+  ) ff_s1_s2_scale_exp_q_1 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[0]),
+    .in_d ({1'b0, scale_a_exponent_q} + {1'b0, scale_b_exponent_q}),
+    .out_q(scale_exp_q[1])
+  );
+  // S1 -> S2: scale_nan_q_1.
+  dp_lib_DFFE #(
+    .WIDTH(1)
+  ) ff_s1_s2_scale_nan_q_1 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[0]),
+    .in_d (nan_s1_q),
+    .out_q(scale_nan_q[1])
+  );
+  // S2 -> S3: coeff_q_2.
+  dp_lib_DFFE #(
+    .WIDTH(COEFF_W)
+  ) ff_s2_s3_coeff_q_2 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[1]),
+    .in_d (coeff_q[1]),
+    .out_q(coeff_q[2])
+  );
+  // S2 -> S3: scale_exp_q_2.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_PRODUCT_EXP_W)
+  ) ff_s2_s3_scale_exp_q_2 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[1]),
+    .in_d (scale_exp_q[1]),
+    .out_q(scale_exp_q[2])
+  );
+  // S2 -> S3: scale_nan_q_2.
+  dp_lib_DFFE #(
+    .WIDTH(1)
+  ) ff_s2_s3_scale_nan_q_2 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[1]),
+    .in_d (scale_nan_q[1]),
+    .out_q(scale_nan_q[2])
+  );
+  // S3 -> S4: coeff_q_3.
+  dp_lib_DFFE #(
+    .WIDTH(COEFF_W)
+  ) ff_s3_s4_coeff_q_3 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[2]),
+    .in_d (coeff_q[2]),
+    .out_q(coeff_q[3])
+  );
+  // S3 -> S4: scale_exp_q_3.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_PRODUCT_EXP_W)
+  ) ff_s3_s4_scale_exp_q_3 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[2]),
+    .in_d (scale_exp_q[2]),
+    .out_q(scale_exp_q[3])
+  );
+  // S3 -> S4: scale_nan_q_3.
+  dp_lib_DFFE #(
+    .WIDTH(1)
+  ) ff_s3_s4_scale_nan_q_3 (
+    .clock(clock),
+    .in_en(rst_n & valid_q[2]),
+    .in_d (scale_nan_q[2]),
+    .out_q(scale_nan_q[3])
+  );
+  // S4 -> S5: out_magnitude.
+  dp_lib_DFFE #(
+    .WIDTH(MAG_W)
+  ) ff_s4_s5_out_magnitude (
+    .clock(clock),
+    .in_en(rst_n & valid_q[3]),
+    .in_d (magnitude_d),
+    .out_q(out_magnitude)
+  );
+  // S4 -> S5: out_negative.
+  dp_lib_DFFE #(
+    .WIDTH(1)
+  ) ff_s4_s5_out_negative (
+    .clock(clock),
+    .in_en(rst_n & valid_q[3]),
+    .in_d (negative_d),
+    .out_q(out_negative)
+  );
+  // S4 -> S5: out_anchor.
+  dp_lib_DFFE #(
+    .WIDTH(ANCHOR_W)
+  ) ff_s4_s5_out_anchor (
+    .clock(clock),
+    .in_en(rst_n & valid_q[3]),
+    .in_d (anchor_d),
+    .out_q(out_anchor)
+  );
+  // S4 -> S5: special.
+  dp_lib_DFFE #(
+    .WIDTH(`DP_SPECIAL_W)
+  ) ff_s4_s5_special (
+    .clock(clock),
+    .in_en(rst_n & valid_q[3]),
+    .in_d (special_d),
+    .out_q(special_q)
+  );
+  // S4 -> S5: out_z.
+  dp_lib_DFFE #(
+    .WIDTH($clog2(MAG_W + 1))
+  ) ff_s4_s5_out_z (
+    .clock(clock),
+    .in_en(rst_n & valid_q[3]),
+    .in_d (((special_d == 0) & (type_q[3] != `DP_DT_INT8)) ? z_d : 0),
+    .out_q(out_z)
+  );
 endmodule

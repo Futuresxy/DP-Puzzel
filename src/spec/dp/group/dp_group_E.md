@@ -1,4 +1,4 @@
-> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[E CModel group/e.cpp](../../../cmodel/lib/group/e.cpp)、[公共后端](../../../cmodel/lib/top/backend.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；多精度基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
+> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[公共后端](../../../cmodel/lib/top/backend.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；多精度基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
 
 # E 类专用 group 设计与实现
 

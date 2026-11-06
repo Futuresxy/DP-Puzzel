@@ -2,7 +2,7 @@
 
 ## 输入与预检
 
-- 记录 Git 提交、明确的 export ID、DC run ID、目标格式、数据集和窗口。用 `python3 scripts/rtl_gate.py EXPORT_ID` 核对当前 RTL 证据。核对 `inputs/resolved.json`、`DC_COMPLETE`、`summary.json` 和原始报告。当前单 DP 为 `dp_top`、`clock`、同步高有效 `reset`，已综合参数为 `K_FP16=16, LOCAL_W=27, GLOBAL_W=40`，L8、II=1。
+- 记录 Git 提交、明确的 export ID、DC run ID、目标格式、数据集和窗口。用 `python3 scripts/rtl_gate.py EXPORT_ID` 核对当前 RTL 证据。核对 `inputs/resolved.json`、`DC_COMPLETE`、`summary.json` 和原始报告。现用单 DP 顶层为 `dp_top` / `dp_top_e`、时钟 `clock`、同步低有效 `rst_n`，默认 `K_FP16=16, LOCAL_W=28, GLOBAL_W=40`、L8/II=1。历史 N12 网表可能使用高有效 `reset` 和 27/40 参数；必须读取所选 export/DC run 的 manifest 和约束，按该版本产生复位，不能把当前 TB 直接用于旧网表。v1.6 尚无新的 DC/功耗实测。
 - 确认原始 `netlist/dp_top.ddc`、`dp_top.sdc`、`dp_top_mapped.v` 齐全，网表和映射数据库来自同一 run。核验实际链接库和 VCS 单元模型的工艺、发行版、base/LVT 和引脚。VCS、DC/Power Compiler 版本和许可证以本机实际运行验证。`power_ready` 保持原记录值，功耗流程另存自己的匹配、活动和注释证据。
 - 首个候选是已通过时序的 `dc_dp_top_11050215`，TSMC CLN12FFCLL TT 0.7 V / 85 °C、1 GHz、ZeroWireload、base/LVT。后续改动以新通过的 RTL、网表和回执为准。该历史 hold 修复 run 的首轮证据在本机归档，按 [DC 记录说明](../../../hw/dc_syn/records/README.md) 取用。
 

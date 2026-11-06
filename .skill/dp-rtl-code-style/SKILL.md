@@ -13,7 +13,7 @@ description: >
 
 本文件以用户指定的 SN 原始 SKILL.md 为主体移植，保留详细规范、解释、正反例、DFF 选择树、单元列表、模块模板和逐项自检。来源指纹及必要差异见 [移植记录](references/sn-adaptation.md)。本文件是当前完整规范，参考文档仅补充 DP 特有合同。
 
-适用于维护中的 `src/verilog/` 多精度/E 前端和共享模块；冻结的 `systemverilog/` 不迁移，Chisel 默认端口不在此规则范围。纯 Verilog-2005、两空格、UTF-8、LF、100 列目标宽度。当前生产 RTL 仍使用同步高有效 reset，skill 模板未接入生产清单；不得把本次规范移植宣称为 RTL 已完成迁移或 PPA 已通过。
+适用于维护中的 `src/verilog/` 多精度/E 前端和共享模块；冻结的 `systemverilog/` 不迁移，Chisel 默认端口不在此规则范围。纯 Verilog-2005、两空格、UTF-8、LF、100 列目标宽度。现用生产 RTL 已在 v1.6 迁移为同步低有效 rst_n 与公共 DFF；实际模块读取 src/verilog/common/。验证见 test/results/dp-style-v1.6.md；旧 PPA 不授予新快照。
 
 ## 仿真收尾
 
@@ -314,7 +314,7 @@ ff_data (
 
 ```text
 src/verilog/
-├── common/                 DFF/MUX/编码基础单元（生产迁移时建立）
+├── common/                 DFF/MUX/编码基础单元（生产实现）
 ├── parameter/              dp_defs.vh / dp_functions.vh / 字段布局
 ├── unpack/                 解包
 ├── arithmetic/             算术共享模块
@@ -325,7 +325,7 @@ src/verilog/
 └── files_e.f               E 实现显式源清单
 ```
 
-skill 的 `assets/lib/` 为可验证模板；目前没有加入生产 files.f。实施时转入 `src/verilog/common/`，避免同名模块重复编译。旧快照不覆盖。维护对象为 Verilog-2005，不导入参考库中的 SV 数组端口、logic 或隐式语言扩展。
+skill 的 `assets/lib/` 为可验证模板；生产实现已转入 `src/verilog/common/` 并加入清单，避免同名模块重复编译。旧快照不覆盖。维护对象为 Verilog-2005，不导入参考库中的 SV 数组端口、logic 或隐式语言扩展。
 
 ### 12. 禁止 `localparam` 纯别名
 
@@ -472,7 +472,7 @@ assign way_target[0] = way_data[0][`DP_IBTB_TARGET_MSB:`DP_IBTB_TARGET_LSB];
 
 本 skill 的基础单元模板位于 `assets/lib/` 目录，分为 **DFF 时序单元** 和 **组合逻辑单元** 两类。
 
-> **工程说明**：六种 DFF wrapper 共用 `dp_dff_en.v` / `dp_dff_sync_reset.v` 两个行为级实现，编译时包含对应依赖；任意控制复位常量可直接参数化后者。模板目前未接入生产 RTL。后续在 `src/verilog/common/` 建立唯一生产实现，并更新源清单和验证；不要同时编译模板与同名生产模块。基础单元是行为级 RTL，不是 PDK 单元。
+> **工程说明**：六种 DFF wrapper 共用 `dp_dff_en.v` / `dp_dff_sync_reset.v` 两个行为级实现，编译时包含对应依赖；任意控制复位常量可直接参数化后者。唯一生产实现已在 `src/verilog/common/`，源清单与验证同步维护；不要同时编译模板与同名生产模块。基础单元是行为级 RTL，不是 PDK 单元。
 
 ### DFF 选择决策树
 

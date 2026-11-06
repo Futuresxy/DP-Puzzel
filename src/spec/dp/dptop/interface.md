@@ -1,8 +1,8 @@
-> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel include/dp/model.hpp](../../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[CModel include/dp/model.hpp](../../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # DP 顶层与模块接口定义
 
-状态：当前 H16Q32E64（T8）及 K4/K8 变体的接口合同。用户确认 A/B 各自携带 datatype、首版仅同格式；C 在 S5 按 FP32/INT32 解包；每笔控制随流水推进，取消 DP 内会话锁定。原子 ready 及逐请求协议已在 CModel 验证；手写 RTL 已采用同步高有效复位，见 [实现合同](../implementation/verilog.md)。
+状态：当前 H16Q32E64（T8）及 K4/K8 变体的接口合同。用户确认 A/B 各自携带 datatype、首版仅同格式；C 在 S5 按 FP32/INT32 解包；每笔控制随流水推进，取消 DP 内会话锁定。原子 ready 及逐请求协议已在 CModel 验证；手写 RTL 已采用同步低有效 `rst_n` 复位，见 [实现合同](../implementation/verilog.md)。
 
 ## 1. 运算和模块边界
 
@@ -28,7 +28,7 @@
 
 | 信号 | 方向 | 宽度 | 合同 |
 | --- | --- | --- | --- |
-| `clock`, `reset` | 入 | 各 1 | 所有子模块共用；同步高有效 reset，复位取消所有在途请求 |
+| `clock`, `rst_n` | 入 | 各 1 | 所有子模块共用；同步低有效 rst_n，复位取消所有在途请求 |
 | `in_a_valid`, `in_b_valid`, `in_c_valid` | 入 | 各 1 | 三个源有效；datatype 与各自 payload 同属一笔 |
 | `out_a_ready`, `out_b_ready`, `out_c_ready` | 出 | 各 1 | 只允许同拍原子接收，见握手公式 |
 | `in_a`, `in_b` | 入 | 各 16K | 低位对应低元素索引，格式切片见下文 |
@@ -91,7 +91,7 @@ A/B **数值**、scale **数值**始终可以不同；独立 datatype 字段不�
 
 ```text
 all_valid = in_a_valid & in_b_valid & in_c_valid
-accept_enable = !reset & datatype_tuple_legal
+accept_enable = rst_n & datatype_tuple_legal
 out_a_ready = out_b_ready = out_c_ready = accept_enable & all_valid
 req_fire = accept_enable & all_valid
 ```

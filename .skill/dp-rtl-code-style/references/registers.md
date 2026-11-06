@@ -4,7 +4,7 @@
 
 主体保留六种 DFF 类型：DFFU/DFFE（无复位）、DFFRU/DFFRE（同步复位为零）、DFFSU/DFFSE（同步置为全一）；U 每拍更新，E 带使能。实际类型名均加 `dp_lib_` 前缀。它们内部共用以下两个行为原语，任意 RESET_VALUE 也可直接实例化控制原语。
 
-以下合同已有本 skill 的行为级模板，但尚未接入生产 RTL；后续落实到 `src/verilog/common/`，两个前端共用唯一实现。模板位于 [控制 DFF](../assets/lib/dp_dff_sync_reset.v) 与 [数据 DFF](../assets/lib/dp_dff_en.v)，级间组织见 [S2→S3 示例](../assets/examples/dp_pipeline_boundary_example.v)。模板不是工艺标准单元，不包含 PDK。
+以下合同已接入 `src/verilog/common/`，两个前端共用唯一生产实现；验收见 `test/results/dp-style-v1.6.md`。模板位于 [控制 DFF](../assets/lib/dp_dff_sync_reset.v) 与 [数据 DFF](../assets/lib/dp_dff_en.v)，级间组织见 [S2→S3 示例](../assets/examples/dp_pipeline_boundary_example.v)。模板不是工艺标准单元，不包含 PDK。
 
 | 模块 | 参数 | 端口 | 上升沿行为 |
 | --- | --- | --- | --- |

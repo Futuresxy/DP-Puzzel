@@ -1,6 +1,7 @@
-# DP v1.4 register ownership from src/spec/dp/dptop/pipeline.md and the unchanged RTL.
+# DP v1.6 DFF capture stages plus legacy register names for archived reports.
 # Classification is reporting only: no path exceptions or optimization constraints.
 proc dp_stage {name} {
+  if {[regexp {ff_s[0-7]_s([1-8])_} $name -> stage]} {return S$stage}
   if {[regexp {operand_unpack_[ab]/} $name]} {return S1}
   if {[regexp {valid_q_reg(?:\[|_)([0-7])(?:\]|_)} $name -> index]} {return S[expr {$index+1}]}
   if {[regexp {(type_s|anchor_s|special_s|all_negative_s)([1-7])_q} $name -> stem stage]} {return S$stage}

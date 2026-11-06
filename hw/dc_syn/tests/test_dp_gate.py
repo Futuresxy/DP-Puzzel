@@ -44,6 +44,19 @@ class DPGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Modified DP snapshot'):
             payload(self.export,self.root)
 
+    def test_reset_contract_is_explicit(self):
+        path=self.export/'manifest.json'
+        original=json.loads(path.read_text())
+        for interface in (None, dict(original['interface'], reset_port='reset', reset_active='high')):
+            modified=dict(original)
+            if interface is None:
+                modified.pop('interface')
+            else:
+                modified['interface']=interface
+            path.write_text(json.dumps(modified))
+            with self.assertRaisesRegex(ValueError, 'clock/reset contract'):
+                payload(self.export,self.root)
+
     def test_filelist_injection_is_rejected(self):
         p=self.export/'files.f'; p.write_text(p.read_text()+'src/src/verilog/systemverilog/top/dp_top.sv\n')
         with self.assertRaisesRegex(ValueError,'files.f mismatch'):
@@ -80,6 +93,8 @@ class DPGateTests(unittest.TestCase):
                'g_group_0__group_unit/g_lane_0__lane/pairs_s2_q_reg[0]':'S2',
                'g_group_0__group_unit/g_lane_0__lane/sop_s3_q_reg[0]':'S3',
                'g_group_0__group_unit/magnitude_s4_q_reg[0]':'S4'}
+        for stage in range(1,9):
+            cases[f'g_group_0__u_group/ff_s{stage-1}_s{stage}_payload/u_storage/out_q_reg[0]']=f'S{stage}'
         for name,stage in cases.items():
             script+='if {[dp_stage {'+name+'}] ne "'+stage+'"} {error "wrong stage"}\n'
         result=subprocess.run(['tclsh'],input=script,text=True,capture_output=True)

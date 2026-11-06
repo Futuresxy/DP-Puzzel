@@ -4,7 +4,7 @@ find_package(Boost 1.83.0 EXACT REQUIRED)
 find_package(nlohmann_json 3.11.3 EXACT REQUIRED)
 add_library(dp_cmodel
   lib/config.cpp lib/arithmetic.cpp lib/unpack.cpp lib/lane.cpp
-  lib/group.cpp lib/lane/e.cpp lib/group/e.cpp lib/top/backend.cpp
+  lib/group.cpp lib/lane/lane_e.cpp lib/group/group_e.cpp lib/top/backend.cpp
   lib/model.cpp lib/json_io.cpp)
 target_include_directories(dp_cmodel PUBLIC include PRIVATE lib)
 target_link_libraries(dp_cmodel PUBLIC Boost::boost nlohmann_json::nlohmann_json)

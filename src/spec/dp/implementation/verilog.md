@@ -1,8 +1,8 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.5.9；修改时间：2026-11-06 09:36:04 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
-本页记录 v1.5 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
+本页记录 v1.6 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
 
 ## 1. 文件组织与实现边界
 
@@ -28,7 +28,7 @@
 | 双向幅值移位 | [dp_bidir_shift.v](../../../verilog/arithmetic/dp_bidir_shift.v) | 组合；方向 bit reversal + 一个右移核心 |
 | FP32 输出 | [dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v) | 组合；S8 结果由 top 注册 |
 
-各路径命名可用于层级统计。E pair、符号恢复、组 abs、特殊摘要与 transport 寄存器仍属于直接拥有它们的 lane/group/top；不能把它们在父子统计中重复计数。没有为了统计添加 `dont_touch`、时钟域或额外寄存级。28/40 同工况面积/时序见 [E64 DC 对比](../../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)，真实活动功耗待测。
+各路径命名可用于层级统计。E pair、符号恢复、组 abs、特殊摘要与 transport 寄存器仍属于直接拥有它们的 lane/group/top；不能把它们在父子统计中重复计数。没有为了统计添加 `dont_touch`、时钟域或额外寄存级。v1.5 旧快照的 28/40 同工况面积/时序见 [E64 DC 对比](../../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)，v1.6 新快照尚未重跑 DC/功耗，旧结果不授予新 RTL。
 
 S1 每侧实际复用两份 E10/M16/S4 寄存器，按 T/H/Q/E/INT8 打包和展开；没有为各格式单独保存一套宽尾数。分类旁带独立，TF32 只启用第一个 atom。M/E/S 布局也纳入 CModel 断点比对。
 
@@ -56,7 +56,13 @@ S5 仍为 `value=(-1)^sign × magnitude × 2^(A_raw-(M-1))`。不同格式 F 在
 
 ## 3. 控制、复位与低活动
 
-采用同步高有效 `reset`，全局同拍作用于所有流水有效位，清除 last/type 控制并取消在途结果。数据通路无需复位到零；只有有效请求进入本级时才更新数据寄存器。复位沿上的旧输出不能被下游作为有效事务消费。
+采用同步低有效 `rst_n`，全局同拍作用于所有流水有效位，清除 last/type 控制并取消在途结果。数据通路无需复位到零；只有有效请求进入本级时才更新数据寄存器。复位沿上的旧输出不能被下游作为有效事务消费。
+
+v1.5 → v1.6：~~同步高有效 reset、功能模块内直接保存流水寄存器~~ → 同步低有效 `rst_n`、显式参数化 DFF。外部需把复位事件取反后接入；数值、L8/II=1、容量及默认 28/40 不变。冻结 SV 保留旧接口。
+
+流水存储的生产单一来源为 `src/verilog/common/`：`dp_lib_DFFRU` 每拍推进并同步清零 valid/last，`dp_lib_DFFRE` 保存需复位且有使能的控制；`dp_lib_DFFE` 无复位，仅在 `rst_n & source_valid` 更新 payload。`ff_sN_sM_<field>` 表明时钟边界；实际顺序逻辑只位于 `dp_dff_en.v` 和 `dp_dff_sync_reset.v`。元数据与数据使用同一使能，不产生新增延迟或级间 ready。
+
+功能组合层使用 assign/generate；译码、符号分离、特殊值归约、舍入的中间量具名，保持原有有限位宽和两次 RTZ。参数/端口/变量逐项声明，普通实例使用 `u_`，循环采用角色名。规范见 [RTL style](../../../../.skill/dp-rtl-code-style/SKILL.md) 与 [命名](../../../../.skill/dp-naming-convention/SKILL.md)。DC 优先从 DFF 实例名识别阶段，同时保留历史命名解析；没有新增 false path 或 dont_touch。
 
 三路原子 ready、逐请求 type、无输出背压和 last 透传完全遵循 [接口](../dptop/interface.md)。缺失输入只产生 bubble，不冻结已接受请求。非法 datatype 元组不握手；合法 NaN/Inf 必须按正常 L8 输出。
 

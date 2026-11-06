@@ -12,8 +12,8 @@ from rtl_gate import contained, read_json, require, rtl_fingerprint
 
 PARAMETERS = {'K_FP16': 16, 'LOCAL_W': 28, 'GLOBAL_W': 40}
 DEFAULT_SCOPE = (PARAMETERS['K_FP16'], PARAMETERS['LOCAL_W'], PARAMETERS['GLOBAL_W'])
-DP_INTERFACE = {'clock_port': 'clock', 'reset_port': 'reset',
-                'reset_kind': 'synchronous', 'reset_active': 'high'}
+DP_INTERFACE = {'clock_port': 'clock', 'reset_port': 'rst_n',
+                'reset_kind': 'synchronous', 'reset_active': 'low'}
 CONFIGS = ((4,27,40), (8,27,40), DEFAULT_SCOPE, (4,28,48), (8,32,64), (16,32,64))
 
 
@@ -36,7 +36,7 @@ def payload(export, root):
     top='dp_top_e' if frontend=='e' else 'dp_top'
     require(manifest['export_id'] == export.name and manifest['implementation'] == 'verilog'
             and manifest['top'] == top, 'DP identity mismatch')
-    require(manifest.get('interface', DP_INTERFACE) == DP_INTERFACE, 'DP clock/reset contract mismatch')
+    require(manifest.get('interface') == DP_INTERFACE, 'DP clock/reset contract mismatch')
     lines = (root/'src/verilog'/('files_e.f' if frontend=='e' else 'files.f')).read_text().splitlines()
     require(lines[0] == '+incdir+src/verilog/parameter', 'Unexpected DP include path')
     sources = lines[1:]

@@ -1,4 +1,4 @@
-> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
+> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
 
 # DP 规格导航
 
@@ -71,4 +71,4 @@ A/B 同格式，合法请求可逐拍换型；last 只透传，无输出背压�
 
 将多精度与 E 专用组织为同一设计族：共用基础库，lane/group 内区分 multi/e，dptop 复用后端并按静态 profile 装配。当前模块目录保持功能分层；变体增加后可在 lane/group 内分别建立 multi/e 子目录，共用数值合同与 scale/后端说明只维护一份，各类型文档记录自身的数据通路、S/I/F、周期和适用范围。
 
-建议的配置、能力矩阵及组合边界见 [模块层级第 9 节](dptop/module-hierarchy.md#9-dp-设计族的工程组织建议)，源码目标布局分别见 [RTL](implementation/verilog.md#6-分类型模块与组合配置建议) 与 [CModel](implementation/cmodel.md#7-与-rtl-对应的设计族组织建议)。CModel 已新增 lane/e.cpp、group/e.cpp，抽取 top/backend.cpp，接入 src/configs/dp/e64.json；RTL 增加 dp_lane_e/dp_group_e/dp_top_e 和 files_e.f；原多精度顶层保留，通用混合组配置仍是讨论稿。默认多精度请求和数值接口保持兼容。
+建议的配置、能力矩阵及组合边界见 [模块层级第 9 节](dptop/module-hierarchy.md#9-dp-设计族的工程组织建议)，源码目标布局分别见 [RTL](implementation/verilog.md#6-分类型模块与组合配置建议) 与 [CModel](implementation/cmodel.md#7-与-rtl-对应的设计族组织建议)。CModel 已新增 lane/lane_e.cpp、group/group_e.cpp，抽取 top/backend.cpp，接入 src/configs/dp/e64.json；RTL 增加 dp_lane_e/dp_group_e/dp_top_e 和 files_e.f；原多精度顶层保留，通用混合组配置仍是讨论稿。默认多精度请求和数值接口保持兼容。
