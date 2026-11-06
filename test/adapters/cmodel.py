@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FIELDS = ("id", "a_datatype", "b_datatype", "c_datatype", "a_scale_datatype",
           "b_scale_datatype", "last", "a", "b", "c", "a_scale", "b_scale",
           "a_e1", "a_e2", "b_e1", "b_e2")
-DEFAULT_CONFIG = dict(k_fp16=16, local_shift_mag_width=27,
+DEFAULT_CONFIG = dict(k_fp16=16, local_shift_mag_width=28,
                       global_signed_align_width=40, post_scale_norm_extra_stage=0)
 
 

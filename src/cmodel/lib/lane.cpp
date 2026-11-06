@@ -6,87 +6,176 @@
 
 namespace dp {
 namespace {
-Big multiply(DataType t,const Big& a,const Big& b,unsigned in_lane) {
-  if(t==DataType::TF32 || t==DataType::FP16) {
-    const Big ah=a>>mul_lo_bits,al=a&mask(mul_lo_bits),bh=b>>mul_lo_bits,bl=b&mask(mul_lo_bits);
-    return (ah*bh<<(2*mul_lo_bits))+((ah*bl+al*bh)<<mul_lo_bits)+al*bl;
+// S2 unsigned mantissa operands A/B -> product Y. Sign is separate.
+// Precision     | A/B S | A/B I | A/B F | Y S | Y I | Y F
+// ------------- | ----- | ----- | ----- | --- | --- | ---
+// TF32 / FP16   | 0     | 1     | 10    | 0   | 2   | 20
+// BF16          | 0     | 1     | 7     | 0   | 2   | 14
+// MXFP8 / MXFP6 | 0     | 1     | 3     | 0   | 2   | 6
+// MXFP4 / NVFP4 | 0     | 3     | 1     | 0   | 6   | 2
+// HiF4          | 0     | 2     | 2     | 0   | 4   | 4
+// INT8          | 0     | 8     | 0     | 0   | 16  | 0
+Big multiply(DataType datatype, const Big &operand_a, const Big &operand_b,
+             unsigned lane_element_index) {
+  if (datatype == DataType::TF32 || datatype == DataType::FP16) {
+    const Big a_high = operand_a >> mul_lo_bits, a_low = operand_a & mask(mul_lo_bits),
+              b_high = operand_b >> mul_lo_bits, b_low = operand_b & mask(mul_lo_bits);
+    return (a_high * b_high << (2 * mul_lo_bits)) +
+           ((a_high * b_low + a_low * b_high) << mul_lo_bits) + a_low * b_low;
   }
-  if(t==DataType::INT8 && in_lane%2) {
-    return a*(b&mask(mul_lo_bits))+((a*(b>>mul_lo_bits))<<mul_lo_bits);
+  if (datatype == DataType::INT8 && lane_element_index % 2) {
+    return operand_a * (operand_b & mask(mul_lo_bits)) +
+           ((operand_a * (operand_b >> mul_lo_bits)) << mul_lo_bits);
   }
-  return a*b;
+  return operand_a * operand_b;
 }
-}
-void stage_products(const Config& c,State& s) {
-  const auto t=s.request.a_type; const auto n=format(t).lane_elements;
-  s.r.assign(c.groups(),0); s.group_special.resize(c.groups());
-  std::vector<bool> active(c.groups(),false);
-  Json pjson=Json::array(),sf=Json::array();
-  for(unsigned i=0;i<s.a.size();++i) {
-    const auto& a=s.a[i]; const auto& b=s.b[i]; Product p;
-    p.negative=a.negative!=b.negative; p.exponent=a.exponent+b.exponent;
-    p.fraction=a.fraction+b.fraction; p.special=product_special(a,b);
-    p.magnitude=multiply(t,a.magnitude,b.magnitude,i%n);
-    const unsigned g=i/(lanes_per_group*n);
-    s.group_special[g].merge(p.special);
-    if(p.magnitude!=0 && !p.special.active()) {
-      s.r[g]=active[g]?std::max(s.r[g],p.exponent):p.exponent; active[g]=true;
+} // namespace
+void stage_products(const Config &config, State &state) {
+  const auto datatype = state.request.a_type;
+  const auto element_count = format(datatype).lane_elements;
+  state.group_max_exponents.assign(config.groups(), 0);
+  state.group_special.resize(config.groups());
+  std::vector<bool> active(config.groups(), false);
+  Json products_json = Json::array();
+  Json scale_pairs_json = Json::array();
+  for (unsigned element_index = 0; element_index < state.operands_a.size(); ++element_index) {
+    const auto &operand_a = state.operands_a[element_index];
+    const auto &operand_b = state.operands_b[element_index];
+    Product product;
+    product.negative = operand_a.negative != operand_b.negative;
+    product.exponent = operand_a.exponent + operand_b.exponent;
+    product.fractional_bits = operand_a.fractional_bits + operand_b.fractional_bits;
+    product.special = product_special(operand_a, operand_b);
+    product.magnitude =
+        multiply(datatype, operand_a.magnitude, operand_b.magnitude, element_index % element_count);
+    const unsigned group_index = element_index / (lanes_per_group * element_count);
+    state.group_special[group_index].merge(product.special);
+    if (product.magnitude != 0 && !product.special.active()) {
+      state.group_max_exponents[group_index] =
+          active[group_index] ? std::max(state.group_max_exponents[group_index], product.exponent)
+                              : product.exponent;
+      active[group_index] = true;
     }
-    s.products.push_back(p);
-    if(s.tracing) pjson.push_back({{"m",p.magnitude.str()},{"sign",p.negative},{"exp",p.exponent},{"f",p.fraction},{"special",special_json(p.special)}});
+    state.products.push_back(product);
+    if (state.tracing)
+      products_json.push_back({{"m", product.magnitude.str()},
+                               {"sign", product.negative},
+                               {"exp", product.exponent},
+                               {"f", product.fractional_bits},
+                               {"special", special_json(product.special)}});
   }
-  if(s.tracing) {
-    for(unsigned g=0;g<c.groups();++g) sf.push_back({{"coefficient",Big(s.scale_a[g].magnitude*s.scale_b[g].magnitude).str()},
-      {"exponent_sum",s.scale_a[g].exponent+s.scale_b[g].exponent}});
-    trace(s,"multiply_and_group_max",{{"products",pjson},{"r",s.r},{"scale_pairs",sf}});
+  if (state.tracing) {
+    for (unsigned group_index = 0; group_index < config.groups(); ++group_index)
+      scale_pairs_json.push_back(
+          {{"coefficient",
+            Big(state.scale_a[group_index].magnitude * state.scale_b[group_index].magnitude).str()},
+           {"exponent_sum",
+            state.scale_a[group_index].exponent + state.scale_b[group_index].exponent}});
+    trace(state, "multiply_and_group_max",
+          {{"products", products_json},
+           {"r", state.group_max_exponents},
+           {"scale_pairs", scale_pairs_json}});
   }
 }
-void stage_local_align(const Config& c,State& s) {
-  const auto t=s.request.a_type; const unsigned n=format(t).lane_elements;
-  Json deltas=Json::array();
-  for(unsigned lane=0;lane<c.lanes();++lane) {
-    std::vector<Big> leaf; Json ld=Json::array(); const unsigned base=lane*n,g=lane/lanes_per_group;
-    if(n==e_elements_per_lane) {
-      const unsigned pad=c.leaf_bits()-(e_pair_bits+e_guard_bits);
-      for(unsigned j=0;j<n;j+=2) {
-        const auto& p=s.products[base+j]; const auto& q=s.products[base+j+1];
-        Big pair=signed_value(p.magnitude,p.negative)+signed_value(q.magnitude,q.negative);
-        check_signed(pair,e_pair_bits,"E pair");
-        int delta=t==DataType::HIF4 && pair!=0?s.r[g]-p.exponent:0;
-        if(delta<0 || delta>static_cast<int>(e_guard_bits)) throw std::logic_error("HiF e2 delta outside guard range");
-        bool lost=false; Big mag=rtz(abs_big(pair)<<e_guard_bits,delta,lost);
-        if(lost) throw std::logic_error("HiF guarded pair lost precision");
-        leaf.push_back(signed_value(mag,pair<0)<<pad); ld.push_back(delta);
+// P=c.local_fraction() (default 26). I excludes S.
+// S3 shift magnitude -> TC tree leaf. Both use the listed I/F.
+// Precision                    | Shift S | Leaf S | I  | F
+// ---------------------------- | ------- | ------ | -- | ----
+// TF32 / FP16 / BF16 / MXFP8/6 | 0       | 1      | 2  | P
+// MXFP4 / NVFP4                | 0       | 1      | 7  | P-5
+// HiF4                         | 0       | 1      | 5  | P-3
+// INT8                         | 0       | 1      | 15 | P-13
+// S3 E pair before guard/padding (TC, W10).
+// Precision / signal | S | I | F
+// ------------------ | - | - | -
+// MXFP4 / NVFP4      | 1 | 7 | 2
+// HiF4               | 1 | 5 | 4
+void stage_local_align(const Config &config, State &state) {
+  const auto datatype = state.request.a_type;
+  const unsigned element_count = format(datatype).lane_elements;
+  Json deltas = Json::array();
+  for (unsigned lane = 0; lane < config.lanes(); ++lane) {
+    std::vector<Big> leaf;
+    Json lane_deltas = Json::array();
+    const unsigned base = lane * element_count;
+    const unsigned group_index = lane / lanes_per_group;
+    if (element_count == e_elements_per_lane) {
+      const unsigned pad = config.leaf_bits() - (e_pair_bits + e_guard_bits);
+      for (unsigned pair_index = 0; pair_index < element_count; pair_index += 2) {
+        const auto &product = state.products[base + pair_index];
+        const auto &next_product = state.products[base + pair_index + 1];
+        Big pair = signed_value(product.magnitude, product.negative) +
+                   signed_value(next_product.magnitude, next_product.negative);
+        check_signed(pair, e_pair_bits, "E pair");
+        int delta = datatype == DataType::HIF4 && pair != 0
+                        ? state.group_max_exponents[group_index] - product.exponent
+                        : 0;
+        if (delta < 0 || delta > static_cast<int>(e_guard_bits))
+          throw std::logic_error("HiF e2 delta outside guard range");
+        bool lost = false;
+        Big magnitude = rtz(abs_big(pair) << e_guard_bits, delta, lost);
+        if (lost)
+          throw std::logic_error("HiF guarded pair lost precision");
+        leaf.push_back(signed_value(magnitude, pair < 0) << pad);
+        lane_deltas.push_back(delta);
       }
     } else {
-      for(unsigned j=0;j<n;++j) {
-        const auto& p=s.products[base+j]; Big v=0; int delta=0;
-        if(t==DataType::INT8) v=signed_value(p.magnitude,p.negative)<<(c.leaf_bits()-int_product_bits);
-        else if(p.magnitude!=0 && !p.special.active()) {
-          delta=s.r[g]-p.exponent;
-          if(delta<0) throw std::logic_error("negative local delta");
-          const Big m=p.magnitude<<(c.local_fraction()-p.fraction);
-          check_unsigned(m,c.local_shift_mag_width,"local shift input");
-          Big y=rtz(m,delta,s.result.flags.local_truncated);
-          v=signed_value(y,p.negative);
+      for (unsigned pair_index = 0; pair_index < element_count; ++pair_index) {
+        const auto &product = state.products[base + pair_index];
+        Big aligned_value = 0;
+        int delta = 0;
+        if (datatype == DataType::INT8)
+          aligned_value = signed_value(product.magnitude, product.negative)
+                          << (config.leaf_bits() - int_product_bits);
+        else if (product.magnitude != 0 && !product.special.active()) {
+          delta = state.group_max_exponents[group_index] - product.exponent;
+          if (delta < 0)
+            throw std::logic_error("negative local delta");
+          const Big magnitude = product.magnitude
+                                << (config.local_fraction() - product.fractional_bits);
+          check_unsigned(magnitude, config.local_shift_mag_width, "local shift input");
+          Big shifted_magnitude = rtz(magnitude, delta, state.result.flags.local_truncated);
+          aligned_value = signed_value(shifted_magnitude, product.negative);
         }
-        check_signed(v,c.leaf_bits(),"local leaf"); leaf.push_back(v); ld.push_back(delta);
+        check_signed(aligned_value, config.leaf_bits(), "local leaf");
+        leaf.push_back(aligned_value);
+        lane_deltas.push_back(delta);
       }
     }
-    s.leaves.push_back(std::move(leaf)); deltas.push_back(ld);
+    state.leaves.push_back(std::move(leaf));
+    deltas.push_back(lane_deltas);
   }
-  if(s.tracing) {
-    Json leaves=Json::array(); for(const auto& l:s.leaves) leaves.push_back(bigs_json(l));
-    trace(s,"local_align_and_E_pairs",{{"leaves_tc",leaves},{"delta",deltas},{"width",c.leaf_bits()}});
+  if (state.tracing) {
+    Json leaves = Json::array();
+    for (const auto &lane_leaves : state.leaves)
+      leaves.push_back(bigs_json(lane_leaves));
+    trace(state, "local_align_and_E_pairs",
+          {{"leaves_tc", leaves}, {"delta", deltas}, {"width", config.leaf_bits()}});
   }
 }
-void stage_lane_sum(const Config& c,State& s) {
-  const auto t=s.request.a_type;
-  for(const auto& l:s.leaves) {
-    Big sum=tree_sum(l,c.leaf_bits());
-    const unsigned pad=ceil_log2(q_elements_per_lane)-ceil_log2(static_cast<unsigned>(l.size()));
-    sum<<=pad; check_signed(sum,c.lane_bits(),"lane SOP"); s.lanes.push_back(sum);
+// P=c.local_fraction() (default 26).
+// S4 lane SOP (TC).
+// Precision / signal | S | I  | F
+// ------------------ | - | -- | ----
+// TF32               | 1 | 2  | P+2
+// FP16 / BF16        | 1 | 3  | P+1
+// MXFP8 / MXFP6      | 1 | 4  | P
+// MXFP4 / NVFP4      | 1 | 9  | P-5
+// HiF4               | 1 | 7  | P-3
+// INT8               | 1 | 17 | P-13
+void stage_lane_sum(const Config &config, State &state) {
+  const auto datatype = state.request.a_type;
+  for (const auto &lane_leaves : state.leaves) {
+    Big sum = tree_sum(lane_leaves, config.leaf_bits());
+    const unsigned pad =
+        ceil_log2(q_elements_per_lane) - ceil_log2(static_cast<unsigned>(lane_leaves.size()));
+    sum <<= pad;
+    check_signed(sum, config.lane_bits(), "lane SOP");
+    state.lanes.push_back(sum);
   }
-  trace(s,"lane_sop_tree",{{"sop_tc",bigs_json(s.lanes)},{"width",c.lane_bits()},{"f",c.lane_fraction(t)}});
+  trace(state, "lane_sop_tree",
+        {{"sop_tc", bigs_json(state.lanes)},
+         {"width", config.lane_bits()},
+         {"f", config.lane_fraction(datatype)}});
 }
 } // namespace dp

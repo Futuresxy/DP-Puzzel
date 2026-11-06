@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "constraint_id": "dp-l8-1000mhz",
+  "purpose": "User-authorized 1GHz fallback preserving DP L8 II1, same N12 TT and IO/uncertainty/hierarchy/VT budgets",
+  "clock_port": "clock",
+  "period_ns": 1.0,
+  "clock_latency_ns": 0.1,
+  "setup_uncertainty_ns": 0.1,
+  "hold_uncertainty_ns": 0.03,
+  "clock_transition_ns": 0.1,
+  "input_delay_max_ns": 0.2,
+  "input_delay_min_ns": 0.0,
+  "output_delay_max_ns": 0.2,
+  "output_delay_min_ns": 0.0,
+  "input_transition_ns": 0.1,
+  "output_load_pf": 0.01,
+  "timing_max_paths": 50,
+  "clock_gating": true,
+  "clock_gating_min_bitwidth": 4,
+  "optimize_area": true,
+  "hold_fix": true,
+  "hierarchy": {
+    "keep_modules": [
+      "dp_*"
+    ],
+    "expand_modules": [],
+    "expand_instances": [],
+    "expand_depth": 0
+  },
+  "write_sdf": false
+}

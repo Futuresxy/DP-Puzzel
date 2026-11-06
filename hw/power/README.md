@@ -1,22 +1,15 @@
-# 单阵列 / 单核心真实负载功耗
+# 单 DP 真实负载功耗
 
-必须在当前机器挂载的 EDA 环境内执行。当前只定义真实硬件和真实负载的分析链，不运行商业工具，不生成或虚构功耗结果。
+项目采用 VCS 原生门级 SAIF 和 Synopsys Power Compiler。方法与验收项见 [功耗 skill](../../.skill/power-analysis/SKILL.md)。目前处于 DP 架构与实现阶段，已定义测量流程，单 DP 功耗入口和实测结果待后续接入。
 
-| 后续位置 | 职责 |
+| 位置 | 内容 |
 | --- | --- |
-| workloads/ | 真实负载/trace 的来源、精度、映射与采样元数据 |
-| activity/ | VCD/SAIF 生成与转换规则；大波形不提交 |
-| scripts/ | 工具驱动、活动覆盖检查和报告提取 |
-| configs/ | 工况和窗口；私有库/挂载路径独立配置 |
-| runs/ | 完整活动/功耗结果与临时文件，默认不提交 |
+| `test/data/dp/` | 已提交的 packed 事务、独立期望和数据来源 |
+| `hw/rtl/<export-id>/` | 与 DC 匹配的已验证 RTL 快照 |
+| `hw/dc_syn/runs/<run-id>/` | 原始 DDC、网表、SDC 和时序结果 |
+| `hw/power/runs/` | 实测激励、原生 SAIF、注释审计、工具报告，保留在本机 |
+| `hw/power/records/` | 可提交的结果摘要和适用范围 |
 
-数据链：
+同一份通过时序的网表用于各精度重放。选择同源模型数据和固定窗口，逐笔核对 RTL 与门级输出，再检查真实引脚状态、SAIF 时长和 Power Compiler 注释覆盖。整 DP 平均功耗与按有效吞吐折算的 pJ/MAC 一起报告。待测内容、运行范围和工艺条件以明确选定的配置为准。
 
-1. 接收具体负载及 tile/精度配置，生成或读取可核验输入，记录 input hash。
-2. 在已验证的同一份 RTL 上重放，核对数值结果和周期，划分 reset、warmup、active、stall、idle、drain 窗口。
-3. 提取 VCD/SAIF，绑定 export、层次路径、timescale、时间窗口与数据分布。随机测试切换率不能冒充真实 workload 活动。
-4. 读取匹配的综合 netlist、约束和工艺库；先完成适用的 RTL/netlist 一致性验证。使用 SDF 或寄生信息时记录其来源。
-5. 在挂载 EDA 中分析 internal、switching、leakage 和 total；检查活动映射覆盖率及未注释节点。记录毛刺建模、寄生缺失等适用限制。
-6. 将不同格式、操作模式及 active/idle 状态的测量值交给 characterization；芯片模型依据调度活动加权，并另计共享存储/互连等成本。
-
-输出须带频率、电压、温度、工作负载、测量窗口和功耗边界。真实负载不同，不能直接复用一个“单核固定功耗”乘以核心数。未来功耗 skill 统一放根目录 .skill/。
+普通功耗分析按 [统一保留入口](../../scripts/README.md#运行产物保留) 滚动保留最近两次终态运行。功耗运行记录其输入 DC run，重要功耗证据与用户确认后标记保留。

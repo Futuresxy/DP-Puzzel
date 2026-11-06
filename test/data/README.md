@@ -26,7 +26,7 @@ DP_INPUTS_V1
 | last | in_last | 1 |
 | id | 无 DUT 信号，scoreboard 软件编号 | 非负整数 |
 
-G=k_fp16/4；十六进制字符数为 ceil(bits/4)，未使用的最高位必须零。datatype 编码：[DP interface](../../src/spec/dp/interface.md)。scale 按基本组展开：MXQ四槽相同；MXFP4槽0=1、2=3；HiF4四槽相同；NV四槽独立。HiF e1每4元素、e2每8元素按低索引bit排列。无scale/meta的格式写全零。
+G=k_fp16/4；十六进制字符数为 ceil(bits/4)，未使用的最高位必须零。datatype 编码：[DP interface](../../src/spec/dp/dptop/interface.md)。scale 按基本组展开：MXQ四槽相同；MXFP4槽0=1、2=3；HiF4四槽相同；NV四槽独立。HiF e1每4元素、e2每8元素按低索引bit排列。无scale/meta的格式写全零。
 
 这份文件已经是物理端口 layout；各 testbench 不重新量化、不重新广播、不复制数据为另一套格式。SV 驱动可直接按16个字段 `$fscanf`，A/B须使用按 k_fp16 展开的packed向量而非32位integer。valid/气泡/reset 由测试调度控制，与数值向量分离；每个请求只在三路共同握手后推进读取位置。
 
@@ -36,7 +36,7 @@ G=k_fp16/4；十六进制字符数为 ceil(bits/4)，未使用的最高位必须
 - `source_reference.txt`：仅九种旧格式保留的原FP64 golden，作为来源证据，不作为新版逐位验收目标。
 - `manifest.json`：schema、类型、两个K、请求数、来源路径及SHA256、五个数据段、golden配置/源码指纹、期望文件校验和。源码指纹排除build/。
 
-九种旧格式的 correct_961 按原顺序保留 random64、mixed128、AI256、AI512、ones1；没有再次复制包含在其中的 batch512。来源仍为 `hw/test/data/petile_ratio`，导入过程不修改来源，也不继承旧误差阈值。
+九种旧格式的 correct_961 按原顺序保留 random64、mixed128、AI256、AI512、ones1；没有再次复制包含在其中的 batch512。历史来源记录在各数据 manifest 中。重新导入时通过 `test/cases/import_legacy.py --source-root` 指定原始 corpus，导入不写回来源。
 
 TF32/INT8 generated_v1 使用种子20271104；编码随机、有限数/累加边界、定向极值及ones分别列段。先完成原九格式，再生成并验证这两种扩展。
 

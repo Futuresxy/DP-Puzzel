@@ -1,9 +1,26 @@
-# 公共流程入口职责
+# 公共流程入口
 
-当前不编写可执行脚本。后续统一负责环境只读检查、固定依赖获取、带记录的 RTL 导出、RTL 验证门禁、EDA 运行接入、产物引用检查/清理和结果校验。
+- `rtl_gate.py EXPORT_ID` 校验 `hw/rtl/` 中的指定快照和 `test/runs/` 中的真实通过回执。
+- `dc_syn.sh` 执行 DC 输入检查、准备、综合与报告。用法见 [DC 说明](../hw/dc_syn/README.md)。
+- `research/` 保存外部参考平台的编译与分析工具。
 
-所有入口读取明确配置和 ID，不使用隐式最新文件、不复制设计 RTL。EDA 入口只在挂载环境具备条件后运行。skill 应调用这些公共能力而非维护重复脚本。Git 日常同步依照开发流程，不未经审查自动提交所有文件。
+设计维护在 `src/`，功能回归在 `test/`，综合和功耗分析在 `hw/`。入口使用明确的配置与 ID。
 
-当前 `check_full_reuse_export.py <export-id>` 只检查指定 full RTL 导出的来源清单、文件 hash、单 module 单文件与1–4/4/4实际层级，输出JSON摘要。它不会执行DUT或把generated提升为passed，不是后续PPA验证门禁。
+## 运行产物保留
 
-当前六种PE使用 `check_pe_export.py <export-id> [--smoke]`。显式清单/hash与实际层级检查；smoke仅基础PE单位scale下−1/0/+1的数值坐标和11级valid。不会提升manifest状态，不是完整精度/PPA门禁。旧check_full_reuse_export仅检查历史Full导出。
+日常 CModel、RTL 回归、DC 和功耗分别保留最近两次已结束且无引用的普通运行。回归目录按 UTC run ID 排序，DC 和功耗按终态完成时间排序。读完结果并记录所需证据后执行清理。
+
+```sh
+python3 scripts/run_retention.py           # 预览保留、跳过和待删除项
+python3 scripts/run_retention.py --apply   # 删除超出名额的最旧普通运行
+```
+
+长期保留前先与用户确认具体 run ID 和理由，再在该运行目录写入保留标记。下面的路径应替换成确认过的真实运行目录。
+
+```sh
+python3 scripts/run_retention.py --pin 'test/runs/verilog/<run-id>' --reason '用户已确认的版本或里程碑'
+```
+
+标记、当前 RTL 门禁回执及验证范围、受 Git 跟踪或被项目记录、DC 和功耗元数据引用的运行均独立于普通名额保留。正在运行、未完成和无法识别的旧目录跳过。RTL manifest 的 `validation_runs` 记录历史回归范围，旧运行的原始文件可随滚动策略到期。
+
+清理范围限于 Git 忽略的 `test/runs/cmodel/`、`test/runs/verilog/`、`hw/dc_syn/runs/` 和 `hw/power/runs/` 下的运行目录。长期证据按项目规则提交精简摘要，大文件可用带校验和的本地归档或外部归档。功耗运行以 `.running` 标记活动阶段，写入终态 `state.json`，包含 `phase=finished` 或 `failed` 和 UTC `finished_utc`（格式 `YYYYMMDDTHHMMSSffffffZ`）。对所用 DC run 的引用写入本次功耗运行的 `manifest.json` 或 `inputs/resolved.json`。

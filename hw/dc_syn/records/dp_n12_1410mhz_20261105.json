@@ -1,0 +1,159 @@
+{
+  "purpose": "Single DP T8H16Q32E64 L8 II1; baseline 138c4b1 with equivalent constant-clog2 compatibility fix; N12 TT 1410MHz stage timing",
+  "time": "2026-11-05T00:24:27+08:00",
+  "technology": {
+    "schema_version": 1,
+    "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+    "process": "TSMC CLN12FFCLL",
+    "pvt": {
+      "corner": "TT",
+      "voltage_v": 0.7,
+      "temperature_c": 85
+    },
+    "target_libraries": [
+      "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+      "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"
+    ],
+    "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+    "operating_condition": "tt0p7v85c",
+    "wire_load_model": "ZeroWireload",
+    "area_unit": "um2",
+    "multi_vt": {
+      "base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+      "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c",
+      "max_lvt_percent": 20.0
+    },
+    "library_release": "120a (Liberty revision 120)",
+    "standard_cell_type": "BWP6T16P96CPD, 6-track standard cells",
+    "time_unit": "ns",
+    "capacitance_unit": "pF",
+    "area_unit_evidence": "Liberty area cross-checked against matching 120a LEF cell SIZE product (micrometres squared)",
+    "corner_basis": "Existing project N12 TT setup analysis profile; not worst-corner or multi-corner signoff"
+  },
+  "export_id": "DP_verilog_36610621c85979e0",
+  "rtl_fingerprint": "fb3c893397da197a9810ec49d828136aecfc317c8bae732481f12a6441175c8c",
+  "parameters": {
+    "K_FP16": 16,
+    "LOCAL_W": 27,
+    "GLOBAL_W": 40
+  },
+  "multi_vt": {
+    "max_cell_percent": 20.0,
+    "measured_nonblackbox_cell_percent": 21.31,
+    "measured_all_cell_percent": 21.29,
+    "status": "FAIL"
+  },
+  "critical_setup_path": {
+    "startpoint": "c_type_q_reg_6_",
+    "endpoint": "out_d_reg_25_",
+    "path_group": "clock",
+    "arrival_ns": 0.910308063,
+    "required_ns": 0.713882864,
+    "slack_ns": -0.1964252
+  },
+  "stage_setup_paths": {
+    "S1": {
+      "startpoint": "in_a_datatype[0]",
+      "endpoint": "g_group_0__group_unit/g_lane_1__lane/operand_unpack_a/exponent_q_reg_1__4_",
+      "path_group": "clock",
+      "arrival_ns": 0.904506981,
+      "required_ns": 0.711456597,
+      "slack_ns": -0.193050385
+    },
+    "S2": {
+      "startpoint": "g_group_3__group_unit/g_lane_0__lane/type_s1_q_reg_2_",
+      "endpoint": "g_group_3__group_unit/g_lane_0__lane/anchor_s2_q_reg_6_",
+      "path_group": "clock",
+      "arrival_ns": 0.907980621,
+      "required_ns": 0.714467585,
+      "slack_ns": -0.193513036
+    },
+    "S3": {
+      "startpoint": "g_group_2__group_unit/g_lane_0__lane/negative_q_reg_4_",
+      "endpoint": "g_group_2__group_unit/g_lane_0__lane/leaves_q_reg_70_",
+      "path_group": "clock",
+      "arrival_ns": 0.905291915,
+      "required_ns": 0.71175319,
+      "slack_ns": -0.193538725
+    },
+    "S4": {
+      "startpoint": "g_group_1__group_unit/g_lane_0__lane/leaves_q_reg_92_",
+      "endpoint": "g_group_1__group_unit/g_lane_0__lane/out_sop_reg_28_",
+      "path_group": "clock",
+      "arrival_ns": 0.904146373,
+      "required_ns": 0.710970044,
+      "slack_ns": -0.193176329
+    },
+    "S5": {
+      "startpoint": "g_group_0__group_unit/g_lane_0__lane/out_sop_reg_0_",
+      "endpoint": "g_group_0__group_unit/out_z_reg_0_",
+      "path_group": "clock",
+      "arrival_ns": 0.906781018,
+      "required_ns": 0.713365734,
+      "slack_ns": -0.193415284
+    },
+    "S6": {
+      "startpoint": "c_type_q_reg_4_",
+      "endpoint": "leaves_q_reg_190_",
+      "path_group": "clock",
+      "arrival_ns": 0.90658462,
+      "required_ns": 0.712986827,
+      "slack_ns": -0.193597794
+    },
+    "S7": {
+      "startpoint": "leaves_q_reg_62_",
+      "endpoint": "sum_q_reg_41_",
+      "path_group": "clock",
+      "arrival_ns": 0.891813219,
+      "required_ns": 0.714349687,
+      "slack_ns": -0.177463531
+    },
+    "S8": {
+      "startpoint": "c_type_q_reg_6_",
+      "endpoint": "out_d_reg_25_",
+      "path_group": "clock",
+      "arrival_ns": 0.910308063,
+      "required_ns": 0.713882864,
+      "slack_ns": -0.1964252
+    }
+  },
+  "source_files": [
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/arithmetic/dp_bidir_shift.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/arithmetic/dp_exponent_add.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/arithmetic/dp_fp32_round.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/arithmetic/dp_lzd.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/arithmetic/dp_max_tree.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/arithmetic/dp_mul_unsigned.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/arithmetic/dp_rtz_shift.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/arithmetic/dp_scale_multiply.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/arithmetic/dp_sum_tree.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/group/dp_group.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/lane/dp_exponent_bank.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/lane/dp_lane.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/lane/dp_mantissa_bank.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/top/dp_global_align.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/top/dp_top.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/unpack/dp_c_unpack.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/unpack/dp_lane_unpack.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/unpack/dp_operand_unpack.v",
+    "hw/rtl/DP_verilog_36610621c85979e0/src/src/verilog/unpack/dp_scale_unpack.v"
+  ],
+  "run": "hw/dc_syn/runs/dc_dp_top_11050024",
+  "dc_version": "X-2025.06",
+  "frequency_mhz": 1410.0,
+  "clock_gating": true,
+  "result": {
+    "synthesis_valid": true,
+    "total_area_um2": 22420.611251,
+    "combinational_area_um2": 18702.729383,
+    "sequential_area_um2": 3717.881868,
+    "setup": "FAIL",
+    "hold": "PASS",
+    "flow_pass": false,
+    "setup_wns_ns": -0.1964252,
+    "setup_tns_ns": -382.878204346,
+    "setup_violating_paths": 2915,
+    "setup_slack_ns": -0.1964252,
+    "hold_slack_ns": 8.212e-05
+  }
+}
