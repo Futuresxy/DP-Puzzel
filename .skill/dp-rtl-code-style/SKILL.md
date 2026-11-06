@@ -32,6 +32,8 @@ RTL 仿真、复核或失败定位结束后，按根目录 AGENTS.md 和 [运行
 
 ---
 
+命名细节同时遵循 [dp-naming-convention](../dp-naming-convention/SKILL.md)：文件、实例、变量的功能词、互联方向、阶段和术语映射以该规范为准。本文保留的通用算术正反例用于解释对应规则，实际新增代码不能据此继续使用 a/e/f 等不明局部名称。
+
 ## 一、RTL 编码规范（硬性要求）
 
 ### 1. 禁止魔鬼数字
@@ -363,7 +365,7 @@ wire [239:0] sram_rdata;  // SRAM 读出数据
 wire [9:0]   sram_addr;   // SRAM 读写地址
 ```
 
-注意：命名时不需要在信号名中重复模块名（如 `sram_` 前缀即可，不需 `mbtb_sram_wdata`），因为信号仅在模块内部可见时短名足够；若信号跨越模块边界，则按 `` {driver}_{receiver}_{signal} `` 规则命名。
+注意：内部变量用功能名，不重复整段模块路径；父模块中的互联线使用 `{driver}_{receiver}_{function}`。可复用模块端口继续使用 `in_{function}` / `out_{function}`，时钟和复位保留 `clock/rst_n`。局部量不用 e/f/a 等不明简称，区分 exponent_field、fraction_field、fractional_bits 和 magnitude；详见命名 skill。
 
 ### 14. 模块 interface 禁止 pack 独立信号为单 bus
 

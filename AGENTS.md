@@ -67,6 +67,8 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 
 参考 SN 风格适配后的项目规范采用模块 `dp_`、宏 `DP_`、DFF 实例 `ff_<源阶段>_<目标阶段>_<功能>` 命名；字段布局集中定义，内部寄存打包紧邻解包。DFF 模板及边界示例仅放在 skill assets，不是已接入的生产 RTL。 用户进一步要求尽量保留 SN 完整规范：主体包含详细规则、示例、六种 DFF/组合单元说明及逐项自检；新功能组合使用 assign（FSM 次态例外）、条件先归约后按位组合、动态选择显式组织 MUX。DFF 端口允许紧凑同行，声明仍每行一个。
 
+命名相关设计、修改和审查同时读取 [.skill/dp-naming-convention/SKILL.md](.skill/dp-naming-convention/SKILL.md)。文件/module/实例/变量需表达实际功能，禁止局部数值使用裸 e/f/a 等不明缩写；指数域、指数值、域宽、定点小数位数分别命名。父层互联使用 driver_receiver_function，复用模块端口保持 in_/out_，本地变量不重复端点；数学操作数 in_a/in_b/in_c、E 前端后缀 _e 和库端口 in_d/out_q 是已定义例外。循环索引使用 lane_index/element_index 等角色名。本次仅建立命名规范，源码重命名按任务范围同步引用与验证。
+
 本次先建立规范，现有高有效 `reset` 和功能模块内时序块尚待整批迁移；实施时同步接口 spec、TB、导出及 EDA 入口，重新验证，不将旧快照视为新规范已验收。冻结 SystemVerilog 不迁移，Chisel 默认端口约定保持原范围。
 
 ## 3. 面积、时序与功耗

@@ -11,3 +11,5 @@
 已有 `.codex/`、`.agents/` 等设置保持不变。此目录名是项目统一存放约定；不假定应用会自动扫描任意自定义目录，下轮可显式指定技能文件使用。
 
 维护中的手写 Verilog 设计与审查使用 [dp-rtl-code-style](dp-rtl-code-style/SKILL.md)：完整移植 SN 的详细规则、示例、DFF/组合单元指南和逐项自检，按 DP 适配单变量声明、同步低有效 `rst_n`、显式流水保存及逐精度 S/I/F 注释。现有 RTL 的接口迁移状态见该技能，冻结 SV 不参与迁移。
+
+文件、模块、实例、端口、互联和内部变量的命名使用 [dp-naming-convention](dp-naming-convention/SKILL.md)：保留 SN 命名维度/接口/CSV/审查规则并适配 DP，要求用功能名区分 exponent_field、fraction_field、位数、幅值和流水角色，避免 e/f/a 等不明局部变量。

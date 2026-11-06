@@ -41,6 +41,8 @@ dp_top                         单个 DP，C 传递/解包及 S6–S8
 
 ## 纯 Verilog 排版
 
+文件、模块、实例和信号命名遵循 [dp-naming-convention](../../.skill/dp-naming-convention/SKILL.md)。局部数值不得只叫 `e/f/a`，应按实际含义写 `exponent_field/fraction_field/product_even` 等；互联线明确驱动方和接收方，模块端口保留 `in_`/`out_`。现有代码尚待按范围迁移，规则不代表已批量改名。
+
 遵循 [dp-rtl-code-style skill](../../.skill/dp-rtl-code-style/SKILL.md)。`*.v` 使用两空格缩进、LF 换行、100 列目标行宽，**每条声明只定义一个变量**。端口每行重复完整方向、类型和位宽；`wire/reg/parameter/localparam` 等也分别声明，取代此前同类变量合并的约定。
 
 ```verilog

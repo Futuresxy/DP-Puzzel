@@ -31,6 +31,8 @@ wire [GROUP_W-1:0] group_sum_q;
 
 ## 命名与文件组织
 
+详细规则与允许的缩写/例外见 [dp-naming-convention](../../dp-naming-convention/SKILL.md)，此处只保留编码时的速查。
+
 | 对象 | 规则 | 示例 |
 | --- | --- | --- |
 | 模块/文件 | `dp_` 前缀，同名；DFF 库类型后缀保留大写 | `dp_lib_DFFE.v` / `dp_lib_DFFE` |
@@ -38,10 +40,12 @@ wire [GROUP_W-1:0] group_sum_q;
 | DFF 实例 | `ff_` 加源/目标阶段与内容 | `ff_s2_s3_payload`、`ff_s2_s3_valid` |
 | generate | `g_` 加功能 | `g_group`、`g_lane` |
 | 数据/控制信号 | 功能 + 阶段 + `_d/_q` | `group_magnitude_s5_q`、`valid_s3_d` |
-| 跨层连接 | 必要时带 group/lane 索引或边界，仍保留功能名 | `lane_sum_s4_q` |
+| 父层互联线 | driver_receiver_function，必要时标实例索引和阶段 | `lane_group_sum_s4` |
 | 使能/复位 | `_en` / `_n` | `payload_s3_en`、`rst_n` |
 | 配置/派生参数 | 大写下划线 | `LOCAL_W`、`GROUP_MAG_W` |
 | 头文件宏 | `DP_` 前缀 | `` `DP_HALF_W`` |
+
+循环索引用 `lane_index/element_index/bit_index` 等，不用无含义 i/j 或 index1/index2；局部数值禁止 e/f/a 等，例外见命名 skill。
 
 `_d/_q` 表示状态角色，不能替代功能名；避免 `tmp1`、只叫 `sram_d` 或无含义的 `bus0`。`in_a/in_b/in_c` 是已定义的操作数角色，可以保留。`*_s3_d` 是即将存入 S3 的组合结果，`*_s3_q` 是 S3 寄存输出；实例 `ff_s2_s3_*` 明确其 S2→S3 边界。
 
