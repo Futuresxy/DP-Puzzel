@@ -10,4 +10,4 @@
 
 已有 `.codex/`、`.agents/` 等设置保持不变。此目录名是项目统一存放约定；不假定应用会自动扫描任意自定义目录，下轮可显式指定技能文件使用。
 
-维护中的手写 Verilog 设计与审查使用 [rtl-design](rtl-design/SKILL.md)：单变量声明、同步低有效 `rst_n`、参数化 DFF 流水封装及逐精度 S/I/F 注释。现有 RTL 的接口迁移状态见该技能，冻结 SV 不参与迁移。
+维护中的手写 Verilog 设计与审查使用 [dp-rtl-code-style](dp-rtl-code-style/SKILL.md)：单变量声明、同步低有效 `rst_n`、参数化 DFF 流水封装及逐精度 S/I/F 注释。现有 RTL 的接口迁移状态见该技能，冻结 SV 不参与迁移。

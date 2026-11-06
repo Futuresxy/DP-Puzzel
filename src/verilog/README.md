@@ -41,7 +41,7 @@ dp_top                         单个 DP，C 传递/解包及 S6–S8
 
 ## 纯 Verilog 排版
 
-遵循 [rtl-design skill](../../.skill/rtl-design/SKILL.md)。`*.v` 使用两空格缩进、LF 换行、100 列目标行宽，**每条声明只定义一个变量**。端口每行重复完整方向、类型和位宽；`wire/reg/parameter/localparam` 等也分别声明，取代此前同类变量合并的约定。
+遵循 [dp-rtl-code-style skill](../../.skill/dp-rtl-code-style/SKILL.md)。`*.v` 使用两空格缩进、LF 换行、100 列目标行宽，**每条声明只定义一个变量**。端口每行重复完整方向、类型和位宽；`wire/reg/parameter/localparam` 等也分别声明，取代此前同类变量合并的约定。
 
 ```verilog
 input wire in_a_valid,
@@ -61,7 +61,7 @@ verible-verilog-format --inplace --failsafe_success=false \
   src/verilog/top/dp_top.v
 ```
 
-2026-11-06 已确认的新设计规则为**同步低有效 `rst_n`**和**参数化 DFF 模块统一承载流水寄存器**。控制复位、数据使能和气泡传播要求见 [寄存器合同](../../.skill/rtl-design/references/registers.md)。当前 RTL 仍是上述同步高有效 `reset`，本次只建立规范；源码、接口 spec、TB、导出和 EDA 入口尚待一起迁移并重新验证，不能将新规则视为现有实现状态。
+2026-11-06 已确认的新设计规则为**同步低有效 `rst_n`**和**参数化 DFF 模块统一承载流水寄存器**。控制复位、数据使能和气泡传播要求见 [寄存器合同](../../.skill/dp-rtl-code-style/references/registers.md)。当前 RTL 仍是上述同步高有效 `reset`，本次只建立规范；源码、接口 spec、TB、导出和 EDA 入口尚待一起迁移并重新验证，不能将新规则视为现有实现状态。
 
 ## 验证
 

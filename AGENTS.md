@@ -63,7 +63,9 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 
 ## 2a. 手写 RTL 风格与流水寄存器
 
-设计、修改或审查维护中的 Verilog 前读取 [.skill/rtl-design/SKILL.md](.skill/rtl-design/SKILL.md)。用户于 2026-11-06 确认：每条声明只定义一个变量，端口逐行重复完整方向/类型/位宽，`parameter/localparam` 等同样拆开；这取代之前合并同类变量的排版约定。时钟保留 `clock`，复位采用**同步低有效 `rst_n`**；所有流水寄存器统一实例化参数化 DFF 模块，区分带同步复位的控制寄存器和无复位、带使能的数据寄存器。valid 每拍推进以传递气泡，payload 仅在有效时更新，不增加流水级数。
+设计、修改或审查维护中的 Verilog 前读取 [.skill/dp-rtl-code-style/SKILL.md](.skill/dp-rtl-code-style/SKILL.md)。用户于 2026-11-06 确认：每条声明只定义一个变量，端口逐行重复完整方向/类型/位宽，`parameter/localparam` 等同样拆开；这取代之前合并同类变量的排版约定。时钟保留 `clock`，复位采用**同步低有效 `rst_n`**；所有流水寄存器统一实例化参数化 DFF 模块，区分带同步复位的控制寄存器和无复位、带使能的数据寄存器。valid 每拍推进以传递气泡，payload 仅在有效时更新，不增加流水级数。
+
+参考 SN 风格适配后的项目规范采用模块 `dp_`、宏 `DP_`、DFF 实例 `ff_<源阶段>_<目标阶段>_<功能>` 命名；字段布局集中定义，内部寄存打包紧邻解包。DFF 模板及边界示例仅放在 skill assets，不是已接入的生产 RTL。
 
 本次先建立规范，现有高有效 `reset` 和功能模块内时序块尚待整批迁移；实施时同步接口 spec、TB、导出及 EDA 入口，重新验证，不将旧快照视为新规范已验收。冻结 SystemVerilog 不迁移，Chisel 默认端口约定保持原范围。
 
