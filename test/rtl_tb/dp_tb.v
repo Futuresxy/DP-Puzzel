@@ -163,14 +163,14 @@ module dp_tb;
           for(element_index=0;element_index<(ats[pending[0]]==`DP_DT_TF32 ? 1 : `DP_LANES);element_index=element_index+1) begin
             $fdisplay(trace_fd,"%0d 1 layout_a %0d %h %h %h",pending[0],
               (group_index*`DP_LANES+lane_index)*(ats[pending[0]]==`DP_DT_TF32 ? 1 : `DP_LANES)+element_index,
-              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_A.mantissa_q[element_index],
-              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_A.exponent_q[element_index],
-              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_A.signs_q[element_index]);
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_A.`DP_TRACE_UNPACK_MANTISSAS[element_index],
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_A.`DP_TRACE_UNPACK_EXPONENTS[element_index],
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_A.`DP_TRACE_UNPACK_SIGNS[element_index]);
             $fdisplay(trace_fd,"%0d 1 layout_b %0d %h %h %h",pending[0],
               (group_index*`DP_LANES+lane_index)*(ats[pending[0]]==`DP_DT_TF32 ? 1 : `DP_LANES)+element_index,
-              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_B.mantissa_q[element_index],
-              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_B.exponent_q[element_index],
-              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_B.signs_q[element_index]);
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_B.`DP_TRACE_UNPACK_MANTISSAS[element_index],
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_B.`DP_TRACE_UNPACK_EXPONENTS[element_index],
+              dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.`DP_TRACE_OPERAND_UNPACK_B.`DP_TRACE_UNPACK_SIGNS[element_index]);
           end
         end
         if(dut.valid_q[1]) begin

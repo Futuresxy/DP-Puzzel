@@ -1,8 +1,8 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.6.3；修改时间：2026-11-06 15:05:16 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.6.4；修改时间：2026-11-06 15:51:16 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
-本页记录 v1.6.3 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
+本页记录 v1.6.4 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
 
 ## 1. 文件组织与实现边界
 
@@ -13,12 +13,13 @@
 | 顶层 DP、请求控制、C transport | [dp_top.v](../../../verilog/top/dp_top.v) | valid/last/type S1–S8、C raw S1–S4、C S5、S6/S7/S8 |
 | T2H4Q8E16 基本组 | [dp_group.v](../../../verilog/group/dp_group.v) | scale S1–S4；组 token S5 |
 | T1H2Q4E8 lane | [dp_lane.v](../../../verilog/lane/dp_lane.v) | S1 子模块有效控制、乘积 S2、叶 S3、SOP S4 |
-| 固定 layout 解包/寄存 | [dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v) | S1 两份 E10/M16/S4；class/signaling 旁带，扩展元素视图只是连线 |
-| A/B 元素解码 | [dp_operand_unpack.v](../../../verilog/unpack/dp_operand_unpack.v) | 组合；S1 由 dp_lane_unpack 注册 |
+| A/B 解包入口与分类配对 | [dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v) | 两侧紧凑字段输出；S2 配对/归约的结果由 lane 捕获 |
+| 单侧固定 layout 寄存 | [dp_lane_operand_unpack.v](../../../verilog/unpack/dp_lane_operand_unpack.v) | 每侧 S1 两份 E10/M16/S4 与 class/signaling；不展开 Number |
+| A/B 元素解码 | [dp_operand_unpack.v](../../../verilog/unpack/dp_operand_unpack.v) | 组合，独立数值/符号/分类输出；S1 由 dp_lane_operand_unpack 保存 |
 | scale / C 解包 | [dp_scale_unpack.v](../../../verilog/unpack/dp_scale_unpack.v)、[dp_c_unpack.v](../../../verilog/unpack/dp_c_unpack.v) | 组合；分别由 group/top 注册 |
-| 尾数共享 bank | [dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v) | 组合；输入 mux/隔离与重构属于 bank |
+| 尾数共享 bank | [dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v) | 组合；直接从每侧 M32 取字段，输入 mux/隔离与重构属于 bank |
 | 乘法叶 | [dp_mul_unsigned.v](../../../verilog/arithmetic/dp_mul_unsigned.v) | 组合；HH/HL/LH/LL 和 scale-pair 分实例 |
-| 指数共享 bank / 加法叶 | [dp_exponent_bank.v](../../../verilog/lane/dp_exponent_bank.v)、[dp_exponent_add.v](../../../verilog/arithmetic/dp_exponent_add.v) | 组合；两套宽/窄加法器，E 共用一份 e2 和 |
+| 指数共享 bank / 加法叶 | [dp_exponent_bank.v](../../../verilog/lane/dp_exponent_bank.v)、[dp_exponent_add.v](../../../verilog/arithmetic/dp_exponent_add.v) | 组合；直接从每侧 E20 取字段，两套宽/窄加法器，E 共用一份 e2 和 |
 | MAX | [dp_max_tree.v](../../../verilog/arithmetic/dp_max_tree.v) | 组合；lane/group/global 分别实例化 |
 | S3 完整局部对齐 | [dp_lane_align.v](../../../verilog/lane/dp_lane_align.v) | E pair、模式落位、四路 RTZ、符号恢复；S3 DFF 由 lane 持有 |
 | E lane 坐标左移 | [dp_lane_e_shift.v](../../../verilog/lane/dp_lane_e_shift.v) | S3 和先扩展再左移；组和由 group 的 S4 DFF 捕获 |
@@ -32,9 +33,11 @@
 
 各路径命名可用于层级统计。多精度 S3 的 E pair/符号恢复归入 dp_lane_align，E 的 S2 pair 复用 N=2 的 dp_sum_tree；组 abs、特殊摘要与 transport 寄存器仍属于直接拥有它们的 lane/group/top；不能把它们在父子统计中重复计数。没有为了统计添加 `dont_touch`、时钟域或额外寄存级。v1.5 旧快照的 28/40 同工况面积/时序见 [E64 DC 对比](../../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)，v1.6 新快照尚未重跑 DC/功耗，旧结果不授予新 RTL。
 
-S1 每侧实际复用两份 E10/M16/S4 寄存器，按 T/H/Q/E/INT8 打包和展开；没有为各格式单独保存一套宽尾数。分类旁带独立，TF32 只启用第一个 atom。M/E/S 布局也纳入 CModel 断点比对。
+S1 每侧复用两份 E10/M16/S4，class/signaling 旁带单独保存；不为各精度复制寄存器。dp_lane_unpack 内部先按 A/B 对应元素配对特殊分类，再归约为四位摘要。尾数/指数 bank 直接接 M32/E20，不再经过每侧 184 位 Number 组合展开。详细字段、84 位/侧 S1 payload 口径与分类规则见 [解包接口](../lane/unpack.md#11-当前纯-verilog-的紧凑接口)。
 
-dp_lane 的内部寄存命名按级显式表达：r1_valid～r4_valid、r1_datatype、r2_product_magnitudes、r2_group_anchor、r3_aligned_leaves；组合候选保留功能名_d。解包元素视图为 a_decoded_data/b_decoded_data，不增加寄存器。每个参数、端口和变量首次声明前解释功能，模块互联分组，赋值与端口对齐，按完整条件/分支换行。此轮只整理 dp_lane；其余模块及冻结 SV 保持各自命名，TB 通过 dp_tb_trace_names.vh 适配内部观察点。数值、位宽与 L8/II=1 合同不变。
+dp_lane 与新增单侧解包模块的寄存值按 rN_<功能> 命名，例如 r1_valid、r2_product_magnitudes、r1_mantissas；组合候选保留功能名_d。参数、端口和变量首次声明前解释用途，互联按功能分区，赋值与端口对齐，按完整条件/分支换行。DFF 就地保存，固定端口同行。TB 用 dp_tb_trace_names.vh 映射当前/冻结 SV 观察点；S1 数值字段和 CModel trace 不变。
+
+本次 v1.6.4 只重构多精度解包与 bank 内部接口，CModel、E 前端算术和冻结 SV 源码未改。验收、基线与代码对比见 [紧凑解包验证](../../../../test/results/dp-compact-unpack-v1.6.4.md)。
 
 ## 2. 参数与数值坐标
 

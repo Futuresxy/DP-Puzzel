@@ -118,4 +118,15 @@
 `define DP_HIF_SCALE_F (2)
 `define DP_E_PAYLOAD_W (`DP_EIGHTH_W-1)
 `define DP_E_SIGN_BIT (`DP_EIGHTH_W-1)
+
+// Compact S1 operand layout: two atoms per lane, each M16/E10/S4.
+// Two Q slots / four E-sign slots per atom; classification is two bits per slot.
+`define DP_UNPACK_ATOM_Q_LANES (`DP_Q_LANES/`DP_LANES)
+`define DP_UNPACK_ATOM_EXP_W (2*`DP_Q_EXP_W)
+`define DP_UNPACK_ATOM_SIGN_W (`DP_E_LANES/`DP_LANES)
+`define DP_UNPACK_ATOM_CLASS_W (`DP_UNPACK_ATOM_SIGN_W*`DP_NUM_CLASS_W)
+`define DP_UNPACK_MANT_W (`DP_LANES*`DP_HALF_W)
+`define DP_UNPACK_EXP_W (`DP_LANES*`DP_UNPACK_ATOM_EXP_W)
+`define DP_UNPACK_SIGN_W (`DP_LANES*`DP_UNPACK_ATOM_SIGN_W)
+`define DP_UNPACK_CLASS_W (`DP_UNPACK_SIGN_W*`DP_NUM_CLASS_W)
 `endif

@@ -1,6 +1,6 @@
 # 多精度 DP · 手写 RTL
 
-实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **架构 v1.6 / 实现映射 v1.6.3**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
+实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **架构 v1.6 / 实现映射 v1.6.4**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
 
 | 实现 | 编译清单 | 顶层 |
 | --- | --- | --- |
@@ -24,7 +24,8 @@
 dp_top                              单个 DP，C 传递/解包及 S6–S8
 ├── g_group[g].u_group_unit               T2H4Q8E16，scale 与共同 MAX，S5
 │   └── g_lane[l].u_lane             T1H2Q4E8，S1–S4
-│       ├── u_operand_unpack_a/b     每侧两份 E10/M16/S4 物理寄存布局
+│       ├── u_lane_unpack           A/B 紧凑字段入口、S2 特殊值配对/归约
+│       │   └── u_operand_a/b        每侧两份 E10/M16/S4，S1 DFF；分类保留槽位
 │       ├── u_mantissa_mul_bank      两套 HH/HL/LH/LL
 │       ├── u_exponent_add           两套宽/窄指数加法器
 │       ├── u_local_alignment       完整 S3：E pair/落位/四路 RTZ/符号恢复
@@ -35,7 +36,7 @@ dp_top                              单个 DP，C 传递/解包及 S6–S8
 └── u_fp32_output                   S8 RNE、渐进下溢与 FP32 打包
 ```
 
-每个 module 单独同名文件。组合模块不暗加寄存器；S1 寄存器由 lane 内 `dp_lane_unpack` 持有，其余流水由 lane、group、top 三层持有。同步低有效 `rst_n` 清除有效控制并取消在途请求；数据寄存器以有效使能保持，不进行全数据复位。握手、阶段映射、源文件和统计归属见 [RTL 实现合同](../spec/dp/implementation/verilog.md)。
+每个 module 单独同名文件。组合模块不暗加寄存器；S1 payload 寄存器由 `dp_lane_unpack` 内两份 `dp_lane_operand_unpack` 持有，其余流水由 lane、group、top 三层持有。同步低有效 `rst_n` 清除有效控制并取消在途请求；数据寄存器以有效使能保持，不进行全数据复位。握手、阶段映射、源文件和统计归属见 [RTL 实现合同](../spec/dp/implementation/verilog.md)。
 
 尾数定点格式注释使用对齐表格，每行一种或一类精度，独立列出 S、I、F。表前说明 SM 独立符号或 TC 二补码，以及 P、L 等参数的定义。乘法器输入和输出分别列出各自的 S、I、F。解包和尾数乘法表列有效 coefficient 的格式；通用槽的高位零扩展不增加 F，树和级间输出表按数值通路宽度列示。
 
@@ -103,8 +104,10 @@ DC 接入使用 [统一门禁与流程](../../hw/dc_syn/README.md)。Verilog 的
 
 [完整测试结果](../../test/results/e64-v1.5.8.md)按用户要求长期保留；原始输入/输出、断点、编译与仿真日志放在显式 run，快照放在 hw/rtl，网表保留在 DC run，不提交大型产物。
 
-E 元素解包独立位于 [unpack/dp_lane_unpack_e.v](unpack/dp_lane_unpack_e.v)，每份组合模块处理一侧32位操作数、HiF4 e1并输出幅值/符号；S1 寄存器继续在 dp_lane_e，e2 控制也由 lane 持有，不增加延迟。显式 files_e.f 包含15个 `.v`。多精度 dp_lane_unpack 保持原样。模块化后的新快照需重新验证，历史 DC 测量仅属于原快照。
+E 元素解包独立位于 [unpack/dp_lane_unpack_e.v](unpack/dp_lane_unpack_e.v)，每份组合模块处理一侧32位操作数、HiF4 e1并输出幅值/符号；S1 寄存器继续在 dp_lane_e，e2 控制也由 lane 持有，不增加延迟。专用源由 files_e.f 显式列出。多精度 dp_lane_unpack 使用独立的紧凑字段接口，E 解包的数值和流水保持原样。模块化后的新快照需重新验证，历史 DC 测量仅属于原快照。
 
 主要计算注释与当前模块映射见 [功能分区](../spec/dp/dptop/module-hierarchy.md#71-当前-rtl-的阅读顺序v161)。E lane 使用 `g_pair[].u_pair_sum`、`u_lane_sop_tree` 和独立 `u_lane_coordinate_shift`；S2/S3 保存规约结果，S4 左移与组和由 group 捕获。完整局部对齐见 [dp_lane_align.v](lane/dp_lane_align.v)，E 坐标融合见 [dp_lane_e_shift.v](lane/dp_lane_e_shift.v)。
 
-`dp_lane.v` 使用 `r1_valid`～`r4_valid` 明确阶段，寄存数据使用 `rN_<功能>`；参数、端口和局部变量在声明前解释作用。完整条件/函数调用按语义换行，同组赋值按等号对齐。其他模块暂保留已有命名。TB 通过 dp_tb_trace_names.vh 分别映射当前 lane 和冻结 SV 的内部观察点。
+`dp_lane.v` 使用 `r1_valid`～`r4_valid` 明确阶段，寄存数据使用 `rN_<功能>`；参数、端口和局部变量在声明前解释作用。完整条件/函数调用按语义换行，同组赋值按等号对齐。本次解包与 bank 也遵循该排版；其余模块按任务范围逐步整理。TB 通过 dp_tb_trace_names.vh 分别映射当前 lane 和冻结 SV 的内部观察点。
+
+紧凑解包阅读入口：[A/B 解包及分类](unpack/dp_lane_unpack.v) → [单侧 S1 保存](unpack/dp_lane_operand_unpack.v) → [元素译码](unpack/dp_operand_unpack.v)。数值输出直接连接 [尾数 bank](lane/dp_mantissa_bank.v) 和 [指数 bank](lane/dp_exponent_bank.v)，不恢复每侧 184 位 Number；S1 声明寄存宽度保持 84 位/侧，L8/II=1 不变。[前后对比与验收](../../test/results/dp-compact-unpack-v1.6.4.md)记录接口、分类位置及回归证据。

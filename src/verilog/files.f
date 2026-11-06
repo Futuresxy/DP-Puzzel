@@ -27,6 +27,7 @@ src/verilog/lane/dp_mantissa_bank.v
 src/verilog/top/dp_global_align.v
 src/verilog/top/dp_top.v
 src/verilog/unpack/dp_c_unpack.v
+src/verilog/unpack/dp_lane_operand_unpack.v
 src/verilog/unpack/dp_lane_unpack.v
 src/verilog/unpack/dp_operand_unpack.v
 src/verilog/unpack/dp_scale_unpack.v

@@ -1,4 +1,4 @@
-> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
+> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.6.4；修改时间：2026-11-06 15:51:16 +08:00；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
 
 # lane：解包、元素乘法与局部规约
 
@@ -8,8 +8,8 @@
 
 | 阶段 | 计算单元 | 输出与边界 | 详细规格 |
 | --- | --- | --- | --- |
-| S1 | 元素解包、分类、HiF4 e1 融合 | E/M/S 及分类旁带；HiF4 保留 e2 | [unpack.md](unpack.md) |
-| S2 | 尾数共享 bank、部分积重构、元素指数和 | 无符号乘积、独立 sign、指数候选 | [multiplier-sharing.md](multiplier-sharing.md) |
+| S1 | dp_lane_unpack 内两侧单独解包、分类、HiF4 e1 融合 | 紧凑 M32/E20/S8 及内部分类旁带；HiF4 保留 e2 | [unpack.md](unpack.md) |
+| S2 | bank 直接选紧凑字段；乘积/指数计算，unpack 内配对归约特殊值 | 无符号乘积、独立 sign、指数候选 | [multiplier-sharing.md](multiplier-sharing.md) |
 | S2 侧带 | lane MAX 候选 → group MAX → 共同 r | 由 group 组合返回并在 S2 寄存，同拍无环 | [组内协作](../group/shared-align.md) |
 | S3 | 幅值 RTZ、E pair/小移位、符号恢复 | 默认 29 位 TC 叶子，每 lane 四路 | [shifter-sharing.md](shifter-sharing.md) |
 | S4 | 四路平衡树 | 默认 31 位 TC lane SOP，携带 r/特殊值 | [数值推导](../common/numeric-layout.md) · [逐级格式](../common/stage-formats.md) |

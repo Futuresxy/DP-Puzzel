@@ -26,7 +26,7 @@
 // INT8               | 1 | 17 | P-13
 // TF32/FP16/BF16 append 2/1/1 low zeros after the tree.
 // 阅读顺序 / 功能边界：
-// S1 u_operand_unpack_a/b 保存复用解包字段。
+// S1 u_lane_unpack 保存紧凑尾数/指数/符号；内部在 S2 配对归约特殊分类。
 // S2 u_mantissa_mul_bank 产生幅值乘积，u_exponent_add/MAX 同时准备对齐坐标。
 // S3 u_local_alignment 完成 pair/落位/RTZ/符号恢复；S4 u_lane_sop_tree 规约。
 // r1/r2/r3/r4 前缀明确寄存级；_d 表示本级组合计算、等待捕获的结果。
@@ -99,17 +99,21 @@ module dp_lane #(
   // S3 保存的格式，驱动 S4 输出低位补零选择。
   wire [`DP_TYPE_W-1:0]                    r3_datatype;
 
-  // ---- S1 解包模块与 lane 的互联 ----
-  // A 解包模块输出给 lane 的 S1 Number 总线；每槽含幅值、指数、符号和分类。
-  wire [`DP_E_LANES*`DP_NUM_W-1:0]         unpack_a_lane_data;
-  // B 解包模块输出给 lane 的 S1 Number 总线，槽位与 A 一一对应。
-  wire [`DP_E_LANES*`DP_NUM_W-1:0]         unpack_b_lane_data;
+  // ---- S1 紧凑解包与 S2 数值 bank 的互联 ----
+  // A/B 尾数各为两个 M16 atom，直接送乘法 bank 按精度选择位片。
+  wire [`DP_UNPACK_MANT_W-1:0]             unpack_mantissa_mul_a_mantissas;
+  // B 尾数的槽位与 A 一一对应，符号独立于无符号幅值。
+  wire [`DP_UNPACK_MANT_W-1:0]             unpack_mantissa_mul_b_mantissas;
+  // A 指数为两个 E10 atom，H 取低 8 位、Q 取两个 5 位、HiF4 取 e2。
+  wire [`DP_UNPACK_EXP_W-1:0]              unpack_exponent_add_a_exponents;
+  // B 紧凑指数，与 A 使用同一格式和位片映射。
+  wire [`DP_UNPACK_EXP_W-1:0]              unpack_exponent_add_b_exponents;
+  // A 原始紧凑符号出口；乘积符号已由 unpack 配对，本层保留该接口供观察。
+  wire [`DP_UNPACK_SIGN_W-1:0]             unpack_lane_a_signs;
+  // B 原始紧凑符号出口；不参与本层的幅值乘法。
+  wire [`DP_UNPACK_SIGN_W-1:0]             unpack_lane_b_signs;
 
-  // ---- S2 尾数乘法 bank 输入与乘积输出 ----
-  // lane 提取后送尾数乘法 bank 的 A 幅值，各槽宽 DP_MANT_W。
-  wire [`DP_E_LANES*`DP_MANT_W-1:0]        lane_mantissa_mul_a_magnitude;
-  // lane 提取后送尾数乘法 bank 的 B 幅值，各槽宽 DP_MANT_W。
-  wire [`DP_E_LANES*`DP_MANT_W-1:0]        lane_mantissa_mul_b_magnitude;
+  // ---- S2 尾数乘法 bank 输出与寄存值 ----
   // 尾数乘法 bank 的组合输出：各元素无符号乘积，等待 S2 捕获。
   wire [`DP_E_LANES*`DP_PRODUCT_W-1:0]     product_magnitudes_d;
   // S2 保存的无符号乘积总线，送局部对齐模块；符号独立传递。
@@ -118,10 +122,6 @@ module dp_lane #(
   // ---- S2 指数 bank 输入与输出 ----
   // 指数 bank 的组合输出：各元素 A/B 指数之和，等待 S2 捕获。
   wire [`DP_E_LANES*`DP_PRODUCT_EXP_W-1:0] product_exponents_d;
-  // lane 提取后送指数 bank 的 A 指数域，总线按元素槽打包。
-  wire [`DP_E_LANES*`DP_EXP_W-1:0]         lane_exponent_add_a_exponents;
-  // lane 提取后送指数 bank 的 B 指数域，总线按元素槽打包。
-  wire [`DP_E_LANES*`DP_EXP_W-1:0]         lane_exponent_add_b_exponents;
   // S2 保存的逐元素指数和，用于 S3 计算对齐差值。
   wire [`DP_E_LANES*`DP_PRODUCT_EXP_W-1:0] r2_product_exponents;
 
@@ -134,9 +134,7 @@ module dp_lane #(
   wire [`DP_E_LANES-1:0]                   r2_product_negative;
   // S2 保存的有限非零活动掩码，供 S3 对齐使用。
   wire [`DP_E_LANES-1:0]                   r2_product_active;
-  // 每个乘积的四位特殊分类拼接总线，供 lane 分类规约。
-  wire [`DP_E_LANES*`DP_SPECIAL_W-1:0]     product_special_flags_d;
-  // lane 特殊分类的组合归约结果，包含正负 Inf 冲突判定。
+  // unpack 内配对/归约后的分类摘要，包含 0*Inf、sNaN 和正负 Inf 冲突。
   wire [`DP_SPECIAL_W-1:0]                 lane_special_flags_d;
   // S2 保存的 lane 特殊分类摘要。
   wire [`DP_SPECIAL_W-1:0]                 r2_special_flags;
@@ -167,30 +165,32 @@ module dp_lane #(
   assign out_valid   = r4_valid;
   assign out_special = r4_special_flags;
   // verilog_format: on
-  // [S1 解包] A/B 各一份模块，内部拥有 S1 寄存器；展开的 Number 只是组合视图。
-  // r1_datatype 与这些视图同拍，不能用当前输入 datatype 解释上一笔已寄存的 payload。
-  dp_lane_unpack u_operand_unpack_a (
+  // [S1 解包 / S2 分类] A/B 共用一个入口，各自保存 M32/E20/S8 及分类。
+  // unpack 只做一次编码译码；bank 只选择紧凑字段，不重新解码 hidden bit/特殊值。
+  // 分类在 unpack 内按 A/B 对应元素配对再归约，仍由本模块 S2 DFF 捕获。
+  // 原始 A/B 符号输出在本层无需使用，乘积符号及 all_negative 已由 unpack 生成。
+  dp_lane_unpack u_lane_unpack (
     .clock                 (clock),
     .rst_n                 (rst_n),
     .in_valid              (in_valid),
     .in_datatype           (in_datatype),
     .in_registered_datatype(r1_datatype),
-    .in_data               (in_a),
-    .in_e1                 (in_e1_a),
-    .in_e2                 (in_e2_a),
-    .out_numbers           (unpack_a_lane_data)
-  );
-
-  dp_lane_unpack u_operand_unpack_b (
-    .clock                 (clock),
-    .rst_n                 (rst_n),
-    .in_valid              (in_valid),
-    .in_datatype           (in_datatype),
-    .in_registered_datatype(r1_datatype),
-    .in_data               (in_b),
-    .in_e1                 (in_e1_b),
-    .in_e2                 (in_e2_b),
-    .out_numbers           (unpack_b_lane_data)
+    .in_a                  (in_a),
+    .in_b                  (in_b),
+    .in_e1_a               (in_e1_a),
+    .in_e1_b               (in_e1_b),
+    .in_e2_a               (in_e2_a),
+    .in_e2_b               (in_e2_b),
+    .out_a_mantissas       (unpack_mantissa_mul_a_mantissas),
+    .out_b_mantissas       (unpack_mantissa_mul_b_mantissas),
+    .out_a_exponents       (unpack_exponent_add_a_exponents),
+    .out_b_exponents       (unpack_exponent_add_b_exponents),
+    .out_a_signs           (unpack_lane_a_signs),
+    .out_b_signs           (unpack_lane_b_signs),
+    .out_product_negative  (product_negative_d),
+    .out_product_active    (product_active_d),
+    .out_special           (lane_special_flags_d),
+    .out_all_negative      (all_products_negative_d)
   );
 
   // [S1 寄存边界] 保存 valid/类型，与解包模块内的 S1 幅值、指数和符号同拍。
@@ -201,52 +201,13 @@ module dp_lane #(
   ff_s0_s1_type_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(in_datatype), .out_q(r1_datatype));
   // verilog_format: on
 
-  // [S2 元素旁带] 从 Number 取幅值/指数，符号异或；分类信息独立于数值路径。
-  // active 只包含当前格式的有限非零乘积，用于指数 MAX，不是整个事务的 valid。
-  generate
-    for (
-      element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
-    ) begin : g_element
-      // 当前元素的 A 解包数据视图，来自 S1；不是额外寄存器。
-      wire [    `DP_NUM_W-1:0] a_decoded_data;
-      // 当前元素的 B 解包数据视图，来自 S1；不是额外寄存器。
-      wire [    `DP_NUM_W-1:0] b_decoded_data;
-      // 当前元素乘积的 NaN/invalid/Inf 分类，独立于幅值乘法。
-      wire [`DP_SPECIAL_W-1:0] product_special_flags;
-      // verilog_format: off
-      assign a_decoded_data = unpack_a_lane_data[element_index*`DP_NUM_W+:`DP_NUM_W];
-      assign b_decoded_data = unpack_b_lane_data[element_index*`DP_NUM_W+:`DP_NUM_W];
-      // verilog_format: on
-
-      // verilog_format: off
-      assign lane_mantissa_mul_a_magnitude[element_index*`DP_MANT_W+:`DP_MANT_W] = a_decoded_data[`DP_NUM_MAG_LO+:`DP_MANT_W];
-      assign lane_mantissa_mul_b_magnitude[element_index*`DP_MANT_W+:`DP_MANT_W] = b_decoded_data[`DP_NUM_MAG_LO+:`DP_MANT_W];
-      // verilog_format: on
-
-      // verilog_format: off
-      assign lane_exponent_add_a_exponents[element_index*`DP_EXP_W+:`DP_EXP_W] = a_decoded_data[`DP_NUM_EXP_LO+:`DP_EXP_W];
-      assign lane_exponent_add_b_exponents[element_index*`DP_EXP_W+:`DP_EXP_W] = b_decoded_data[`DP_NUM_EXP_LO+:`DP_EXP_W];
-      // verilog_format: on
-
-      // verilog_format: off
-      assign product_negative_d[element_index]                                   = a_decoded_data[`DP_NUM_SIGN] ^ b_decoded_data[`DP_NUM_SIGN];
-      assign product_special_flags                                               = product_special(a_decoded_data, b_decoded_data);
-      assign product_special_flags_d[element_index*`DP_SPECIAL_W+:`DP_SPECIAL_W] = product_special_flags;
-
-      assign product_active_d[element_index] = (a_decoded_data[`DP_NUM_MAG_LO+:`DP_MANT_W] != 0) &
-                                              (b_decoded_data[`DP_NUM_MAG_LO+:`DP_MANT_W] != 0) &
-                                              (product_special_flags == 0) &
-                                              (element_index < elements(r1_datatype));
-      // verilog_format: on
-    end
-  endgenerate
-
+  // [S2 指数计算] 只按 r1_datatype 选择 E10 中的字段，共享宽/窄加法器。
   dp_exponent_bank u_exponent_add (
-    .in_datatype  (r1_datatype),
-    .in_enable    (r1_valid),
-    .in_a         (lane_exponent_add_a_exponents),
-    .in_b         (lane_exponent_add_b_exponents),
-    .out_exponents(product_exponents_d)
+    .in_datatype   (r1_datatype),
+    .in_enable     (r1_valid),
+    .in_a_exponents(unpack_exponent_add_a_exponents),
+    .in_b_exponents(unpack_exponent_add_b_exponents),
+    .out_exponents (product_exponents_d)
   );
 
   // Exponent MAX does not depend on multiplier outputs or returned group MAX.
@@ -280,45 +241,12 @@ module dp_lane #(
 
   // [S2 尾数乘法] bank 只计算无符号幅值；乘积符号、指数、分类另行同拍寄存。
   dp_mantissa_bank u_mantissa_mul_bank (
-    .in_datatype (r1_datatype),
-    .in_enable   (r1_valid),
-    .in_a        (lane_mantissa_mul_a_magnitude),
-    .in_b        (lane_mantissa_mul_b_magnitude),
-    .out_products(product_magnitudes_d)
+    .in_datatype   (r1_datatype),
+    .in_enable     (r1_valid),
+    .in_a_mantissas(unpack_mantissa_mul_a_mantissas),
+    .in_b_mantissas(unpack_mantissa_mul_b_mantissas),
+    .out_products  (product_magnitudes_d)
   );
-
-  // [S2 特殊值与零符号] 聚合 NaN/Inf/invalid；正负 Inf 同时出现产生 invalid。
-  // all_negative 包括零乘积，用于最终精确零的符号；不能只归约 active 乘积。
-  // 参与项取乘积符号，未用项置 1，用于全负符号归约。
-  wire [`DP_E_LANES-1:0] included_product_negative;
-  // 按当前模式屏蔽未用槽后的逐元素 NaN 标志。
-  wire [`DP_E_LANES-1:0] product_nan_sources;
-  // 按当前模式屏蔽未用槽后的逐元素 invalid 标志。
-  wire [`DP_E_LANES-1:0] product_invalid_sources;
-  // 按当前模式屏蔽未用槽后的逐元素正 Inf 标志。
-  wire [`DP_E_LANES-1:0] product_positive_inf_sources;
-  // 按当前模式屏蔽未用槽后的逐元素负 Inf 标志。
-  wire [`DP_E_LANES-1:0] product_negative_inf_sources;
-  generate
-    for (
-      element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
-    ) begin : g_special_reduce
-      // verilog_format: off
-      assign product_nan_sources[element_index]          = (element_index < elements(r1_datatype)) & product_special_flags_d[element_index*`DP_SPECIAL_W+`DP_SP_NAN];
-      assign product_invalid_sources[element_index]      = (element_index < elements(r1_datatype)) & product_special_flags_d[element_index*`DP_SPECIAL_W+`DP_SP_INVALID];
-      assign product_positive_inf_sources[element_index] = (element_index < elements(r1_datatype)) & product_special_flags_d[element_index*`DP_SPECIAL_W+`DP_SP_POS_INF];
-      assign product_negative_inf_sources[element_index] = (element_index < elements(r1_datatype)) & product_special_flags_d[element_index*`DP_SPECIAL_W+`DP_SP_NEG_INF];
-      assign included_product_negative[element_index]    = (element_index >= elements(r1_datatype)) | product_negative_d[element_index];
-      // verilog_format: on
-    end
-  endgenerate
-  // verilog_format: off
-  assign lane_special_flags_d[`DP_SP_NAN]     = |product_nan_sources;
-  assign lane_special_flags_d[`DP_SP_POS_INF] = |product_positive_inf_sources;
-  assign lane_special_flags_d[`DP_SP_NEG_INF] = |product_negative_inf_sources;
-  assign lane_special_flags_d[`DP_SP_INVALID] = (|product_invalid_sources) | ((|product_positive_inf_sources) & (|product_negative_inf_sources));
-  assign all_products_negative_d              = &included_product_negative;
-  // verilog_format: on
 
   // [S2 寄存边界] 捕获乘积、指数/公共 anchor、符号和特殊分类，供 S3 对齐使用。
   // verilog_format: off

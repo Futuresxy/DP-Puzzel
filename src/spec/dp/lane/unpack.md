@@ -1,4 +1,4 @@
-> 功能：定义固定 E/M/S 解包数值布局；范围：T/H/Q/E、HiF4 e1/e2 和 E6M2 块 scale；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/unpack.cpp](../../../cmodel/lib/unpack.cpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义固定 E/M/S 解包数值布局；范围：T/H/Q/E、HiF4 e1/e2 和 E6M2 块 scale；版本：v1.6.4；修改时间：2026-11-06 15:51:16 +08:00；对应代码：[CModel lib/unpack.cpp](../../../cmodel/lib/unpack.cpp)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_operand_unpack.v](../../../verilog/unpack/dp_lane_operand_unpack.v)、[dp_operand_unpack.v](../../../verilog/unpack/dp_operand_unpack.v)；Chisel 尚未实现。
 
 # 固定 E/M/S 解包布局
 
@@ -23,6 +23,7 @@
 | FP16 | `E[4:0]=e0`，`E[9:5]=0` | 同 T 的 I1F10：`M[10:0]={h,F[9:0]}`，`M[15:11]=0` | `S[0]=s0`，其余为 0 |
 | MXFP8/6 | `E[4:0]=e0`，`E[9:5]=e1`，各为重编码后的 5 位指数 | `M[3:0]=m0`、`M[7:4]=m1`，各 I1F3；`M[15:8]=0` | `S[1:0]={s1,s0}`，其余为 0 |
 | MXFP4/NVFP4 | `E[9:0]=0`，元素指数已融入 M | `M[4*i+:4]=mi`，i=0..3，各 I3F1 | `S[i]=si`，i=0..3 |
+| INT8 | `E[9:0]=0` | `M[7:0]=abs(x0)`、`M[15:8]=abs(x1)`，各 I8F0，包含 abs(-128)=128 | `S[1:0]={s1,s0}`，其余为 0 |
 | HiF4 | `E[0]=e2`，`E[9:1]=0`；e2 为共享的 1 位指数增量 | `M[4*i+:4]=mi`，i=0..3，各 I2F2；e1 已融入 mi | `S[i]=si`，i=0..3 |
 
 未使用字段统一置零，不依赖 Don't-care/X；只有由 mode 决定的活动元素参与分类与求和。图中的 unused 与补零在逻辑输出上均为零。E 只是紧凑布局，不能作为一个 10 位指数直接相加；Q 必须拆成两个字段，H/T 必须按自身指数基准解释。
@@ -115,3 +116,32 @@ scale 的 E8M0/E4M3/E6M2 统一解包为 E8 指数、I1F3 幅值和分类，详�
 C 的 S5 物理输出统一为 sign+M32：FP32 自然 M24/F23 在低位补 8 零，成为 I1F31；INT32 为 I32F0。FP32 额外低零可由综合常量优化，不改变数值、A_c 或流水级数。
 
 各侧 datatype 在原子 req_fire 时采样；首版 A/B 同格式，具体枚举/scale 合法矩阵见 [DP 接口](../dptop/interface.md)。S1–S4 的 C 存储无需保存解包后的重复 sign/exp/mant/class；节省的是展开记录的额外寄存位，原始 C32 与类型仍须保存。S5 解包不减少 C 延迟，不延后外部接收。
+
+## 11. 当前纯 Verilog 的紧凑接口
+
+`dp_lane` 实例化一个 A/B 入口 `u_lane_unpack`，入口内部有两份 `dp_lane_operand_unpack`。单侧模块完成元素数值/分类译码，并用 `ff_s0_s1_*` 保存两份紧凑 atom；`dp_operand_unpack` 只输出分离的 magnitude、exponent、negative、class、signaling，不再提供复合 Number 端口。
+
+| dp_lane_unpack 输出 | 每侧/总宽度 | 消费者与语义 |
+| --- | ---: | --- |
+| out_a_mantissas / out_b_mantissas | 每侧 32 | 两个 M16，直接送 dp_mantissa_bank |
+| out_a_exponents / out_b_exponents | 每侧 20 | 两个 E10，直接送 dp_exponent_bank |
+| out_a_signs / out_b_signs | 每侧 8 | 两个 S4；入口内部先选槽再做符号 XOR，lane 保留观察连线 |
+| out_product_negative | 8 | S2 逐乘积符号，未用槽为零 |
+| out_product_active | 8 | S2 有限非零乘积掩码，供指数 MAX 使用 |
+| out_special | 4 | S2 NaN、invalid、正 Inf、负 Inf 摘要 |
+| out_all_negative | 1 | S2 所有参与项均为负，包括零乘积 |
+
+端口的 M/E/S 来自 S1；分类配对和归约仍在 S1 后的 S2 组合段，由 `dp_lane` 原 S2 DFF 捕获。`in_datatype` 解码当前输入，`in_registered_datatype` 必须与 S1 字段同拍，不能用下一笔格式解释已寄存 payload。valid 每拍推进，payload 只在 `rst_n & in_valid` 更新；复位和气泡保持原合同。
+
+每个 atom 在 M16/E10/S4 外另存四个 2-bit class 和四个 signaling bit，因此单侧 S1 payload 声明宽度为 `2×(16+10+4+8+4)=84` 位。重构前后相同；综合可优化其中的常量字段。删除的每侧 `8×23=184` 位 Number 是组合展开接口，不能将接口减少直接计为 DFF 或面积收益。
+
+特殊值必须先对同一元素的 A/B 配对，再做 lane 归约：
+
+- 任一 NaN 置 NaN 摘要；sNaN 或该元素 `0×Inf` 置 invalid。
+- Inf 乘积需排除 NaN 与零，其符号取 A/B XOR；lane 同时含正、负 Inf 时置 invalid。
+- 只有双方 class 均为 FINITE 的元素参与有限非零指数 MAX。
+- all_negative 包含正/负零的符号，未用槽作为归约与的 1。
+
+单侧 class/signaling 保留元素位置，仅在入口内部使用，不向数值 bank 传递。bank 只按本页位号选择系数或指数，不再判定原编码的 hidden bit、subnormal、NaN/Inf；特殊值数值占位也只由元素译码器生成。
+
+实现组织参考 `Quant_LLM_Chip_Codesign/HW/PE/PEGroup/DataUnpack.scala` 的字段分离与 A/B 配对摘要，数值布局保持本 DP 合同：FP16/TF32 为 I1F10，Q 两个 nibble 位于 M[7:0]，scale 仍由 group 负责，L8/II=1 不变。代码前后对比和验证见 [紧凑解包验收](../../../../test/results/dp-compact-unpack-v1.6.4.md)。

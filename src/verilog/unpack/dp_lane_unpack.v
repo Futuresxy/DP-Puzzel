@@ -1,191 +1,194 @@
 `include "dp_defs.vh"
-// S1 operand decoder and fixed-layout registers for one T1H2Q4E8 lane.
-// Two atoms each use M16/E10/S4, plus class/signaling sidebands. Different
-// formats share the same physical fields; widened element views are wires only.
-// Synchronous enable, no reset on payload; caller's valid masks all bubbles.
-// Each packed M field carries the unsigned magnitude from dp_operand_unpack.
-// Its F follows datatype; E/M/S slots may include inactive fields.
+// A/B 解包入口：两侧各保存 S1 M32/E20/S8，数值译码及特殊分类集中在 unpack 区域。
+// S1 后按对应元素配对计算 0*Inf、sNaN 和 Inf 符号，归约为 4 位 lane 分类。
+// 配对逻辑仍在原 S2 组合区；dp_lane 的 S2 DFF 捕获，无新增流水级。
+// 输出符号保持 atom 紧凑槽；product_negative/active 是 S2 逐乘积掩码。
 module dp_lane_unpack (
-  input wire clock,
-  input wire rst_n,
-  input wire in_valid,
-  input wire [`DP_TYPE_W-1:0] in_datatype,
-  input wire [`DP_TYPE_W-1:0] in_registered_datatype,
-  input wire [`DP_LANE_W-1:0] in_data,
-  input wire [1:0] in_e1,
-  input wire in_e2,
-  output wire [`DP_E_LANES*`DP_NUM_W-1:0] out_numbers
+  // 上升沿流水时钟。
+  // verilog_format: off
+  input wire                          clock,
+  // 同步低有效复位；与 valid 共同屏蔽 payload 捕获。
+  input wire                          rst_n,
+  // 当前请求有效，S1 payload 仅在有效且不复位时更新。
+  input wire                          in_valid,
+  // 当前输入格式；按该格式完成 S1 译码。
+  input wire [`DP_TYPE_W-1:0]         in_datatype,
+  // 与 S1 字段同拍保存的格式，用于 S2 分类槽选择。
+  input wire [`DP_TYPE_W-1:0]         in_registered_datatype,
+  // A 原始 32 位 lane 输入。
+  input wire [`DP_LANE_W-1:0]         in_a,
+  // B 原始 32 位 lane 输入，与 A 对应元素配对。
+  input wire [`DP_LANE_W-1:0]         in_b,
+  // A 的 HiF4 e1 元数据，每四个元素共用一位。
+  input wire [1:0]                    in_e1_a,
+  // B 的 HiF4 e1 元数据，每四个元素共用一位。
+  input wire [1:0]                    in_e1_b,
+  // A 的 HiF4 e2 元数据，八个元素共享。
+  input wire                          in_e2_a,
+  // B 的 HiF4 e2 元数据，八个元素共享。
+  input wire                          in_e2_b,
+  // A 的 S1 紧凑 M32，两个 M16 atom；幅值格式见元素解码器 S/I/F 表。
+  output wire [`DP_UNPACK_MANT_W-1:0] out_a_mantissas,
+  // B 的 S1 紧凑 M32，与 A 使用相同字段布局。
+  output wire [`DP_UNPACK_MANT_W-1:0] out_b_mantissas,
+  // A 的 S1 紧凑 E20，两个 E10 atom；不能作为单个整数指数相加。
+  output wire [`DP_UNPACK_EXP_W-1:0]  out_a_exponents,
+  // B 的 S1 紧凑 E20，指数 bank 按格式选择字段。
+  output wire [`DP_UNPACK_EXP_W-1:0]  out_b_exponents,
+  // A 的 S1 紧凑 S8，每 atom 四槽；未用槽为零。
+  output wire [`DP_UNPACK_SIGN_W-1:0] out_a_signs,
+  // B 的 S1 紧凑 S8，每 atom 四槽；保留负零符号。
+  output wire [`DP_UNPACK_SIGN_W-1:0] out_b_signs,
+  // S2 逐乘积符号，A/B 符号 XOR；未用元素为零。
+  output wire [`DP_E_LANES-1:0]       out_product_negative,
+  // S2 有限非零乘积掩码，供指数 MAX 屏蔽零和特殊值。
+  output wire [`DP_E_LANES-1:0]       out_product_active,
+  // S2 lane 分类摘要：NaN、invalid、正 Inf、负 Inf。
+  output wire [`DP_SPECIAL_W-1:0]     out_special,
+  // 全部参与项的乘积符号均为负；包含零乘积，供最终零符号选择。
+  output wire                         out_all_negative
+  // verilog_format: on
 );
-  // [S1 固定布局] 每侧两个 atom，每 atom 复用 M16/E10/S4；class/signaling 另存。
-  // 先按当前 datatype 打包到容器，再由 DFF 保存；读端按已寄存 datatype 展开。
-  // 不能用当前 in_datatype 解读旧寄存器，否则连续换型会造成字段错位。
-  localparam integer ATOM_E = 2 * `DP_Q_EXP_W;
-  localparam integer ATOM_S = `DP_E_LANES / `DP_LANES;
-  wire [`DP_E_LANES*`DP_NUM_W-1:0] decoded;
-  wire [`DP_HALF_W-1:0] mantissa_q[0:`DP_LANES-1];
-  wire [ATOM_E-1:0] exponent_q[0:`DP_LANES-1];
-  wire [ATOM_S-1:0] signs_q[0:`DP_LANES-1];
-  wire [ATOM_S-1:0] signaling_q[0:`DP_LANES-1];
-  wire [ATOM_S*`DP_NUM_CLASS_W-1:0] classes_q[0:`DP_LANES-1];
-  genvar atom_index;
+  `include "dp_functions.vh"
+  // A/B 的 S1 分类保留元素位置；不能先把 Inf/Zero 各自 OR 后再判断乘法。
+  // verilog_format: off
+  wire [`DP_UNPACK_CLASS_W-1:0] r1_a_classes;
+  // B 子模块保存的 S1 分类，与 A 同布局。
+  wire [`DP_UNPACK_CLASS_W-1:0] r1_b_classes;
+  // A 子模块保存的 S1 sNaN 槽。
+  wire [`DP_UNPACK_SIGN_W-1:0]  r1_a_signaling;
+  // B 子模块保存的 S1 sNaN 槽。
+  wire [`DP_UNPACK_SIGN_W-1:0]  r1_b_signaling;
+  // verilog_format: on
+
+  dp_lane_operand_unpack u_operand_a (
+    .clock        (clock),
+    .rst_n        (rst_n),
+    .in_valid     (in_valid),
+    .in_datatype  (in_datatype),
+    .in_data      (in_a),
+    .in_e1        (in_e1_a),
+    .in_e2        (in_e2_a),
+    .out_mantissas(out_a_mantissas),
+    .out_exponents(out_a_exponents),
+    .out_signs    (out_a_signs),
+    .out_classes  (r1_a_classes),
+    .out_signaling(r1_a_signaling)
+  );
+
+  dp_lane_operand_unpack u_operand_b (
+    .clock        (clock),
+    .rst_n        (rst_n),
+    .in_valid     (in_valid),
+    .in_datatype  (in_datatype),
+    .in_data      (in_b),
+    .in_e1        (in_e1_b),
+    .in_e2        (in_e2_b),
+    .out_mantissas(out_b_mantissas),
+    .out_exponents(out_b_exponents),
+    .out_signs    (out_b_signs),
+    .out_classes  (r1_b_classes),
+    .out_signaling(r1_b_signaling)
+  );
+
+  // S2 仅路由分类槽，不重新读取原始浮点编码或生成宽 Number。
+  // verilog_format: off
+  wire select_h;
+  // E 格式字段选择，每 atom 四项。
+  wire select_e;
+  assign select_h = (in_registered_datatype == `DP_DT_TF32) | (in_registered_datatype == `DP_DT_FP16) | (in_registered_datatype == `DP_DT_BF16);
+  assign select_e = (in_registered_datatype == `DP_DT_MXFP4) | (in_registered_datatype == `DP_DT_NVFP4) | (in_registered_datatype == `DP_DT_HIF4);
+  // verilog_format: on
+
+  // 分类归约掩码；all_negative 包含零乘积，未用槽为归约与的 1。
+  // verilog_format: off
+  wire [`DP_E_LANES-1:0] nan_sources;
+  // 参与归约的逐乘积 sNaN 或 0*Inf 标志。
+  wire [`DP_E_LANES-1:0] invalid_sources;
+  // 参与归约的逐乘积正 Inf 标志。
+  wire [`DP_E_LANES-1:0] positive_inf_sources;
+  // 参与归约的逐乘积负 Inf 标志。
+  wire [`DP_E_LANES-1:0] negative_inf_sources;
+  // 参与项取乘积符号；未用项置 1，作为归约与的单位元。
+  wire [`DP_E_LANES-1:0] included_negative;
+  // verilog_format: on
+  // 生成期元素索引，不是运行时计数器。
   genvar element_index;
   generate
     for (
       element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
-    ) begin : g_decode
-      dp_operand_unpack #(
-        .INDEX(element_index)
-      ) u_decoder (
-        .in_data(in_data),
-        .in_datatype(in_datatype),
-        .in_e1(in_e1),
-        .in_e2(in_e2),
-        .out_number(decoded[element_index*`DP_NUM_W+:`DP_NUM_W])
-      );
-    end
-  endgenerate
-  generate
-    for (atom_index = 0; atom_index < `DP_LANES; atom_index = atom_index + 1) begin : g_atom
-      wire [`DP_NUM_W-1:0] h_value;
-      wire [2*`DP_NUM_W-1:0] q_values;
-      wire [ATOM_S*`DP_NUM_W-1:0] e_values;
-      wire [`DP_HALF_W-1:0] mantissa_d;
-      wire [ATOM_E-1:0] exponent_d;
-      wire [ATOM_S-1:0] signs_d;
-      wire [ATOM_S-1:0] signaling_d;
-      wire [ATOM_S*`DP_NUM_CLASS_W-1:0] classes_d;
-      wire select_h;
-      wire select_e;
-      wire [`DP_HALF_W-1:0] h_mantissa;
-      wire [`DP_HALF_W-1:0] e_mantissa;
-      wire [`DP_HALF_W-1:0] q_mantissa;
-      wire [ATOM_E-1:0] q_exponent;
-      wire [ATOM_S-1:0] e_signs;
-      wire [ATOM_S-1:0] q_signs;
-      wire [ATOM_S-1:0] e_signaling;
-      wire [ATOM_S-1:0] q_signaling;
-      wire [ATOM_S*`DP_NUM_CLASS_W-1:0] e_classes;
-      wire [ATOM_S*`DP_NUM_CLASS_W-1:0] q_classes;
-      assign h_value = decoded[atom_index*`DP_NUM_W+:`DP_NUM_W];
-      assign q_values = decoded[(atom_index*2)*`DP_NUM_W+:2*`DP_NUM_W];
-      assign e_values = decoded[(atom_index*ATOM_S)*`DP_NUM_W+:ATOM_S*`DP_NUM_W];
-      assign select_h = (in_datatype == `DP_DT_TF32) | (in_datatype == `DP_DT_FP16) |
-        (in_datatype == `DP_DT_BF16);
-      assign select_e = (in_datatype == `DP_DT_MXFP4) | (in_datatype == `DP_DT_NVFP4) |
-        (in_datatype == `DP_DT_HIF4);
-      assign h_mantissa = ((in_datatype != `DP_DT_TF32) | (atom_index == 0)) ?
-        {{(`DP_HALF_W - `DP_MANT_W) {1'b0}}, h_value[`DP_NUM_MAG_LO+:`DP_MANT_W]} : 0;
-      for (
-        element_index = 0; element_index < ATOM_S; element_index = element_index + 1
-      ) begin : g_pack_slot
-        assign e_mantissa[element_index*`DP_MUL_LO+:`DP_MUL_LO] =
-          e_values[element_index*`DP_NUM_W+`DP_NUM_MAG_LO+:`DP_MUL_LO];
-        assign e_signs[element_index] = e_values[element_index*`DP_NUM_W+`DP_NUM_SIGN];
-        assign e_signaling[element_index] = e_values[element_index*`DP_NUM_W+`DP_NUM_SIGNAL];
-        assign e_classes[element_index*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] =
-          e_values[element_index*`DP_NUM_W+`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W];
-        if (element_index < 2) begin : g_q_slot
-          assign q_signs[element_index] = q_values[element_index*`DP_NUM_W+`DP_NUM_SIGN];
-          assign q_signaling[element_index] = q_values[element_index*`DP_NUM_W+`DP_NUM_SIGNAL];
-          assign q_classes[element_index*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] =
-            q_values[element_index*`DP_NUM_W+`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W];
-          assign q_exponent[element_index*`DP_Q_EXP_W+:`DP_Q_EXP_W] = in_datatype == `DP_DT_INT8 ?
-            0 : q_values[element_index*`DP_NUM_W+`DP_NUM_EXP_LO+:`DP_Q_EXP_W];
-        end else begin : g_unused_q
-          assign q_signs[element_index] = 0;
-          assign q_signaling[element_index] = 0;
-          assign q_classes[element_index*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] = 0;
-        end
-      end
-      assign q_mantissa = in_datatype == `DP_DT_INT8 ?
-        {q_values[`DP_NUM_W+`DP_NUM_MAG_LO+:`DP_QUARTER_W], q_values[`DP_NUM_MAG_LO+:`DP_QUARTER_W]}
-        : {{(`DP_HALF_W - 2 * `DP_MUL_LO) {1'b0}}, q_values[`DP_NUM_W+`DP_NUM_MAG_LO+:`DP_MUL_LO],
-           q_values[`DP_NUM_MAG_LO+:`DP_MUL_LO]};
-      assign mantissa_d = select_h ? h_mantissa : select_e ? e_mantissa : q_mantissa;
-      assign exponent_d = select_h ?
-        (((in_datatype != `DP_DT_TF32) | (atom_index == 0)) ?
-         {{(ATOM_E - `DP_EXP_W) {1'b0}}, h_value[`DP_NUM_EXP_LO+:`DP_EXP_W]} : 0) :
-        select_e ? {{(ATOM_E - 1) {1'b0}}, e_values[`DP_NUM_EXP_LO]} : q_exponent;
-      assign signs_d = select_h ? (((in_datatype != `DP_DT_TF32) | (atom_index == 0)) ?
-                                   {{(ATOM_S - 1) {1'b0}}, h_value[`DP_NUM_SIGN]} : 0) :
-        select_e ? e_signs : q_signs;
-      assign signaling_d = select_h ? (((in_datatype != `DP_DT_TF32) | (atom_index == 0)) ?
-                                       {{(ATOM_S - 1) {1'b0}}, h_value[`DP_NUM_SIGNAL]} : 0) :
-        select_e ? e_signaling : q_signaling;
-      assign classes_d = select_h ?
-        (((in_datatype != `DP_DT_TF32) | (atom_index == 0)) ?
-         {{((ATOM_S - 1) * `DP_NUM_CLASS_W) {1'b0}}, h_value[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W]} :
-         0) : select_e ? e_classes : q_classes;
-
-      // S0 -> S1: mantissa_q_atom.
+    ) begin : g_pair_class
+      // H/Q/E 每 atom 分别使用 1/2/4 个槽，以下索引在 elaboration 时确定。
+      localparam integer H_SLOT = (element_index % `DP_LANES) * `DP_UNPACK_ATOM_SIGN_W;
+      // Q/INT8 元素对应的紧凑槽，每 atom 使用槽 0/1。
+      localparam integer Q_SLOT = ((element_index / `DP_UNPACK_ATOM_Q_LANES) % `DP_LANES) *
+        `DP_UNPACK_ATOM_SIGN_W + element_index % `DP_UNPACK_ATOM_Q_LANES;
+      // E 元素对应的紧凑槽，与连续元素编号一致。
+      localparam integer E_SLOT = element_index;
+      // 当前元素是否属于已寄存格式的有效容量。
       // verilog_format: off
-      dp_lib_DFFE #(.WIDTH(`DP_HALF_W))
-      ff_s0_s1_mantissa_q_atom (.clock(clock), .in_en(rst_n & in_valid), .in_d(mantissa_d), .out_q(mantissa_q[atom_index]));
-      // S0 -> S1: exponent_q_atom.
-      dp_lib_DFFE #(.WIDTH(ATOM_E))
-      ff_s0_s1_exponent_q_atom (.clock(clock), .in_en(rst_n & in_valid), .in_d(exponent_d), .out_q(exponent_q[atom_index]));
-      // S0 -> S1: signs_q_atom.
-      dp_lib_DFFE #(.WIDTH(ATOM_S))
-      ff_s0_s1_signs_q_atom (.clock(clock), .in_en(rst_n & in_valid), .in_d(signs_d), .out_q(signs_q[atom_index]));
-      // S0 -> S1: classes_q_atom.
-      dp_lib_DFFE #(.WIDTH(ATOM_S * `DP_NUM_CLASS_W))
-      ff_s0_s1_classes_q_atom (.clock(clock), .in_en(rst_n & in_valid), .in_d(classes_d), .out_q(classes_q[atom_index]));
-      // S0 -> S1: signaling_q_atom.
-      dp_lib_DFFE #(.WIDTH(ATOM_S))
-      ff_s0_s1_signaling_q_atom (.clock(clock), .in_en(rst_n & in_valid), .in_d(signaling_d), .out_q(signaling_q[atom_index]));
+      wire                       element_used;
+      // 按 H/Q/E 槽映射选出的 A 分类。
+      wire [`DP_NUM_CLASS_W-1:0] a_class;
+      // 按相同槽映射选出的 B 分类。
+      wire [`DP_NUM_CLASS_W-1:0] b_class;
+      // 当前 A 元素符号，包含负零。
+      wire                       a_sign;
+      // 当前 B 元素符号，包含负零。
+      wire                       b_sign;
+      // 当前 A 元素的 sNaN 标志。
+      wire                       a_signaling;
+      // 当前 B 元素的 sNaN 标志。
+      wire                       b_signaling;
+      assign element_used = element_index < elements(in_registered_datatype);
+      assign a_class      = select_h ? r1_a_classes[H_SLOT*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] :
+                            select_e ? r1_a_classes[E_SLOT*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] :
+                                       r1_a_classes[Q_SLOT*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W];
+      assign a_sign       = select_h ? out_a_signs[H_SLOT] :
+                            select_e ? out_a_signs[E_SLOT] :
+                                       out_a_signs[Q_SLOT];
+      assign a_signaling  = select_h ? r1_a_signaling[H_SLOT] :
+                            select_e ? r1_a_signaling[E_SLOT] :
+                                       r1_a_signaling[Q_SLOT];
+      assign b_class      = select_h ? r1_b_classes[H_SLOT*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] :
+                            select_e ? r1_b_classes[E_SLOT*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] :
+                                       r1_b_classes[Q_SLOT*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W];
+      assign b_sign       = select_h ? out_b_signs[H_SLOT] :
+                            select_e ? out_b_signs[E_SLOT] :
+                                       out_b_signs[Q_SLOT];
+      assign b_signaling  = select_h ? r1_b_signaling[H_SLOT] :
+                            select_e ? r1_b_signaling[E_SLOT] :
+                                       r1_b_signaling[Q_SLOT];
       // verilog_format: on
-
+      // 先配对再归约：NaN 不能当零；0*Inf 是 invalid；Inf 符号由 A/B XOR 决定。
+      // verilog_format: off
+      wire pair_nan;
+      // 本元素 A/B 至少一侧为 Inf。
+      wire pair_inf;
+      // 本元素 A/B 至少一侧为零；不能与其他元素交叉配对。
+      wire pair_zero;
+      // 有效 Inf 乘积，排除 NaN 和 0*Inf。
+      wire pair_infinity;
+      assign pair_nan                            = (a_class == `DP_CLASS_NAN) | (b_class == `DP_CLASS_NAN);
+      assign pair_inf                            = (a_class == `DP_CLASS_INF) | (b_class == `DP_CLASS_INF);
+      assign pair_zero                           = (a_class == `DP_CLASS_ZERO) | (b_class == `DP_CLASS_ZERO);
+      assign pair_infinity                       = element_used & pair_inf & ~pair_zero & ~pair_nan;
+      assign out_product_negative[element_index] = element_used & (a_sign ^ b_sign);
+      assign out_product_active[element_index]   = element_used & (a_class == `DP_CLASS_FINITE) & (b_class == `DP_CLASS_FINITE);
+      assign nan_sources[element_index]          = element_used & pair_nan;
+      assign invalid_sources[element_index]      = element_used & (a_signaling | b_signaling | (pair_inf & pair_zero));
+      assign positive_inf_sources[element_index] = pair_infinity & ~out_product_negative[element_index];
+      assign negative_inf_sources[element_index] = pair_infinity & out_product_negative[element_index];
+      assign included_negative[element_index]    = ~element_used | out_product_negative[element_index];
+      // verilog_format: on
     end
   endgenerate
-  generate
-    for (
-      element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
-    ) begin : g_expand
-      // S1 出口展开只增加连线视图，不为各格式复制寄存器。
-      wire [`DP_NUM_W-1:0] h_number;
-      wire [`DP_NUM_W-1:0] q_number;
-      wire [`DP_NUM_W-1:0] e_number;
-      wire select_h;
-      wire select_e;
-      assign select_h = (in_registered_datatype == `DP_DT_TF32) |
-        (in_registered_datatype == `DP_DT_FP16) | (in_registered_datatype == `DP_DT_BF16);
-      assign select_e = (in_registered_datatype == `DP_DT_MXFP4) |
-        (in_registered_datatype == `DP_DT_NVFP4) | (in_registered_datatype == `DP_DT_HIF4);
-      assign
-        h_number[`DP_NUM_MAG_LO+:`DP_MANT_W] = mantissa_q[element_index%`DP_LANES][0+:`DP_MANT_W];
-      assign
-        h_number[`DP_NUM_EXP_LO+:`DP_EXP_W] = exponent_q[element_index%`DP_LANES][0+:`DP_EXP_W];
-      assign h_number[`DP_NUM_SIGN] = signs_q[element_index%`DP_LANES][0];
-      assign h_number[`DP_NUM_SIGNAL] = signaling_q[element_index%`DP_LANES][0];
-      assign h_number[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] =
-        classes_q[element_index%`DP_LANES][0+:`DP_NUM_CLASS_W];
-      assign e_number[`DP_NUM_MAG_LO+:`DP_MANT_W] = {
-        {(`DP_MANT_W - `DP_MUL_LO) {1'b0}},
-        mantissa_q[element_index/ATOM_S][(element_index%ATOM_S)*`DP_MUL_LO+:`DP_MUL_LO]
-      };
-      assign e_number[`DP_NUM_EXP_LO+:`DP_EXP_W] = {
-        {(`DP_EXP_W - 1) {1'b0}}, exponent_q[element_index/ATOM_S][0]
-      };
-      assign e_number[`DP_NUM_SIGN] = signs_q[element_index/ATOM_S][element_index%ATOM_S];
-      assign e_number[`DP_NUM_SIGNAL] = signaling_q[element_index/ATOM_S][element_index%ATOM_S];
-      assign e_number[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] =
-        classes_q[element_index/ATOM_S][(element_index%ATOM_S)*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W];
-      assign q_number[`DP_NUM_MAG_LO+:`DP_MANT_W] = in_registered_datatype == `DP_DT_INT8 ?
-        {{(`DP_MANT_W - `DP_QUARTER_W) {1'b0}},
-         mantissa_q[(element_index/2)%`DP_LANES][(element_index%2)*`DP_QUARTER_W+:`DP_QUARTER_W]} :
-        {{(`DP_MANT_W - `DP_MUL_LO) {1'b0}},
-         mantissa_q[(element_index/2)%`DP_LANES][(element_index%2)*`DP_MUL_LO+:`DP_MUL_LO]};
-      assign q_number[`DP_NUM_EXP_LO+:`DP_EXP_W] = in_registered_datatype == `DP_DT_INT8 ?
-        0 : {{(`DP_EXP_W - `DP_Q_EXP_W) {1'b0}},
-             exponent_q[(element_index/2)%`DP_LANES][(element_index%2)*`DP_Q_EXP_W+:`DP_Q_EXP_W]};
-      assign q_number[`DP_NUM_SIGN] = signs_q[(element_index/2)%`DP_LANES][element_index%2];
-      assign q_number[`DP_NUM_SIGNAL] = signaling_q[(element_index/2)%`DP_LANES][element_index%2];
-      assign q_number[`DP_NUM_CLASS_LO+:`DP_NUM_CLASS_W] =
-        classes_q[(element_index/2)%`DP_LANES][(element_index%2)*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W];
-      assign out_numbers[element_index*`DP_NUM_W+:`DP_NUM_W] = select_h ?
-        (((element_index < `DP_LANES) &
-          ((in_registered_datatype != `DP_DT_TF32) | (element_index == 0))) ? h_number : 0) :
-        select_e ? e_number : element_index < `DP_Q_LANES ? q_number : 0;
-    end
-  endgenerate
+  // lane 分类只输出四位；与旧 special 位语义一致，不是外部异常状态寄存器。
+  // verilog_format: off
+  assign out_special[`DP_SP_NAN]     = |nan_sources;
+  assign out_special[`DP_SP_POS_INF] = |positive_inf_sources;
+  assign out_special[`DP_SP_NEG_INF] = |negative_inf_sources;
+  assign out_special[`DP_SP_INVALID] = (|invalid_sources) | ((|positive_inf_sources) & (|negative_inf_sources));
+  assign out_all_negative            = &included_negative;
+  // verilog_format: on
 endmodule

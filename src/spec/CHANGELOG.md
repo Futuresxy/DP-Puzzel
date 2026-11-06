@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.6.3；修改时间：2026-11-06 15:05:16 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.6.4；修改时间：2026-11-06 15:51:16 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -15,11 +15,7 @@ v1.5 → v1.6：~~reset 高有效、功能模块内 always 保存流水~~ → `r
 
 v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)。旧 N12 综合报告仍对应其原 export ID；本次不以功能回归证明面积、时序或功耗。Chisel、混合组和阵列未新增实现。
 
-v1.6.1：补充主/E RTL 关键计算注释，抽取完整局部对齐 dp_lane_align 与 E 坐标左移 dp_lane_e_shift；E pair 复用两项树。流水、数值及 CModel 不变；验证见 [功能分区回归](../../test/results/dp-functional-blocks-v1.6.1.md)。
-
-当前小修：DFF 按“本级计算→捕获→下一级使用”就地组织，固定端口紧凑同行并作局部格式保护；算术 `product` 中文统一为“乘积”。仅组织/排版和术语修订，数值与流水合同不变。175 个 DFF 的类型/参数/连接保持一致；三个长输入表达式移到同宽具名 wire，展开后与原表达式相同。主/E 各 6 组严格 lint 通过，Verible 重跑保持紧凑格式；本次未重跑数值回归或签发新快照回执。
-
-dp_lane 阅读性修订 v1.6.3：用 rN 显式表示寄存级，标明参数及变量含义，保持完整表达式换行及同组对齐；同步主/历史 TB 探针。验收见 [lane 风格回归](../../test/results/dp-lane-style-v1.6.3.md)。
+当前实现小修 v1.6.4：多精度 dp_lane_unpack 改为 A/B 紧凑 M/E/S 入口，内部完成配对特殊分类；新增 dp_lane_operand_unpack 保存原 S1 字段。尾数/指数 bank 直接选 M32/E20，移除 184 位 Number 展开接口。CModel、数值布局、S1/S2 边界和 L8/II=1 不变。沿用 rN 功能命名、就地 DFF 与完整语义排版；同步测试探针。代码对比与验收见 [紧凑解包验证](../../test/results/dp-compact-unpack-v1.6.4.md)。
 
 ## 3. 当前文件索引
 
@@ -33,15 +29,15 @@ dp_lane 阅读性修订 v1.6.3：用 rN 显式表示寄存级，标明参数及�
 | [06-configuration.md](06-configuration.md) | v1.5.7 | 定义参数及其合法派生关系 |
 | [07-verification.md](07-verification.md) | v1.5.8 | 定义现用模型/RTL及未来实现的共用验收合同 |
 | [08-implementation-ppa.md](08-implementation-ppa.md) | v1.5.5 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.6.3 | 维护整体架构与文档版本时间线 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.6.4 | 维护整体架构与文档版本时间线 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.5.4 | 定义规格版本和历史修订规则 |
 | [dp/README.md](dp/README.md) | v1.6 | 按模块与共用合同组织 DP 规格 |
-| [dp/lane/README.md](dp/lane/README.md) | v1.6 | 定义 lane 规格目录与计算边界 |
+| [dp/lane/README.md](dp/lane/README.md) | v1.6.4 | 定义 lane 规格目录与计算边界 |
 | [dp/lane/dp_lane_E.md](dp/lane/dp_lane_E.md) | v1.6 | 讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合 |
 | [dp/lane/multiplier-sharing.md](dp/lane/multiplier-sharing.md) | v1.5.4 | 定义尾数乘法器共享和模式路由 |
 | [dp/lane/shifter-sharing.md](dp/lane/shifter-sharing.md) | v1.5.4 | 定义固定物理移位器的 mux 复用 |
-| [dp/lane/unpack.md](dp/lane/unpack.md) | v1.5.4 | 定义固定 E/M/S 解包数值布局 |
+| [dp/lane/unpack.md](dp/lane/unpack.md) | v1.6.4 | 定义固定 E/M/S 解包数值布局 |
 | [dp/group/README.md](dp/group/README.md) | v1.6 | 定义 group 规格目录与计算边界 |
 | [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.6 | 讨论 E16 定点组规约及兼容的 group 输出 |
 | [dp/group/scale.md](dp/group/scale.md) | v1.5.5 | 定义 scale 统一解包和 bias 处理 |
@@ -52,13 +48,13 @@ dp_lane 阅读性修订 v1.6.3：用 rN 显式表示寄存级，标明参数及�
 | [dp/dptop/independent-align.md](dp/dptop/independent-align.md) | v1.5.4 | 记录独立移位对齐对比方案 |
 | [dp/dptop/interface.md](dp/dptop/interface.md) | v1.6 | 定义 DP 顶层和模块接口 |
 | [dp/dptop/layout-and-scales.md](dp/dptop/layout-and-scales.md) | v1.5.4 | 定义 DP 容量与输入布局 |
-| [dp/dptop/module-hierarchy.md](dp/dptop/module-hierarchy.md) | v1.6.2 | 定义 DP 模块层级与未来 S6 接入合同 |
+| [dp/dptop/module-hierarchy.md](dp/dptop/module-hierarchy.md) | v1.6.4 | 定义 DP 模块层级与未来 S6 接入合同 |
 | [dp/dptop/pipeline.md](dp/dptop/pipeline.md) | v1.6 | 定义分组共享 DP 的流水候选 |
 | [dp/common/numeric-layout.md](dp/common/numeric-layout.md) | v1.5.5 | 推导逐级位宽和统一对齐坐标 |
 | [dp/common/special-values.md](dp/common/special-values.md) | v1.5.4 | 定义浮点分类与特殊值传播 |
 | [dp/common/stage-formats.md](dp/common/stage-formats.md) | v1.5.4 | 列出每级数值出口的定点格式与指数范围 |
 | [dp/implementation/cmodel.md](dp/implementation/cmodel.md) | v1.6 | 定义 DP CModel、模块映射及共用测试接口 |
 | [dp/implementation/resource-accounting.md](dp/implementation/resource-accounting.md) | v1.5.6 | 定义可统计的功能模块边界 |
-| [dp/implementation/verilog.md](dp/implementation/verilog.md) | v1.6.3 | 定义手写 RTL 实现映射及验证合同 |
+| [dp/implementation/verilog.md](dp/implementation/verilog.md) | v1.6.4 | 定义手写 RTL 实现映射及验证合同 |
 | [dp-group/README.md](dp-group/README.md) | v1.4.1 | 定义广播计算组规格 |
 | [tensorcore/README.md](tensorcore/README.md) | v1.4.1 | 定义 TensorCore 阵列规格 |
