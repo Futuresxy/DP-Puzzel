@@ -116,6 +116,25 @@ module dp_group_e #(
     .out_exponent(scale_b_exponent_d),
     .out_nan(scale_b_nan_d)
   );
+
+  // [S1 寄存边界] 保存 scale 解包值、类型和 valid，供下一段系数预乘使用。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s0_s1_valid (.clock(clock), .rst_n(rst_n), .in_d(in_valid), .out_q(valid_q[0]));
+  dp_lib_DFFE #(.WIDTH(`DP_TYPE_W))
+  ff_s0_s1_type_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(in_datatype), .out_q(type_s1_q));
+  dp_lib_DFFE #(.WIDTH(`DP_SCALE_M))
+  ff_s0_s1_sa_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(scale_a_magnitude_d), .out_q(scale_a_magnitude_s1_q));
+  dp_lib_DFFE #(.WIDTH(`DP_SCALE_M))
+  ff_s0_s1_sb_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(scale_b_magnitude_d), .out_q(scale_b_magnitude_s1_q));
+  dp_lib_DFFE #(.WIDTH(`DP_EXP_W))
+  ff_s0_s1_ea_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(scale_a_exponent_d), .out_q(scale_a_exponent_s1_q));
+  dp_lib_DFFE #(.WIDTH(`DP_EXP_W))
+  ff_s0_s1_eb_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(scale_b_exponent_d), .out_q(scale_b_exponent_s1_q));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s0_s1_nan_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(scale_a_nan_d | scale_b_nan_d), .out_q(nan_s1_q));
+  // verilog_format: on
+
   dp_mul_unsigned #(
     .A_W(`DP_SCALE_M),
     .B_W(`DP_SCALE_M)
@@ -124,6 +143,43 @@ module dp_group_e #(
     .in_b(scale_b_magnitude_s1_q),
     .out_product(coefficient_d)
   );
+
+  // [S2 寄存边界] 捕获 scale 系数积/指数和及旁带，下一段据此计算 anchor。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s1_s2_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[0]), .out_q(valid_q[1]));
+  dp_lib_DFFE #(.WIDTH(`DP_TYPE_W))
+  ff_s1_s2_type_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d(type_s1_q), .out_q(type_s2_q));
+  dp_lib_DFFE #(.WIDTH(COEFF_W))
+  ff_s1_s2_coeff_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d(coefficient_d), .out_q(coeff_s2_q));
+  dp_lib_DFFE #(.WIDTH(`DP_PRODUCT_EXP_W))
+  ff_s1_s2_scale_exp_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d({1'b0, scale_a_exponent_s1_q} + {1'b0, scale_b_exponent_s1_q}), .out_q(scale_exp_s2_q));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s1_s2_nan_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d(nan_s1_q), .out_q(nan_s2_q));
+  // verilog_format: on
+
+  wire signed [31:0] anchor_work;
+  // [S3 anchor 预计算] e2 已融入 lane 数值，不在此重复加指数。
+  // alpha=scale_exp_sum-2*bias；F=M-10(MX) 或 M-12(NV/HiF)，所以偏移为 9 或 11。
+  // 此坐标提前算出并延迟到 S5，与 magnitude/符号属于同一笔数据。
+  // alpha - F + M-1; F=M-10 (MX), M-12 (NV/HiF).
+  assign anchor_work = {{(32 - `DP_PRODUCT_EXP_W) {1'b0}}, scale_exp_s2_q} - 2 * `DP_SCALE_BIAS +
+    (type_s2_q == `DP_DT_MXFP4 ? 9 : 11);
+
+  // [S3 寄存边界] 捕获预计算 anchor，同时延迟系数、类型和分类。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s2_s3_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[1]), .out_q(valid_q[2]));
+  dp_lib_DFFE #(.WIDTH(`DP_TYPE_W))
+  ff_s2_s3_type_s3 (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(type_s2_q), .out_q(type_s3_q));
+  dp_lib_DFFE #(.WIDTH(COEFF_W))
+  ff_s2_s3_coeff_s3 (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(coeff_s2_q), .out_q(coeff_s3_q));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s2_s3_nan_s3 (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(nan_s2_q), .out_q(nan_s3_q));
+  dp_lib_DFFE #(.WIDTH(ANCHOR_W))
+  ff_s2_s3_anchor_s3 (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(anchor_work[ANCHOR_W-1:0]), .out_q(anchor_s3_q));
+  // verilog_format: on
+
   // [S4 组规约] 两个已经移位到 F4 的 signed14 lane 和，用一层树增长到 signed15。
   // 取绝对值后保存 magnitude_s4_q 和 negative_s4_q，S5 再做 scale。
   wire signed [GROUP_W-1:0] group_sum;
@@ -138,6 +194,25 @@ module dp_group_e #(
   assign absolute_sop = group_sum[GROUP_W-1] ? -group_sum : group_sum;
   wire [COMPACT_W-1:0] magnitude_s4_q;
   wire negative_s4_q;
+
+  // [S4 寄存边界] 捕获组和的绝对值/符号，并同步保存 scale 系数及 anchor。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s3_s4_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[2]), .out_q(valid_q[3]));
+  dp_lib_DFFE #(.WIDTH(`DP_TYPE_W))
+  ff_s3_s4_type_s4 (.clock(clock), .in_en(rst_n & valid_q[2]), .in_d(type_s3_q), .out_q(type_s4_q));
+  dp_lib_DFFE #(.WIDTH(COEFF_W))
+  ff_s3_s4_coeff_s4 (.clock(clock), .in_en(rst_n & valid_q[2]), .in_d(coeff_s3_q), .out_q(coeff_s4_q));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s3_s4_nan_s4 (.clock(clock), .in_en(rst_n & valid_q[2]), .in_d(nan_s3_q), .out_q(nan_s4_q));
+  dp_lib_DFFE #(.WIDTH(ANCHOR_W))
+  ff_s3_s4_anchor_s4 (.clock(clock), .in_en(rst_n & valid_q[2]), .in_d(anchor_s3_q), .out_q(anchor_s4_q));
+  dp_lib_DFFE #(.WIDTH(COMPACT_W))
+  ff_s3_s4_magnitude_s4 (.clock(clock), .in_en(rst_n & valid_q[2]), .in_d(absolute_sop[COMPACT_W-1:0]), .out_q(magnitude_s4_q));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s3_s4_negative_s4 (.clock(clock), .in_en(rst_n & valid_q[2]), .in_d(group_sum[GROUP_W-1] | ((group_sum == 0) & (&lane_group_all_negative))), .out_q(negative_s4_q));
+  // verilog_format: on
+
   // Both MX and NV share F4 before scale. HiF4 e2 is consumed inside each lane.
   wire inject_scale;
   assign inject_scale = valid_q[3] & type_s4_q != `DP_DT_MXFP4;
@@ -167,284 +242,21 @@ module dp_group_e #(
     .out_count(leading_d),
     .out_active(magnitude_active)
   );
-  wire signed [31:0] anchor_work;
-  // [S3 anchor 预计算] e2 已融入 lane 数值，不在此重复加指数。
-  // alpha=scale_exp_sum-2*bias；F=M-10(MX) 或 M-12(NV/HiF)，所以偏移为 9 或 11。
-  // 此坐标提前算出并延迟到 S5，与 magnitude/符号属于同一笔数据。
-  // alpha - F + M-1; F=M-10 (MX), M-12 (NV/HiF).
-  assign anchor_work = {{(32 - `DP_PRODUCT_EXP_W) {1'b0}}, scale_exp_s2_q} - 2 * `DP_SCALE_BIAS +
-    (type_s2_q == `DP_DT_MXFP4 ? 9 : 11);
 
-  // [流水保存] valid_q[0..3] 是 S1..S4，out_valid 是 S5；scale/类型随数据同行。
-  // DFF 是捕获边界；上方树、乘法器和 LZD 全是组合模块，不暗含额外一级。
-  // S0 -> S1: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s0_s1_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (in_valid),
-    .out_q(valid_q[0])
-  );
-  // S1 -> S2: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s1_s2_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[0]),
-    .out_q(valid_q[1])
-  );
-  // S2 -> S3: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s2_s3_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[1]),
-    .out_q(valid_q[2])
-  );
-  // S3 -> S4: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s3_s4_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[2]),
-    .out_q(valid_q[3])
-  );
-  // S4 -> S5: out_valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s4_s5_out_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[3]),
-    .out_q(out_valid)
-  );
-  // S0 -> S1: type_s1.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_TYPE_W)
-  ) ff_s0_s1_type_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (in_datatype),
-    .out_q(type_s1_q)
-  );
-  // S0 -> S1: sa_s1.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_SCALE_M)
-  ) ff_s0_s1_sa_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (scale_a_magnitude_d),
-    .out_q(scale_a_magnitude_s1_q)
-  );
-  // S0 -> S1: sb_s1.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_SCALE_M)
-  ) ff_s0_s1_sb_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (scale_b_magnitude_d),
-    .out_q(scale_b_magnitude_s1_q)
-  );
-  // S0 -> S1: ea_s1.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_EXP_W)
-  ) ff_s0_s1_ea_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (scale_a_exponent_d),
-    .out_q(scale_a_exponent_s1_q)
-  );
-  // S0 -> S1: eb_s1.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_EXP_W)
-  ) ff_s0_s1_eb_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (scale_b_exponent_d),
-    .out_q(scale_b_exponent_s1_q)
-  );
-  // S0 -> S1: nan_s1.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s0_s1_nan_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (scale_a_nan_d | scale_b_nan_d),
-    .out_q(nan_s1_q)
-  );
-  // S1 -> S2: type_s2.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_TYPE_W)
-  ) ff_s1_s2_type_s2 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[0]),
-    .in_d (type_s1_q),
-    .out_q(type_s2_q)
-  );
-  // S1 -> S2: coeff_s2.
-  dp_lib_DFFE #(
-    .WIDTH(COEFF_W)
-  ) ff_s1_s2_coeff_s2 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[0]),
-    .in_d (coefficient_d),
-    .out_q(coeff_s2_q)
-  );
-  // S1 -> S2: scale_exp_s2.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_PRODUCT_EXP_W)
-  ) ff_s1_s2_scale_exp_s2 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[0]),
-    .in_d ({1'b0, scale_a_exponent_s1_q} + {1'b0, scale_b_exponent_s1_q}),
-    .out_q(scale_exp_s2_q)
-  );
-  // S1 -> S2: nan_s2.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s1_s2_nan_s2 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[0]),
-    .in_d (nan_s1_q),
-    .out_q(nan_s2_q)
-  );
-  // S2 -> S3: type_s3.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_TYPE_W)
-  ) ff_s2_s3_type_s3 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[1]),
-    .in_d (type_s2_q),
-    .out_q(type_s3_q)
-  );
-  // S2 -> S3: coeff_s3.
-  dp_lib_DFFE #(
-    .WIDTH(COEFF_W)
-  ) ff_s2_s3_coeff_s3 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[1]),
-    .in_d (coeff_s2_q),
-    .out_q(coeff_s3_q)
-  );
-  // S2 -> S3: nan_s3.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s2_s3_nan_s3 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[1]),
-    .in_d (nan_s2_q),
-    .out_q(nan_s3_q)
-  );
-  // S2 -> S3: anchor_s3.
-  dp_lib_DFFE #(
-    .WIDTH(ANCHOR_W)
-  ) ff_s2_s3_anchor_s3 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[1]),
-    .in_d (anchor_work[ANCHOR_W-1:0]),
-    .out_q(anchor_s3_q)
-  );
-  // S3 -> S4: type_s4.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_TYPE_W)
-  ) ff_s3_s4_type_s4 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[2]),
-    .in_d (type_s3_q),
-    .out_q(type_s4_q)
-  );
-  // S3 -> S4: coeff_s4.
-  dp_lib_DFFE #(
-    .WIDTH(COEFF_W)
-  ) ff_s3_s4_coeff_s4 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[2]),
-    .in_d (coeff_s3_q),
-    .out_q(coeff_s4_q)
-  );
-  // S3 -> S4: nan_s4.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s3_s4_nan_s4 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[2]),
-    .in_d (nan_s3_q),
-    .out_q(nan_s4_q)
-  );
-  // S3 -> S4: anchor_s4.
-  dp_lib_DFFE #(
-    .WIDTH(ANCHOR_W)
-  ) ff_s3_s4_anchor_s4 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[2]),
-    .in_d (anchor_s3_q),
-    .out_q(anchor_s4_q)
-  );
-  // S3 -> S4: magnitude_s4.
-  dp_lib_DFFE #(
-    .WIDTH(COMPACT_W)
-  ) ff_s3_s4_magnitude_s4 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[2]),
-    .in_d (absolute_sop[COMPACT_W-1:0]),
-    .out_q(magnitude_s4_q)
-  );
-  // S3 -> S4: negative_s4.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s3_s4_negative_s4 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[2]),
-    .in_d (group_sum[GROUP_W-1] | ((group_sum == 0) & (&lane_group_all_negative))),
-    .out_q(negative_s4_q)
-  );
-  // S4 -> S5: out_magnitude.
-  dp_lib_DFFE #(
-    .WIDTH(MAG_W)
-  ) ff_s4_s5_out_magnitude (
-    .clock(clock),
-    .in_en(rst_n & valid_q[3]),
-    .in_d (magnitude_d),
-    .out_q(out_magnitude)
-  );
-  // S4 -> S5: out_negative.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s4_s5_out_negative (
-    .clock(clock),
-    .in_en(rst_n & valid_q[3]),
-    .in_d (negative_s4_q),
-    .out_q(out_negative)
-  );
-  // S4 -> S5: out_special.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_SPECIAL_W)
-  ) ff_s4_s5_out_special (
-    .clock(clock),
-    .in_en(rst_n & valid_q[3]),
-    .in_d ({nan_s4_q, 3'b000}),
-    .out_q(out_special)
-  );
-  // S4 -> S5: out_anchor.
-  dp_lib_DFFE #(
-    .WIDTH(ANCHOR_W)
-  ) ff_s4_s5_out_anchor (
-    .clock(clock),
-    .in_en(rst_n & valid_q[3]),
-    .in_d ((magnitude_active & ~nan_s4_q) ? anchor_s4_q : 0),
-    .out_q(out_anchor)
-  );
-  // S4 -> S5: out_z.
-  dp_lib_DFFE #(
-    .WIDTH($clog2(MAG_W + 1))
-  ) ff_s4_s5_out_z (
-    .clock(clock),
-    .in_en(rst_n & valid_q[3]),
-    .in_d (~nan_s4_q ? leading_d : 0),
-    .out_q(out_z)
-  );
+  // [S5 寄存边界] 保存 scale/LZD 后的 group token；valid 与符号、幅值、anchor 同拍。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s4_s5_out_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[3]), .out_q(out_valid));
+  dp_lib_DFFE #(.WIDTH(MAG_W))
+  ff_s4_s5_out_magnitude (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(magnitude_d), .out_q(out_magnitude));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s4_s5_out_negative (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(negative_s4_q), .out_q(out_negative));
+  dp_lib_DFFE #(.WIDTH(`DP_SPECIAL_W))
+  ff_s4_s5_out_special (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d({nan_s4_q, 3'b000}), .out_q(out_special));
+  dp_lib_DFFE #(.WIDTH(ANCHOR_W))
+  ff_s4_s5_out_anchor (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d((magnitude_active & ~nan_s4_q) ? anchor_s4_q : 0), .out_q(out_anchor));
+  dp_lib_DFFE #(.WIDTH($clog2(MAG_W + 1)))
+  ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(~nan_s4_q ? leading_d : 0), .out_q(out_z));
+  // verilog_format: on
+
 endmodule

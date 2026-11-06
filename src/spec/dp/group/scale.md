@@ -1,4 +1,4 @@
-> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/group.cpp](../../../cmodel/lib/group.cpp)、[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)；Chisel 尚未实现。
+> 功能：定义 scale 统一解包和 bias 处理；范围：E8M0/E4M3/E6M2 到 E8M3、组内融合及统一指数坐标；版本：v1.5.5；修改时间：2026-11-06 13:54:29 +08:00；对应代码：[CModel lib/group.cpp](../../../cmodel/lib/group.cpp)、[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)；Chisel 尚未实现。
 
 # scale 统一 E8M3 数值表示
 
@@ -52,7 +52,7 @@ CModel 在 S5 形成已去 bias 的 A_raw，S6 直接比较统一坐标。后续
 
 ## 5. 去 bias、MAX 与净移位
 
-S5 组 token 的 A 已完成元素/scale bias 与定点坐标修正，C 的 A_c 同样无偏。先对有限非零源的实际指数做 signed MAX。右对齐距离 d 为非负数，合并规格化后的净移位 net 用带符号差值计算。S2/S3 的同格式产品相减中，相同的元素双 bias 抵消，因此可以保留 r/p 的带偏置无符号表示。
+S5 组 token 的 A 已完成元素/scale bias 与定点坐标修正，C 的 A_c 同样无偏。先对有限非零源的实际指数做 signed MAX。右对齐距离 d 为非负数，合并规格化后的净移位 net 用带符号差值计算。S2/S3 的同格式乘积指数相减中，相同的元素双 bias 抵消，因此可以保留 r/p 的带偏置无符号表示。
 
 scale 后 LZD 只计数 z；e=A_raw-z 用于比较，d=MAX(e)-e 非负，但 net=z-d 有符号。已选 [一次双向移位](../dptop/global-align.md) 为当前首选；bias 不重复扣除。
 

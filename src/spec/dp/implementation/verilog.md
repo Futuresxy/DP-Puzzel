@@ -1,8 +1,8 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.6.1；修改时间：2026-11-06 12:54:42 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.6.2；修改时间：2026-11-06 13:54:29 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
-本页记录 v1.6.1 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
+本页记录 v1.6.2 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
 
 ## 1. 文件组织与实现边界
 
@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | 顶层 DP、请求控制、C transport | [dp_top.v](../../../verilog/top/dp_top.v) | valid/last/type S1–S8、C raw S1–S4、C S5、S6/S7/S8 |
 | T2H4Q8E16 基本组 | [dp_group.v](../../../verilog/group/dp_group.v) | scale S1–S4；组 token S5 |
-| T1H2Q4E8 lane | [dp_lane.v](../../../verilog/lane/dp_lane.v) | S1 子模块有效控制、产品 S2、叶 S3、SOP S4 |
+| T1H2Q4E8 lane | [dp_lane.v](../../../verilog/lane/dp_lane.v) | S1 子模块有效控制、乘积 S2、叶 S3、SOP S4 |
 | 固定 layout 解包/寄存 | [dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v) | S1 两份 E10/M16/S4；class/signaling 旁带，扩展元素视图只是连线 |
 | A/B 元素解码 | [dp_operand_unpack.v](../../../verilog/unpack/dp_operand_unpack.v) | 组合；S1 由 dp_lane_unpack 注册 |
 | scale / C 解包 | [dp_scale_unpack.v](../../../verilog/unpack/dp_scale_unpack.v)、[dp_c_unpack.v](../../../verilog/unpack/dp_c_unpack.v) | 组合；分别由 group/top 注册 |

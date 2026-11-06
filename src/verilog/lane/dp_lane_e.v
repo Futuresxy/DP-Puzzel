@@ -67,8 +67,25 @@ module dp_lane_e (
     .out_magnitude(b_mantissa_d),
     .out_negative(b_sign_d)
   );
-  // [S2 产品] 4 位幅值乘法得到 unsigned8；符号异或后用 signed9 容器恢复补码。
-  // 随后的 u_pair_sum 为第一层规约，S2 只保存四个 signed10 pair，减少产品寄存位。
+
+  // [S1 寄存边界] 保存 E 解包幅值/符号和 e2 移位量；valid 每拍推进。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s0_s1_valid (.clock(clock), .rst_n(rst_n), .in_d(in_valid), .out_q(valid_q[0]));
+  dp_lib_DFFE #(.WIDTH(`DP_E_LANES))
+  ff_s0_s1_a_sign_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(a_sign_d), .out_q(a_sign_s1_q));
+  dp_lib_DFFE #(.WIDTH(`DP_E_LANES))
+  ff_s0_s1_b_sign_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(b_sign_d), .out_q(b_sign_s1_q));
+  dp_lib_DFFE #(.WIDTH(`DP_E_LANES * `DP_MUL_LO))
+  ff_s0_s1_a_mantissa_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(a_mantissa_d), .out_q(a_mantissa_s1_q));
+  dp_lib_DFFE #(.WIDTH(`DP_E_LANES * `DP_MUL_LO))
+  ff_s0_s1_b_mantissa_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(b_mantissa_d), .out_q(b_mantissa_s1_q));
+  dp_lib_DFFE #(.WIDTH((1) - (0) + 1))
+  ff_s0_s1_shift_s1 (.clock(clock), .in_en(rst_n & in_valid), .in_d(in_datatype == `DP_DT_HIF4 ? {1'b0, in_e2_a} + {1'b0, in_e2_b} : 2'd2), .out_q(shift_s1_q));
+  // verilog_format: on
+
+  // [S2 乘积] 4 位幅值乘法得到 unsigned8；符号异或后用 signed9 容器恢复补码。
+  // 随后的 u_pair_sum 为第一层规约，S2 只保存四个 signed10 pair，减少乘积寄存位。
   genvar element_index;
   generate
     for (
@@ -95,7 +112,7 @@ module dp_lane_e (
       assign pair_left = signed_products[2*element_index*(PRODUCT_W+1)+:PRODUCT_W+1];
       wire signed [PRODUCT_W:0] pair_right;
       assign pair_right = signed_products[(2*element_index+1)*(PRODUCT_W+1)+:PRODUCT_W+1];
-      // S2 第一层规约：两个 signed9 产品 -> signed10 pair，显式保留进位。
+      // S2 第一层规约：两个 signed9 乘积 -> signed10 pair，显式保留进位。
       // N=2 的 dp_sum_tree 是单层加法器，没有寄存器；S2 DFF 在父层保存结果。
       dp_sum_tree #(
         .N(2),
@@ -106,6 +123,19 @@ module dp_lane_e (
       );
     end
   endgenerate
+
+  // [S2 寄存边界] 保存四个 pair 及符号摘要、移位量；不保存八个完整乘积。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s1_s2_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[0]), .out_q(valid_q[1]));
+  dp_lib_DFFE #(.WIDTH(PAIRS * PAIR_W))
+  ff_s1_s2_pairs_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d(pairs_d), .out_q(pairs_s2_q));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s1_s2_all_negative_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d(&product_negative), .out_q(all_negative_s2_q));
+  dp_lib_DFFE #(.WIDTH((1) - (0) + 1))
+  ff_s1_s2_shift_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d(shift_s1_q), .out_q(shift_s2_q));
+  // verilog_format: on
+
   // [S3 lane 累加树] 四个 signed10 pair 经两层树得到 signed12。
   // 此处不做右移和舍入；HiF4 的 e1 已在解包中融合，e2 留到出口精确左移。
   dp_sum_tree #(
@@ -115,6 +145,19 @@ module dp_lane_e (
     .in_values(pairs_s2_q),
     .out_sum  (lane_sum_d)
   );
+
+  // [S3 寄存边界] 保存 lane 和与同一请求的 shift，随后进行 S4 组合坐标融合。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s2_s3_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[1]), .out_q(valid_q[2]));
+  dp_lib_DFFE #(.WIDTH(LANE_W))
+  ff_s2_s3_sop_s3 (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(lane_sum_d), .out_q(sop_s3_q));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s2_s3_all_negative_s3 (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(all_negative_s2_q), .out_q(all_negative_s3_q));
+  dp_lib_DFFE #(.WIDTH((1) - (0) + 1))
+  ff_s2_s3_shift_s3 (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(shift_s2_q), .out_q(shift_s3_q));
+  // verilog_format: on
+
   // [S4 坐标融合] 已寄存的 S3 和进入独立精确左移模块，group 在 S4 捕获。
   // HiF4 移位量=e2_a+e2_b；MX/NV 固定补两个低零，将 F2 变成共同 F4。
   dp_lane_e_shift #(
@@ -128,132 +171,4 @@ module dp_lane_e (
   assign out_valid = valid_q[2];
   assign out_all_negative = all_negative_s3_q;
 
-  // [流水保存] valid/产品符号/shift 同请求推进；S2 pair 与 S3 SOP 分别捕获。
-  // shift_s3_q 必须与 sop_s3_q 对应同一请求；不能从当前输入 e2 直接驱动 S4。
-  // S0 -> S1: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s0_s1_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (in_valid),
-    .out_q(valid_q[0])
-  );
-  // S1 -> S2: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s1_s2_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[0]),
-    .out_q(valid_q[1])
-  );
-  // S2 -> S3: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s2_s3_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[1]),
-    .out_q(valid_q[2])
-  );
-  // S0 -> S1: a_sign_s1.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_E_LANES)
-  ) ff_s0_s1_a_sign_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (a_sign_d),
-    .out_q(a_sign_s1_q)
-  );
-  // S0 -> S1: b_sign_s1.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_E_LANES)
-  ) ff_s0_s1_b_sign_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (b_sign_d),
-    .out_q(b_sign_s1_q)
-  );
-  // S0 -> S1: a_mantissa_s1.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_E_LANES * `DP_MUL_LO)
-  ) ff_s0_s1_a_mantissa_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (a_mantissa_d),
-    .out_q(a_mantissa_s1_q)
-  );
-  // S0 -> S1: b_mantissa_s1.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_E_LANES * `DP_MUL_LO)
-  ) ff_s0_s1_b_mantissa_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (b_mantissa_d),
-    .out_q(b_mantissa_s1_q)
-  );
-  // S0 -> S1: shift_s1.
-  dp_lib_DFFE #(
-    .WIDTH((1) - (0) + 1)
-  ) ff_s0_s1_shift_s1 (
-    .clock(clock),
-    .in_en(rst_n & in_valid),
-    .in_d (in_datatype == `DP_DT_HIF4 ? {1'b0, in_e2_a} + {1'b0, in_e2_b} : 2'd2),
-    .out_q(shift_s1_q)
-  );
-  // S1 -> S2: pairs_s2.
-  dp_lib_DFFE #(
-    .WIDTH(PAIRS * PAIR_W)
-  ) ff_s1_s2_pairs_s2 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[0]),
-    .in_d (pairs_d),
-    .out_q(pairs_s2_q)
-  );
-  // S1 -> S2: all_negative_s2.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s1_s2_all_negative_s2 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[0]),
-    .in_d (&product_negative),
-    .out_q(all_negative_s2_q)
-  );
-  // S1 -> S2: shift_s2.
-  dp_lib_DFFE #(
-    .WIDTH((1) - (0) + 1)
-  ) ff_s1_s2_shift_s2 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[0]),
-    .in_d (shift_s1_q),
-    .out_q(shift_s2_q)
-  );
-  // S2 -> S3: sop_s3.
-  dp_lib_DFFE #(
-    .WIDTH(LANE_W)
-  ) ff_s2_s3_sop_s3 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[1]),
-    .in_d (lane_sum_d),
-    .out_q(sop_s3_q)
-  );
-  // S2 -> S3: all_negative_s3.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s2_s3_all_negative_s3 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[1]),
-    .in_d (all_negative_s2_q),
-    .out_q(all_negative_s3_q)
-  );
-  // S2 -> S3: shift_s3.
-  dp_lib_DFFE #(
-    .WIDTH((1) - (0) + 1)
-  ) ff_s2_s3_shift_s3 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[1]),
-    .in_d (shift_s2_q),
-    .out_q(shift_s3_q)
-  );
 endmodule

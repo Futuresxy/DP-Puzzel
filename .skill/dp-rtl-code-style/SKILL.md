@@ -239,7 +239,11 @@ localparam integer GLOBAL_MAG_W = GLOBAL_W - 1;
 localparam integer N = GROUPS + 1;
 ```
 
-**唯一例外：DFF 基础单元例化**允许将端口放在同一行（因为 DFF 端口固定且简洁，紧凑写法反而可读性更好）。但 DFF 例化时参数 `#(...)` 必须单独一段，实例及端口另起一行；超过目标行宽则展开端口。每个变量声明仍须单独一行。
+**DFF 基础单元例化统一采用紧凑两行格式**：第一行是模块类型和 `#(...)` 参数，第二行是 `ff_*` 实例名与全部固定端口，末尾 `);`。DFF 端口行豁免 100 列目标，不因行宽把 clock/rst_n/in_en/in_d/out_q 再拆开；复杂输入表达式优先在外部以具名连线表达。每个变量声明仍须单独一行。
+
+连续 DFF 区块用 `// verilog_format: off` 与 `// verilog_format: on` 成对保护，避免 Verible 将固定端口展开；保护只覆盖 DFF 区块，不覆盖普通模块端口或组合逻辑。
+
+**按流水级就地放置 DFF**：每级采用“组合计算 → 本级 DFF 捕获 → 下一级使用”的源码顺序，valid/类型/符号等旁带放在对应级。禁止把各级寄存器按字段全部集中到文件末尾；纯延迟路径也按 S1、S2…分别标注。解包子模块拥有的寄存器保留原所有权，不在父层重复打拍。
 
 ```verilog
 // ❌ 错误：信号声明挤在一行
@@ -260,15 +264,13 @@ dp_fifo u_fifo (
   .out_data(dout)
 );
 
-// ✅ 正确：DFF 例化例外 — 端口可放同行，参数单独一行
+// ✅ 正确：DFF 例化例外 — 端口同行，参数单独一行
 dp_lib_DFFU #(.WIDTH(8))
 ff_data (.clock(clock), .in_d(d), .out_q(q));
 
-// ✅ 同样正确：DFF 例化也可以用展开写法
+// ✅ 带复位/使能的 DFF 同样保持固定端口同行
 dp_lib_DFFRE #(.WIDTH(8))
-ff_data (
-  .clock(clock), .rst_n(rst_n), .in_en(en), .in_d(d), .out_q(q)
-);
+ff_data (.clock(clock), .rst_n(rst_n), .in_en(en), .in_d(d), .out_q(q));
 ```
 
 ### 8. 寄存器类型选择原则
@@ -299,13 +301,9 @@ ff_data (
 
 ```verilog
 // ✅ 32bit 数据打拍，用 DFFE，为后端 ICG 优化提供条件
+// 是否生成 ICG 由后端配置和映射验证
 dp_lib_DFFE #(.WIDTH(32))
-ff_data (
-  .clock  (clock),
-  .in_en   (data_valid),   // 是否生成 ICG 由后端配置和映射验证
-  .in_d    (data_in),
-  .out_q    (data_out)
-);
+ff_data (.clock(clock), .in_en(data_valid), .in_d(data_in), .out_q(data_out));
 ```
 
 ### 11. 代码目录结构
@@ -502,7 +500,7 @@ assign way_target[0] = way_data[0][`DP_IBTB_TARGET_MSB:`DP_IBTB_TARGET_LSB];
 - **端口**: `clock`, `in_d[WIDTH-1:0]`, `out_q[WIDTH-1:0]`
 
 ```verilog
-// 例化模板（DFF 端口可同行，参数单独一行）
+// 例化模板（DFF 端口同行，参数单独一行）
 dp_lib_DFFU #(.WIDTH(<width>))
 ff_<name> (.clock(<clock>), .in_d(<data_in>), .out_q(<data_out>));
 ```
@@ -515,7 +513,7 @@ ff_<name> (.clock(<clock>), .in_d(<data_in>), .out_q(<data_out>));
 - **端口**: `clock`, `in_en`, `in_d[WIDTH-1:0]`, `out_q[WIDTH-1:0]`
 
 ```verilog
-// 例化模板（DFF 端口可同行，参数单独一行）
+// 例化模板（DFF 端口同行，参数单独一行）
 dp_lib_DFFE #(.WIDTH(<width>))
 ff_<name> (.clock(<clock>), .in_en(<enable>), .in_d(<data_in>), .out_q(<data_out>));
 ```
@@ -528,7 +526,7 @@ ff_<name> (.clock(<clock>), .in_en(<enable>), .in_d(<data_in>), .out_q(<data_out
 - **端口**: `clock`, `rst_n`, `in_d[WIDTH-1:0]`, `out_q[WIDTH-1:0]`
 
 ```verilog
-// 例化模板（DFF 端口可同行，参数单独一行）
+// 例化模板（DFF 端口同行，参数单独一行）
 dp_lib_DFFRU #(.WIDTH(<width>))
 ff_<name> (.clock(<clock>), .rst_n(<reset_n>), .in_d(<data_in>), .out_q(<data_out>));
 ```
@@ -541,7 +539,7 @@ ff_<name> (.clock(<clock>), .rst_n(<reset_n>), .in_d(<data_in>), .out_q(<data_ou
 - **端口**: `clock`, `rst_n`, `in_en`, `in_d[WIDTH-1:0]`, `out_q[WIDTH-1:0]`
 
 ```verilog
-// 例化模板（DFF 端口可同行，参数单独一行）
+// 例化模板（DFF 端口同行，参数单独一行）
 dp_lib_DFFRE #(.WIDTH(<width>))
 ff_<name> (.clock(<clock>), .rst_n(<reset_n>), .in_en(<enable>), .in_d(<data_in>), .out_q(<data_out>));
 ```
@@ -554,7 +552,7 @@ ff_<name> (.clock(<clock>), .rst_n(<reset_n>), .in_en(<enable>), .in_d(<data_in>
 - **端口**: `clock`, `rst_n`, `in_d[WIDTH-1:0]`, `out_q[WIDTH-1:0]`
 
 ```verilog
-// 例化模板（DFF 端口可同行，参数单独一行）
+// 例化模板（DFF 端口同行，参数单独一行）
 dp_lib_DFFSU #(.WIDTH(<width>))
 ff_<name> (.clock(<clock>), .rst_n(<set_n>), .in_d(<data_in>), .out_q(<data_out>));
 ```
@@ -567,7 +565,7 @@ ff_<name> (.clock(<clock>), .rst_n(<set_n>), .in_d(<data_in>), .out_q(<data_out>
 - **端口**: `clock`, `rst_n`, `in_en`, `in_d[WIDTH-1:0]`, `out_q[WIDTH-1:0]`
 
 ```verilog
-// 例化模板（DFF 端口可同行，参数单独一行）
+// 例化模板（DFF 端口同行，参数单独一行）
 dp_lib_DFFSE #(.WIDTH(<width>))
 ff_<name> (.clock(<clock>), .rst_n(<set_n>), .in_en(<enable>), .in_d(<data_in>), .out_q(<data_out>));
 ```
@@ -721,24 +719,12 @@ module dp_pipeline_boundary_example #(
   assign payload_s3_d = {in_sign, in_magnitude};
 
   // S2 -> S3 control: advance every edge, including bubbles; reset to invalid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s2_s3_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_s3_d),
-    .out_q(valid_s3_q)
-  );
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s2_s3_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_s3_d), .out_q(valid_s3_q));
 
   // S2 -> S3 payload: save only a valid item, hold during reset and bubbles.
-  dp_lib_DFFE #(
-    .WIDTH(PAYLOAD_W)
-  ) ff_s2_s3_payload (
-    .clock(clock),
-    .in_en(payload_s3_en),
-    .in_d (payload_s3_d),
-    .out_q(payload_s3_q)
-  );
+  dp_lib_DFFE #(.WIDTH(PAYLOAD_W))
+  ff_s2_s3_payload (.clock(clock), .in_en(payload_s3_en), .in_d(payload_s3_d), .out_q(payload_s3_q));
   assign {sign_s3_q, magnitude_s3_q} = payload_s3_q;
 
   assign out_valid = valid_s3_q;
@@ -775,7 +761,6 @@ endmodule
 ### 审查输出格式
 
 使用与自检相同的表格格式（参见“写完后强制自检”），逐项标注 ✅/❌ 并给出具体行号和修复建议。
-
 
 ## 五、DP 特有合同与迁移验证
 

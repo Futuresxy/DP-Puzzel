@@ -15,7 +15,7 @@
 // 阅读顺序 / 功能边界：
 // 前端 group 完成 S1-S5；C raw 经 S1-S4 透传，到 S5 才解包为同拍 token。
 // S6 u_global_alignment -> S7 u_final_sop_tree -> S8 u_fp32_output/特殊值选择。
-// 下面先列组合功能区，再列 ff_sN_sM_*；寄存器位置而非源码行序决定流水。
+// 按各级组合计算 -> ff_sN_sM_* 捕获 -> 下一级使用的顺序阅读。
 // 所有 group 同步接收一个 req_fire，外部仅一次原子 A/B/C 握手，无输出反压。
 module dp_top_e #(
   parameter integer K_FP16   = `DP_DEFAULT_K,
@@ -132,6 +132,48 @@ module dp_top_e #(
       assign source_special[group_index*`DP_SPECIAL_W+:`DP_SPECIAL_W] = group_align_special;
     end
   endgenerate
+  // [S1-S4 C/控制传递] group 内执行前端计算；本层同拍传递 C 和请求旁带。
+
+  // [S1 寄存边界] 保存 C 原始编码和 valid/last，与前端同级数据同步推进。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s0_s1_valid (.clock(clock), .rst_n(rst_n), .in_d(req_fire), .out_q(valid_q[0]));
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s0_s1_last (.clock(clock), .rst_n(rst_n), .in_d(req_fire & in_last), .out_q(last_q[0]));
+  dp_lib_DFFE #(.WIDTH(`DP_FP32_W))
+  ff_s0_s1_c_raw (.clock(clock), .in_en(rst_n & req_fire), .in_d(in_c), .out_q(c_raw_q[0]));
+  // verilog_format: on
+
+  // [S2 寄存边界] 保存 C 原始编码和 valid/last，与前端同级数据同步推进。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s1_s2_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[0]), .out_q(valid_q[1]));
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s1_s2_last (.clock(clock), .rst_n(rst_n), .in_d(last_q[0]), .out_q(last_q[1]));
+  dp_lib_DFFE #(.WIDTH(`DP_FP32_W))
+  ff_s1_s2_c_raw (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d(c_raw_q[0]), .out_q(c_raw_q[1]));
+  // verilog_format: on
+
+  // [S3 寄存边界] 保存 C 原始编码和 valid/last，与前端同级数据同步推进。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s2_s3_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[1]), .out_q(valid_q[2]));
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s2_s3_last (.clock(clock), .rst_n(rst_n), .in_d(last_q[1]), .out_q(last_q[2]));
+  dp_lib_DFFE #(.WIDTH(`DP_FP32_W))
+  ff_s2_s3_c_raw (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(c_raw_q[1]), .out_q(c_raw_q[2]));
+  // verilog_format: on
+
+  // [S4 寄存边界] 保存 C 原始编码和 valid/last，与前端同级数据同步推进。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s3_s4_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[2]), .out_q(valid_q[3]));
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s3_s4_last (.clock(clock), .rst_n(rst_n), .in_d(last_q[2]), .out_q(last_q[3]));
+  dp_lib_DFFE #(.WIDTH(`DP_FP32_W))
+  ff_s3_s4_c_raw (.clock(clock), .in_en(rst_n & valid_q[2]), .in_d(c_raw_q[2]), .out_q(c_raw_q[3]));
+  // verilog_format: on
+
   wire c_negative_d;
   wire [`DP_FP32_W-1:0] c_magnitude_d;
   wire signed [ANCHOR_W-1:0] c_anchor_d;
@@ -155,6 +197,25 @@ module dp_top_e #(
     .out_z(c_z_d),
     .out_special(c_special_d)
   );
+
+  // [S5 寄存边界] 捕获 C 解包 token 和请求旁带，供 S6 与 group token 一起对齐。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s4_s5_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[3]), .out_q(valid_q[4]));
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s4_s5_last (.clock(clock), .rst_n(rst_n), .in_d(last_q[3]), .out_q(last_q[4]));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s4_s5_c_negative (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(c_negative_d), .out_q(c_negative_q));
+  dp_lib_DFFE #(.WIDTH(`DP_FP32_W))
+  ff_s4_s5_c_magnitude (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(c_magnitude_d), .out_q(c_magnitude_q));
+  dp_lib_DFFE #(.WIDTH(ANCHOR_W))
+  ff_s4_s5_c_anchor (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(c_anchor_d), .out_q(c_anchor_q));
+  dp_lib_DFFE #(.WIDTH($clog2(`DP_FP32_W + 1)))
+  ff_s4_s5_c_z (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(c_z_d), .out_q(c_z_q));
+  dp_lib_DFFE #(.WIDTH(`DP_SPECIAL_W))
+  ff_s4_s5_c_special (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(c_special_d), .out_q(c_special_q));
+  // verilog_format: on
+
   assign source_magnitude[GROUPS*GLOBAL_MAG_W+:GLOBAL_MAG_W] = {
     c_magnitude_q, {(GLOBAL_MAG_W - `DP_FP32_W) {1'b0}}
   };
@@ -192,6 +253,23 @@ module dp_top_e #(
     .out_negative_zero(negative_zero_d),
     .out_special(special_d)
   );
+
+  // [S6 寄存边界] 捕获全局对齐叶子、共同 anchor 和特殊/零符号旁带。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s5_s6_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[4]), .out_q(valid_q[5]));
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s5_s6_last (.clock(clock), .rst_n(rst_n), .in_d(last_q[4]), .out_q(last_q[5]));
+  dp_lib_DFFE #(.WIDTH(N * GLOBAL_W))
+  ff_s5_s6_leaves (.clock(clock), .in_en(rst_n & valid_q[4]), .in_d(leaves_d), .out_q(leaves_q));
+  dp_lib_DFFE #(.WIDTH(ANCHOR_W))
+  ff_s5_s6_common_s6 (.clock(clock), .in_en(rst_n & valid_q[4]), .in_d(common_d), .out_q(common_s6_q));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s5_s6_negative_zero_s6 (.clock(clock), .in_en(rst_n & valid_q[4]), .in_d(negative_zero_d), .out_q(negative_zero_s6_q));
+  dp_lib_DFFE #(.WIDTH(`DP_SPECIAL_W))
+  ff_s5_s6_special_s6 (.clock(clock), .in_en(rst_n & valid_q[4]), .in_d(special_d), .out_q(special_s6_q));
+  // verilog_format: on
+
   wire signed [SUM_W-1:0] sum_d;
   wire signed [SUM_W-1:0] sum_q;
   // [S7 最终累加树] G 个组结果加 C，共 G+1 项；K4/K8/K16 对应 2/3/5 项。
@@ -203,6 +281,23 @@ module dp_top_e #(
     .in_values(leaves_q),
     .out_sum  (sum_d)
   );
+
+  // [S7 寄存边界] 捕获最终累加和及旁带，供 S8 舍入/特殊值选择。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s6_s7_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[5]), .out_q(valid_q[6]));
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s6_s7_last (.clock(clock), .rst_n(rst_n), .in_d(last_q[5]), .out_q(last_q[6]));
+  dp_lib_DFFE #(.WIDTH(SUM_W))
+  ff_s6_s7_sum (.clock(clock), .in_en(rst_n & valid_q[5]), .in_d(sum_d), .out_q(sum_q));
+  dp_lib_DFFE #(.WIDTH(ANCHOR_W))
+  ff_s6_s7_common_s7 (.clock(clock), .in_en(rst_n & valid_q[5]), .in_d(common_s6_q), .out_q(common_s7_q));
+  dp_lib_DFFE #(.WIDTH(1))
+  ff_s6_s7_negative_zero_s7 (.clock(clock), .in_en(rst_n & valid_q[5]), .in_d(negative_zero_s6_q), .out_q(negative_zero_s7_q));
+  dp_lib_DFFE #(.WIDTH(`DP_SPECIAL_W))
+  ff_s6_s7_special_s7 (.clock(clock), .in_en(rst_n & valid_q[5]), .in_d(special_s6_q), .out_q(special_s7_q));
+  // verilog_format: on
+
   wire [`DP_FP32_W-1:0] finite_result;
   // [S8 有限结果转换] 对 S7 总和做 abs/LZD/归一化和唯一一次 FP32 RNE。
   // NaN/invalid/Inf 的最终选择在输出 DFF 输入完成，不在这里伪装成普通有限值。
@@ -217,318 +312,22 @@ module dp_top_e #(
     .out_bits(finite_result)
   );
 
-  // [流水保存与输出] valid/last 每拍推进；数据仅在前一级 valid 有效时更新。
-  // 同步低有效 rst_n 清除控制并取消在途事务；无效 payload 可保持旧值。
-  // S1 在接收沿 n 捕获，S8 在 n+7 更新，外部在 n+8 沿前观察，L8/II=1。
-  // S0 -> S1: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s0_s1_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (req_fire),
-    .out_q(valid_q[0])
-  );
-  // S0 -> S1: last.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s0_s1_last (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (req_fire & in_last),
-    .out_q(last_q[0])
-  );
-  // S1 -> S2: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s1_s2_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[0]),
-    .out_q(valid_q[1])
-  );
-  // S1 -> S2: last.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s1_s2_last (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (last_q[0]),
-    .out_q(last_q[1])
-  );
-  // S2 -> S3: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s2_s3_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[1]),
-    .out_q(valid_q[2])
-  );
-  // S2 -> S3: last.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s2_s3_last (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (last_q[1]),
-    .out_q(last_q[2])
-  );
-  // S3 -> S4: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s3_s4_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[2]),
-    .out_q(valid_q[3])
-  );
-  // S3 -> S4: last.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s3_s4_last (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (last_q[2]),
-    .out_q(last_q[3])
-  );
-  // S4 -> S5: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s4_s5_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[3]),
-    .out_q(valid_q[4])
-  );
-  // S4 -> S5: last.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s4_s5_last (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (last_q[3]),
-    .out_q(last_q[4])
-  );
-  // S5 -> S6: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s5_s6_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[4]),
-    .out_q(valid_q[5])
-  );
-  // S5 -> S6: last.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s5_s6_last (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (last_q[4]),
-    .out_q(last_q[5])
-  );
-  // S6 -> S7: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s6_s7_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[5]),
-    .out_q(valid_q[6])
-  );
-  // S6 -> S7: last.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s6_s7_last (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (last_q[5]),
-    .out_q(last_q[6])
-  );
-  // S7 -> S8: valid.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s7_s8_valid (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (valid_q[6]),
-    .out_q(valid_q[7])
-  );
-  // S7 -> S8: last.
-  dp_lib_DFFRU #(
-    .WIDTH(1)
-  ) ff_s7_s8_last (
-    .clock(clock),
-    .rst_n(rst_n),
-    .in_d (last_q[6]),
-    .out_q(last_q[7])
-  );
-  // S0 -> S1: c_raw.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_FP32_W)
-  ) ff_s0_s1_c_raw (
-    .clock(clock),
-    .in_en(rst_n & req_fire),
-    .in_d (in_c),
-    .out_q(c_raw_q[0])
-  );
-  // S1 -> S2: c_raw.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_FP32_W)
-  ) ff_s1_s2_c_raw (
-    .clock(clock),
-    .in_en(rst_n & valid_q[0]),
-    .in_d (c_raw_q[0]),
-    .out_q(c_raw_q[1])
-  );
-  // S2 -> S3: c_raw.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_FP32_W)
-  ) ff_s2_s3_c_raw (
-    .clock(clock),
-    .in_en(rst_n & valid_q[1]),
-    .in_d (c_raw_q[1]),
-    .out_q(c_raw_q[2])
-  );
-  // S3 -> S4: c_raw.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_FP32_W)
-  ) ff_s3_s4_c_raw (
-    .clock(clock),
-    .in_en(rst_n & valid_q[2]),
-    .in_d (c_raw_q[2]),
-    .out_q(c_raw_q[3])
-  );
-  // S4 -> S5: c_negative.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s4_s5_c_negative (
-    .clock(clock),
-    .in_en(rst_n & valid_q[3]),
-    .in_d (c_negative_d),
-    .out_q(c_negative_q)
-  );
-  // S4 -> S5: c_magnitude.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_FP32_W)
-  ) ff_s4_s5_c_magnitude (
-    .clock(clock),
-    .in_en(rst_n & valid_q[3]),
-    .in_d (c_magnitude_d),
-    .out_q(c_magnitude_q)
-  );
-  // S4 -> S5: c_anchor.
-  dp_lib_DFFE #(
-    .WIDTH(ANCHOR_W)
-  ) ff_s4_s5_c_anchor (
-    .clock(clock),
-    .in_en(rst_n & valid_q[3]),
-    .in_d (c_anchor_d),
-    .out_q(c_anchor_q)
-  );
-  // S4 -> S5: c_z.
-  dp_lib_DFFE #(
-    .WIDTH($clog2(`DP_FP32_W + 1))
-  ) ff_s4_s5_c_z (
-    .clock(clock),
-    .in_en(rst_n & valid_q[3]),
-    .in_d (c_z_d),
-    .out_q(c_z_q)
-  );
-  // S4 -> S5: c_special.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_SPECIAL_W)
-  ) ff_s4_s5_c_special (
-    .clock(clock),
-    .in_en(rst_n & valid_q[3]),
-    .in_d (c_special_d),
-    .out_q(c_special_q)
-  );
-  // S5 -> S6: leaves.
-  dp_lib_DFFE #(
-    .WIDTH(N * GLOBAL_W)
-  ) ff_s5_s6_leaves (
-    .clock(clock),
-    .in_en(rst_n & valid_q[4]),
-    .in_d (leaves_d),
-    .out_q(leaves_q)
-  );
-  // S5 -> S6: common_s6.
-  dp_lib_DFFE #(
-    .WIDTH(ANCHOR_W)
-  ) ff_s5_s6_common_s6 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[4]),
-    .in_d (common_d),
-    .out_q(common_s6_q)
-  );
-  // S5 -> S6: negative_zero_s6.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s5_s6_negative_zero_s6 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[4]),
-    .in_d (negative_zero_d),
-    .out_q(negative_zero_s6_q)
-  );
-  // S5 -> S6: special_s6.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_SPECIAL_W)
-  ) ff_s5_s6_special_s6 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[4]),
-    .in_d (special_d),
-    .out_q(special_s6_q)
-  );
-  // S6 -> S7: sum.
-  dp_lib_DFFE #(
-    .WIDTH(SUM_W)
-  ) ff_s6_s7_sum (
-    .clock(clock),
-    .in_en(rst_n & valid_q[5]),
-    .in_d (sum_d),
-    .out_q(sum_q)
-  );
-  // S6 -> S7: common_s7.
-  dp_lib_DFFE #(
-    .WIDTH(ANCHOR_W)
-  ) ff_s6_s7_common_s7 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[5]),
-    .in_d (common_s6_q),
-    .out_q(common_s7_q)
-  );
-  // S6 -> S7: negative_zero_s7.
-  dp_lib_DFFE #(
-    .WIDTH(1)
-  ) ff_s6_s7_negative_zero_s7 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[5]),
-    .in_d (negative_zero_s6_q),
-    .out_q(negative_zero_s7_q)
-  );
-  // S6 -> S7: special_s7.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_SPECIAL_W)
-  ) ff_s6_s7_special_s7 (
-    .clock(clock),
-    .in_en(rst_n & valid_q[5]),
-    .in_d (special_s6_q),
-    .out_q(special_s7_q)
-  );
-  // S7 -> S8: out_d.
-  dp_lib_DFFE #(
-    .WIDTH(`DP_FP32_W)
-  ) ff_s7_s8_out_d (
-    .clock(clock),
-    .in_en(rst_n & valid_q[6]),
-    .in_d((special_s7_q[`DP_SP_NAN] | special_s7_q[`DP_SP_INVALID]) ?
-          `DP_FP32_QNAN : (special_s7_q[`DP_SP_POS_INF] | special_s7_q[`DP_SP_NEG_INF]) ?
-          (`DP_FP32_INF | {special_s7_q[`DP_SP_NEG_INF], {(`DP_FP32_W - 1) {1'b0}}}) :
-          finite_result),
-    .out_q(out_d)
-  );
+  // [S8 输出选择] 组合数值选择在 DFF 外明确表达，寄存器只保存选定结果。
+  wire [`DP_FP32_W-1:0] result_s8_d;
+  assign result_s8_d = (special_s7_q[`DP_SP_NAN] | special_s7_q[`DP_SP_INVALID]) ?
+    `DP_FP32_QNAN : (special_s7_q[`DP_SP_POS_INF] | special_s7_q[`DP_SP_NEG_INF]) ?
+    (`DP_FP32_INF | {special_s7_q[`DP_SP_NEG_INF], {(`DP_FP32_W - 1) {1'b0}}}) : finite_result;
+
+  // [S8 寄存边界] 捕获最终结果及 valid/last；L8/II=1，未新增寄存级。
+  // verilog_format: off
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s7_s8_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[6]), .out_q(valid_q[7]));
+  dp_lib_DFFRU #(.WIDTH(1))
+  ff_s7_s8_last (.clock(clock), .rst_n(rst_n), .in_d(last_q[6]), .out_q(last_q[7]));
+  dp_lib_DFFE #(.WIDTH(`DP_FP32_W))
+  ff_s7_s8_out_d (.clock(clock), .in_en(rst_n & valid_q[6]), .in_d(result_s8_d), .out_q(out_d));
+  // verilog_format: on
+
   // Elaboration constraints are validation only; no synthesized datapath/reset.
   // synthesis translate_off
   initial begin

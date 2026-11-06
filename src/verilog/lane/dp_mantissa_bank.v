@@ -146,8 +146,8 @@ module dp_mantissa_bank (
         .in_b(ll_b),
         .out_product(ll)
       );
-      // [乘积重构] T/FP16 使用 HH*2^(2L)+(HL+LH)*2^L+LL，保留完整 22 位产品。
-      // Q/E 的乘法叶是独立元素产品，不按分段权重相加；INT8 奇元素使用分段重构。
+      // [乘积重构] T/FP16 使用 HH*2^(2L)+(HL+LH)*2^L+LL，保留完整 22 位乘积。
+      // Q/E 的乘法叶是独立元素乘积，不按分段权重相加；INT8 奇元素使用分段重构。
       assign product_first = ((in_datatype == `DP_DT_TF32) | (in_datatype == `DP_DT_FP16)) ?
         (hh_extended << (2 * `DP_MUL_LO)) + ((hl_extended + lh_extended) << `DP_MUL_LO) +
         ll_extended : ((in_datatype == `DP_DT_BF16) | (in_datatype == `DP_DT_INT8) | (elements(

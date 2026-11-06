@@ -29,6 +29,8 @@ wire [GROUP_W-1:0] group_sum_q;
 
 模块参数列表每行写 `parameter integer NAME = ...`，项之间仍用逗号。内部变量、函数形参和数组同样不共享声明。初始化表达式/拼接中的逗号不属于多变量声明，不用简单“禁止逗号”的正则检查。
 
+DFF 例化采用紧凑两行：模块类型/参数一行，实例名与全部端口一行；该端口行豁免 100 列。连续 DFF 区块用成对 `verilog_format: off/on` 保护，避免格式化后重新展开。普通实例仍逐行连接。
+
 ## 命名与文件组织
 
 详细规则与允许的缩写/例外见 [dp-naming-convention](../../dp-naming-convention/SKILL.md)，此处只保留编码时的速查。
@@ -49,7 +51,7 @@ wire [GROUP_W-1:0] group_sum_q;
 
 `_d/_q` 表示状态角色，不能替代功能名；避免 `tmp1`、只叫 `sram_d` 或无含义的 `bus0`。`in_a/in_b/in_c` 是已定义的操作数角色，可以保留。`*_s3_d` 是即将存入 S3 的组合结果，`*_s3_q` 是 S3 寄存输出；实例 `ff_s2_s3_*` 明确其 S2→S3 边界。
 
-保持 `src/verilog/{top,group,lane,unpack,arithmetic,parameter}`；共享 DFF 后续落实到 `src/verilog/common/`，不复制 SN 的 box 目录。每个模块依次组织：功能/协议和 SIF 注释、参数/端口、局部参数、信号、组合计算、按 S1…S8 顺序的级间 DFF、输出连接。大型流水模块可按阶段重复“组合计算→DFF”，不要拆散相关逻辑。
+保持 `src/verilog/{top,group,lane,unpack,arithmetic,parameter}`；共享 DFF 后续落实到 `src/verilog/common/`，不复制 SN 的 box 目录。每个模块先写功能/协议和 SIF 注释、参数/端口与所需声明，然后按流水级重复“本级组合计算 → 本级 DFF 捕获 → 下一级使用”。valid/类型/符号等旁带随对应级放置，不把所有 DFF 按字段集中到文件末尾。
 
 ## 常量、接口打包与选择逻辑
 

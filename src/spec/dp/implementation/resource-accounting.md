@@ -1,4 +1,4 @@
-> 功能：定义可统计的功能模块边界；范围：当前 DP 的资源层级、面积/功耗归属、导出与后端报告映射；版本：v1.5.5；修改时间：2026-11-05 14:34:46 +08:00；对应代码：[Chisel](../../../chisel/README.md)、[手写 Verilog](../../../verilog/README.md)、[DC](../../../../hw/dc_syn/README.md)、[功耗](../../../../hw/power/README.md)（手写模块已建立，后端统计流程尚未接入）。
+> 功能：定义可统计的功能模块边界；范围：当前 DP 的资源层级、面积/功耗归属、导出与后端报告映射；版本：v1.5.6；修改时间：2026-11-06 13:54:29 +08:00；对应代码：[Chisel](../../../chisel/README.md)、[手写 Verilog](../../../verilog/README.md)、[DC](../../../../hw/dc_syn/README.md)、[功耗](../../../../hw/power/README.md)（手写模块已建立，后端统计流程尚未接入）。
 
 # 功能块边界与面积、功耗统计
 
@@ -15,10 +15,10 @@ T1H2Q4E8、T2H4Q8E16 和 H16Q32E64 是架构层级；下表为其内部应可识
 | c_transport | 顶层 / S1–S4 | 原始 C32 和必要控制传递；不复制到每个 lane/组 |
 | c_unpack | 顶层 / S5 | FP32 分类/幅值/指数或 INT32 sign/abs |
 | mantissa_mul_bank | lane / S2 | 两套 HH/HL/LH/LL 单元；子 ID 区分四个乘法器与部分积重构 |
-| exponent_add | lane / S2 | 各活动产品的指数和及选择 |
+| exponent_add | lane / S2 | 各活动乘积的指数和及选择 |
 | lane_exponent_max | lane / S2 | 有限非零候选 MAX |
 | group_exponent_max | 基本组 / S2 | 两 lane MAX 合并及回传，无新增寄存延迟 |
-| local_delta | lane / S3 | 公共 r 与产品指数的完整差值、饱和控制 |
+| local_delta | lane / S3 | 公共 r 与乘积指数的完整差值、饱和控制 |
 | local_align_shift | lane / S3 | 四个固定 W-bit 幅值逻辑右移器 |
 | e_pair_reduce | lane / S3 | E8→4 的符号求和、HiF4 0/1/2 精确移位 |
 | local_sign_convert | lane / S3 | 幅值移位后恢复补码；INT8 符号恢复 |

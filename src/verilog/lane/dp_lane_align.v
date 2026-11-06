@@ -1,9 +1,9 @@
 `include "dp_defs.vh"
-// 多精度 lane 的完整 S3 局部对齐：S2 产品/公共 anchor -> S3 补码叶子。
+// 多精度 lane 的完整 S3 局部对齐：S2 乘积/公共 anchor -> S3 补码叶子。
 // 纯组合，无 clock/reset/内部寄存器；dp_lane 在 ff_s2_s3_leaves 保存输出。
 // in_valid=0 时所有叶子为零。datatype/active/negative 必须属于同一笔 S2 数据。
 // 计算顺序：E 两项先求和 -> 幅值落入 LOCAL_W 窗口 -> RTZ 右移 -> 恢复符号。
-// T/H/Q 每路选一个产品；E 每路选两个产品；四路物理右移器被互斥格式复用。
+// T/H/Q 每路选一个乘积；E 每路选两个乘积；四路物理右移器被互斥格式复用。
 // LOCAL_W 是无符号窗口，LEAF_W=LOCAL_W+1 增加补码符号位，不增加小数精度。
 // P=LOCAL_W-2，I 不包含 S；下表为输出补码叶子，而非未对齐的原始乘积。
 // Precision                 | S | I  | F
@@ -70,7 +70,7 @@ module dp_lane_align #(
         in_datatype
       )) : 0;
       // 3. 公共 anchor 由本 group 两个 lane 在 S2 共同求 MAX；差值应非负。
-      // 零/特殊产品不参加浮点 MAX；MX/NV pair 与 INT8 的右移量为零。
+      // 零/特殊乘积不参加浮点 MAX；MX/NV pair 与 INT8 的右移量为零。
       assign delta = (select_pair & (in_datatype == `DP_DT_HIF4) & (pair_abs != 0)) ? in_anchor -
         in_exponents[(2*pair_index)*`DP_PRODUCT_EXP_W+:`DP_PRODUCT_EXP_W] : select_float ?
         in_anchor - in_exponents[pair_index*`DP_PRODUCT_EXP_W+:`DP_PRODUCT_EXP_W] : 0;

@@ -118,50 +118,22 @@ module dp_lane_unpack (
          0) : select_e ? e_classes : q_classes;
 
       // S0 -> S1: mantissa_q_atom.
-      dp_lib_DFFE #(
-        .WIDTH(`DP_HALF_W)
-      ) ff_s0_s1_mantissa_q_atom (
-        .clock(clock),
-        .in_en(rst_n & in_valid),
-        .in_d (mantissa_d),
-        .out_q(mantissa_q[atom_index])
-      );
+      // verilog_format: off
+      dp_lib_DFFE #(.WIDTH(`DP_HALF_W))
+      ff_s0_s1_mantissa_q_atom (.clock(clock), .in_en(rst_n & in_valid), .in_d(mantissa_d), .out_q(mantissa_q[atom_index]));
       // S0 -> S1: exponent_q_atom.
-      dp_lib_DFFE #(
-        .WIDTH(ATOM_E)
-      ) ff_s0_s1_exponent_q_atom (
-        .clock(clock),
-        .in_en(rst_n & in_valid),
-        .in_d (exponent_d),
-        .out_q(exponent_q[atom_index])
-      );
+      dp_lib_DFFE #(.WIDTH(ATOM_E))
+      ff_s0_s1_exponent_q_atom (.clock(clock), .in_en(rst_n & in_valid), .in_d(exponent_d), .out_q(exponent_q[atom_index]));
       // S0 -> S1: signs_q_atom.
-      dp_lib_DFFE #(
-        .WIDTH(ATOM_S)
-      ) ff_s0_s1_signs_q_atom (
-        .clock(clock),
-        .in_en(rst_n & in_valid),
-        .in_d (signs_d),
-        .out_q(signs_q[atom_index])
-      );
+      dp_lib_DFFE #(.WIDTH(ATOM_S))
+      ff_s0_s1_signs_q_atom (.clock(clock), .in_en(rst_n & in_valid), .in_d(signs_d), .out_q(signs_q[atom_index]));
       // S0 -> S1: classes_q_atom.
-      dp_lib_DFFE #(
-        .WIDTH(ATOM_S * `DP_NUM_CLASS_W)
-      ) ff_s0_s1_classes_q_atom (
-        .clock(clock),
-        .in_en(rst_n & in_valid),
-        .in_d (classes_d),
-        .out_q(classes_q[atom_index])
-      );
+      dp_lib_DFFE #(.WIDTH(ATOM_S * `DP_NUM_CLASS_W))
+      ff_s0_s1_classes_q_atom (.clock(clock), .in_en(rst_n & in_valid), .in_d(classes_d), .out_q(classes_q[atom_index]));
       // S0 -> S1: signaling_q_atom.
-      dp_lib_DFFE #(
-        .WIDTH(ATOM_S)
-      ) ff_s0_s1_signaling_q_atom (
-        .clock(clock),
-        .in_en(rst_n & in_valid),
-        .in_d (signaling_d),
-        .out_q(signaling_q[atom_index])
-      );
+      dp_lib_DFFE #(.WIDTH(ATOM_S))
+      ff_s0_s1_signaling_q_atom (.clock(clock), .in_en(rst_n & in_valid), .in_d(signaling_d), .out_q(signaling_q[atom_index]));
+      // verilog_format: on
 
     end
   endgenerate
