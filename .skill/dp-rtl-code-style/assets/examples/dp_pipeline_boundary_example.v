@@ -31,19 +31,17 @@ module dp_pipeline_boundary_example #(
   assign payload_s3_d = {in_sign, in_magnitude};
 
   // S2 -> S3 control: advance every edge, including bubbles; reset to invalid.
-  dp_dff_sync_reset #(
-    .WIDTH(1),
-    .RESET_VALUE(1'b0)
+  dp_lib_DFFRU #(
+    .WIDTH(1)
   ) ff_s2_s3_valid (
     .clock(clock),
     .rst_n(rst_n),
-    .in_en(1'b1),
     .in_d (valid_s3_d),
     .out_q(valid_s3_q)
   );
 
   // S2 -> S3 payload: save only a valid item, hold during reset and bubbles.
-  dp_dff_en #(
+  dp_lib_DFFE #(
     .WIDTH(PAYLOAD_W)
   ) ff_s2_s3_payload (
     .clock(clock),

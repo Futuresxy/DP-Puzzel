@@ -14,7 +14,7 @@ module dp_dff_sync_reset #(
 );
 
   always @(posedge clock) begin
-    if (!rst_n) begin
+    if (~rst_n) begin
       out_q <= RESET_VALUE;
     end else if (in_en) begin
       out_q <= in_d;
