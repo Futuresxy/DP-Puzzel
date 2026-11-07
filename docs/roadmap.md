@@ -1,5 +1,9 @@
 # 后续实施路线
 
+### 混合 DP 当前待评审项（2026-11-07）
+
+[三种低精度扩展草案](../src/spec/dp/dptop/mixed-precision-expansion.md) 已建立：四个多精度组加 2/4 个 E 组，或加四个 QE 组；QE lane/group 尚未实现。先评审 S5 兼容、参与掩码、双分支 MAX/求和和 L8 切分，再开发 CModel/RTL。原生 E96/E128、Q64 数据与精确数学 golden 在本轮独立准备，不代表混合硬件已验证。当前已实现/EDA 授权边界以根 AGENTS.md 和 [spec 索引](../src/spec/README.md) 为准；下文早期路线中的“尚无实现/不执行 EDA”是此前阶段记录。
+
 ## 当前路线：先完成新版整体 spec
 
 2026-11-04 用户明确旧 DP 设计过时，新设计在根目录 `src/` 展开，共用测试在根目录 `test/`。旧 Chisel 和相关记录保留在 Git 历史，不能作为新版的默认结构或通过证据。

@@ -11,6 +11,8 @@
 
 共用激励、调度、检查规则及报告，按实现选择后端。现用 Verilog 对 CModel 的实现一致性与相对数学参考的精度分别验收；SV 已冻结为历史参考，不再作为新功能的同步维护对象。具体合同由 spec 定义。
 
+混合 DP 架构讨论新增 E96/E128、Q64 共9610笔[逻辑向量及数学 golden](data/README.md#逻辑-k-扩展数据-dp_logical_vectors_v1)。它们使用独立 `inputs.jsonl` schema，CModel/RTL 尚未接入，不混入下面的既有10747笔回归。数据校验入口为 `python3.11 -m unittest discover -s test/tests -p test_logical_vectors.py -v`。
+
 生成结果放入 `test/runs/`（忽略提交）。CModel 和 RTL 各保留最近两次普通运行，重要证据与用户确认后标记保留。结果确认后按 [运行产物保留](../scripts/README.md#运行产物保留) 清理。设计 RTL 只读取 `hw/rtl/` 的显式导出，不在本目录复制另一份。DC 流程自身的校验测试位于 `hw/dc_syn/tests/`。
 
 ## 可执行入口

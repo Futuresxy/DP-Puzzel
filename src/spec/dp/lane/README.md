@@ -1,4 +1,4 @@
-> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.6.4；修改时间：2026-11-06 15:51:16 +08:00；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
+> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.6.5；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
 
 # lane：解包、元素乘法与局部规约
 
@@ -27,3 +27,7 @@
 ## 3. 阅读和验证边界
 
 解包 → 乘法路由 → 局部移位/规约 → [组求和与 scale](../group/README.md)。控制/有效拍以 [顶层接口](../dptop/interface.md) 和 [流水](../dptop/pipeline.md) 为准；S/I/F、特殊值及验证规则从 [DP 总索引](../README.md) 进入。E 专用候选必须建立新的内部 cutpoint 对照，保持兼容的组输出数值语义。
+
+## 4. QE 专用候选
+
+[dp_lane_qe.md](dp_lane_qe.md) 定义 Q4E8：仅保留四种 Q 与三种 E，S2 使用 8 个 4×4 乘法器（Q 激活四个），沿用多精度的 S3 局部对齐和 S4 lane 树，裁掉 T/H/INT8。候选 v1.7.0 待用户评审，尚未建立 QE 实现或验收；与 E-only 的窄树切分分别维护。

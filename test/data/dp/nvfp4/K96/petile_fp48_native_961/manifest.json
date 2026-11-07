@@ -1,0 +1,380 @@
+{
+  "schema": "dp_logical_vectors_v1",
+  "format": "nvfp4",
+  "datatype": 8,
+  "logical_k": 96,
+  "count": 961,
+  "dataset": "petile_fp48_native_961",
+  "source_logical_k": 96,
+  "extraction": "native",
+  "selected_element_range": [
+    0,
+    96
+  ],
+  "c_policy": "source C unchanged; add exactly once",
+  "group_elements": 16,
+  "group_count": 6,
+  "packed_widths": {
+    "a": 384,
+    "b": 384,
+    "c": 32,
+    "a_scale": 48,
+    "b_scale": 48,
+    "a_e1": 24,
+    "b_e1": 24,
+    "a_e2": 12,
+    "b_e2": 12
+  },
+  "segments": [
+    {
+      "name": "batch64_random",
+      "start": 0,
+      "count": 64,
+      "seed": 20267596,
+      "data_policy": "raw_prefix_of_petile_full16_fp416",
+      "scale_policy": "retain_parent_scale_slots_including_complete_HiF4_64_element_scale",
+      "c_policy": "same_transaction_C_as_parent"
+    },
+    {
+      "name": "batch128_mixed_random",
+      "start": 64,
+      "count": 128,
+      "seed": 20467596,
+      "data_policy": "raw_prefix_of_petile_full16_fp416",
+      "scale_policy": "retain_parent_scale_slots_including_complete_HiF4_64_element_scale",
+      "c_policy": "same_transaction_C_as_parent"
+    },
+    {
+      "name": "batch256_deepseek_ai_load",
+      "start": 192,
+      "count": 256,
+      "seed": 20260705,
+      "data_policy": "raw_prefix_of_petile_full16_fp416",
+      "scale_policy": "retain_parent_scale_slots_including_complete_HiF4_64_element_scale",
+      "c_policy": "same_transaction_C_as_parent"
+    },
+    {
+      "name": "batch512_ai_load",
+      "start": 448,
+      "count": 512,
+      "seed": 20260705,
+      "data_policy": "raw_prefix_of_petile_full16_fp416",
+      "scale_policy": "retain_parent_scale_slots_including_complete_HiF4_64_element_scale",
+      "c_policy": "same_transaction_C_as_parent"
+    },
+    {
+      "name": "ones",
+      "start": 960,
+      "count": 1,
+      "seed": null,
+      "data_policy": "raw_prefix_of_petile_full16_fp416",
+      "scale_policy": "retain_parent_scale_slots_including_complete_HiF4_64_element_scale",
+      "c_policy": "same_transaction_C_as_parent"
+    }
+  ],
+  "source_scale_indices_per_group": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "source_repository": {
+    "name": "Quant_LLM_Chip_Codesign",
+    "git_head": "5a5037ad03b656ea975ef594d0aca4dc5ef96a39",
+    "content_identity": "per-file SHA-256; HEAD alone does not identify generated corpus"
+  },
+  "source_root": "HW/tests/data/petile_test_data/petile_ratio",
+  "source_ratio": "petile_full16_fp48",
+  "sources": [
+    {
+      "case": "batch64_random",
+      "files": {
+        "meta.json": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/meta.json",
+          "sha256": "8caaa1e881a235d97e951f300059afe2d911db591fe67e1c110d31028d9fb0fe"
+        },
+        "a_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/a_data.txt",
+          "sha256": "12c9d051ffe148b734e05b302a564fd2daa975b28aa612404b8764a2aa0f16cc"
+        },
+        "b_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/b_data.txt",
+          "sha256": "d953138457ba2cb7d9a14c1e34e7a952754eb6181c591bf03e150dfedd5acaf6"
+        },
+        "a_scale.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/a_scale.txt",
+          "sha256": "5cfc13909ffbf85e5ff451d16353a6355ae8f51612dc785a1d460d338e57d114"
+        },
+        "b_scale.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/b_scale.txt",
+          "sha256": "e8732d7f4a737c53bc335342325d488ab187ae833529085d2cad5fabf59fd407"
+        },
+        "a_sf_group0.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/a_sf_group0.txt",
+          "sha256": "112ed37e878bb7a92424522ac1e7f6603e42ffc32572d1f85a3796e231852504"
+        },
+        "b_sf_group0.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/b_sf_group0.txt",
+          "sha256": "112ed37e878bb7a92424522ac1e7f6603e42ffc32572d1f85a3796e231852504"
+        },
+        "a_sf_group1.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/a_sf_group1.txt",
+          "sha256": "ddac0e8dd6391c51eea69ec3336ccf73dce55a05aa279db6078767c90ac8eeed"
+        },
+        "b_sf_group1.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/b_sf_group1.txt",
+          "sha256": "ddac0e8dd6391c51eea69ec3336ccf73dce55a05aa279db6078767c90ac8eeed"
+        },
+        "c_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/c_data.txt",
+          "sha256": "cd462ce2ff05726d741c5d62fdedc9b56c45ca6bdb431dfbfd0affb85c183e6e"
+        },
+        "golden_result_bits.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/golden_result_bits.txt",
+          "sha256": "77f659a561aff485e6b5a6deda7f0ad6d390aba112aa34561097f26036cf1a3a"
+        },
+        "golden_result_value.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch64_random/golden_result_value.txt",
+          "sha256": "32218dd55ab69a81c53bb19a7145772eea9f37f366a036ab9623474f0dd50679"
+        }
+      }
+    },
+    {
+      "case": "batch128_mixed_random",
+      "files": {
+        "meta.json": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/meta.json",
+          "sha256": "0088eb901000911d3ef7bbbf8033513ffa1c2332078cead20cfff71d1cd513a6"
+        },
+        "a_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/a_data.txt",
+          "sha256": "776bee2ab31e54fd7c1ea72feafe454b827d3b4f608282b111a4ea11973f7bcb"
+        },
+        "b_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/b_data.txt",
+          "sha256": "e1fb2b85dd8689dbcddff73032bc4cc1f2fa773df1f36923ad7711b5a6809f04"
+        },
+        "a_scale.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/a_scale.txt",
+          "sha256": "41ae5236ed6bc9438df45180d4476e06f44851ce101f8bb99983ba908e6d32f7"
+        },
+        "b_scale.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/b_scale.txt",
+          "sha256": "e4838e42c57ebfbb0d9650291777bf7d958a2922e3a7fa31a46449f0dfa6d8dd"
+        },
+        "a_sf_group0.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/a_sf_group0.txt",
+          "sha256": "ace7969c7426a309a3a1986cd1638f9e88bf46caf188a2268d8828b2476c18a1"
+        },
+        "b_sf_group0.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/b_sf_group0.txt",
+          "sha256": "ace7969c7426a309a3a1986cd1638f9e88bf46caf188a2268d8828b2476c18a1"
+        },
+        "a_sf_group1.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/a_sf_group1.txt",
+          "sha256": "112ed37e878bb7a92424522ac1e7f6603e42ffc32572d1f85a3796e231852504"
+        },
+        "b_sf_group1.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/b_sf_group1.txt",
+          "sha256": "112ed37e878bb7a92424522ac1e7f6603e42ffc32572d1f85a3796e231852504"
+        },
+        "c_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/c_data.txt",
+          "sha256": "409d639b0daeb4f5ab704050ce5a093c5a60d598a213193ad2fa3117d88a3674"
+        },
+        "golden_result_bits.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/golden_result_bits.txt",
+          "sha256": "f8446f3826af143a57f573004e2d89a8963aad31fbc9ed2a5cc6e79511996aee"
+        },
+        "golden_result_value.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch128_mixed_random/golden_result_value.txt",
+          "sha256": "00cf10c7f6efaed0971becdfe2ddb0db8ccebad0c31ee81735505342f9b49179"
+        }
+      }
+    },
+    {
+      "case": "batch256_deepseek_ai_load",
+      "files": {
+        "meta.json": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/meta.json",
+          "sha256": "ab88eb243249b45d256ae1de7aa28775a7802dbeda6167e5a2c19c8172b6a0bd"
+        },
+        "a_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/a_data.txt",
+          "sha256": "0ef3d7f4d6a6029c930b034f0b00ccf7b91ab7bb56adce32e117b7e0ba68354b"
+        },
+        "b_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/b_data.txt",
+          "sha256": "d6efad3eb701761e8e401cdbd100b077c0075a7d50cc93bd111469d855030839"
+        },
+        "a_scale.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/a_scale.txt",
+          "sha256": "8bffa0a2c5f95c7677dd57007316d92854625dae0cea6a85b7a18a4ffd1c346d"
+        },
+        "b_scale.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/b_scale.txt",
+          "sha256": "ca5521d2bebd34c6743ed71085f14b7c0d06c157c825e46de1fb2a1e94696aac"
+        },
+        "a_sf_group0.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/a_sf_group0.txt",
+          "sha256": "0027215b1bdfd36f6b79a9352b8c97e791b68a8e6f2ca0691a5ef1de27a5ab33"
+        },
+        "b_sf_group0.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/b_sf_group0.txt",
+          "sha256": "0027215b1bdfd36f6b79a9352b8c97e791b68a8e6f2ca0691a5ef1de27a5ab33"
+        },
+        "a_sf_group1.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/a_sf_group1.txt",
+          "sha256": "ace7969c7426a309a3a1986cd1638f9e88bf46caf188a2268d8828b2476c18a1"
+        },
+        "b_sf_group1.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/b_sf_group1.txt",
+          "sha256": "ace7969c7426a309a3a1986cd1638f9e88bf46caf188a2268d8828b2476c18a1"
+        },
+        "c_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/c_data.txt",
+          "sha256": "d98887917122f32af8904d8ddf0e16ff39b88ee09ae0311f0d4da18e872e9f45"
+        },
+        "golden_result_bits.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/golden_result_bits.txt",
+          "sha256": "d3b5715cf7dddb9f39073dc5bb6dcc3a3b6b5f5a3a905a8310c44daf4b786063"
+        },
+        "golden_result_value.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch256_deepseek_ai_load/golden_result_value.txt",
+          "sha256": "a1cf3e6b0662bbe30333ff62d5b867718376fb87e02a9e7b97b6bc8fc183f494"
+        }
+      }
+    },
+    {
+      "case": "batch512_ai_load",
+      "files": {
+        "meta.json": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/meta.json",
+          "sha256": "f20c03d110602389f7f7f9d761efaff785d564720f49aeaa44f93c2e413b7310"
+        },
+        "a_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/a_data.txt",
+          "sha256": "662acd7d540e7a9f6962d05a5c70cd0cb9c3d76412aeb5714edeb63f8ed6e5bf"
+        },
+        "b_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/b_data.txt",
+          "sha256": "f0da8509a98624c1ffafeb117224124900ddc478d3ff02d4a1020995c4b8713f"
+        },
+        "a_scale.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/a_scale.txt",
+          "sha256": "9cbbe58870bcdc2f8a377cf5f8fe4e3f4ebf53d2db17db94d2b2d21279a2952e"
+        },
+        "b_scale.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/b_scale.txt",
+          "sha256": "4e85062232eb55aa14a2ac02ebf3168f96da4640a74a406d38a9853c75bb0af0"
+        },
+        "a_sf_group0.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/a_sf_group0.txt",
+          "sha256": "046d4956f22b0651b0e478f599b232e684c74499e142276a3d39dd8faaa70338"
+        },
+        "b_sf_group0.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/b_sf_group0.txt",
+          "sha256": "046d4956f22b0651b0e478f599b232e684c74499e142276a3d39dd8faaa70338"
+        },
+        "a_sf_group1.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/a_sf_group1.txt",
+          "sha256": "0027215b1bdfd36f6b79a9352b8c97e791b68a8e6f2ca0691a5ef1de27a5ab33"
+        },
+        "b_sf_group1.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/b_sf_group1.txt",
+          "sha256": "0027215b1bdfd36f6b79a9352b8c97e791b68a8e6f2ca0691a5ef1de27a5ab33"
+        },
+        "c_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/c_data.txt",
+          "sha256": "b5be696818e8f082acf94a1a42cbb9077bf31e369d502f4a5703544e4f1822cf"
+        },
+        "golden_result_bits.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/golden_result_bits.txt",
+          "sha256": "7d734776ec56b15047d2afa2f0222f2dcccba06314de2ca8ea289204a8a9ec78"
+        },
+        "golden_result_value.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/batch512_ai_load/golden_result_value.txt",
+          "sha256": "f55dd17db2d43451a1342ac2aaba006abfd35c3eda6b161078a3fa6778076630"
+        }
+      }
+    },
+    {
+      "case": "ones",
+      "files": {
+        "meta.json": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/meta.json",
+          "sha256": "692752ad8bb08392b14b1463557dc8be0f5bc04868999c25bbff823f80feee9a"
+        },
+        "a_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/a_data.txt",
+          "sha256": "82dfb05a1eb1323e1fc11304e35fb660a4c80f99967207035755dfc8ece21c40"
+        },
+        "b_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/b_data.txt",
+          "sha256": "82dfb05a1eb1323e1fc11304e35fb660a4c80f99967207035755dfc8ece21c40"
+        },
+        "a_scale.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/a_scale.txt",
+          "sha256": "2d1c02ded92ed01903bb3f306a7bc989fec64ba0b0a0395f997a2d873b3e5093"
+        },
+        "b_scale.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/b_scale.txt",
+          "sha256": "2d1c02ded92ed01903bb3f306a7bc989fec64ba0b0a0395f997a2d873b3e5093"
+        },
+        "a_sf_group0.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/a_sf_group0.txt",
+          "sha256": "69c4bc4fd1640d18c3d0c651e941472be364a6f21f64a64efa4d059a0a626091"
+        },
+        "b_sf_group0.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/b_sf_group0.txt",
+          "sha256": "69c4bc4fd1640d18c3d0c651e941472be364a6f21f64a64efa4d059a0a626091"
+        },
+        "a_sf_group1.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/a_sf_group1.txt",
+          "sha256": "f7db4361a098963dd8d7a9f015ce6d22113175e68c738fd6300347f6b0b8614c"
+        },
+        "b_sf_group1.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/b_sf_group1.txt",
+          "sha256": "f7db4361a098963dd8d7a9f015ce6d22113175e68c738fd6300347f6b0b8614c"
+        },
+        "c_data.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/c_data.txt",
+          "sha256": "8b9bcb40666b64ba21309be21992dabc74627823e313902281aac0dfb699b4f5"
+        },
+        "golden_result_bits.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/golden_result_bits.txt",
+          "sha256": "5ccb06c76d757edbc3d1fbbbc1df330d3898577aaecd0a0f4bcf7bba44345aea"
+        },
+        "golden_result_value.txt": {
+          "path": "HW/tests/data/petile_test_data/petile_ratio/petile_full16_fp48/nvfp4/ones/golden_result_value.txt",
+          "sha256": "969eeff1eaac226a228cc61503effa46ea87d872ef3174365befc7c36ffa3c48"
+        }
+      }
+    }
+  ],
+  "mathematical_reference": "Fraction exact dequantized dot+C; one FP32 RNE conversion",
+  "mathematical_reference_sources": {
+    "test/reference/exact.py": "0a778dd2a901e0e9322e796635b2abe1a5c0bc9e77c989f7ce8274f14533bd96",
+    "test/reference/logical.py": "8216cdca313aa21a43def1ae20ee531ca4457762aa3499699a59fc93fa4aa240",
+    "test/adapters/logical.py": "814dfee3d78ec89349ec1c7fa3af08749bac57f84cbfea8b38ea7baf67da69c9",
+    "test/cases/import_petile_ratio.py": "8988feaa6fa6b4c7f3104e2fd8a41bcf5040ab04fb3bd108a1e31ed47e386769"
+  },
+  "cmodel_status": "not_implemented",
+  "rtl_status": "not_implemented",
+  "ppa_eligible": false,
+  "source_golden_model": "fp64_dequant_dot_plus_c_v1",
+  "source_full_k_audit": {
+    "count": 961,
+    "bit_exact": 961,
+    "finite_max_ulp": 0,
+    "nonfinite_mismatches": 0
+  },
+  "input_layout": "test/data/README.md#逻辑-k-扩展数据-dp_logical_vectors_v1",
+  "files_sha256": {
+    "inputs.jsonl": "56589e7d5d6e3832b57d2b96fe6176e0addada35e7b9e1f120493b88e4ec9e2b",
+    "expected.jsonl": "9386e685995f757c997e7632364dce0e81e10c66f4243d31b1ecbe8388a8a54a",
+    "source_reference.jsonl": "6e83ab01dca7e2170cf628081e3004a355e813ed9f09b92f4ced6c91f5ef49a1"
+  }
+}

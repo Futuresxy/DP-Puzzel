@@ -1,4 +1,4 @@
-> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.6；修改时间：2026-11-06 12:09:37 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.6.5；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 多精度 DP / Cube 设计规范
 
@@ -17,6 +17,7 @@
 | 运行与评估模型 | [CModel 合同](dp/implementation/cmodel.md) · [构建入口](../cmodel/README.md) · [测试报告](../../test/results/cmodel-v1.4.md) |
 | 手写 RTL | [实现合同](dp/implementation/verilog.md) · [源码](../verilog/README.md) · [验证报告](../../test/results/verilog-v1.4.md) |
 | 讨论 E 类专用 DP | [E8 lane](dp/lane/dp_lane_E.md) · [E16 group 与 FP32 后端接入](dp/group/dp_group_E.md)（e2 定点融合、兼容 group 输出；E CModel / RTL 已实现并验证） |
+| 评审低精度算力扩展 | [混合 E96/E128/Q64E128 顶层](dp/dptop/mixed-precision-expansion.md) · [QE lane](dp/lane/dp_lane_qe.md) · [QE group](dp/group/dp_group_qe.md)（v1.7.0 候选，未实现） |
 | 准备 PPA | [参数](06-configuration.md) · [验证](07-verification.md) · [实现与 PPA](08-implementation-ppa.md) · [功能块统计](dp/implementation/resource-accounting.md) |
 
 ## 2. 设计摘要
@@ -32,7 +33,9 @@
 | 资源选择 | S5 分离符号与幅值，NVFP4/HiF4 共用 14×8 无符号 scale 乘法；S5 LZD 仅计数，S6 一次双向移位 |
 | 目标 | 1.41 GHz；满足精度与吞吐后，功耗优先、面积其次 |
 
-已有 CModel 证据不代表 RTL、频率或 PPA 通过。25 位局部小数保留已落实；FP4 35 位 / HiF4 约 37 位目标的整体误差判据仍需继续评估。
+验证与 PPA 结论需按实现快照分别引用；默认 LOCAL_W=28，对 Q 乘积局部窗口 P=26，其他模式依逐级 S/I/F 表解释；FP4 35 位 / HiF4 约 37 位目标的整体误差判据仍需继续评估。
+
+混合组扩展草案保持 T/H 容量，分别扩 E 到 K96/K128、Q 到 K64。该候选的源数、参与掩码与求和增长位另行定义；当前已实现配置表不因此扩展。
 
 ## 3. 文档约定
 

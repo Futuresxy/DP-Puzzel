@@ -1,8 +1,8 @@
-> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
+> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.6.5；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
 
 # DP 规格导航
 
-当前多精度主实现为 T8H16Q32E64、L8、II=1，默认局部/全局窗口 28/40；每笔完成 scaled_dot(A,B)+C，无跨请求累加状态。当前架构 v1.5，实现映射 v1.5.1。本文档目录调整不改变算术、接口、流水或验证结论。
+当前多精度主实现为 T8H16Q32E64、L8、II=1，默认局部/全局窗口 28/40；每笔完成 scaled_dot(A,B)+C，无跨请求累加状态。当前有效架构 v1.6，实现映射 v1.6.4；本次索引修订为 v1.6.5，不改变已实现的算术、接口或验证结论。
 
 ## 1. 按模块查找
 
@@ -22,12 +22,14 @@ dp/
 │   ├── unpack.md
 │   ├── multiplier-sharing.md
 │   ├── shifter-sharing.md
-│   └── dp_lane_E.md
+│   ├── dp_lane_E.md
+│   └── dp_lane_qe.md
 ├── group/
 │   ├── README.md
 │   ├── shared-align.md
 │   ├── scale.md
-│   └── dp_group_E.md
+│   ├── dp_group_E.md
+│   └── dp_group_qe.md
 ├── dptop/
 │   ├── README.md
 │   ├── module-hierarchy.md
@@ -36,7 +38,8 @@ dp/
 │   ├── control.md
 │   ├── pipeline.md
 │   ├── global-align.md
-│   └── independent-align.md
+│   ├── independent-align.md
+│   └── mixed-precision-expansion.md
 ├── common/             # 跨层数值合同
 ├── implementation/     # 模型、RTL 验证与资源统计
 └── draw.io/            # 架构图源码
@@ -72,3 +75,9 @@ A/B 同格式，合法请求可逐拍换型；last 只透传，无输出背压�
 将多精度与 E 专用组织为同一设计族：共用基础库，lane/group 内区分 multi/e，dptop 复用后端并按静态 profile 装配。当前模块目录保持功能分层；变体增加后可在 lane/group 内分别建立 multi/e 子目录，共用数值合同与 scale/后端说明只维护一份，各类型文档记录自身的数据通路、S/I/F、周期和适用范围。
 
 建议的配置、能力矩阵及组合边界见 [模块层级第 9 节](dptop/module-hierarchy.md#9-dp-设计族的工程组织建议)，源码目标布局分别见 [RTL](implementation/verilog.md#6-分类型模块与组合配置建议) 与 [CModel](implementation/cmodel.md#7-与-rtl-对应的设计族组织建议)。CModel 已新增 lane/lane_e.cpp、group/group_e.cpp，抽取 top/backend.cpp，接入 src/configs/dp/e64.json；RTL 增加 dp_lane_e/dp_group_e/dp_top_e 和 files_e.f；原多精度顶层保留，通用混合组配置仍是讨论稿。默认多精度请求和数值接口保持兼容。
+
+## 6. 混合组扩展：待评审 v1.7.0
+
+[混合顶层草案](dptop/mixed-precision-expansion.md) 定义保留四个多精度组后，新增 2/4 个 E 组形成 T8H16Q32E96/E128，或新增四个 [QE group](group/dp_group_qe.md) / [QE lane](lane/dp_lane_qe.md) 形成 T8H16Q64E128。后端按请求屏蔽扩展支的 MAX、移位、求和与特殊值，保持单次 C 和 L8/II=1。
+
+本轮只生成架构文档、导入原生 K96/K128 E 与 K64 Q 数据并计算独立数学 golden；新 QE/混合 CModel、RTL 和 PPA 尚未实施。候选 v1.7.0 不替代当前 v1.6 合同。

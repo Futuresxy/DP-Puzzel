@@ -1,4 +1,4 @@
-> 功能：定义 DP 顶层规格目录与后端边界；范围：请求/分发、C、S6 全局对齐、S7 规约、S8 输出和 E64 接入；版本：v1.5.8；修改时间：2026-11-05 21:34:01 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_global_align.v](../../../verilog/top/dp_global_align.v)、[dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v)、[共用 CModel 后端](../../../cmodel/lib/top/backend.cpp)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)；Chisel 尚未实现。
+> 功能：定义 DP 顶层规格目录与后端边界；范围：请求/分发、C、S6 全局对齐、S7 规约、S8 输出和 E64 接入；版本：v1.6.5；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_global_align.v](../../../verilog/top/dp_global_align.v)、[dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v)、[共用 CModel 后端](../../../cmodel/lib/top/backend.cpp)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)；Chisel 尚未实现。
 
 # dptop：接口、全局对齐与输出
 
@@ -35,3 +35,9 @@ E-only 接入口限制合法格式为 MXFP4/NVFP4/HiF4、C/D 为 FP32；HiF4 新
 ## 4. 候选与验证入口
 
 [独立整体对齐](independent-align.md) 为后续另一架构候选，不能混入当前主实现。[实现映射](../implementation/verilog.md)、[CModel](../implementation/cmodel.md) 和 [资源统计](../implementation/resource-accounting.md) 统一追踪各层源码、快照、验证和 PPA 来源。架构图仍保留在 [draw.io](../draw.io/dp_arch.drawio)。
+
+## 5. 混合低精度扩展候选
+
+[混合顶层草案](mixed-precision-expansion.md) 定义 dp_top_e96、dp_top_e128、dp_top_Q64e128。基础四组和新增 E/QE 分支共用 S5 token；S6 先合并带参与资格的指数 MAX，再逐源对齐；S7 分支求和，高精度旁路扩展合并，S8 只做一次最终编码。N=7/9 时默认总和宽为 43/44，保持 L8/II=1。源参与、有限非零、特殊值与负零分别处理，避免闲置 token 污染结果。
+
+本稿 v1.7.0 待评审，当前顶层与上述接口表仍对应既有已实现设计；独立数学数据准备不构成新 RTL 验收。
