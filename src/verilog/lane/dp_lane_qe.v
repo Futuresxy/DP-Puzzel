@@ -21,7 +21,7 @@
 // MXFP4 / NVFP4      | 1 | 9  | P-5
 // HiF4               | 1 | 7  | P-3
 // 阅读顺序 / 功能边界：
-// S1 u_lane_unpack 保存紧凑尾数/指数/符号；内部在 S2 配对归约特殊分类。
+// S1 解包保存紧凑幅值/指数；优化版在 S1 前配对分类，原版在 S1 后配对。
 // S2 u_mantissa_mul_bank 产生幅值乘积，同一 bank 的指数和/MAX 同时准备对齐坐标。
 // S3 u_local_alignment 完成 pair/落位/RTZ/符号恢复；S4 u_lane_sop_tree 规约。
 // r1/r2/r3/r4 前缀明确寄存级；_d 表示本级组合计算、等待捕获的结果。
@@ -29,6 +29,8 @@
 // 层内没有独立 ready；两 lane 的公共 MAX 在同拍组合完成，随乘积一起进入 S2。
 // verilog_format: off
 module dp_lane_qe #(
+  // 静态选择紧凑 QE 解包；默认保留原实现供独立对照。
+  parameter integer COMPACT_UNPACK = 0,
   // S3 局部幅值对齐窗口宽度；默认 28 位，Q 的小数位数为 LOCAL_W-2。
   parameter integer LOCAL_W    = `DP_DEFAULT_LOCAL_W,
   // S3 补码叶子宽度：在 LOCAL_W 位无符号幅值之外增加一个符号位。
@@ -99,7 +101,7 @@ module dp_lane_qe #(
   wire [`DP_UNPACK_MANT_W-1:0]             unpack_mantissa_mul_a_mantissas;
   // B 尾数的槽位与 A 一一对应，符号独立于无符号幅值。
   wire [`DP_UNPACK_MANT_W-1:0]             unpack_mantissa_mul_b_mantissas;
-  // A 指数为两个 E10 atom，H 取低 8 位、Q 取两个 5 位、HiF4 取 e2。
+  // A 指数为两个 E10 atom；Q 取两个 5 位，HiF4 取 e2，MX/NV 为零。
   wire [`DP_UNPACK_EXP_W-1:0]              unpack_exponent_add_a_exponents;
   // B 紧凑指数，与 A 使用同一格式和位片映射。
   wire [`DP_UNPACK_EXP_W-1:0]              unpack_exponent_add_b_exponents;
@@ -162,31 +164,58 @@ module dp_lane_qe #(
   // verilog_format: on
   // [S1 解包 / S2 分类] A/B 共用一个入口，各自保存 M32/E20/S8 及分类。
   // unpack 只做一次编码译码；bank 只选择紧凑字段，不重新解码 hidden bit/特殊值。
-  // 分类在 unpack 内按 A/B 对应元素配对再归约，仍由本模块 S2 DFF 捕获。
+  // 原版在 S1 后配对；优化版 S1 已捕获摘要，两者均由本模块 S2 DFF 同拍捕获。
   // 原始 A/B 符号输出在本层无需使用，乘积符号及 all_negative 已由 unpack 生成。
-  dp_lane_unpack #(.QE_ONLY(1)) u_lane_unpack (
-    .clock                  (clock),
-    .rst_n                  (rst_n),
-    .in_valid               (in_valid),
-    .in_datatype            (in_datatype),
-    .in_registered_datatype (r1_datatype),
-    .in_a                   (in_a),
-    .in_b                   (in_b),
-    .in_e1_a                (in_e1_a),
-    .in_e1_b                (in_e1_b),
-    .in_e2_a                (in_e2_a),
-    .in_e2_b                (in_e2_b),
-    .out_a_mantissas        (unpack_mantissa_mul_a_mantissas),
-    .out_b_mantissas        (unpack_mantissa_mul_b_mantissas),
-    .out_a_exponents        (unpack_exponent_add_a_exponents),
-    .out_b_exponents        (unpack_exponent_add_b_exponents),
-    .out_a_signs            (unpack_lane_a_signs),
-    .out_b_signs            (unpack_lane_b_signs),
-    .out_product_negative   (product_negative_d),
-    .out_product_active     (product_active_d),
-    .out_special            (lane_special_flags_d),
-    .out_all_negative       (all_products_negative_d)
-  );
+  generate
+    if (COMPACT_UNPACK != 0) begin : g_compact_unpack
+      dp_lane_unpack_qe u_lane_unpack (
+        .clock                  (clock),
+        .rst_n                  (rst_n),
+        .in_valid               (in_valid),
+        .in_datatype            (in_datatype),
+        .in_a                   (in_a),
+        .in_b                   (in_b),
+        .in_e1_a                (in_e1_a),
+        .in_e1_b                (in_e1_b),
+        .in_e2_a                (in_e2_a),
+        .in_e2_b                (in_e2_b),
+        .out_a_mantissas        (unpack_mantissa_mul_a_mantissas),
+        .out_b_mantissas        (unpack_mantissa_mul_b_mantissas),
+        .out_a_exponents        (unpack_exponent_add_a_exponents),
+        .out_b_exponents        (unpack_exponent_add_b_exponents),
+        .out_product_negative   (product_negative_d),
+        .out_product_active     (product_active_d),
+        .out_special            (lane_special_flags_d),
+        .out_all_negative       (all_products_negative_d)
+      );
+      assign unpack_lane_a_signs = {`DP_UNPACK_SIGN_W{1'b0}};
+      assign unpack_lane_b_signs = {`DP_UNPACK_SIGN_W{1'b0}};
+    end else begin : g_reference_unpack
+      dp_lane_unpack #(.QE_ONLY(1)) u_lane_unpack (
+        .clock                  (clock),
+        .rst_n                  (rst_n),
+        .in_valid               (in_valid),
+        .in_datatype            (in_datatype),
+        .in_registered_datatype (r1_datatype),
+        .in_a                   (in_a),
+        .in_b                   (in_b),
+        .in_e1_a                (in_e1_a),
+        .in_e1_b                (in_e1_b),
+        .in_e2_a                (in_e2_a),
+        .in_e2_b                (in_e2_b),
+        .out_a_mantissas        (unpack_mantissa_mul_a_mantissas),
+        .out_b_mantissas        (unpack_mantissa_mul_b_mantissas),
+        .out_a_exponents        (unpack_exponent_add_a_exponents),
+        .out_b_exponents        (unpack_exponent_add_b_exponents),
+        .out_a_signs            (unpack_lane_a_signs),
+        .out_b_signs            (unpack_lane_b_signs),
+        .out_product_negative   (product_negative_d),
+        .out_product_active     (product_active_d),
+        .out_special            (lane_special_flags_d),
+        .out_all_negative       (all_products_negative_d)
+      );
+    end
+  endgenerate
 
   // [S1 寄存边界] 保存 valid/类型，与解包模块内的 S1 幅值、指数和符号同拍。
   // verilog_format: off

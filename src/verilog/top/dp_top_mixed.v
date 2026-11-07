@@ -22,6 +22,8 @@
 // 按各级组合计算 -> ff_sN_sM_* 捕获 -> 下一级使用的顺序阅读。
 // 基础组接收 req_fire；扩展组仅接收匹配 Q/E 类型的请求。外部只做一次原子握手。
 module dp_top_mixed #(
+  // 独立优化顶层启用：紧凑 QE 解包与扩展源浮点专用落位，基础组不变。
+  parameter integer OPTIMIZE_QE = 0,
   // 高精度基线并行度，混合顶层固定为 16。
   parameter integer K_FP16 = `DP_DEFAULT_K,
   // S3 局部幅值对齐窗口，改变时下游 lane/group 位宽同步推导。
@@ -233,6 +235,7 @@ module dp_top_mixed #(
         );
       end else if (EXT_QE != 0) begin : g_qe
         dp_group_qe #(
+            .COMPACT_UNPACK(OPTIMIZE_QE),
             .LOCAL_W (LOCAL_W),
             .ANCHOR_W(ANCHOR_W)
         ) u_group_unit (
@@ -282,9 +285,15 @@ module dp_top_mixed #(
             .out_special      (group_align_special)
         );
       end
-      assign source_magnitude[group_index*GLOBAL_MAG_W+:GLOBAL_MAG_W] = r5_c_datatype ?
-        (({{(GLOBAL_MAG_W - GROUP_MAG_W) {1'b0}}, group_align_magnitude} >> INT_GROUP_F) <<
-         INT_GLOBAL_F) : {group_align_magnitude, {(GLOBAL_MAG_W - GROUP_MAG_W) {1'b0}}};
+      if ((OPTIMIZE_QE != 0) & (group_index >= BASE_GROUPS)) begin : g_float_extension_layout
+        // 扩展组从不参与整数请求；只补浮点低零，参与掩码仍在后端生效。
+        assign source_magnitude[group_index*GLOBAL_MAG_W+:GLOBAL_MAG_W] =
+            {group_align_magnitude, {(GLOBAL_MAG_W-GROUP_MAG_W){1'b0}}};
+      end else begin : g_reference_layout
+        assign source_magnitude[group_index*GLOBAL_MAG_W+:GLOBAL_MAG_W] = r5_c_datatype ?
+          (({{(GLOBAL_MAG_W - GROUP_MAG_W) {1'b0}}, group_align_magnitude} >> INT_GROUP_F) <<
+           INT_GLOBAL_F) : {group_align_magnitude, {(GLOBAL_MAG_W - GROUP_MAG_W) {1'b0}}};
+      end
       assign source_negative[group_index] = group_align_negative;
       assign source_anchor[group_index*ANCHOR_W+:ANCHOR_W] = group_align_anchor;
       assign source_z[group_index*Z_W+:Z_W] = {
@@ -426,6 +435,7 @@ module dp_top_mixed #(
   // [S6 全局对齐] 完整模块内完成有效源 MAX、净移位、恢复补码与特殊值归约。
   // leaves_d/common_d 等在 S6 DFF 同时捕获；不能将新 anchor 配给上一拍叶子。
   dp_mixed_global_align #(
+      .FLOAT_ONLY_EXTENSION(OPTIMIZE_QE),
       .BASE_GROUPS(BASE_GROUPS),
       .EXT_GROUPS (EXT_GROUPS),
       .N          (N),

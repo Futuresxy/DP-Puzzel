@@ -1,4 +1,4 @@
-> 功能：定义在 T8H16Q32E64 上扩展 E/Q 算力的顶层；范围：E96、E128、Q64E128、分支屏蔽、全局对齐及 L8；版本：v1.7.2；修改时间：2026-11-08 02:24:09 +0800；对应代码：[混合 CModel](../../../cmodel/lib/top/mixed.cpp) 已实现；[dp_top_mixed.v](../../../verilog/top/dp_top_mixed.v) 与三个固定配比顶层已实现；现有入口为 [dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[CModel backend.cpp](../../../cmodel/lib/top/backend.cpp)。
+> 功能：定义在 T8H16Q32E64 上扩展 E/Q 算力的顶层；范围：E96、E128、Q64E128、分支屏蔽、全局对齐及 L8；版本：v1.7.3；修改时间：2026-11-08 07:35:46 +0800；对应代码：[混合 CModel](../../../cmodel/lib/top/mixed.cpp) 已实现；[dp_top_mixed.v](../../../verilog/top/dp_top_mixed.v) 与三个固定配比顶层已实现；现有入口为 [dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[CModel backend.cpp](../../../cmodel/lib/top/backend.cpp)。
 
 # 多精度 DP 的 E96 / E128 / Q64E128 扩展设计
 
@@ -222,7 +222,7 @@ C 归基础支，只计一次。INT8 仅使用基础支，S6 仍是 S1I32F7，S7
 
 ## 10. 独立面积优化版本与验收
 
-用户要求在保留原验证版本的前提下，单独优化 T8H16Q64E128，将相对 T8H16Q32E64 的面积增长目标设为 **55%–65%**。拟用顶层名 `dp_top_t8h16q64e128_opt`，尚未实现；本节是基于现有源码/综合证据的优化约束，不是新的通过报告。仍保留基础四个多精度组，扩展四个 QE 组支持 **MXFP8 E4M3/E5M2、MXFP6 E3M2/E2M3、MXFP4、NVFP4、HiF4**，不扩展 T/H/INT8。E-only 扩展优化同样保留全部三种 E。
+用户要求在保留原验证版本的前提下，单独优化 T8H16Q64E128，将相对 T8H16Q32E64 的面积增长目标设为 **55%–65%**。独立顶层为 `dp_top_t8h16q64e128_opt`，首轮实现范围见第 10.4 节；本节是基于现有源码/综合证据的优化约束，不是新的通过报告。仍保留基础四个多精度组，扩展四个 QE 组支持 **MXFP8 E4M3/E5M2、MXFP6 E3M2/E2M3、MXFP4、NVFP4、HiF4**，不扩展 T/H/INT8。E-only 扩展优化同样保留全部三种 E。
 
 ### 10.1 面积依据与预算
 
@@ -244,7 +244,7 @@ C 归基础支，只计一次。INT8 仅使用基础支，S6 仍是 S1I32F7，S7
 
 | 层级 | 优先方案 | 状态与限制 |
 | --- | --- | --- |
-| QE lane | 固定字段窄解包；配对分类/符号摘要提前压缩；去重指数寄存 | [具体方案与验收](../lane/dp_lane_qe.md#7-面积优化qe-专用解包与寄存压缩)；尚未实现/测量，S1 时序需重新检查 |
+| QE lane | 固定字段窄解包；配对分类/符号摘要提前压缩；去重指数寄存 | [具体方案与验收](../lane/dp_lane_qe.md#7-面积优化qe-专用解包与寄存压缩)；首轮固定解包/分类压缩已实现，指数寄存去重未改，收益需新测 |
 | QE group | 保持紧凑内部数据，检查旁带冗余；复用 scale 和 token 合同 | [group 边界](../group/dp_group_qe.md#6-qe-group-优化边界)；NV/HiF 乘法不能删除 |
 | E lane/group | S1 保存乘积 XOR 符号；保持自然增长窄树，评估小系数实现 | [lane](../lane/dp_lane_E.md#7-e-扩展的进一步面积优化)、[group](../group/dp_group_E.md#7-e-group-优化约束)；当前窄树已经实现，新增收益待测 |
 | 顶层/S6 | 按源的静态能力删除扩展源整数落位/整数直通选择 | 现 `dp_top_mixed` 对每个 group 选择整数/浮点落位，`dp_mixed_global_align` 对每源选择整数直通；扩展源只可能参与浮点，可专用化，保留基础四组和 C 的整数行为 |
@@ -261,3 +261,9 @@ S6 静态裁剪仅适用于扩展源索引。有效性证明为 `participate_ext
 从本次通过门禁的快照做 N12 TT/0.7V/85°C、1GHz、相同 IO/uncertainty/负载及 VT 规则的 DC，开启真实 ICG 与时序优先优化，保持 L8/II=1。分别报告总面积、基础/扩展前端、解包、移位、寄存、树和时序修复开销；检查所有阶段 setup/hold 及电气规则。面积更低但时序失败的候选不能作为目标达成结果。保留各阶段代码检查点；优化后仍未达到 55%–65% 时报告实测差距，再决定下一项，不修改已有结果去满足目标。
 
 增加流水级或改变有效精度不属于本节默认方案；只有保持 L8 的逻辑和后端优化仍无法满足时序时再评审。时钟门控覆盖率不是实际功耗，当前没有新活动功耗测量。上述方案只有在新验证和综合结果齐备后，才能由“候选”更新为“已验收”。
+
+### 10.4 首轮 RTL 映射
+
+[dp_top_t8h16q64e128_opt.v](../../../verilog/top/dp_top_t8h16q64e128_opt.v) 已建立；独立 [filelist](../../../verilog/files_t8h16q64e128_opt.f) 和 [配置](../../../configs/dp/t8h16q64e128_opt.json)使用 profile `t8h16q64e128_opt`。共用 `dp_top_mixed`，仅该包装启用 `OPTIMIZE_QE=1`：向 QE group/lane 传入 `COMPACT_UNPACK=1`，同时对扩展源使用浮点补零、删除整数直通选择。原顶层默认参数仍为 0，不复制一套后端算法。
+
+新增 profile 复用原 MixedQE128 的 CModel 数值语义，使用同一原生 K64/K128 corpus 和三组窗口进行独立完整 RTL 回归；门禁按新 top、filelist、源指纹和通过回执核验，部分验证仍拒绝 PPA。参考顶层同步回归，既有 DC 快照/报告不覆盖。此轮未实施 S3 pair 前移或 E-only 改写；解包、分类压缩与 S6 静态选择裁剪的真实收益由新 DC 报告确定。

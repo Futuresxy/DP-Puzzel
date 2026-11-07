@@ -9,6 +9,8 @@
 // INT8 + INT32       | 0     | 1      | 32 | MAG_W-32
 // Floating coordinates use E_max; INT8+INT32 bypasses the shift.
 module dp_mixed_global_align #(
+  // 静态能力裁剪；仅扩展组可裁掉整数直通，基础组和 C 仍支持整数。
+  parameter integer FLOAT_ONLY_EXTENSION = 0,
   // Four base groups and one C, plus the enabled low-precision branch.
   parameter integer BASE_GROUPS = 4,
   // 新增低精度 group 数量，E96 为 2，E128/Q64E128 为 4。
@@ -125,9 +127,17 @@ module dp_mixed_global_align #(
       assign isolated_magnitude = active[source_index] ? magnitude : 0;
       wire [MAG_W-1:0] shifted;
       wire [MAG_W-1:0] result_magnitude;
-      assign result_magnitude = ~in_participate[source_index] ? 0 : in_integer ? magnitude : shifted;
-      assign active[source_index] = in_enable & in_participate[source_index] & ~in_integer & magnitude != 0 &
-        in_special[source_index*`DP_SPECIAL_W+:`DP_SPECIAL_W] == 0;
+      // 参与资格保证扩展源只处理浮点；C 的索引在扩展组范围之外。
+      if ((FLOAT_ONLY_EXTENSION != 0) & (source_index >= BASE_GROUPS) &
+          (source_index < BASE_GROUPS + EXT_GROUPS)) begin : g_float_extension
+        assign result_magnitude = in_participate[source_index] ? shifted : {MAG_W{1'b0}};
+        assign active[source_index] = in_enable & in_participate[source_index] &
+            (magnitude != 0) & (in_special[source_index*`DP_SPECIAL_W+:`DP_SPECIAL_W] == 0);
+      end else begin : g_integer_capable
+        assign result_magnitude = ~in_participate[source_index] ? {MAG_W{1'b0}} : in_integer ? magnitude : shifted;
+        assign active[source_index] = in_enable & in_participate[source_index] & ~in_integer &
+            (magnitude != 0) & (in_special[source_index*`DP_SPECIAL_W+:`DP_SPECIAL_W] == 0);
+      end
       assign exponents[source_index*ANCHOR_W+:ANCHOR_W] = raw_anchor - $signed({{(ANCHOR_W - Z_W) {1'b0}}, leading});
       dp_bidir_shift #(
           .W    (MAG_W),

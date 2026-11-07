@@ -29,6 +29,8 @@ src/verilog/unpack/dp_c_unpack.v
 src/verilog/unpack/dp_lane_operand_unpack.v
 src/verilog/unpack/dp_lane_unpack.v
 src/verilog/unpack/dp_operand_unpack.v
+src/verilog/unpack/dp_operand_unpack_qe.v
+src/verilog/unpack/dp_lane_unpack_qe.v
 src/verilog/unpack/dp_scale_unpack.v
 src/verilog/lane/dp_lane_e_shift.v
 src/verilog/lane/dp_lane_e.v

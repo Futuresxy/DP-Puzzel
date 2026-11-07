@@ -16,7 +16,7 @@ DP_INTERFACE = {'clock_port': 'clock', 'reset_port': 'rst_n',
                 'reset_kind': 'synchronous', 'reset_active': 'low'}
 CONFIGS = ((4,27,40), (8,27,40), DEFAULT_SCOPE, (4,28,48), (8,32,64), (16,32,64))
 
-MIXED_PROFILES = ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128')
+MIXED_PROFILES = ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128', 't8h16q64e128_opt')
 MIXED_CONFIGS = ((16,27,40), DEFAULT_SCOPE, (16,32,64))
 
 def frontend_top(frontend):
@@ -126,7 +126,7 @@ def validate_scopes(scopes, root, started, finished, frontend='multi'):
 
 
 def verify_dp_export(export_id, root):
-    require(re.fullmatch(r'DP_verilog_(?:(?:e|t8h16q32e96|t8h16q32e128|t8h16q64e128)_)?[0-9a-f]{16}',export_id), 'Invalid DP export ID')
+    require(re.fullmatch(r'DP_verilog_(?:(?:e|t8h16q32e96|t8h16q32e128|t8h16q64e128(?:_opt)?)_)?[0-9a-f]{16}',export_id), 'Invalid DP export ID')
     export = contained(root/'hw/rtl',export_id)
     m, fp, sources = payload(export,root)
     frontend=m.get('frontend','multi')

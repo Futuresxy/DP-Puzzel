@@ -1,4 +1,4 @@
-> 功能：定义 Q8E16 专用 group 和兼容 S5 token；范围：两个 QE lane、公共指数、组和、scale 与 LZD；版本：v1.7.2；修改时间：2026-11-08 02:24:09 +0800；对应代码：[QE CModel](../../../cmodel/lib/group/group_qe.cpp) 已实现；[dp_group_qe.v](../../../verilog/group/dp_group_qe.v)；现有对照为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)。
+> 功能：定义 Q8E16 专用 group 和兼容 S5 token；范围：两个 QE lane、公共指数、组和、scale 与 LZD；版本：v1.7.3；修改时间：2026-11-08 07:35:46 +0800；对应代码：[QE CModel](../../../cmodel/lib/group/group_qe.cpp) 已实现；[dp_group_qe.v](../../../verilog/group/dp_group_qe.v)；现有对照为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)。
 
 # Q8E16 专用 group 设计与优化
 
@@ -92,3 +92,7 @@ effective_exponent = A_raw - z
 - **隔离与门控按请求控制。** 不使用的数据乘法支路可隔离，但动态选择 Q/MX 不会移除 NV/HiF 的物理乘法器。无效 payload 保持、valid 每拍推进，ICG 通过受支持的 DC 流程映射；功耗收益需另有活动证据。
 
 验收保留 S2 共同 r、S4 数值组输入、S5 token 的精确对照，覆盖 HiF4 两 lane 不同 e2、零/抵消、scale 特殊值、逐拍 Q/E 换型。缩短局部寄存或改变内部归约位置后，重新检查 S1、S3、S5 的关键路径，不能用原 group 已通过综合代替优化版本验收。
+
+## 7. 首轮优化接入
+
+`COMPACT_UNPACK` 是 elaboration 期能力参数，传给两条 QE lane；默认 0 保留参考实现，独立优化顶层设为 1。组内 S2 公共 MAX、scale、S5 组和/abs/14×8/LZD 与 token 布局不变，本轮不裁减 NVFP4/HiF4 或共享 scale 位宽。优化仅重组 lane 内 S1 表示，验证仍要求同坐标 S5 token 和 L8/II=1。

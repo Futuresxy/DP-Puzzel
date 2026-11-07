@@ -23,6 +23,8 @@
 // 旁带：S1 scale 解包，S2 系数积/指数和，再延迟到 S5；S2 公共 MAX 回送两 lane。
 // 两个 lane 共享 valid 和时钟，没有独立握手；MAX 只产生共同坐标，不等待 lane 结果。
 module dp_group_qe #(
+  // 仅影响 QE lane 的 S1 内部表示，组 S5 token 与数值坐标不变。
+  parameter integer COMPACT_UNPACK = 0,
   // S3 局部幅值对齐窗口，改变时下游 lane/group 位宽同步推导。
   parameter integer LOCAL_W = `DP_DEFAULT_LOCAL_W,
   // S4 lane 和位宽：有符号叶子经四项树增加两位整数位。
@@ -118,6 +120,7 @@ module dp_group_qe #(
       wire [(`DP_Q_EXP_W+1)-1:0] candidate;
       wire [  `DP_SPECIAL_W-1:0] special_value;
       dp_lane_qe #(
+          .COMPACT_UNPACK(COMPACT_UNPACK),
           .LOCAL_W(LOCAL_W)
       ) u_lane (
           .clock               (clock),
