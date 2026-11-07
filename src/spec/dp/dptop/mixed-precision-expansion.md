@@ -1,21 +1,21 @@
-> 功能：定义在 T8H16Q32E64 上扩展 E/Q 算力的候选顶层；范围：E96、E128、Q64E128、分支屏蔽、全局对齐及 L8；版本：v1.7.0（待评审，未生效）；修改时间：2026-11-07 23:00:00 +08:00；对应代码：三个混合顶层及 QE 前端尚未实现；现有入口为 [dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[CModel backend.cpp](../../../cmodel/lib/top/backend.cpp)。
+> 功能：定义在 T8H16Q32E64 上扩展 E/Q 算力的候选顶层；范围：E96、E128、Q64E128、分支屏蔽、全局对齐及 L8；版本：v1.7.0（已批准，分阶段实施）；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[混合 CModel](../../../cmodel/lib/top/mixed.cpp) 已实现；三个混合顶层 RTL 待实施；现有入口为 [dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[CModel backend.cpp](../../../cmodel/lib/top/backend.cpp)。
 
 # 多精度 DP 的 E96 / E128 / Q64E128 扩展草案
 
-本轮交付架构文档和独立数学参考数据，等待用户 review 后实施 CModel/RTL。当前有效架构仍为 v1.6；本文 v1.7.0 是候选合同。设计保持一笔请求完成全 K 的 `scaled_dot(A,B)+C`、L8、II=1；不增加时间复用轮次，不扩展计算阵列。
+用户已批准本文 v1.7.0，授权按 CModel → Verilog/Verilator → N12 DC 的顺序实施。当前先完成 CModel 验证；现有多精度/E RTL 保持原验收状态，三个新顶层需独立验证。设计保持一笔请求完成全 K 的 `scaled_dot(A,B)+C`、L8、II=1；不增加时间复用轮次，不扩展计算阵列。
 
 ## 1. 三种装配与能力
 
 | 顶层 | 原多精度组 | 新增组 | T | H | Q | E | INT8 |
 | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
 | 既有 dp_top | 4 | 无 | 8 | 16 | 32 | 64 | 32 |
-| dp_top_e96 | 4 | 2×dp_group_e | 8 | 16 | 32 | 96 | 32 |
-| dp_top_e128 | 4 | 4×dp_group_e | 8 | 16 | 32 | 128 | 32 |
-| dp_top_Q64e128 | 4 | 4×dp_group_qe | 8 | 16 | 64 | 128 | 32 |
+| dp_top_t8h16q32e96 | 4 | 2×dp_group_e | 8 | 16 | 32 | 96 | 32 |
+| dp_top_t8h16q32e128 | 4 | 4×dp_group_e | 8 | 16 | 32 | 128 | 32 |
+| dp_top_t8h16q64e128 | 4 | 4×dp_group_qe | 8 | 16 | 64 | 128 | 32 |
 
 前三列确定物理组数，后五列表示每次请求的有效点积项数。T=TF32，H=FP16/BF16，Q=四种 MXFP8/6，E=MXFP4/NVFP4/HiF4。QE group 不支持 INT8；所有扩展顶层的 INT8 仍由原四组完成 K32。
 
-`dp_top_e` 仍表示现有 **E-only K64**；`dp_top_e96/e128` 按用户指定表示**保留 T/H/Q 的混合顶层**，不是 E-only。`dp_top_Q64e128` 保留用户指定的大小写，作为模块/文件命名的显式例外；三个拟建文件都放 `src/verilog/top/`。通用内部模块继续遵守 dp_ 和 lower_snake_case 规则。
+`dp_top_e` 仍表示现有 **E-only K64**；`dp_top_t8h16q32e96/e128` 按用户指定表示**保留 T/H/Q 的混合顶层**，不是 E-only。三个名字按用户最新要求显式包含完整容量并使用小写；三个拟建文件都放 `src/verilog/top/`。通用内部模块继续遵守 dp_ 和 lower_snake_case 规则。
 
 不能将既有 `K_FP16` 改成 24/32 来构造这些顶层，否则 T/H 也会增长。建议用三个薄包装选择固定装配，底层共用混合后端；原四组的 FP16 容量固定为 16，LOCAL_W/GLOBAL_W 继续可调，默认 28/40。未来更多组数不作为本轮接口要求。
 
@@ -195,7 +195,7 @@ C 归基础支，只计一次。INT8 仅使用基础支，S6 仍是 S1I32F7，S7
 
 ## 8. 数据、验证与实施顺序
 
-本轮导入用户纠正后的原生来源：`petile_full16_fp48` 的 E96、`petile_full16_fp416` 的 E128、`petile_full16_low16` 的 Q64。每个精度/K 独立保存输入、来源/hash 和精确数学结果；详细格式见 [扩展数据说明](../../../../test/data/README.md#逻辑-k-扩展数据-dp_logical_vectors_v1)。外部向量转换为项目布局后，以 exact Fraction 数学计算并最终 RNE，不能用旧 CModel 的 K16 结果冒充更长向量的参考。
+本轮使用用户纠正后的原生来源：`petile_full16_fp48` 的 E96、`petile_full16_fp416` 的 E128、`petile_full16_low16` 的 Q64。每个精度/K 独立保存输入、来源/hash 和精确数学结果；详细格式见 [扩展数据说明](../../../../test/data/README.md#逻辑-k-扩展数据-dp_logical_vectors_v1)。外部向量转换为项目布局后，以 exact Fraction 数学计算并最终 RNE，不能用旧 CModel 的 K16 结果冒充更长向量的参考。
 
 后续验收分两层：RTL 对新增位精确 CModel 比较；两者再对独立精确数学结果统计 exact_match/max_ulp/超过阈值的 case。更长 K 的抵消可能放大 ULP，现有 E64 数据的误差结论不能直接推广。导入数据通过布局/参考检查不代表混合 RTL 已实现或通过。
 
@@ -210,7 +210,7 @@ C 归基础支，只计一次。INT8 仅使用基础支，S6 仍是 S1I32F7，S7
 | 参数 | 默认 28/40、既有合法窗口变体、非法窗口拒绝；N=7 非二次幂和 N=9 增长位 |
 | 后端 | S6 全叶、S7 两支/总和、S8 输出；旁路结果与完整精确加法一致 |
 
-实施顺序：用户评审本稿 → CModel 能力/profile 与混合后端 → QE RTL 和三个 top → 各 profile 独立导出与 Verilator/断点/协议验证 → 同工况 DC → 经授权的活动功耗。当前不启动新 RTL、DC 或功耗实验。旧 N12 的 1GHz 结果只作比较基线，1GHz 与原 1.41GHz 目标都必须由新快照重新测量。
+实施顺序：已批准规格 → CModel 能力/profile 与混合后端 → QE RTL 和三个 top → 各 profile 独立导出与 Verilator/断点/协议验证 → 同工况 DC → 经授权的活动功耗。本轮授权新 RTL 与 1GHz DC，开启 clock gating 和时序优先优化；优先保持 L8，充分综合优化仍失败后才评审流水调整。不运行真实负载功耗；旧 N12 结果仅作注明来源的历史比较。
 
 ## 9. 本次 review 的重点
 
@@ -218,4 +218,4 @@ C 归基础支，只计一次。INT8 仅使用基础支，S6 仍是 S1I32F7，S7
 2. 高精度只走原四组；新增组不扩 INT8；使用分支 MAX/求和及按请求传递的参与标志。
 3. 保持一套最终 FP32 编码与 L8，接受先评估 7/9 源后端的时序，再决定是否优化树结构；不预设旁路后物理时序完全不变。
 
-以上都是待评审设计，不修改当前已验证模块及其验收状态。数据导入与精确参考检查结果见 [本批数据报告](../../../../test/results/mixed-dp-data-20261107.md)。
+以上设计已获批准；分阶段提交回退点，新实现不能继承旧验证/PPA 状态。数据导入与精确参考检查结果见 [本批数据报告](../../../../test/results/mixed-dp-data-20261107.md)。

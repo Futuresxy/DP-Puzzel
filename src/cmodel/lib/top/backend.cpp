@@ -51,18 +51,29 @@ void stage_global_align(const Config &config, State &state) {
   std::vector<Token> sources = state.groups;
   sources.push_back(state.c_token);
   const bool integer = state.request.c_type == CType::INT32;
+  std::vector<bool> participate = state.participate;
+  if (participate.empty()) participate.assign(state.groups.size(), true);
+  participate.push_back(true); // C always participates, including its zero sign.
   bool any = false;
   state.common = 0;
   if (!integer)
-    for (const auto &token : sources)
-      if (token.active()) {
+    for (unsigned source_index = 0; source_index < sources.size(); ++source_index) {
+      const auto &token = sources[source_index];
+      if (participate[source_index] && token.active()) {
         const int exponent_value = token.anchor_raw - static_cast<int>(token.leading_zero_count);
         state.common = any ? std::max(state.common, exponent_value) : exponent_value;
         any = true;
       }
+    }
   Json controls = Json::array();
   state.negative_zero = true;
-  for (const auto &token : sources) {
+  for (unsigned source_index = 0; source_index < sources.size(); ++source_index) {
+    const auto &token = sources[source_index];
+    if (!participate[source_index]) {
+      state.aligned.push_back(0);
+      controls.push_back({{"d", 0}, {"net", 0}, {"z", 0}, {"participate", false}});
+      continue;
+    }
     Big magnitude = 0;
     int delta = 0;
     int net_shift = 0;
@@ -102,7 +113,15 @@ void stage_global_align(const Config &config, State &state) {
 // All floating modes | 1 | 1+L  | W-2
 // INT8 + INT32       | 1 | 32+L | W-33
 void stage_total(const Config &config, State &state) {
-  state.sum = tree_sum(state.aligned, config.global_signed_align_width);
+  if (config.mixed()) {
+    std::vector<Big> base(state.aligned.begin(), state.aligned.begin() + 4);
+    base.push_back(state.aligned.back());
+    const std::vector<Big> extension(state.aligned.begin() + 4, state.aligned.end() - 1);
+    const Big base_sum = tree_sum(base, config.global_signed_align_width);
+    const Big extension_sum = tree_sum(extension, config.global_signed_align_width);
+    state.sum = base_sum;
+    if (config.extension_supports(state.request.a_type)) state.sum += extension_sum;
+  } else state.sum = tree_sum(state.aligned, config.global_signed_align_width);
   check_signed(state.sum, config.sum_bits(), "final sum");
   trace(state, "total_sop_tree",
         {{"sop_tc", state.sum.str()},
@@ -132,8 +151,9 @@ void stage_output(const Config &config, State &state) {
     result.bits = residue.convert_to<std::uint32_t>();
   } else {
     Special all = state.c_token.special;
-    for (const auto &group_token : state.groups)
-      all.merge(group_token.special);
+    for (unsigned group_index = 0; group_index < state.groups.size(); ++group_index)
+      if (state.participate.empty() || state.participate[group_index])
+        all.merge(state.groups[group_index].special);
     result.flags.invalid = all.invalid;
     if (all.nan || all.invalid)
       result.bits = canonical_nan;

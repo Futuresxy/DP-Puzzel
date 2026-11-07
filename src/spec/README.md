@@ -40,3 +40,5 @@
 ## 3. 文档约定
 
 正文只呈现当前有效合同和明确标注的候选。仅相邻两个主要架构版本的**核心变更**保留删除线对照，非核心小修直接更新；完整历史由 Git 保存。见 [文档控制](document-control.md) 与 [版本记录](CHANGELOG.md)。
+
+2026-11-07 实施状态：用户已批准 v1.7.0 混合 DP，并将顶层统一为 dp_top_t8h16q32e96、dp_top_t8h16q32e128、dp_top_t8h16q64e128。QE/混合 CModel 已完成第一阶段；验收见 [CModel 阶段报告](../../test/results/mixed-cmodel-v1.7.md)。RTL 与 1GHz clock-gating/timing-first DC 按阶段继续实施，优先保持 L8。此状态取代本页此前的待评审说明。

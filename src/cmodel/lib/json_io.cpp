@@ -44,8 +44,11 @@ Config config_from_json(const Json &json_value) {
         config.frontend = Frontend::Multi;
       else if (value == "e")
         config.frontend = Frontend::E;
-      else
-        throw std::invalid_argument("frontend must be multi or e");
+      else if (value == "qe") config.frontend = Frontend::QE;
+      else if (value == "t8h16q32e96") config.frontend = Frontend::MixedE96;
+      else if (value == "t8h16q32e128") config.frontend = Frontend::MixedE128;
+      else if (value == "t8h16q64e128") config.frontend = Frontend::MixedQE128;
+      else throw std::invalid_argument("unknown frontend profile");
     } else
       throw std::invalid_argument("unknown configuration key: " + key);
   }
@@ -75,7 +78,7 @@ Request request_from_json(const Json &json_value) {
   return request;
 }
 Json config_json(const Config &config) {
-  Json result = {{"frontend", config.frontend == Frontend::E ? "e" : "multi"},
+  Json result = {{"frontend", name(config.frontend)},
                  {"k_fp16", config.k_fp16},
                  {"local_shift_mag_width", config.local_shift_mag_width},
                  {"global_signed_align_width", config.global_signed_align_width},

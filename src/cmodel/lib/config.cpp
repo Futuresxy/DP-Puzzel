@@ -30,6 +30,27 @@ const char *name(DataType datatype) {
   (void)format(datatype);
   return names[static_cast<unsigned>(datatype)];
 }
+const char *name(Frontend frontend) {
+  switch (frontend) {
+  case Frontend::Multi: return "multi";
+  case Frontend::E: return "e";
+  case Frontend::QE: return "qe";
+  case Frontend::MixedE96: return "t8h16q32e96";
+  case Frontend::MixedE128: return "t8h16q32e128";
+  case Frontend::MixedQE128: return "t8h16q64e128";
+  }
+  throw std::invalid_argument("unknown frontend");
+}
+bool Config::extension_supports(DataType datatype) const {
+  return datatype >= (frontend == Frontend::MixedQE128 ? DataType::MXFP8_E4M3
+                                                      : DataType::MXFP4) &&
+         datatype <= DataType::HIF4;
+}
+Frontend Config::group_frontend(unsigned group_index) const {
+  if (!mixed()) return frontend;
+  if (group_index < 4) return Frontend::Multi;
+  return frontend == Frontend::MixedQE128 ? Frontend::QE : Frontend::E;
+}
 unsigned ceil_log2(unsigned element_count) {
   if (!element_count)
     throw std::invalid_argument("empty tree");
@@ -39,8 +60,10 @@ unsigned ceil_log2(unsigned element_count) {
   return tree_levels;
 }
 void Config::validate() const {
-  if (frontend != Frontend::Multi && frontend != Frontend::E)
+  if (static_cast<unsigned>(frontend) > static_cast<unsigned>(Frontend::MixedQE128))
     throw std::invalid_argument("unknown frontend");
+  if (mixed() && (k_fp16 != 16 || post_scale_norm_extra_stage != 0))
+    throw std::invalid_argument("mixed profiles require base K16 and L8");
   if (k_fp16 != 4 && k_fp16 != 8 && k_fp16 != 16)
     throw std::invalid_argument("k_fp16 must be 4,8,16");
   if (local_shift_mag_width < 27)
@@ -80,7 +103,9 @@ bool tuple_legal(const Request &request) {
 }
 bool tuple_legal(const Config &config, const Request &request) {
   return tuple_legal(request) &&
-         (config.frontend == Frontend::Multi ||
+         (config.frontend == Frontend::Multi || config.mixed() ||
+          (config.frontend == Frontend::QE && request.a_type >= DataType::MXFP8_E4M3 &&
+           request.a_type <= DataType::HIF4) ||
           (config.frontend == Frontend::E &&
            (request.a_type == DataType::MXFP4 || request.a_type == DataType::NVFP4 ||
             request.a_type == DataType::HIF4)));
@@ -107,17 +132,22 @@ void validate_payload(const Config &config, const Request &request) {
       if ((datatype == DataType::MXFP6_E3M2 || datatype == DataType::MXFP6_E2M3) && (raw & 3))
         throw std::invalid_argument("FP6 low2 must be zero");
     }
+  const unsigned active_groups = config.active_groups(datatype);
   if (datatype != DataType::HIF4 &&
-      (request.a_e1 != 0 || request.a_e2 != 0 || request.b_e1 != 0 || request.b_e2 != 0))
+      ((request.a_e1 & mask(4 * active_groups)) != 0 ||
+       (request.a_e2 & mask(2 * active_groups)) != 0 ||
+       (request.b_e1 & mask(4 * active_groups)) != 0 ||
+       (request.b_e2 & mask(2 * active_groups)) != 0))
     throw std::invalid_argument("unused HiF metadata must be zero");
-  if (format_info.scale == ScaleType::NONE && (request.a_scale != 0 || request.b_scale != 0))
+  if (format_info.scale == ScaleType::NONE && ((request.a_scale & mask(8 * active_groups)) != 0 ||
+       (request.b_scale & mask(8 * active_groups)) != 0))
     throw std::invalid_argument("unused scales must be zero");
   for (const Big *data : {&request.a_scale, &request.b_scale})
-    for (unsigned group_index = 0; group_index < config.groups(); ++group_index) {
+    for (unsigned group_index = 0; group_index < active_groups; ++group_index) {
       const unsigned raw = slice(*data, group_index * 8, 8);
       if (datatype == DataType::NVFP4 && (raw & 128))
         throw std::invalid_argument("NV scale must be nonnegative");
-      const unsigned first = (datatype == DataType::MXFP4) ? (group_index / 2) * 2 : 0;
+      const unsigned first = (datatype == DataType::MXFP4) ? (group_index / 2) * 2 : (group_index / 4) * 4;
       if ((format_info.scale == ScaleType::E8M0 || datatype == DataType::HIF4) &&
           raw != slice(*data, first * 8, 8))
         throw std::invalid_argument("scale broadcast mismatch");

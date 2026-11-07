@@ -1,8 +1,8 @@
-> 功能：定义 Q4E8 专用 lane 的候选计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.0（待评审，未生效）；修改时间：2026-11-07 23:00:00 +08:00；对应代码：dp_lane_qe 尚未实现；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
+> 功能：定义 Q4E8 专用 lane 的候选计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.0（已批准，分阶段实施）；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；dp_lane_qe RTL 待实施；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
 
 # Q4E8 专用 lane 设计草案
 
-本稿配合 [Q8E16 group](../group/dp_group_qe.md) 和 [三种混合 DP](../dptop/mixed-precision-expansion.md) 评审。拟新增 `src/verilog/lane/dp_lane_qe.v`，裁剪多精度 lane 中的 T/H/INT8 运算，不修改既有 `dp_lane` 和 `dp_lane_e` 的功能。本轮仅定义设计，尚无 QE CModel、RTL 或 PPA 证据。
+本稿配合 [Q8E16 group](../group/dp_group_qe.md) 和 [三种混合 DP](../dptop/mixed-precision-expansion.md) 评审。拟新增 `src/verilog/lane/dp_lane_qe.v`，裁剪多精度 lane 中的 T/H/INT8 运算，不修改既有 `dp_lane` 和 `dp_lane_e` 的功能。本轮已按用户授权建立 QE CModel；RTL 与 PPA 在模型验证后实施。
 
 ## 1. 能力与复用边界
 

@@ -1,4 +1,4 @@
-> 功能：定义 Q8E16 专用 group 和兼容 S5 token；范围：两个 QE lane、公共指数、组和、scale 与 LZD；版本：v1.7.0（待评审，未生效）；修改时间：2026-11-07 23:00:00 +08:00；对应代码：dp_group_qe 尚未实现；现有对照为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)。
+> 功能：定义 Q8E16 专用 group 和兼容 S5 token；范围：两个 QE lane、公共指数、组和、scale 与 LZD；版本：v1.7.0（已批准，分阶段实施）；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[QE CModel](../../../cmodel/lib/group/group_qe.cpp) 已实现；dp_group_qe RTL 待实施；现有对照为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)。
 
 # Q8E16 专用 group 设计草案
 

@@ -7,6 +7,10 @@
 namespace dp {
 void advance(const Config &config, State &state, unsigned stage) {
   state.stage = stage;
+  if (config.mixed() && stage <= 5) {
+    stage_mixed_frontends(config, state, stage);
+    return;
+  }
   if (config.frontend == Frontend::E && stage <= 5) {
     switch (stage) {
     case 1:
@@ -33,7 +37,8 @@ void advance(const Config &config, State &state, unsigned stage) {
       stage_unpack(config, state);
       break;
     case 2:
-      stage_products(config, state);
+      if (config.frontend == Frontend::QE) qe_frontend::stage_products(config, state);
+      else stage_products(config, state);
       break;
     case 3:
       stage_local_align(config, state);
@@ -45,7 +50,9 @@ void advance(const Config &config, State &state, unsigned stage) {
     return;
   }
   if (stage == 5) {
-    stage_group(config, state, config.post_scale_norm_extra_stage == 0);
+    if (config.frontend == Frontend::QE)
+      qe_frontend::stage_group(config, state, config.post_scale_norm_extra_stage == 0);
+    else stage_group(config, state, config.post_scale_norm_extra_stage == 0);
     return;
   }
   if (config.post_scale_norm_extra_stage && stage == 6) {

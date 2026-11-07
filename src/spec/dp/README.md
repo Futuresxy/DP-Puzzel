@@ -81,3 +81,5 @@ A/B 同格式，合法请求可逐拍换型；last 只透传，无输出背压�
 [混合顶层草案](dptop/mixed-precision-expansion.md) 定义保留四个多精度组后，新增 2/4 个 E 组形成 T8H16Q32E96/E128，或新增四个 [QE group](group/dp_group_qe.md) / [QE lane](lane/dp_lane_qe.md) 形成 T8H16Q64E128。后端按请求屏蔽扩展支的 MAX、移位、求和与特殊值，保持单次 C 和 L8/II=1。
 
 本轮只生成架构文档、导入原生 K96/K128 E 与 K64 Q 数据并计算独立数学 golden；新 QE/混合 CModel、RTL 和 PPA 尚未实施。候选 v1.7.0 不替代当前 v1.6 合同。
+
+2026-11-07 实施状态：用户已批准 v1.7.0 混合 DP，并将顶层统一为 dp_top_t8h16q32e96、dp_top_t8h16q32e128、dp_top_t8h16q64e128。QE/混合 CModel 已完成第一阶段；验收见 [CModel 阶段报告](../../../test/results/mixed-cmodel-v1.7.md)。RTL 与 1GHz clock-gating/timing-first DC 按阶段继续实施，优先保持 L8。此状态取代本页此前的待评审说明。

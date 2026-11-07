@@ -32,3 +32,5 @@ lane 元素解包和乘法见 [lane](../lane/README.md)；量化块 scale 广播
 ## 4. QE 专用候选
 
 [dp_group_qe.md](dp_group_qe.md) 定义两条 Q4E8 lane 组成 Q8E16，保留公共指数及原 S5 组和/abs/scale/LZD，输出与多精度 Q/E 同坐标的 token，用于混合 T8H16Q64E128。与已有 E group 统一字段、时刻及数值不变量，允许 E-only HiF4 保持自己的坐标。候选 v1.7.0 待评审，尚未实施。
+
+2026-11-07 实施状态：用户已批准 v1.7.0 混合 DP，并将顶层统一为 dp_top_t8h16q32e96、dp_top_t8h16q32e128、dp_top_t8h16q64e128。QE/混合 CModel 已完成第一阶段；验收见 [CModel 阶段报告](../../../../test/results/mixed-cmodel-v1.7.md)。RTL 与 1GHz clock-gating/timing-first DC 按阶段继续实施，优先保持 L8。此状态取代本页此前的待评审说明。

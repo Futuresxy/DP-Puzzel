@@ -18,7 +18,8 @@ enum class DataType {
 };
 enum class CType { FP32, INT32 };
 enum class ScaleType { NONE, E8M0, E4M3, E6M2 };
-enum class Frontend { Multi, E };
+enum class Frontend { Multi, E, QE, MixedE96, MixedE128, MixedQE128 };
+const char *name(Frontend frontend);
 
 // Format/architecture constants are named here; adjustable windows are Config fields.
 struct Format {
@@ -65,10 +66,21 @@ struct Config {
   unsigned post_scale_norm_extra_stage = 0;
   Frontend frontend = Frontend::Multi;
   void validate() const;
-  unsigned groups() const { return k_fp16 / fp16_per_group; }
+  bool mixed() const {
+    return frontend == Frontend::MixedE96 || frontend == Frontend::MixedE128 ||
+           frontend == Frontend::MixedQE128;
+  }
+  unsigned groups() const {
+    return mixed() ? (frontend == Frontend::MixedE96 ? 6 : 8) : k_fp16 / fp16_per_group;
+  }
+  bool extension_supports(DataType datatype) const;
+  unsigned active_groups(DataType datatype) const {
+    return mixed() && !extension_supports(datatype) ? 4 : groups();
+  }
+  Frontend group_frontend(unsigned group_index) const;
   unsigned lanes() const { return groups() * lanes_per_group; }
-  unsigned elements(DataType datatype) const { return lanes() * format(datatype).lane_elements; }
-  unsigned packed_bits() const { return k_fp16 * 16; }
+  unsigned elements(DataType datatype) const { return active_groups(datatype) * lanes_per_group * format(datatype).lane_elements; }
+  unsigned packed_bits() const { return groups() * 64; }
   unsigned local_fraction() const { return local_shift_mag_width - 2; } // S0I2F(local-2)
   unsigned leaf_bits() const {
     return frontend == Frontend::E ? e_pair_bits : local_shift_mag_width + 1;

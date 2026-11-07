@@ -31,3 +31,5 @@
 ## 4. QE 专用候选
 
 [dp_lane_qe.md](dp_lane_qe.md) 定义 Q4E8：仅保留四种 Q 与三种 E，S2 使用 8 个 4×4 乘法器（Q 激活四个），沿用多精度的 S3 局部对齐和 S4 lane 树，裁掉 T/H/INT8。候选 v1.7.0 待用户评审，尚未建立 QE 实现或验收；与 E-only 的窄树切分分别维护。
+
+2026-11-07 实施状态：用户已批准 v1.7.0 混合 DP，并将顶层统一为 dp_top_t8h16q32e96、dp_top_t8h16q32e128、dp_top_t8h16q64e128。QE/混合 CModel 已完成第一阶段；验收见 [CModel 阶段报告](../../../../test/results/mixed-cmodel-v1.7.md)。RTL 与 1GHz clock-gating/timing-first DC 按阶段继续实施，优先保持 L8。此状态取代本页此前的待评审说明。

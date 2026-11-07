@@ -70,3 +70,5 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [QE group](dp/group/dp_group_qe.md) | v1.7.0 | Q8E16 组和、无符号 scale 与兼容 S5 token |
 
 本表是候选目录，不把 v1.7.0 列为已生效的第三个历史架构版本。实施与验收状态以候选正文及后续实际回执为准。
+
+2026-11-07 实施状态：用户已批准 v1.7.0 混合 DP，并将顶层统一为 dp_top_t8h16q32e96、dp_top_t8h16q32e128、dp_top_t8h16q64e128。QE/混合 CModel 已完成第一阶段；验收见 [CModel 阶段报告](../../test/results/mixed-cmodel-v1.7.md)。RTL 与 1GHz clock-gating/timing-first DC 按阶段继续实施，优先保持 L8。此状态取代本页此前的待评审说明。

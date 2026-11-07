@@ -38,6 +38,8 @@ E-only 接入口限制合法格式为 MXFP4/NVFP4/HiF4、C/D 为 FP32；HiF4 新
 
 ## 5. 混合低精度扩展候选
 
-[混合顶层草案](mixed-precision-expansion.md) 定义 dp_top_e96、dp_top_e128、dp_top_Q64e128。基础四组和新增 E/QE 分支共用 S5 token；S6 先合并带参与资格的指数 MAX，再逐源对齐；S7 分支求和，高精度旁路扩展合并，S8 只做一次最终编码。N=7/9 时默认总和宽为 43/44，保持 L8/II=1。源参与、有限非零、特殊值与负零分别处理，避免闲置 token 污染结果。
+[混合顶层草案](mixed-precision-expansion.md) 定义 dp_top_t8h16q32e96、dp_top_t8h16q32e128、dp_top_t8h16q64e128。基础四组和新增 E/QE 分支共用 S5 token；S6 先合并带参与资格的指数 MAX，再逐源对齐；S7 分支求和，高精度旁路扩展合并，S8 只做一次最终编码。N=7/9 时默认总和宽为 43/44，保持 L8/II=1。源参与、有限非零、特殊值与负零分别处理，避免闲置 token 污染结果。
 
 本稿 v1.7.0 待评审，当前顶层与上述接口表仍对应既有已实现设计；独立数学数据准备不构成新 RTL 验收。
+
+2026-11-07 实施状态：用户已批准 v1.7.0 混合 DP，并将顶层统一为 dp_top_t8h16q32e96、dp_top_t8h16q32e128、dp_top_t8h16q64e128。QE/混合 CModel 已完成第一阶段；验收见 [CModel 阶段报告](../../../../test/results/mixed-cmodel-v1.7.md)。RTL 与 1GHz clock-gating/timing-first DC 按阶段继续实施，优先保持 L8。此状态取代本页此前的待评审说明。

@@ -48,6 +48,9 @@ struct EFrontendState {
 };
 struct State {
   Request request;
+  // Mixed profiles retain one actual S1-S5 frontend state per physical group.
+  std::vector<State> frontends;
+  std::vector<bool> participate;
   bool tracing = false;
   unsigned stage = 0;
   std::vector<Number> operands_a;
@@ -100,6 +103,11 @@ void stage_global_align(const Config &, State &);
 void stage_total(const Config &, State &);
 void stage_output(const Config &, State &);
 void advance(const Config &, State &, unsigned stage);
+void stage_mixed_frontends(const Config &, State &, unsigned stage);
+namespace qe_frontend {
+void stage_products(const Config &, State &);
+void stage_group(const Config &, State &, bool detect);
+}
 namespace e_frontend {
 void stage_pairs(const Config &, State &);
 void stage_lane_sum(const Config &, State &);

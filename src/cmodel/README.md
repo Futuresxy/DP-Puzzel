@@ -50,7 +50,7 @@ eval 示例是一个 FP16 非零乘积加零，其余元素为零，默认 K16�
 {"frontend":"multi","k_fp16":16,"local_shift_mag_width":28,"global_signed_align_width":40,"post_scale_norm_extra_stage":0}
 ```
 
-E64 配置为 [e64.json](../configs/dp/e64.json)。原始 CLI 可执行 `src/cmodel/build/dp_cmodel_cli --config src/configs/dp/e64.json --trace < requests.jsonl`，请求 JSONL 的字段和编码不变。`frontend` 在构造模型时选择，`datatype` 仍可逐笔换型；E 前端拒绝其他格式及 INT32 C。兼容参数 `k_fp16=4/8/16` 在 E 配置中只表示 G=1/2/4，即 E16/E32/E64，并不启用 FP16。LOCAL_W 控制 E 的兼容输出容器及补零，内部 pair/lane/group 位宽固定为 10/12/15；GLOBAL_W 继续控制公共后端。尚未实现 multi/E 混合组配置。
+E64 配置为 [e64.json](../configs/dp/e64.json)。原始 CLI 可执行 `src/cmodel/build/dp_cmodel_cli --config src/configs/dp/e64.json --trace < requests.jsonl`，请求 JSONL 的字段和编码不变。`frontend` 在构造模型时选择，`datatype` 仍可逐笔换型；E 前端拒绝其他格式及 INT32 C。兼容参数 `k_fp16=4/8/16` 在 E 配置中只表示 G=1/2/4，即 E16/E32/E64，并不启用 FP16。LOCAL_W 控制 E 的兼容输出容器及补零，内部 pair/lane/group 位宽固定为 10/12/15；GLOBAL_W 继续控制公共后端。混合配置见下节。
 
 `--trace` 给出 S1–S8 的实际数值观察点及逐拍寄存状态；大整数以十进制字符串输出，输入及最终 d 以十六进制表示。不要把 trace 内软件保存的历史字段计入硬件寄存面积。
 
@@ -68,3 +68,11 @@ E64 配置为 [e64.json](../configs/dp/e64.json)。原始 CLI 可执行 `src/cmo
 [首批报告](../../test/results/cmodel-v1.4.md) 区分“匹配有限位宽架构”与“相对精确数学的误差”。CModel通过不等于RTL、1.41GHz或PPA通过。
 
 命名：内部数值变量区分 exponent_field/fraction_field/fractional_bits，状态采用 config/state/token 等职责名；C++ 每项声明独立，使用两空格缩进、100 列目标。JSON 字段兼容原协议，reset=true 表示软件复位事件，对应现用 RTL rst_n=0。
+
+## v1.7 混合组
+
+新增 frontend `qe`（仅 Q/E，同原 Q/E 数值流水），以及 `t8h16q32e96`、`t8h16q32e128`、`t8h16q64e128`。三种混合配置位于 `src/configs/dp/` 同名 JSON；基础 k_fp16 固定16、L8，物理组数6/8，实际各格式容量由能力矩阵决定。窗口继续可调。
+
+`lib/top/mixed.cpp` 每物理组保存自己的 S1–S5 状态；基础组调用 multi，扩展调用 E 或 QE。关闭组不解包其 payload，也不参与数值 MAX、特殊值和负零归约。`lib/top/backend.cpp` 在同一公共指数下逐源对齐，基础四组+C与扩展组分别求和再合并；高精度旁路扩展。
+
+运行 `python3.11 -m unittest discover -s test/tests -p test_mixed_frontend.py -v`，精度摘要写入 `test/runs/cmodel/mixed_summary.json`；固定数据与精确 golden 不覆盖。新架构接受上半区闲置端口的任意位模式，只校验当前参与组。Q/MX/HiF scale 广播仍按32/32/64元素块检查，含E96尾部部分块。
