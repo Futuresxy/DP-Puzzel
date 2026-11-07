@@ -4,11 +4,11 @@ from adapters.cmodel import ROOT, read_inputs
 from adapters.logical import read_logical_inputs
 from reference.exact import DTYPES
 
-PROFILES = ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128')
+PROFILES = ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128', 't8h16q64e128_opt')
 
 
 def extended(profile, datatype):
-    return 7 <= datatype <= 9 or (profile == PROFILES[2] and 3 <= datatype <= 6)
+    return 7 <= datatype <= 9 or (profile in PROFILES[2:] and 3 <= datatype <= 6)
 
 
 def corpus(profile):

@@ -88,7 +88,7 @@ class MixedFrontend(unittest.TestCase):
                                            ('a_e1',4),('b_e1',4),('a_e2',2),('b_e2',2)]:
                             sub[field]=format((int(request[field],16)>>(bits*group_index))&((1<<bits)-1),'x')
                         sub['c']='00000000'
-                        frontend='multi' if group_index<4 else 'qe' if profile==PROFILES[2] else 'e'
+                        frontend='multi' if group_index<4 else 'qe' if profile in PROFILES[2:] else 'e'
                         single=evaluate([sub],config=cfg|{'k_fp16':4,'frontend':frontend},trace=True)[0]
                         self.assertEqual(token,single['trace'][4]['data']['groups'][0])
                     aligned=list(map(int,result['trace'][5]['data']['aligned_tc']))

@@ -47,7 +47,9 @@ Config config_from_json(const Json &json_value) {
       else if (value == "qe") config.frontend = Frontend::QE;
       else if (value == "t8h16q32e96") config.frontend = Frontend::MixedE96;
       else if (value == "t8h16q32e128") config.frontend = Frontend::MixedE128;
-      else if (value == "t8h16q64e128") config.frontend = Frontend::MixedQE128;
+      // RTL implementation alias: identical arithmetic and S2-S8 numeric boundaries.
+      else if (value == "t8h16q64e128" || value == "t8h16q64e128_opt")
+        config.frontend = Frontend::MixedQE128;
       else throw std::invalid_argument("unknown frontend profile");
     } else
       throw std::invalid_argument("unknown configuration key: " + key);
