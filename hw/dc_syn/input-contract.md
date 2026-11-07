@@ -66,10 +66,16 @@ run ID 固定 `dc_<RTL顶层名>_<MMDDHHMM>`，使用 Asia/Shanghai（UTC+08）�
 门禁独立复核 10747 默认数值输出、2922 混格式输出、231654 断点、日志及数据，
 不能通过直接修改 `ppa_eligible` 绕过。
 
-DP manifest 记录 `top=dp_top` 和 `interface`，其中 `clock_port=clock`，`reset_port=reset`，复位同步高有效。DC 检查时钟配置与接口一致，复位作为同步输入正常计时。
+DP manifest 记录 `top=dp_top` 和 `interface`，其中 `clock_port=clock`，`reset_port=rst_n`，复位同步低有效。DC 检查时钟配置与接口一致，复位作为同步输入正常计时。
 
 当前后端准入参数为 `K_FP16=16, LOCAL_W=28, GLOBAL_W=40`。历史综合记录的局部窗口为 27。
 其余参数虽有功能覆盖，必须另行建立对应综合配置合同。DC 显式使用
 `analyze -format verilog` 与 `elaborate -parameters`，只消费主实现 19 个 `.v` 与两份头文件。
 
 E-only 使用 `DP_verilog_e_<16 hex>`、top=dp_top_e 和 src/verilog/files_e.f（15 个 `.v`，共用两份头文件）。接口、K16/28/40、L8/II1 和目录指纹规则相同，frontend=e 单独记录。E 完整门禁要求三格式各 961 笔、5288 笔定向输出、六组参数各 137 笔有效输出与 7 笔复位取消、1106924 个 S1–S7 断点。未知前端、top/清单混用、部分回归及源漂移均拒绝；不继承 multi 的验证回执。
+
+混合 profile 使用 `DP_verilog_t8h16q32e96_<hash>`、`DP_verilog_t8h16q32e128_<hash>`、`DP_verilog_t8h16q64e128_<hash>` 和独立 filelist/top。真实验证入口为 `test/run_mixed_verilog.py --frontend <profile>`：11种精度的10747笔全量输出、三组窗口的混格式/定向/复位检查及S5–S7断点，全部通过才生成后端回执。基础/E64旧门禁要求保持不变。
+
+`prepare --timing-repair-from <run>` 只接受同一已验证RTL、工艺、最终约束及机器绑定的完整有效映射DDC，不接受失败工具/缺报告/忽略设置的run。修复使用临时增加50ps的setup uncertainty做最多两次增量优化，再恢复原始setup预算；hold修复临时增加1ps后同样恢复。源run、两种guardband与最终结果分别记录，不改变用户要求的最终1ns周期、IO延迟或uncertainty，不引入false/multicycle path或retiming。
+
+`design_rule_repair` 可引用原始有效映射或其一次 setup/hold 修复；完整核对父链、冻结 RTL 和约束。它执行电气设计规则修复后重新检查 hold，最终不放宽时钟/IO/uncertainty。报告的 flow_pass 还要求 max_capacitance/max_transition/max_fanout 无违规；setup/hold 状态单独保留，便于识别时序通过但电气规则失败。

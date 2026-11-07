@@ -41,3 +41,5 @@ CModel 检查点 `49ae9e6` 之后实现 QE lane/group 和三个混合顶层；�
 | 15 | 字段位片明确 | ✅ | DP字段宏、参数化槽偏移，固定profile接口单独声明 |
 
 第二次回归包含 DC elaboration 发现的 DFF 端口位宽修复：multi/QE 的 out_z 和 E group 的 out_anchor/out_z 条件表达式使用显式参数宽度零值，避免无尺寸0把模块端口扩为32位。五个前端均重新完整验证；上表和JSON已指向本次新快照。旧检查点611d58f保留用于回退，不用于后续综合。
+
+后续 DC 阶段已完成，独立的面积/时序/门控证据见 [N12 1GHz 比较](../../hw/dc_syn/records/mixed_n12_1000mhz_20261108.md)。

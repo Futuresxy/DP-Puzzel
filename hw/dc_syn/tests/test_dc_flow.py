@@ -222,6 +222,76 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(rejected.returncode, 2)
         self.assertIn("source differs: constraints", rejected.stderr.decode())
 
+    def test_explicit_inverter_sizing_is_recorded_and_scoped(self):
+        parent = self.completed()
+        args = ["prepare", *self.selection(), "--run-id", "dc_Fixture_10240002",
+                "--resize-inverter", "core/inverter", "INVD1Fixture", "INVD4Fixture"]
+        self.assertEqual(self.cli(*args).returncode, 2)
+        result = self.cli(*args, "--design-rule-repair-from", parent.name)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        data = json.loads((self.dc / "runs/dc_Fixture_10240002/inputs/resolved.json").read_text())
+        self.assertEqual(data["design_rule_repair"]["resize_inverters"],
+                         [["core/inverter", "INVD1Fixture", "INVD4Fixture"]])
+
+    def test_electrical_violation_prevents_flow_pass(self):
+        run = self.completed()
+        (run / "reports/constraints.rpt").write_text(
+            "   max_capacitance\n\n   Net    Required Actual Slack\n"
+            "   sample  0.03 0.04 -0.01 (VIOLATED)\n")
+        result = self.cli("report", "--run-id", run.name)
+        measured = json.loads(result.stdout)
+        self.assertTrue(measured["synthesis_valid"])
+        self.assertEqual(measured["timing_status"], "PASS")
+        self.assertFalse(measured["flow_pass"])
+        self.assertEqual(measured["electrical_violations"], ["max_capacitance"])
+
+    def test_design_rule_cleanup_checks_parent_chain(self):
+        parent = self.completed()
+        repair_id = "dc_Fixture_10240002"
+        self.assertEqual(self.cli("prepare", *self.selection(), "--run-id", repair_id,
+                                 "--timing-repair-from", parent.name).returncode, 0)
+        self.assertEqual(self.cli("run", "--run-id", repair_id).returncode, 0)
+        args = ["prepare", *self.selection(), "--run-id", "dc_Fixture_10240003",
+                "--design-rule-repair-from", repair_id]
+        result = self.cli(*args)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        # Tampering with an ancestor must invalidate even an otherwise complete DDC.
+        (parent / "DC_COMPLETE").unlink()
+        args[args.index("dc_Fixture_10240003")] = "dc_Fixture_10240004"
+        rejected = self.cli(*args)
+        self.assertEqual(rejected.returncode, 2)
+        self.assertIn("valid source synthesis", rejected.stderr.decode())
+
+    def test_timing_repair_requires_same_valid_source(self):
+        parent = self.completed()
+        repair_id = "dc_Fixture_10240002"
+        result = self.cli("prepare", *self.selection(), "--run-id", repair_id,
+                          "--timing-repair-from", parent.name)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        repair = self.dc / "runs" / repair_id
+        config = json.loads((repair / "inputs/resolved.json").read_text())
+        self.assertEqual(config["timing_repair"],
+                         {"source_run": parent.name, "setup_guardband_ns": 0.05})
+        self.assertEqual(config["constraints"]["period_ns"],
+                         json.loads((parent / "inputs/resolved.json").read_text())["constraints"]["period_ns"])
+        settings = (repair / "inputs/resolved.tcl").read_text()
+        self.assertIn('set setup_repair_guardband_ns "0.05"', settings)
+        self.assertIn('set timing_repair "1"', settings)
+        changed = json.loads(self.constraints.read_text())
+        changed["setup_uncertainty_ns"] += 0.01
+        dump(self.constraints, changed)
+        rejected = self.cli("prepare", *self.selection(), "--run-id", "dc_Fixture_10240003",
+                            "--timing-repair-from", parent.name)
+        self.assertEqual(rejected.returncode, 2)
+        self.assertIn("source differs: constraints", rejected.stderr.decode())
+
+    def test_timing_repair_rejects_unmapped_source(self):
+        parent = self.prepare()
+        result = self.cli("prepare", *self.selection(), "--run-id", "dc_Fixture_10240002",
+                          "--timing-repair-from", parent.name)
+        self.assertEqual(result.returncode, 2)
+        self.assertFalse((self.dc / "runs/dc_Fixture_10240002").exists())
+
     def test_hold_repair_rejects_incomplete_source(self):
         parent = self.prepare()
         result = self.cli("prepare", *self.selection(), "--run-id", "dc_Fixture_10240002",
@@ -418,6 +488,11 @@ set clock_port clock
 set hold_fix true
 set hold_uncertainty_ns 0.03
 set hold_repair_guardband_ns 0
+set timing_incremental_passes 0
+set timing_repair 0
+set design_rule_repair 0
+set resize_inverters {}
+set setup_repair_guardband_ns 0
 proc get_clocks {name} {global generation; return clock_generation_$generation}
 proc check_clock {value} {
   global generation

@@ -137,3 +137,15 @@ DC 在 compile/optimize_netlist 后可能使此前缓存的 collection 失效。
 `constraints/dp-1000mhz-timing-first.json` 保持原1GHz时序、IO、门控、层级和工艺预算，只设置 `optimize_area=false`，跳过 `set_max_area 0` 与显式 `optimize_netlist -area`；仍保留工具正常映射、设计规则和 hold 修复。用该文件替换 check/prepare 的 `--constraints`，在新 run 中执行。它不保证所有设计时序必然通过，最终仍检查 setup/hold 和 Vt。
 
 E64 同一已验证快照的实测 run dc_dp_top_e_11052354 已全部通过，面积增加2.54%；[对齐逻辑核验和时序结果](records/e64_n12_timing_first_20261105.md)记录小数点转换、逐级核对及各级余量。与面积优先结果比较时须注明策略不同，不能覆盖旧报告或放宽负 slack 判据。
+
+## 混合 DP / 1GHz
+
+三个混合 profile 使用 `test/run_mixed_verilog.py` 产生各自验证回执。与当前 `dp_top` 比较时统一使用 `constraints/dp-mixed-1000mhz-incremental.json`，开启门控、关闭显式面积恢复、最多两次增量时序优化，仅展开 DFF 包装层。数值/流水源代码不变，不使用 retiming。
+
+若有效映射仍有小量 setup 违例，可在新的 run 中 `prepare --timing-repair-from <source-run>`；输入必须与有效源完全一致，临时加严50ps后恢复原始最终约束。若仅有hold违例，可使用已有 `--hold-repair-from`。不接受错误工具运行或缺失证据的DDC作为修复源。原始网表/DDC/报告留在本地 runs，精简比较记录放 records。
+
+四顶层同工况的报告生成命令及结果入口见 [比较记录](records/README.md)。DC 流程软件测试为 `python3.11 -m unittest discover -s hw/dc_syn/tests`；软件测试不替代真实综合。
+
+若 setup/hold 已通过但有 max_capacitance/max_transition/max_fanout 违例，使用 `prepare --design-rule-repair-from <source-run>` 先做设计规则修复，再修复 hold。该入口允许跟随一次 setup/hold 修复，但会逐级验证祖先运行完整性和输入一致性，不允许重复电气修复链。最终三类电气违例也纳入 flow_pass；泄漏优化产生的 Required=0 不作为已承诺的用户功耗预算。
+
+电气自动修复仍未解决的反相器负载可显式传入 `--resize-inverter <instance> <expected-ref> <target-ref>`，只允许用于电气修复。DC 校验当前实例引用、base 库两端口结构和输出函数一致后执行 size_cell，并保护该尺寸避免重新缩小。源 DDC、实例和两个引用名写入运行输入/精简记录，随后仍完整检查 setup/hold/电气规则/VT；不得用它替换不同逻辑或手改网表。

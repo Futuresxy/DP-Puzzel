@@ -44,6 +44,7 @@ def default_run_id(top, when=None):
 def constraint_defaults(value):
     result = dict(value)
     result.setdefault("clock_gating", True)
+    result.setdefault("timing_incremental_passes", 0)
     hierarchy = {"keep_modules": ["PE*", "Pe*", "pe_*", "SubPE*", "ProcessingElement*"],
                  "expand_modules": [], "expand_instances": [], "expand_depth": 0}
     hierarchy.update(result.get("hierarchy", {}))
@@ -77,7 +78,7 @@ def load_inputs(args):
     constraints = constraint_defaults(constraints)
     require(all(c.get("schema_version") == 1 for c in (tech, constraints, machine)), "Unsupported schema")
     required = set(TIME_KEYS + BOOL_KEYS + ("schema_version", "constraint_id", "purpose", "clock_port",
-                                           "timing_max_paths", "clock_gating_min_bitwidth", "hierarchy"))
+                                           "timing_max_paths", "clock_gating_min_bitwidth", "hierarchy", "timing_incremental_passes"))
     require(set(constraints) == required, "Missing or unknown constraint keys")
     require(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", constraints["clock_port"]), "Invalid clock port")
     require(constraints["clock_port"] == gate.get("clock_port", constraints["clock_port"]),
@@ -95,6 +96,8 @@ def load_inputs(args):
         require(type(constraints[key]) is bool, "Expected boolean: " + key)
     for key in ("timing_max_paths", "clock_gating_min_bitwidth"):
         require(type(constraints[key]) is int and constraints[key] > 0, "Expected positive integer: " + key)
+    require(type(constraints["timing_incremental_passes"]) is int and
+            0 <= constraints["timing_incremental_passes"] <= 3, "Expected 0..3 timing incremental passes")
     hierarchy = constraints["hierarchy"]
     require(set(hierarchy) == {"keep_modules", "expand_modules", "expand_instances", "expand_depth"},
             "Unknown/missing hierarchy settings")
@@ -137,9 +140,12 @@ def load_inputs(args):
 
 def render_tcl(data):
     settings = dict(data["constraints"])
-    repair = data.get("hold_repair")
+    repair = data.get("hold_repair") or data.get("timing_repair") or data.get("design_rule_repair")
     settings["source_ddc"] = str(run_path(repair["source_run"]) / "netlist" / (data["gate"]["top"] + ".ddc")) if repair else ""
-    settings["hold_repair_guardband_ns"] = repair["guardband_ns"] if repair else 0
+    settings["hold_repair_guardband_ns"] = repair.get("guardband_ns", 0.001) if repair else 0
+    settings["timing_repair"] = bool(data.get("timing_repair"))
+    settings["design_rule_repair"] = bool(data.get("design_rule_repair"))
+    settings["setup_repair_guardband_ns"] = data.get("timing_repair", {}).get("setup_guardband_ns", 0)
     settings.update({k: data["technology"][k] for k in ("operating_library", "operating_condition", "wire_load_model")})
     settings["top"] = data["gate"]["top"]
     settings["rtl_language"] = data["gate"].get("language", "sverilog")
@@ -152,6 +158,8 @@ def render_tcl(data):
     text += "".join("set {} {}\n".format(k, tcl_string(v)) for k, v in settings.items() if k != "hierarchy")
     hierarchy = settings["hierarchy"]
     text += "set expand_depth {}\n".format(hierarchy["expand_depth"])
+    resizes = data.get("design_rule_repair", {}).get("resize_inverters", [])
+    text += "set resize_inverters [list " + " ".join("[list " + " ".join(tcl_string(v) for v in row) + "]" for row in resizes) + "]\n"
     for key, values in (("target_dbs", data["target_dbs"]),
                         ("target_library_names", data["technology"]["target_libraries"]),
                         ("rtl_sources", data["gate"]["sources"]), ("include_dirs", data["gate"]["include_dirs"]),
@@ -163,6 +171,22 @@ def render_tcl(data):
 
 
 def prepare(args, data):
+    require(sum(bool(getattr(args, key, None)) for key in
+                ("hold_repair_from", "timing_repair_from", "design_rule_repair_from")) <= 1,
+            "Select one repair mode")
+    if getattr(args, "design_rule_repair_from", None):
+        resizes = getattr(args, "resize_inverter", None) or []
+        for instance, expected, replacement in resizes:
+            require(re.fullmatch(r"[A-Za-z0-9_/]+", instance) and
+                    all(re.fullmatch(r"INVD[0-9]+[A-Za-z0-9_]+", cell) for cell in (expected, replacement)),
+                    "Expected a named mapped inverter and same-function drive variant")
+        data["design_rule_repair"] = {"source_run": args.design_rule_repair_from, "resize_inverters": resizes}
+        verify_repair_source(data)
+    else:
+        require(not getattr(args, "resize_inverter", None), "Inverter sizing requires design-rule repair")
+    if getattr(args, "timing_repair_from", None):
+        data["timing_repair"] = {"source_run": args.timing_repair_from, "setup_guardband_ns": 0.05}
+        verify_repair_source(data)
     if getattr(args, "hold_repair_from", None):
         data["hold_repair"] = {"source_run": args.hold_repair_from, "guardband_ns": 0.001}
         verify_repair_source(data)
@@ -188,17 +212,24 @@ def prepare(args, data):
 
 
 def verify_repair_source(data):
-    repair = data.get("hold_repair")
+    repair = data.get("hold_repair") or data.get("timing_repair") or data.get("design_rule_repair")
     if not repair:
         return
     parent = run_path(repair["source_run"])
     require(not (parent / ".running").exists(), "Source synthesis is still running")
     original = read_json(parent / "inputs/resolved.json")
-    require(not original.get("hold_repair"), "Repair must start from an original synthesis run")
+    require(not original.get("design_rule_repair"), "No repeated design-rule repair chain")
+    if data.get("design_rule_repair"):
+        # A final electrical cleanup may follow one setup/hold repair. Verify
+        # that entire parent chain; never accept drift or incomplete ancestors.
+        verify_repair_source(original)
+    else:
+        require(not original.get("hold_repair") and not original.get("timing_repair"),
+                "Repair must start from an original synthesis run")
     for key in ("gate", "technology", "constraints", "machine", "target_dbs"):
-        require(original[key] == data[key], "Hold repair source differs: " + key)
-    require(data["constraints"]["hold_fix"], "Hold repair requires hold_fix")
-    require(analyze(parent, original)["synthesis_valid"], "Hold repair requires a valid source synthesis")
+        require(original[key] == data[key], "Repair source differs: " + key)
+    require(data["constraints"]["hold_fix"], "Repair requires hold_fix")
+    require(analyze(parent, original)["synthesis_valid"], "Repair requires a valid source synthesis")
 
 
 def verify_inputs(run, for_execution=False):
@@ -220,7 +251,7 @@ def verify_inputs(run, for_execution=False):
 
 def exit_status(summary):
     return 2 if not summary["synthesis_valid"] else (0 if summary.get("flow_pass", summary["timing_pass"]) else
-           3 if summary["timing_status"] == "FAIL" or (summary.get("multi_vt") or {}).get("status") == "FAIL" else 4)
+           3 if summary["timing_status"] == "FAIL" or summary.get("electrical_violations") or (summary.get("multi_vt") or {}).get("status") == "FAIL" else 4)
 
 
 def execute(run):
@@ -307,6 +338,9 @@ def main():
             sub.add_argument("--run-id")
             sub.add_argument("--purpose", default="RTL 综合面积与时序检查")
             sub.add_argument("--hold-repair-from", help="Load this valid run's DDC and repair hold only, with identical inputs")
+            sub.add_argument("--resize-inverter", action="append", nargs=3, metavar=("INSTANCE", "EXPECTED_REF", "TARGET_REF"), help="Verified same-function base-library inverter drive sizing in a design-rule repair")
+            sub.add_argument("--design-rule-repair-from", help="Repair electrical design rules then hold; accepts a verified original or single setup/hold repair")
+            sub.add_argument("--timing-repair-from", help="Load a valid DDC; incremental setup optimization with temporary 50ps guardband, restore final budget")
     for name in ("run", "report", "clean"):
         sub = commands.add_parser(name)
         sub.add_argument("--run-id", required=True)

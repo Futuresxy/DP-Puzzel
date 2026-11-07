@@ -1,4 +1,4 @@
-> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.7.1；修改时间：2026-11-07 23:51:07 +0800；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
+> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.7.1；修改时间：2026-11-08 01:51:08 +0800；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
 
 # DP 规格导航
 
@@ -80,4 +80,4 @@ A/B 同格式，合法请求可逐拍换型；last 只透传，无输出背压�
 
 [混合顶层合同](dptop/mixed-precision-expansion.md) 定义保留四个多精度组后，新增 2/4 个 E 组形成 T8H16Q32E96/E128，或新增四个 [QE group](group/dp_group_qe.md) / [QE lane](lane/dp_lane_qe.md) 形成 T8H16Q64E128。后端按请求屏蔽扩展支的 MAX、移位、求和与特殊值，保持单次 C 和 L8/II=1。
 
-CModel 和 QE/混合 Verilog 已实现；三个顶层分别通过完整 Verilator 验证，保持 L8/II=1。面积和时序以本轮独立 DC 回执为准。
+CModel 和 QE/混合 Verilog 已实现；三个顶层分别通过完整 Verilator 验证，保持 L8/II=1。同库同约束 N12 TT/1GHz 综合已完成，保持 L8/II=1，setup/hold/VT/电气规则均通过；面积、门控及各级时序见 [实测比较](../../../hw/dc_syn/records/mixed_n12_1000mhz_20261108.md)。

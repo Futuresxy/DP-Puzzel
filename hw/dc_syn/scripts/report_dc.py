@@ -138,7 +138,13 @@ def analyze(run, resolved):
         "PASS" if coverage and setup["status"] == hold["status"] == "PASS" else "UNKNOWN")
     valid = not errors
     vt = vt_usage(read(reports / "threshold_voltage_group.rpt"), resolved["technology"].get("multi_vt"))
-    flow_pass = valid and timing_status == "PASS" and (vt is None or vt["status"] == "PASS")
+    electrical_violations = []
+    constraints = read(reports / "constraints.rpt")
+    for section in re.split(r"(?m)^\s{3}(?=[a-z_]+\s*$)", constraints):
+        kind = re.match(r"(max_capacitance|max_transition|max_fanout)\s*\n", section)
+        if kind and "VIOLATED" in section:
+            electrical_violations.append(kind.group(1))
+    flow_pass = valid and timing_status == "PASS" and not electrical_violations and (vt is None or vt["status"] == "PASS")
     return {"schema_version": 2, "run_id": run.name, "purpose": resolved.get("purpose", "RTL 综合面积与时序检查"),
             "time": resolved["created_at"], "top": resolved["gate"]["top"],
             "source_files": [project_path(p) for p in resolved["gate"]["sources"]],
@@ -153,6 +159,9 @@ def analyze(run, resolved):
             "technology": {k: v for k, v in resolved["technology"].items() if k != "reference_dc_version"},
             "parameters": resolved["gate"].get("parameters", {}),
             "hold_repair": resolved.get("hold_repair"),
+            "timing_repair": resolved.get("timing_repair"),
+            "design_rule_repair": resolved.get("design_rule_repair"),
+            "electrical_violations": electrical_violations,
             "critical_setup_path": critical_path(read(reports / "timing_setup.rpt")),
             "stage_setup_paths": {p.stem[7:]: critical_path(read(p)) for p in sorted(stage_reports.glob("timing_S*.rpt"))},
             "clock_period_ns": resolved["constraints"]["period_ns"],
@@ -168,6 +177,9 @@ def compact_record(summary):
             "export_id": summary["export_id"], "rtl_fingerprint": summary["rtl_fingerprint"],
             "parameters": summary.get("parameters", {}), "multi_vt": summary.get("multi_vt"),
             "hold_repair": summary.get("hold_repair"),
+            "timing_repair": summary.get("timing_repair"),
+            "design_rule_repair": summary.get("design_rule_repair"),
+            "electrical_violations": summary.get("electrical_violations", []),
             "critical_setup_path": summary.get("critical_setup_path"),
             "stage_setup_paths": summary.get("stage_setup_paths", {}),
             "source_files": summary["source_files"], "run": "hw/dc_syn/runs/" + summary["run_id"],

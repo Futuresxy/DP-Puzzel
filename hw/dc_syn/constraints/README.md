@@ -5,3 +5,5 @@
 当前不保存生成 SDC；显式 JSON 约束由 `../templates/DC.tcl` 应用，并在每份 run 的 `netlist/<Top>.sdc` 导出。参考预算在 `../constraints/reference-1410mhz.json`，无默认启用的目标工况。v1 为单时钟/统一 IO，min/max 独立，不包含时序例外；新增例外先更新契约和验收，不能编辑 run 快照。
 
 clock_gating 默认开启，hierarchy 默认保留所有模块和 PE 子树。展开按 expand_depth、expand_modules、expand_instances 选择，keep_modules 优先。面积比较时同时核对门控、hold、层级及 IO 策略。
+
+`dp-mixed-1000mhz-incremental.json` 对混合顶层和当前多精度基线使用同一1ns/IO/clock-gating/N12 Vt预算。关闭显式面积恢复；初次compile_ultra后若setup仍为负，最多进行两次受支持的incremental优化，不retime。仅展开dp_lib_DFF*/dp_dff_*寄存器包装，保留lane/group/算术层级，便于门控共享及短路径缓冲。源RTL仍显式使用DFF，不改变L8。旧配置省略timing_incremental_passes时默认为0。X-2025.06明确忽略timing_high_effort_script，流程不请求该过时选项，报告门禁仍拒绝被忽略的设置。

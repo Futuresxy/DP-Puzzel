@@ -97,8 +97,53 @@ if {$source_ddc eq ""} {
   # X-2025.06 may ignore -area_high_effort_script (OPT-1341). Do not request it.
   if {$optimize_area} { set_max_area 0 }
   eval $compile_command
+  # Supported X-2025.06 timing-driven incremental optimization. No retiming,
+  # path exceptions or weaker clock/IO budgets are introduced.
+  for {set pass 0} {$pass < $timing_incremental_passes} {incr pass} {
+    set worst [get_timing_paths -delay_type max -max_paths 1]
+    if {[sizeof_collection $worst] == 0 || [get_attribute $worst slack] >= 0} {break}
+    puts "DP_TIMING_INCREMENTAL_PASS [expr {$pass+1}]"
+    eval [concat $compile_command {-incremental}]
+  }
   if {$optimize_area} { optimize_netlist -area }
   compile -incr -only_design_rule
+}
+if {$timing_repair} {
+  # Optimize against a stricter target, then restore the requested signoff budget.
+  # The source DDC must already be a complete, valid mapped run of this exact RTL.
+  set_clock_uncertainty -setup [expr {$setup_uncertainty_ns + $setup_repair_guardband_ns}] [get_clocks $clock_port]
+  set repair_command [list compile_ultra -incremental -no_autoungroup -no_boundary_optimization]
+  if {$clock_gating} { lappend repair_command -gate_clock }
+  for {set pass 0} {$pass < 2} {incr pass} {
+    eval $repair_command
+    set worst [get_timing_paths -delay_type max -max_paths 1]
+    if {[sizeof_collection $worst] == 0 || [get_attribute $worst slack] >= 0} {break}
+  }
+  set_clock_uncertainty -setup $setup_uncertainty_ns [get_clocks $clock_port]
+}
+if {$design_rule_repair} {
+  # Explicit mapped-cell sizing is provenance, never a hand-edited netlist.
+  foreach row $resize_inverters {
+    lassign $row instance expected replacement
+    set cell [get_cells -quiet $instance]
+    if {[sizeof_collection $cell] != 1 || [get_attribute $cell ref_name] ne $expected} {
+      error "Inverter resize source mismatch: $instance"
+    }
+    set old_pins [get_lib_pins -quiet ${base_library}/${expected}/*]
+    set new_pins [get_lib_pins -quiet ${base_library}/${replacement}/*]
+    if {[sizeof_collection $old_pins] != 2 || [sizeof_collection $new_pins] != 2} {
+      error "Sizing expects a two-pin base-library inverter"
+    }
+    set old_out [get_lib_pins ${base_library}/${expected}/ZN]
+    set new_out [get_lib_pins ${base_library}/${replacement}/ZN]
+    if {[get_attribute $old_out function] ne [get_attribute $new_out function]} {
+      error "Inverter replacement changes logic"
+    }
+    puts "DP_INVERTER_RESIZE $instance $expected $replacement"
+    size_cell $cell ${base_library}/${replacement}
+    set_dont_touch $cell true
+  }
+  compile -incremental_mapping -only_design_rule
 }
 if {$hold_fix} {
   # compile/optimize_netlist can invalidate earlier collection handles.
@@ -125,7 +170,7 @@ report_area -hierarchy -nosplit > reports/area_hierarchy.rpt
 report_qor -significant_digits 9 > reports/qor.rpt
 report_timing -delay_type max -max_paths $timing_max_paths -significant_digits 9 > reports/timing_setup.rpt
 report_timing -delay_type min -max_paths $timing_max_paths -significant_digits 9 > reports/timing_hold.rpt
-if {$top eq "dp_top" || $top eq "dp_top_e"} {
+if {$top eq "dp_top" || $top eq "dp_top_e" || [string match "dp_top_t8h16*" $top]} {
   source inputs/dp_stages.tcl
   report_dp_stages
 }
