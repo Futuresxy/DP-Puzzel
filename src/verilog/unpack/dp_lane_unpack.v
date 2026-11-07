@@ -3,7 +3,10 @@
 // S1 后按对应元素配对计算 0*Inf、sNaN 和 Inf 符号，归约为 4 位 lane 分类。
 // 配对逻辑仍在原 S2 组合区；dp_lane 的 S2 DFF 捕获，无新增流水级。
 // 输出符号保持 atom 紧凑槽；product_negative/active 是 S2 逐乘积掩码。
-module dp_lane_unpack (
+module dp_lane_unpack #(
+  // Static format capability, not a runtime functional input.
+  parameter integer QE_ONLY = 0
+) (
   // 上升沿流水时钟。
   // verilog_format: off
   input wire                          clock,
@@ -61,7 +64,7 @@ module dp_lane_unpack (
   wire [`DP_UNPACK_SIGN_W-1:0]  r1_b_signaling;
   // verilog_format: on
 
-  dp_lane_operand_unpack u_operand_a (
+  dp_lane_operand_unpack #(.QE_ONLY(QE_ONLY)) u_operand_a (
     .clock        (clock),
     .rst_n        (rst_n),
     .in_valid     (in_valid),
@@ -76,7 +79,7 @@ module dp_lane_unpack (
     .out_signaling(r1_a_signaling)
   );
 
-  dp_lane_operand_unpack u_operand_b (
+  dp_lane_operand_unpack #(.QE_ONLY(QE_ONLY)) u_operand_b (
     .clock        (clock),
     .rst_n        (rst_n),
     .in_valid     (in_valid),
@@ -96,7 +99,7 @@ module dp_lane_unpack (
   wire select_h;
   // E 格式字段选择，每 atom 四项。
   wire select_e;
-  assign select_h = (in_registered_datatype == `DP_DT_TF32) | (in_registered_datatype == `DP_DT_FP16) | (in_registered_datatype == `DP_DT_BF16);
+  assign select_h = (QE_ONLY == 0) & ((in_registered_datatype == `DP_DT_TF32) | (in_registered_datatype == `DP_DT_FP16) | (in_registered_datatype == `DP_DT_BF16));
   assign select_e = (in_registered_datatype == `DP_DT_MXFP4) | (in_registered_datatype == `DP_DT_NVFP4) | (in_registered_datatype == `DP_DT_HIF4);
   // verilog_format: on
 
@@ -140,7 +143,7 @@ module dp_lane_unpack (
       wire                       a_signaling;
       // 当前 B 元素的 sNaN 标志。
       wire                       b_signaling;
-      assign element_used = element_index < elements(in_registered_datatype);
+      assign element_used = element_index < ((QE_ONLY != 0) ? (select_e ? `DP_E_LANES : `DP_Q_LANES) : elements(in_registered_datatype));
       assign a_class      = select_h ? r1_a_classes[H_SLOT*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] :
                             select_e ? r1_a_classes[E_SLOT*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] :
                                        r1_a_classes[Q_SLOT*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W];

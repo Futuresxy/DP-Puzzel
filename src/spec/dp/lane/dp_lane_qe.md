@@ -1,8 +1,8 @@
-> 功能：定义 Q4E8 专用 lane 的候选计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.0（已批准，分阶段实施）；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；dp_lane_qe RTL 待实施；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
+> 功能：定义 Q4E8 专用 lane 的计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.1（已批准）；修改时间：2026-11-07 23:51:07 +0800；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；[dp_lane_qe.v](../../../verilog/lane/dp_lane_qe.v)、[dp_qe_product_bank.v](../../../verilog/lane/dp_qe_product_bank.v)；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
 
 # Q4E8 专用 lane 设计草案
 
-本稿配合 [Q8E16 group](../group/dp_group_qe.md) 和 [三种混合 DP](../dptop/mixed-precision-expansion.md) 评审。拟新增 `src/verilog/lane/dp_lane_qe.v`，裁剪多精度 lane 中的 T/H/INT8 运算，不修改既有 `dp_lane` 和 `dp_lane_e` 的功能。本轮已按用户授权建立 QE CModel；RTL 与 PPA 在模型验证后实施。
+本文配合 [Q8E16 group](../group/dp_group_qe.md) 和 [三种混合 DP](../dptop/mixed-precision-expansion.md) 定义。已新增 `src/verilog/lane/dp_lane_qe.v`，裁剪多精度 lane 中的 T/H/INT8 运算，不修改既有 `dp_lane` 和 `dp_lane_e` 的功能。QE CModel 已先行验证；纯 Verilog 实现使用静态 QE 解包与窄乘法 bank，验证入口为 test/run_mixed_verilog.py。
 
 ## 1. 能力与复用边界
 
@@ -73,6 +73,6 @@ Q 的 W8 幅值低补 `LOCAL_W-8` 位后进入局部 RTZ。E pair 的 W10 TC 先
 
 ## 6. 复位、接口和验收
 
-`clock`、同步低有效 `rst_n`、无背压、II=1；valid 每拍推进，payload 仅在该级有效时写入 DFFE；DFF 紧随本级计算。数据/符号/类型/指数/特殊摘要必须属于同一请求。上层只向 QE 发合法 Q/E 请求，非法直接调用也必须被诊断，不能解释成某个默认格式。
+`clock`、同步低有效 `rst_n`、无背压、II=1；valid 每拍推进，payload 仅在该级有效时写入 DFFE；DFF 紧随本级计算。数据/符号/类型/指数/特殊摘要必须属于同一请求。上层只向 QE 发合法 Q/E 请求，顶层对非法元组拒绝握手，不向 QE 发送有效请求；直接实例化 QE 的调用者必须检查此输入前置条件，不能把不支持的格式解释成默认格式。
 
 实施后至少检查：七个子型、所有特殊分类、局部指数边界、HiF4 两 lane 的 e2 差、正负抵消与负零；Q/E 每拍切换、气泡、复位取消；合法 LOCAL_W 变体。与多精度 lane 对照 S1 有效字段、S2 乘积/指数/特殊摘要、S3 四叶和 S4 lane 和；未使用物理位不强求相同。独立数学 golden 负责误差度量，不能替代这些 bit-exact 断点。

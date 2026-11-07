@@ -1,4 +1,4 @@
-> 功能：定义 Q8E16 专用 group 和兼容 S5 token；范围：两个 QE lane、公共指数、组和、scale 与 LZD；版本：v1.7.0（已批准，分阶段实施）；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[QE CModel](../../../cmodel/lib/group/group_qe.cpp) 已实现；dp_group_qe RTL 待实施；现有对照为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)。
+> 功能：定义 Q8E16 专用 group 和兼容 S5 token；范围：两个 QE lane、公共指数、组和、scale 与 LZD；版本：v1.7.1（已批准）；修改时间：2026-11-07 23:51:07 +0800；对应代码：[QE CModel](../../../cmodel/lib/group/group_qe.cpp) 已实现；[dp_group_qe.v](../../../verilog/group/dp_group_qe.v)；现有对照为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)。
 
 # Q8E16 专用 group 设计草案
 
@@ -78,6 +78,6 @@ effective_exponent = A_raw - z
 
 ## 5. 实现和验收边界
 
-拟新增 `src/verilog/group/dp_group_qe.v` 与对应 CModel group/lane 能力实现，公共 token、scale 和顶层后端各保留一份定义。CModel 可复用共享 Q/E 算术，但 trace 必须对应 QE 的窄乘积和实际阶段，不能把未来 RTL 当作已存在。
+已实现 `src/verilog/group/dp_group_qe.v` 与对应 CModel group/lane 能力实现，公共 token、scale 和顶层后端各保留一份定义。CModel 可复用共享 Q/E 算术，但 trace 必须对应 QE 的窄乘积和实际阶段，CModel 与 RTL 必须分别通过数值验证。
 
 评审后实施时，对相同两 lane 输入逐级对照原多精度 group 的全部七个 Q/E 子型，检查 S2 公共 r、S4 lane 和、S5 全部字段。测试还须覆盖两 lane 指数差、scale 边界/特殊值、符号抵消、Q/E 换型、气泡、复位和窗口变体。后续 DC 单独报告 QE 前端与整 DP，不用元素乘法器数量推算面积百分比。

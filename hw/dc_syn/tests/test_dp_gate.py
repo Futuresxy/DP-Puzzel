@@ -81,6 +81,17 @@ class DPGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Full DP campaign'):
             validate_scopes([],self.root,0,1,'e')
 
+    def test_mixed_identity_and_incomplete_campaign_rejected(self):
+        for frontend in ('t8h16q32e96','t8h16q32e128','t8h16q64e128'):
+            with patch.object(adapter,'ROOT',self.root):
+                export,_=adapter.snapshot('verilog',frontend)
+            manifest,_,_=payload(export,self.root)
+            self.assertEqual(manifest['top'],'dp_top_'+frontend)
+            with self.assertRaisesRegex(ValueError,'no backend-eligible'):
+                verify_dp_export(export.name,self.root)
+            with self.assertRaisesRegex(ValueError,'Full DP campaign'):
+                validate_scopes([],self.root,0,1,frontend)
+
     def test_stage_classification_preserves_top_and_lane_distinction(self):
         script='source {'+str(ROOT/'hw/dc_syn/templates/dp_stages.tcl')+'}\n'
         cases={'g_group_0__group_unit/g_lane_0__lane/operand_unpack_a/mantissa_q_reg[0][1]':'S1',

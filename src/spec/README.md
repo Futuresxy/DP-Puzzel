@@ -1,4 +1,4 @@
-> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.6.5；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.7.1；修改时间：2026-11-07 23:51:07 +0800；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 多精度 DP / Cube 设计规范
 
@@ -17,7 +17,7 @@
 | 运行与评估模型 | [CModel 合同](dp/implementation/cmodel.md) · [构建入口](../cmodel/README.md) · [测试报告](../../test/results/cmodel-v1.4.md) |
 | 手写 RTL | [实现合同](dp/implementation/verilog.md) · [源码](../verilog/README.md) · [验证报告](../../test/results/verilog-v1.4.md) |
 | 讨论 E 类专用 DP | [E8 lane](dp/lane/dp_lane_E.md) · [E16 group 与 FP32 后端接入](dp/group/dp_group_E.md)（e2 定点融合、兼容 group 输出；E CModel / RTL 已实现并验证） |
-| 评审低精度算力扩展 | [混合 E96/E128/Q64E128 顶层](dp/dptop/mixed-precision-expansion.md) · [QE lane](dp/lane/dp_lane_qe.md) · [QE group](dp/group/dp_group_qe.md)（v1.7.0 候选，未实现） |
+| 评审低精度算力扩展 | [混合 E96/E128/Q64E128 顶层](dp/dptop/mixed-precision-expansion.md) · [QE lane](dp/lane/dp_lane_qe.md) · [QE group](dp/group/dp_group_qe.md)（v1.7.1，CModel/RTL已实现） |
 | 准备 PPA | [参数](06-configuration.md) · [验证](07-verification.md) · [实现与 PPA](08-implementation-ppa.md) · [功能块统计](dp/implementation/resource-accounting.md) |
 
 ## 2. 设计摘要
@@ -35,10 +35,8 @@
 
 验证与 PPA 结论需按实现快照分别引用；默认 LOCAL_W=28，对 Q 乘积局部窗口 P=26，其他模式依逐级 S/I/F 表解释；FP4 35 位 / HiF4 约 37 位目标的整体误差判据仍需继续评估。
 
-混合组扩展草案保持 T/H 容量，分别扩 E 到 K96/K128、Q 到 K64。该候选的源数、参与掩码与求和增长位另行定义；当前已实现配置表不因此扩展。
+混合组扩展保持 T/H 容量，分别扩 E 到 K96/K128、Q 到 K64。物理源数为7/9，参与掩码逐请求保存，S7 宽度按物理源数自然增长；具体接口见混合顶层合同。
 
 ## 3. 文档约定
 
 正文只呈现当前有效合同和明确标注的候选。仅相邻两个主要架构版本的**核心变更**保留删除线对照，非核心小修直接更新；完整历史由 Git 保存。见 [文档控制](document-control.md) 与 [版本记录](CHANGELOG.md)。
-
-2026-11-07 实施状态：用户已批准 v1.7.0 混合 DP，并将顶层统一为 dp_top_t8h16q32e96、dp_top_t8h16q32e128、dp_top_t8h16q64e128。QE/混合 CModel 已完成第一阶段；验收见 [CModel 阶段报告](../../test/results/mixed-cmodel-v1.7.md)。RTL 与 1GHz clock-gating/timing-first DC 按阶段继续实施，优先保持 L8。此状态取代本页此前的待评审说明。

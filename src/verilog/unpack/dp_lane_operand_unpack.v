@@ -4,7 +4,10 @@
 // NaN/Inf 用 class 表达，数值占位为 magnitude=0/exponent=1；不得在后级再次分类。
 // 输出是紧凑字段，不含 8x23 Number；r1 数据仅有效输入时更新，控制有效位由 lane 持有。
 // M 是无符号 coefficient：T/H 保留原 F10/F7；Q 为 F3；MX/NV 为 F1；HiF 为 F2。
-module dp_lane_operand_unpack (
+module dp_lane_operand_unpack #(
+  // Static format capability, not a runtime functional input.
+  parameter integer QE_ONLY = 0
+) (
   // 上升沿流水时钟。
   // verilog_format: off
   input wire                           clock,
@@ -65,7 +68,8 @@ module dp_lane_operand_unpack (
       element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
     ) begin : g_decode
       dp_operand_unpack #(
-        .INDEX(element_index)
+        .INDEX(element_index),
+        .QE_ONLY(QE_ONLY)
       ) u_decoder (
         .in_data      (in_data),
         .in_datatype  (in_datatype),
@@ -86,9 +90,9 @@ module dp_lane_operand_unpack (
       wire select_e;
       // TF32 仅 atom0 有效；其余格式使用两个 atom。
       wire atom_enabled;
-      assign select_h     = (in_datatype == `DP_DT_TF32) | (in_datatype == `DP_DT_FP16) | (in_datatype == `DP_DT_BF16);
+      assign select_h     = (QE_ONLY == 0) & ((in_datatype == `DP_DT_TF32) | (in_datatype == `DP_DT_FP16) | (in_datatype == `DP_DT_BF16));
       assign select_e     = (in_datatype == `DP_DT_MXFP4) | (in_datatype == `DP_DT_NVFP4) | (in_datatype == `DP_DT_HIF4);
-      assign atom_enabled = (in_datatype != `DP_DT_TF32) | (atom_index == 0);
+      assign atom_enabled = (QE_ONLY != 0) | (in_datatype != `DP_DT_TF32) | (atom_index == 0);
       // verilog_format: on
 
       // M16 选择：H 单幅值；Q 两个低 nibble；INT 两字节；E 四 nibble。
@@ -101,7 +105,7 @@ module dp_lane_operand_unpack (
       // 本 atom 等待 S1 捕获的紧凑幅值。
       wire [`DP_HALF_W-1:0] mantissa_d;
       assign h_mantissa = {{(`DP_HALF_W-`DP_MANT_W){1'b0}}, decoded_magnitude[atom_index]};
-      assign q_mantissa = (in_datatype == `DP_DT_INT8) ? {decoded_magnitude[`DP_UNPACK_ATOM_Q_LANES*atom_index+1][0+:`DP_QUARTER_W], decoded_magnitude[`DP_UNPACK_ATOM_Q_LANES*atom_index][0+:`DP_QUARTER_W]} :
+      assign q_mantissa = ((QE_ONLY == 0) & (in_datatype == `DP_DT_INT8)) ? {decoded_magnitude[`DP_UNPACK_ATOM_Q_LANES*atom_index+1][0+:`DP_QUARTER_W], decoded_magnitude[`DP_UNPACK_ATOM_Q_LANES*atom_index][0+:`DP_QUARTER_W]} :
                                                          {{(`DP_HALF_W-`DP_UNPACK_ATOM_Q_LANES*`DP_MUL_LO){1'b0}}, decoded_magnitude[`DP_UNPACK_ATOM_Q_LANES*atom_index+1][0+:`DP_MUL_LO], decoded_magnitude[`DP_UNPACK_ATOM_Q_LANES*atom_index][0+:`DP_MUL_LO]};
       assign mantissa_d = ~atom_enabled ? 0 :
                           select_h      ? h_mantissa :
@@ -115,7 +119,7 @@ module dp_lane_operand_unpack (
       assign exponent_d = ~atom_enabled                ? 0 :
                           select_h                     ? {{(`DP_UNPACK_ATOM_EXP_W-`DP_EXP_W){1'b0}}, decoded_exponent[atom_index]} :
                           select_e                     ? {{(`DP_UNPACK_ATOM_EXP_W-1){1'b0}}, decoded_exponent[atom_index*`DP_UNPACK_ATOM_SIGN_W][0]} :
-                          (in_datatype == `DP_DT_INT8) ? 0 :
+                          ((QE_ONLY == 0) & (in_datatype == `DP_DT_INT8)) ? 0 :
                                                          {decoded_exponent[`DP_UNPACK_ATOM_Q_LANES*atom_index+1][0+:`DP_Q_EXP_W], decoded_exponent[`DP_UNPACK_ATOM_Q_LANES*atom_index][0+:`DP_Q_EXP_W]};
       // verilog_format: on
 

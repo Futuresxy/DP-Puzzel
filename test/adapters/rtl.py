@@ -11,21 +11,21 @@ import sys
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT/'scripts'))
-from dp_rtl_gate import DP_INTERFACE, PARAMETERS, payload, validate_scopes, verification_inputs
+from dp_rtl_gate import DP_INTERFACE, PARAMETERS, payload, validate_scopes, verification_inputs, MIXED_PROFILES, frontend_top, frontend_list
 
 def snapshot(implementation,frontend='multi'):
     base=ROOT/'src/verilog'
-    if frontend not in ('multi','e') or (frontend=='e' and implementation!='verilog'):
+    if frontend not in ('multi','e') + MIXED_PROFILES or (frontend!='multi' and implementation!='verilog'):
         raise ValueError('E frontend requires maintained pure Verilog')
     interface = DP_INTERFACE if implementation == 'verilog' else dict(DP_INTERFACE, reset_port='reset', reset_active='high')
-    top='dp_top_e' if frontend=='e' else 'dp_top'
-    source_list=base/('files_e.f' if frontend=='e' else 'files.f' if implementation=='verilog' else 'systemverilog/files.f')
+    top=frontend_top(frontend)
+    source_list=base/(frontend_list(frontend) if implementation=='verilog' else 'systemverilog/files.f')
     sources=[ROOT/line for line in source_list.read_text().splitlines() if line and not line.startswith('+')]
     # The plain-Verilog TB also consumes this same encoding header in SV runs.
     sources+=list(sorted((base/'parameter').glob('*.vh')))
     source_hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
     fingerprint=hashlib.sha256(json.dumps(source_hashes,sort_keys=True).encode()).hexdigest()
-    export_id=f'DP_{implementation}_{"e_" if frontend=="e" else ""}{fingerprint[:16]}'
+    export_id=f'DP_{implementation}_{frontend+"_" if frontend!="multi" else ""}{fingerprint[:16]}'
     dest=ROOT/'hw/rtl'/export_id
     if not dest.exists():
         dest.mkdir(parents=True)

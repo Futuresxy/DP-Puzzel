@@ -16,6 +16,18 @@ DP_INTERFACE = {'clock_port': 'clock', 'reset_port': 'rst_n',
                 'reset_kind': 'synchronous', 'reset_active': 'low'}
 CONFIGS = ((4,27,40), (8,27,40), DEFAULT_SCOPE, (4,28,48), (8,32,64), (16,32,64))
 
+MIXED_PROFILES = ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128')
+MIXED_CONFIGS = ((16,27,40), DEFAULT_SCOPE, (16,32,64))
+
+def frontend_top(frontend):
+    return 'dp_top' if frontend == 'multi' else 'dp_top_' + frontend
+
+def frontend_list(frontend):
+    return 'files.f' if frontend == 'multi' else 'files_' + frontend + '.f'
+
+def frontend_prefix(frontend):
+    return 'DP_verilog_' + ('' if frontend == 'multi' else frontend + '_')
+
 
 def verification_inputs(root):
     paths = []
@@ -32,12 +44,12 @@ def verification_inputs(root):
 def payload(export, root):
     manifest = read_json(export/'manifest.json')
     frontend=manifest.get('frontend','multi')
-    require(frontend in ('multi','e'), 'Unknown DP frontend')
-    top='dp_top_e' if frontend=='e' else 'dp_top'
+    require(frontend in ('multi','e') + MIXED_PROFILES, 'Unknown DP frontend')
+    top=frontend_top(frontend)
     require(manifest['export_id'] == export.name and manifest['implementation'] == 'verilog'
             and manifest['top'] == top, 'DP identity mismatch')
     require(manifest.get('interface') == DP_INTERFACE, 'DP clock/reset contract mismatch')
-    lines = (root/'src/verilog'/('files_e.f' if frontend=='e' else 'files.f')).read_text().splitlines()
+    lines = (root/'src/verilog'/frontend_list(frontend)).read_text().splitlines()
     require(lines[0] == '+incdir+src/verilog/parameter', 'Unexpected DP include path')
     sources = lines[1:]
     require(sources and len(set(sources)) == len(sources)
@@ -48,7 +60,7 @@ def payload(export, root):
     hashes = {n: hashlib.sha256(contained(root,n).read_bytes()).hexdigest() for n in names}
     fp = hashlib.sha256(json.dumps(hashes,sort_keys=True).encode()).hexdigest()
     require(manifest['source_sha256'] == hashes and manifest['source_fingerprint'] == fp
-            and export.name == ('DP_verilog_e_' if frontend=='e' else 'DP_verilog_')+fp[:16], 'DP source fingerprint mismatch')
+            and export.name == frontend_prefix(frontend)+fp[:16], 'DP source fingerprint mismatch')
     expected_list = ['+incdir+src/src/verilog/parameter'] + ['src/'+s for s in sources]
     require((export/'files.f').read_text().splitlines() == expected_list, 'DP files.f mismatch')
     require({str(p.relative_to(export)) for p in (export/'src').rglob('*') if p.is_file()}
@@ -60,15 +72,16 @@ def payload(export, root):
 
 
 def validate_scopes(scopes, root, started, finished, frontend='multi'):
+    extended = frontend in MIXED_PROFILES
     e=frontend=='e'
-    required=10 if e else 17
+    required=14 if extended else 10 if e else 17
     require(len(scopes) == required, 'Full DP campaign requires all formats, parameter runs and E directed coverage')
     require(len({r['name'] for r in scopes}) == required, 'Duplicate DP campaign')
     if e:
         require({r['name'] for r in scopes if not r['name'].startswith('mixed-')} ==
                 {'mxfp4_e2m1','nvfp4','hif4','directed-e'}, 'Missing E numerical coverage')
     mixed = [r for r in scopes if r['name'].startswith('mixed-')]
-    require({(r['k_fp16'],r['local_width'],r['global_width']) for r in mixed} == set(CONFIGS),
+    require({(r['k_fp16'],r['local_width'],r['global_width']) for r in mixed} == set(MIXED_CONFIGS if extended else CONFIGS),
             'Missing parameter/cycle coverage')
     total = 0
     for r in scopes:
@@ -81,7 +94,10 @@ def validate_scopes(scopes, root, started, finished, frontend='multi'):
         require(match, 'Invalid simulator PASS counters')
         _, accepted, checked, cancelled = map(int,match.groups())
         require(checked > 0 and accepted == checked+cancelled, 'Invalid transaction counts')
-        if r in mixed:
+        if r in mixed and extended:
+            require(accepted > 5000 and cancelled > 0 and r['cutpoints_checked'] > 60000,
+                    'Incomplete mixed expansion/boundary/reset coverage')
+        elif r in mixed:
             require((accepted,checked,cancelled) == ((144,137,7) if e else (528,487,41)) and r['cutpoints_checked'] > 0,
                     'Incomplete mixed-format/reset coverage')
         else:
@@ -100,12 +116,17 @@ def validate_scopes(scopes, root, started, finished, frontend='multi'):
         for key, digest in (('results_path','output_sha256'),('input_path','input_sha256')):
             require(hashlib.sha256(contained(root,r[key]).read_bytes()).hexdigest() == r[digest], 'Campaign data mismatch')
     require(total == (2883 if e else 10747), 'Missing default-format numerical coverage')
+    if extended:
+        require({r['name'] for r in scopes if r not in mixed} ==
+                {'tf32','fp16','bf16','mxfp8_e4m3','mxfp8_e5m2','mxfp6_e2m3','mxfp6_e3m2',
+                 'mxfp4_e2m1','nvfp4','hif4','int8'}, 'Missing native precision data')
+        return
     require(sum(r['cutpoints_checked'] for r in mixed) == (96916 if e else 231654),
             'Incomplete numerical cutpoint coverage')
 
 
 def verify_dp_export(export_id, root):
-    require(re.fullmatch(r'DP_verilog_(?:e_)?[0-9a-f]{16}',export_id), 'Invalid DP export ID')
+    require(re.fullmatch(r'DP_verilog_(?:(?:e|t8h16q32e96|t8h16q32e128|t8h16q64e128)_)?[0-9a-f]{16}',export_id), 'Invalid DP export ID')
     export = contained(root/'hw/rtl',export_id)
     m, fp, sources = payload(export,root)
     frontend=m.get('frontend','multi')

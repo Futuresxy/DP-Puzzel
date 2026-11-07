@@ -14,15 +14,19 @@
 // INT8                      | 1 | 15 | P-13
 module dp_lane_align #(
   parameter integer LOCAL_W = `DP_DEFAULT_LOCAL_W,
-  parameter integer LEAF_W  = LOCAL_W + 1
+  parameter integer LEAF_W  = LOCAL_W + 1,
+  // Static QE pruning and natural S2 slot widths.
+  parameter integer QE_ONLY = 0,
+  parameter integer PRODUCT_W = `DP_PRODUCT_W,
+  parameter integer EXPONENT_W = `DP_PRODUCT_EXP_W
 ) (
   input wire in_valid,
   input wire [`DP_TYPE_W-1:0] in_datatype,
-  input wire [`DP_E_LANES*`DP_PRODUCT_W-1:0] in_products,
+  input wire [`DP_E_LANES*PRODUCT_W-1:0] in_products,
   input wire [`DP_E_LANES-1:0] in_negative,
   input wire [`DP_E_LANES-1:0] in_active,
-  input wire [`DP_PRODUCT_EXP_W-1:0] in_anchor,
-  input wire [`DP_E_LANES*`DP_PRODUCT_EXP_W-1:0] in_exponents,
+  input wire [EXPONENT_W-1:0] in_anchor,
+  input wire [`DP_E_LANES*EXPONENT_W-1:0] in_exponents,
   output wire [`DP_Q_LANES*LEAF_W-1:0] out_leaves
 );
   `include "dp_functions.vh"
@@ -30,25 +34,25 @@ module dp_lane_align #(
   generate
     for (pair_index = 0; pair_index < `DP_Q_LANES; pair_index = pair_index + 1) begin : g_align
       wire [LOCAL_W-1:0] shift_input;
-      wire [`DP_PRODUCT_EXP_W-1:0] delta;
+      wire [EXPONENT_W-1:0] delta;
       wire sign_value;
       wire signed [`DP_E_PAIR_W-1:0] pair_a;
       wire signed [`DP_E_PAIR_W-1:0] pair_b;
       wire signed [`DP_E_PAIR_W-1:0] pair_sum;
       wire [`DP_E_PAIR_W-1:0] pair_abs;
       wire [LOCAL_W-1:0] shifted;
-      wire [`DP_PRODUCT_W-1:0] product_value;
-      assign product_value = in_products[pair_index*`DP_PRODUCT_W+:`DP_PRODUCT_W];
+      wire [PRODUCT_W-1:0] product_value;
+      assign product_value = in_products[pair_index*PRODUCT_W+:PRODUCT_W];
       wire select_pair;
       wire select_element;
       wire select_float;
       wire [`DP_E_PAIR_W-1:0] pair_magnitude_a;
       wire [`DP_E_PAIR_W-1:0] pair_magnitude_b;
-      assign select_pair = in_valid & (elements(in_datatype) == `DP_E_LANES);
-      assign select_element = in_valid & ~select_pair & (pair_index < elements(in_datatype));
+      assign select_pair = in_valid & (((QE_ONLY != 0) ? (((in_datatype >= `DP_DT_MXFP4) & (in_datatype <= `DP_DT_HIF4)) ? `DP_E_LANES : `DP_Q_LANES) : elements(in_datatype)) == `DP_E_LANES);
+      assign select_element = in_valid & ~select_pair & (pair_index < ((QE_ONLY != 0) ? (((in_datatype >= `DP_DT_MXFP4) & (in_datatype <= `DP_DT_HIF4)) ? `DP_E_LANES : `DP_Q_LANES) : elements(in_datatype)));
       assign select_float = select_element & (in_datatype != `DP_DT_INT8) & in_active[pair_index];
-      assign pair_magnitude_a = in_products[(2*pair_index)*`DP_PRODUCT_W+:`DP_E_PAIR_W];
-      assign pair_magnitude_b = in_products[(2*pair_index+1)*`DP_PRODUCT_W+:`DP_E_PAIR_W];
+      assign pair_magnitude_a = {{(`DP_E_PAIR_W-2*`DP_EIGHTH_W){1'b0}}, in_products[(2*pair_index)*PRODUCT_W+:2*`DP_EIGHTH_W]};
+      assign pair_magnitude_b = {{(`DP_E_PAIR_W-2*`DP_EIGHTH_W){1'b0}}, in_products[(2*pair_index+1)*PRODUCT_W+:2*`DP_EIGHTH_W]};
       // 1. E pair：先将两个幅值恢复补码再相加，保留抵消；之后重新分离符号。
       // pair 容器含增长位，合法 E 乘积和不溢出。其他格式不启用此支路。
       assign pair_a = select_pair ?
@@ -63,21 +67,19 @@ module dp_lane_align #(
       // HiF4 pair 的 guard zeros 保证后续 e2 差值 0..2 的右移不损失数值。
       // INT8 只做静态落位；T/H/Q 依 product_fraction 确定二进制点。
       assign shift_input = select_pair ? {{(LOCAL_W - `DP_E_PAIR_W) {1'b0}}, pair_abs} <<
-        (LEAF_W - `DP_E_PAIR_W) : (select_element & (in_datatype == `DP_DT_INT8)) ?
-        {{(LOCAL_W - `DP_PRODUCT_W) {1'b0}}, product_value} << (LEAF_W - `DP_INT_PRODUCT_W) :
+        (LEAF_W - `DP_E_PAIR_W) : (select_element & ((QE_ONLY == 0) & (in_datatype == `DP_DT_INT8))) ?
+        {{(LOCAL_W - PRODUCT_W) {1'b0}}, product_value} << (LEAF_W - `DP_INT_PRODUCT_W) :
         select_float ?
-        {{(LOCAL_W - `DP_PRODUCT_W) {1'b0}}, product_value} << (LOCAL_W - 2 - product_fraction(
-        in_datatype
-      )) : 0;
+        {{(LOCAL_W - PRODUCT_W) {1'b0}}, product_value} << (LOCAL_W - 2 - ((QE_ONLY != 0) ? (2 * `DP_SCALE_F) : product_fraction(in_datatype))) : 0;
       // 3. 公共 anchor 由本 group 两个 lane 在 S2 共同求 MAX；差值应非负。
       // 零/特殊乘积不参加浮点 MAX；MX/NV pair 与 INT8 的右移量为零。
       assign delta = (select_pair & (in_datatype == `DP_DT_HIF4) & (pair_abs != 0)) ? in_anchor -
-        in_exponents[(2*pair_index)*`DP_PRODUCT_EXP_W+:`DP_PRODUCT_EXP_W] : select_float ?
-        in_anchor - in_exponents[pair_index*`DP_PRODUCT_EXP_W+:`DP_PRODUCT_EXP_W] : 0;
+        in_exponents[(2*pair_index)*EXPONENT_W+:EXPONENT_W] : select_float ?
+        in_anchor - in_exponents[pair_index*EXPONENT_W+:EXPONENT_W] : 0;
       // 4. 共享幅值右移：丢弃低位即 RTZ，不能对负补码直接做算术右移。
       dp_rtz_shift #(
         .W(LOCAL_W),
-        .SHIFT_W(`DP_PRODUCT_EXP_W)
+        .SHIFT_W(EXPONENT_W)
       ) u_local_align_shift (
         .in_magnitude(shift_input),
         .in_shift(delta),

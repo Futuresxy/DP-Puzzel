@@ -12,7 +12,9 @@
 // INT8               | 1 | 8 | 0
 module dp_operand_unpack #(
   // 静态元素槽号；生成期确定，超出当前格式容量时输出零记录。
-  parameter integer INDEX = 0
+  parameter integer INDEX = 0,
+  // Static QE capability removes T/H/INT8 decode paths during elaboration.
+  parameter integer QE_ONLY = 0
 ) (
   // 单侧原始 32 位 lane 输入，按 datatype 解释各元素。
   // verilog_format: off
@@ -102,19 +104,19 @@ module dp_operand_unpack #(
   wire                       is_signaling;
   // 互斥的 ZERO/FINITE/INF/NAN 分类，有限非零才可参与指数 MAX。
   wire [`DP_NUM_CLASS_W-1:0] number_class;
-  assign is_tf32         = in_datatype == `DP_DT_TF32;
-  assign is_fp16         = in_datatype == `DP_DT_FP16;
-  assign is_bf16         = in_datatype == `DP_DT_BF16;
+  assign is_tf32         = (QE_ONLY == 0) & (in_datatype == `DP_DT_TF32);
+  assign is_fp16         = (QE_ONLY == 0) & (in_datatype == `DP_DT_FP16);
+  assign is_bf16         = (QE_ONLY == 0) & (in_datatype == `DP_DT_BF16);
   assign is_mx8_e4       = in_datatype == `DP_DT_MX8_E4M3;
   assign is_mx8_e5       = in_datatype == `DP_DT_MX8_E5M2;
   assign is_mx6_e3       = in_datatype == `DP_DT_MX6_E3M2;
   assign is_mx6_e2       = in_datatype == `DP_DT_MX6_E2M3;
   assign is_fp4          = (in_datatype == `DP_DT_MXFP4) | (in_datatype == `DP_DT_NVFP4);
   assign is_hif4         = in_datatype == `DP_DT_HIF4;
-  assign is_int8         = in_datatype == `DP_DT_INT8;
+  assign is_int8         = (QE_ONLY == 0) & (in_datatype == `DP_DT_INT8);
   assign is_binary_float = ~(is_fp4 | is_hif4 | is_int8);
   assign is_ieee         = is_tf32 | is_fp16 | is_bf16 | is_mx8_e5;
-  assign element_enabled = INDEX < elements(in_datatype);
+  assign element_enabled = (QE_ONLY != 0) ? (INDEX < ((is_fp4 | is_hif4) ? `DP_E_LANES : `DP_Q_LANES)) : INDEX < elements(in_datatype);
   // verilog_format: on
   // Constant-format selectors keep each encoding's field widths explicit.
   // verilog_format: off
@@ -157,8 +159,8 @@ module dp_operand_unpack #(
                             raw_encoding[`DP_E_PAYLOAD_W-1:0] == 3'd5 ? 4'd6 :
                             raw_encoding[`DP_E_PAYLOAD_W-1:0] == 3'd6 ? 4'd8 :
                                                                         4'd12;
-  assign finite_exponent  = (exponent_field == 0 ? 32'd1 : exponent_field) + (elements(in_datatype) == `DP_Q_LANES ? `DP_Q_BIAS - exponent_bias : 0);
-  assign finite_magnitude = ((exponent_field != 0 ? 32'd1 << fraction_field_width : 0) | fraction_field) << (elements(in_datatype) == `DP_Q_LANES ? `DP_SCALE_F - fraction_field_width : 0);
+  assign finite_exponent  = (exponent_field == 0 ? 32'd1 : exponent_field) + (((QE_ONLY != 0) | (elements(in_datatype) == `DP_Q_LANES)) ? `DP_Q_BIAS - exponent_bias : 0);
+  assign finite_magnitude = ((exponent_field != 0 ? 32'd1 << fraction_field_width : 0) | fraction_field) << (((QE_ONLY != 0) | (elements(in_datatype) == `DP_Q_LANES)) ? `DP_SCALE_F - fraction_field_width : 0);
   assign magnitude_work   = ~element_enabled  ? 0 :
                             is_int8           ? (negative ? (1 << `DP_QUARTER_W) - raw_encoding : raw_encoding) :
                             is_hif4           ? {{(32 - `DP_E_PAYLOAD_W) {1'b0}}, raw_encoding[`DP_E_PAYLOAD_W-1:0]} << in_e1[INDEX/`DP_E1_GRAIN] :

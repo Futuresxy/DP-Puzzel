@@ -1,4 +1,4 @@
-> 功能：定义 group 规格目录与计算边界；范围：两个 lane、S2 公共指数、S5 组和/scale/LZD 及 E16 优化候选；版本：v1.6.5；修改时间：2026-11-07 23:00:00 +08:00；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)、[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；Chisel 尚未实现。
+> 功能：定义 group 规格目录与计算边界；范围：两个 lane、S2 公共指数、S5 组和/scale/LZD 及 E16 优化候选；版本：v1.7.1；修改时间：2026-11-07 23:51:07 +0800；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)、[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；Chisel 尚未实现。
 
 # group：两 lane 协作、组和与 scale
 
@@ -29,8 +29,6 @@ S5 幅值保持未规格化状态，LZD 只计数。输出字段、默认 M31 �
 
 lane 元素解包和乘法见 [lane](../lane/README.md)；量化块 scale 广播及组数由 [顶层输入布局](../dptop/layout-and-scales.md) 决定，不能因基本组 E16 就改变 MX 的 32 元素量化块。C 解包、G 组+C MAX、全局移位、最终树和编码由 [dptop](../dptop/README.md) 拥有。面积统计分别计数元素乘法、scale-pair 与 group-scale，避免跨流水共享资源的错误假设。
 
-## 4. QE 专用候选
+## 4. QE 专用实现
 
-[dp_group_qe.md](dp_group_qe.md) 定义两条 Q4E8 lane 组成 Q8E16，保留公共指数及原 S5 组和/abs/scale/LZD，输出与多精度 Q/E 同坐标的 token，用于混合 T8H16Q64E128。与已有 E group 统一字段、时刻及数值不变量，允许 E-only HiF4 保持自己的坐标。候选 v1.7.0 待评审，尚未实施。
-
-2026-11-07 实施状态：用户已批准 v1.7.0 混合 DP，并将顶层统一为 dp_top_t8h16q32e96、dp_top_t8h16q32e128、dp_top_t8h16q64e128。QE/混合 CModel 已完成第一阶段；验收见 [CModel 阶段报告](../../../../test/results/mixed-cmodel-v1.7.md)。RTL 与 1GHz clock-gating/timing-first DC 按阶段继续实施，优先保持 L8。此状态取代本页此前的待评审说明。
+[dp_group_qe.md](dp_group_qe.md) 定义两条 Q4E8 lane 组成 Q8E16，保留公共指数及原 S5 组和/abs/scale/LZD，输出与多精度 Q/E 同坐标的 token，用于混合 T8H16Q64E128。与已有 E group 统一字段、时刻及数值不变量，允许 E-only HiF4 保持自己的坐标。v1.7.1 已实施 CModel 与 Verilog，保持 L8/II=1。

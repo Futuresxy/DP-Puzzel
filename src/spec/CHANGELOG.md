@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.6.5；修改时间：2026-11-07 23:00:00 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.1；修改时间：2026-11-07 23:51:07 +0800；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -6,24 +6,23 @@
 
 | 版本 | 时间（+08:00） | 核心合同 |
 | --- | --- | --- |
-| v1.5 | 2026-11-05 | S5 使用 14×8 无符号 scale；主/E 共用兼容 group token 和 S6–S8。 |
 | v1.6 | 2026-11-06 | 外部复位改为同步低有效 rst_n；流水显式实例化公共 DFF；CModel/RTL/spec 命名统一。数值、默认 K16/28/40、L8/II=1 保持。 |
 
-v1.5 → v1.6：~~reset 高有效、功能模块内 always 保存流水~~ → `rst_n` 低有效、`ff_sN_sM_<field>` 保存流水。接口使用方需同步改接复位；CModel JSON reset 继续表示“请求复位”的软件事件。冻结 SystemVerilog 不迁移。更早变更从 Git 历史查询。
+| v1.7 | 2026-11-07 | QE 专用前端与 E96/E128/Q64E128 混合顶层；保持 L8/II=1，物理后端扩为7/9源。 |
+
+v1.6 → v1.7：~~仅多精度/E64 独立顶层~~ → 保留原顶层，增加 E96/E128/Q64E128 混合组装配、逐请求参与掩码、7/9 源规约和 QE 专用前端；保持 L8/II=1。
 
 ## 2. 验证与实施边界
 
-v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)。旧 N12 综合报告仍对应其原 export ID；本次不以功能回归证明面积、时序或功耗。Chisel、混合组和阵列未新增实现。
+v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)。旧 N12 综合报告仍对应其原 export ID；本次不以功能回归证明面积、时序或功耗。Chisel 与阵列未新增实现；混合组新增 CModel 和纯 Verilog，采用独立验证证据。
 
 当前实现小修 v1.6.4：多精度 dp_lane_unpack 改为 A/B 紧凑 M/E/S 入口，内部完成配对特殊分类；新增 dp_lane_operand_unpack 保存原 S1 字段。尾数/指数 bank 直接选 M32/E20，移除 184 位 Number 展开接口。CModel、数值布局、S1/S2 边界和 L8/II=1 不变。沿用 rN 功能命名、就地 DFF 与完整语义排版；同步测试探针。代码对比与验收见 [紧凑解包验证](../../test/results/dp-compact-unpack-v1.6.4.md)。
-
-文档修订 v1.6.5：登记独立的 v1.7.0 混合组候选，用户 review 前不生效。候选保持原四组 T8H16Q32E64，添加 2/4 个 E 组或四个 QE 组；新增 QE S1–S5 定义、按请求参与的后端和 7/9 源宽度推导。仅新增文档与独立 logical-K 数学数据，未新增混合 CModel/RTL、未运行新 DC/功耗。原 v1.6 实现不变。
 
 ## 3. 当前文件索引
 
 | 文档 | 当前版本 | 功能 |
 | --- | --- | --- |
-| [README.md](README.md) | v1.6.5 | 汇总新版规格入口和生效范围 |
+| [README.md](README.md) | v1.7.1 | 汇总新版规格入口和生效范围 |
 | [00-system-scope.md](00-system-scope.md) | v1.5.8 | 定义系统边界和设计目标 |
 | [01-numerics.md](01-numerics.md) | v1.5.4 | 定义数值语义与保留精度 |
 | [03-interfaces.md](03-interfaces.md) | v1.5.4 | 汇总共用输入输出协议 |
@@ -31,20 +30,20 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [06-configuration.md](06-configuration.md) | v1.5.7 | 定义参数及其合法派生关系 |
 | [07-verification.md](07-verification.md) | v1.5.8 | 定义现用模型/RTL及未来实现的共用验收合同 |
 | [08-implementation-ppa.md](08-implementation-ppa.md) | v1.5.5 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.6.5 | 维护整体架构与文档版本时间线 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.7.1 | 维护整体架构与文档版本时间线 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.5.4 | 定义规格版本和历史修订规则 |
-| [dp/README.md](dp/README.md) | v1.6.5 | 按模块与共用合同组织 DP 规格 |
-| [dp/lane/README.md](dp/lane/README.md) | v1.6.5 | 定义 lane 规格目录与计算边界 |
+| [dp/README.md](dp/README.md) | v1.7.1 | 按模块与共用合同组织 DP 规格 |
+| [dp/lane/README.md](dp/lane/README.md) | v1.7.1 | 定义 lane 规格目录与计算边界 |
 | [dp/lane/dp_lane_E.md](dp/lane/dp_lane_E.md) | v1.6 | 讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合 |
 | [dp/lane/multiplier-sharing.md](dp/lane/multiplier-sharing.md) | v1.5.4 | 定义尾数乘法器共享和模式路由 |
 | [dp/lane/shifter-sharing.md](dp/lane/shifter-sharing.md) | v1.5.4 | 定义固定物理移位器的 mux 复用 |
 | [dp/lane/unpack.md](dp/lane/unpack.md) | v1.6.4 | 定义固定 E/M/S 解包数值布局 |
-| [dp/group/README.md](dp/group/README.md) | v1.6.5 | 定义 group 规格目录与计算边界 |
+| [dp/group/README.md](dp/group/README.md) | v1.7.1 | 定义 group 规格目录与计算边界 |
 | [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.6 | 讨论 E16 定点组规约及兼容的 group 输出 |
 | [dp/group/scale.md](dp/group/scale.md) | v1.5.5 | 定义 scale 统一解包和 bias 处理 |
 | [dp/group/shared-align.md](dp/group/shared-align.md) | v1.5.4 | 定义分组共享对齐微架构 |
-| [dp/dptop/README.md](dp/dptop/README.md) | v1.6.5 | 定义 DP 顶层规格目录与后端边界 |
+| [dp/dptop/README.md](dp/dptop/README.md) | v1.7.1 | 定义 DP 顶层规格目录与后端边界 |
 | [dp/dptop/control.md](dp/dptop/control.md) | v1.6 | 定义 DP 逐请求控制与有效位推进 |
 | [dp/dptop/global-align.md](dp/dptop/global-align.md) | v1.5.4 | 定义 scale 后实际指数检测与合并对齐 |
 | [dp/dptop/independent-align.md](dp/dptop/independent-align.md) | v1.5.4 | 记录独立移位对齐对比方案 |
@@ -61,14 +60,12 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [dp-group/README.md](dp-group/README.md) | v1.4.1 | 定义广播计算组规格 |
 | [tensorcore/README.md](tensorcore/README.md) | v1.4.1 | 定义 TensorCore 阵列规格 |
 
-## 4. 待评审架构候选（未生效）
+## 4. 混合扩展实现合同
 
 | 文档 | 固定版本 | 评审范围 |
 | --- | --- | --- |
-| [混合顶层](dp/dptop/mixed-precision-expansion.md) | v1.7.0 | 三种扩展装配、输入布局、屏蔽、MAX/树、L8 与验证计划 |
-| [QE lane](dp/lane/dp_lane_qe.md) | v1.7.0 | Q4E8 的紧凑解包、窄乘法和原 Q/E 流水 |
-| [QE group](dp/group/dp_group_qe.md) | v1.7.0 | Q8E16 组和、无符号 scale 与兼容 S5 token |
+| [混合顶层](dp/dptop/mixed-precision-expansion.md) | v1.7.1 | 三种扩展装配、输入布局、屏蔽、MAX/树、L8 与验证计划 |
+| [QE lane](dp/lane/dp_lane_qe.md) | v1.7.1 | Q4E8 的紧凑解包、窄乘法和原 Q/E 流水 |
+| [QE group](dp/group/dp_group_qe.md) | v1.7.1 | Q8E16 组和、无符号 scale 与兼容 S5 token |
 
-本表是候选目录，不把 v1.7.0 列为已生效的第三个历史架构版本。实施与验收状态以候选正文及后续实际回执为准。
-
-2026-11-07 实施状态：用户已批准 v1.7.0 混合 DP，并将顶层统一为 dp_top_t8h16q32e96、dp_top_t8h16q32e128、dp_top_t8h16q64e128。QE/混合 CModel 已完成第一阶段；验收见 [CModel 阶段报告](../../test/results/mixed-cmodel-v1.7.md)。RTL 与 1GHz clock-gating/timing-first DC 按阶段继续实施，优先保持 L8。此状态取代本页此前的待评审说明。
+CModel 验证见 test/results/mixed-cmodel-v1.7.md；RTL 验证和本轮 DC 使用各自的新快照与回执。

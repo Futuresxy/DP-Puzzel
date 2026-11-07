@@ -111,3 +111,17 @@ E 元素解包独立位于 [unpack/dp_lane_unpack_e.v](unpack/dp_lane_unpack_e.v
 `dp_lane.v` 使用 `r1_valid`～`r4_valid` 明确阶段，寄存数据使用 `rN_<功能>`；参数、端口和局部变量在声明前解释作用。完整条件/函数调用按语义换行，同组赋值按等号对齐。本次解包与 bank 也遵循该排版；其余模块按任务范围逐步整理。TB 通过 dp_tb_trace_names.vh 分别映射当前 lane 和冻结 SV 的内部观察点。
 
 紧凑解包阅读入口：[A/B 解包及分类](unpack/dp_lane_unpack.v) → [单侧 S1 保存](unpack/dp_lane_operand_unpack.v) → [元素译码](unpack/dp_operand_unpack.v)。数值输出直接连接 [尾数 bank](lane/dp_mantissa_bank.v) 和 [指数 bank](lane/dp_exponent_bank.v)，不恢复每侧 184 位 Number；S1 声明寄存宽度保持 84 位/侧，L8/II=1 不变。[前后对比与验收](../../test/results/dp-compact-unpack-v1.6.4.md)记录接口、分类位置及回归证据。
+
+## 混合配比顶层（v1.7.1）
+
+新增 `dp_lane_qe` / `dp_group_qe` 与三个固定 profile；详见 [混合架构](../spec/dp/dptop/mixed-precision-expansion.md)。
+
+```sh
+python3.11 test/run_mixed_verilog.py --frontend t8h16q32e96
+python3.11 test/run_mixed_verilog.py --frontend t8h16q32e128
+python3.11 test/run_mixed_verilog.py --frontend t8h16q64e128
+```
+
+每个顶层独立导出和 lint，完整运行11种精度的10747笔原生数据，再运行三组窗口的混格式/边界/协议/断点测试。`golden_exact` 使用本 profile 现场 CModel，`math_exact/max_ulp` 使用提交的独立数学 golden；不会覆写数据中的历史期望。验证记录见 [混合 RTL 验证](../../test/results/mixed-rtl-v1.7.md)。
+
+文件清单分别为 `files_t8h16q32e96.f`、`files_t8h16q32e128.f`、`files_t8h16q64e128.f`。三个 wrapper 共用 dp_top_mixed；基础四组保留原功能，新增组按类型有效使能，S6/S7 的参与旁带跟随当前在途请求。
