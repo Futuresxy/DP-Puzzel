@@ -1,8 +1,8 @@
-> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)、[dp_lane_unpack_e.v](../../../verilog/unpack/dp_lane_unpack_e.v)；多精度基线为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)。
+> 功能：讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合；范围：S1–S3 寄存、S4 lane 内组合左移、E64 前端流水；版本：v1.7.2；修改时间：2026-11-08 02:24:09 +0800；对应代码：[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)、[dp_lane_unpack_e.v](../../../verilog/unpack/dp_lane_unpack_e.v)；多精度基线为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)。
 
 # E 类专用 lane 设计与实现
 
-用户已确认采用 HiF4 先求和再移位，并使 group 输出兼容现有多精度版本；进一步明确可将 HiF4 e2 融入定点 coefficient，删除两 lane 间的指数 MAX/差值/右移对齐。按用户授权，CModel 已实现所选 S2 乘法+第一层 pair、S3 四项规约切分，S4/S5 接口拍数保持不变。专用 RTL 已实现并通过 Verilator 回归；时序和面积按对应 DC 结果解释；现有多精度主实现保持 v1.5 架构及 v1.5.1 实现映射。
+用户已确认采用 HiF4 先求和再移位，并使 group 输出兼容现有多精度版本；进一步明确可将 HiF4 e2 融入定点 coefficient，删除两 lane 间的指数 MAX/差值/右移对齐。按用户授权，CModel 已实现所选 S2 乘法+第一层 pair、S3 四项规约切分，S4/S5 接口拍数保持不变。专用 RTL 已实现并通过 Verilator 回归；时序和面积按对应 DC 结果解释；现有设计族为 v1.7，原多精度前端的数值与流水合同保持。
 
 ## 1. E64 组织与 e2 融合
 
@@ -82,7 +82,7 @@ S4 对 HiF4 先将 12 位 TC 符号扩展到 14 位，再左移 p；MX/NV 直接
 
 `all_negative` 按所有原始乘积符号归约，包括零元素；group 的精确零符号继续使用原合同。不得用 lane 和的 sign bit 替代全部元素的零符号旁带。scale 乘零也保留原组和符号规则。
 
-p、datatype、scale、valid、特殊值和零符号信息必须跟随本笔数据。同步高有效复位清除有效控制并取消在途，无效周期数据保持。删去指数 MAX 后不需要 lane 之间的独立握手；顶层仍只有一次 A/B/C 原子接收。
+p、datatype、scale、valid、特殊值和零符号信息必须跟随本笔数据。同步低有效 `rst_n` 清除有效控制并取消在途，无效周期数据保持。删去指数 MAX 后不需要 lane 之间的独立握手；顶层仍只有一次 A/B/C 原子接收。
 
 ## 5. 寄存成本与时序待验收项
 
@@ -106,3 +106,23 @@ p、datatype、scale、valid、特殊值和零符号信息必须跟随本笔数�
 覆盖所有元素编码乘积、HiF4 e1/e2 组合、严重抵消、正负零、scale 分类、C 特殊值、逐拍换型、气泡和复位；G=1/2/4 及原合法窗口分别验证。当前 CModel 已通过三格式各 961 笔及 6 项 E 前端测试：独立 Fraction 检查 pair/lane/group 数值、同多精度模型比较兼容 S5 坐标和 S6–S8；覆盖 K4/8/16、27/40、28/48、32/64 及 L8/L9。测试入口为 [test_e_frontend.py](../../../../test/tests/test_e_frontend.py)。专用 RTL 已通过同源 Verilator 检查；完整覆盖、断点及结果见 [E64 报告](../../../../test/results/e64-v1.5.8.md)。
 
 专用 CModel 与纯 Verilog 已实现；冻结的 SystemVerilog 历史目录不添加 E-only 模块，详见 [维护边界](../../../verilog/systemverilog/README.md)。
+
+## 7. E 扩展的进一步面积优化
+
+当前窄 pair/树和 lane 求和后融合 e2 已实现；不能重复列为新收益。新增优化继续支持 MXFP4、NVFP4、HiF4，不增加 T/H/Q/INT8，保持本页 S2/S3/S4 所有权和组 S5 接口。
+
+优先候选为在 S1 前对 A/B 符号做 XOR，只寄存八个乘积符号，替代两组各八个操作数符号。若无其他消费者，逻辑上每 lane 减少八个符号寄存位，四个扩展 E group 的八条 lane 共减少 64 位；原始零项符号和 all_negative 必须仍然正确。XOR 前移需检查 S1 时序，面积收益待综合网表确认。
+
+当前范围决定的必要宽度如下；不能为压面积直接少留一位：
+
+| 数值节点 | HiF4 最大幅值 coefficient | 当前必要表示 |
+| --- | ---: | --- |
+| 单乘积 | 14×14=196 | unsigned8；注入符号为 signed9 |
+| pair | 2×196=392 | signed10 |
+| lane 八项和 | 8×196=1568 | signed12 |
+| lane 融合 e2 后 | 1568×4=6272 | signed14 |
+| 两 lane 组和 | 2×6272=12544 | signed15；abs 后 unsigned14 |
+
+后续可独立评估小系数乘法实现：E2M1 使用小尾数与指数重构，或 HiF4 同一 e1 粒度内先做未移位乘积的 pair，再施加共同 e1 和。后者仅在两项共享同一个 e1_a/e1_b、无中间截断、输出宽度足够时成立；跨粒度不能合并。这些是未测候选，额外移位/MUX 可能抵消乘法节省，不替换当前已验证实现。需穷举元素编码和 e1/e2、核对 S2/S3 精确值，并在同工况 DC 下比较。
+
+S1 符号压缩与乘法候选分开提交/验证，不能将逻辑寄存位下降直接换算成实际面积或功耗。整机目标和测量约束见 [混合顶层优化](../dptop/mixed-precision-expansion.md#10-独立面积优化版本与验收)。

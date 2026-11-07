@@ -1,6 +1,6 @@
-> 功能：定义 Q4E8 专用 lane 的计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.1（已批准）；修改时间：2026-11-07 23:51:07 +0800；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；[dp_lane_qe.v](../../../verilog/lane/dp_lane_qe.v)、[dp_qe_product_bank.v](../../../verilog/lane/dp_qe_product_bank.v)；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
+> 功能：定义 Q4E8 专用 lane 的计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.2；修改时间：2026-11-08 02:24:09 +0800；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；[dp_lane_qe.v](../../../verilog/lane/dp_lane_qe.v)、[dp_qe_product_bank.v](../../../verilog/lane/dp_qe_product_bank.v)；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
 
-# Q4E8 专用 lane 设计草案
+# Q4E8 专用 lane 设计与优化
 
 本文配合 [Q8E16 group](../group/dp_group_qe.md) 和 [三种混合 DP](../dptop/mixed-precision-expansion.md) 定义。已新增 `src/verilog/lane/dp_lane_qe.v`，裁剪多精度 lane 中的 T/H/INT8 运算，不修改既有 `dp_lane` 和 `dp_lane_e` 的功能。QE CModel 已先行验证；纯 Verilog 实现使用静态 QE 解包与窄乘法 bank，验证入口为 test/run_mixed_verilog.py。
 
@@ -76,3 +76,18 @@ Q 的 W8 幅值低补 `LOCAL_W-8` 位后进入局部 RTZ。E pair 的 W10 TC 先
 `clock`、同步低有效 `rst_n`、无背压、II=1；valid 每拍推进，payload 仅在该级有效时写入 DFFE；DFF 紧随本级计算。数据/符号/类型/指数/特殊摘要必须属于同一请求。上层只向 QE 发合法 Q/E 请求，顶层对非法元组拒绝握手，不向 QE 发送有效请求；直接实例化 QE 的调用者必须检查此输入前置条件，不能把不支持的格式解释成默认格式。
 
 实施后至少检查：七个子型、所有特殊分类、局部指数边界、HiF4 两 lane 的 e2 差、正负抵消与负零；Q/E 每拍切换、气泡、复位取消；合法 LOCAL_W 变体。与多精度 lane 对照 S1 有效字段、S2 乘积/指数/特殊摘要、S3 四叶和 S4 lane 和；未使用物理位不强求相同。独立数学 golden 负责误差度量，不能替代这些 bit-exact 断点。
+
+## 7. 面积优化：QE 专用解包与寄存压缩
+
+本节是独立优化版本的实现约束与候选，不改写第 2 节已验证的当前流水。优化只覆盖扩展 QE lane，保留四种 MXFP8/6 及 MXFP4、NVFP4、HiF4；不支持 T/H/INT8。当前 `QE_ONLY=1` 已静态裁剪这些不支持的模式，不能把同一项裁剪再次计为新增收益。整机目标及原始面积证据见 [顶层优化约束](../dptop/mixed-precision-expansion.md#10-独立面积优化版本与验收)。
+
+| 优先级 / 状态 | 修改方向 | 等价条件与验收 |
+| --- | --- | --- |
+| 优先实施；待验证/综合 | 按四种 Q 编码固定切片、固定偏置校正，再选择 M4/E5；E 直接产生 M4 与必要 e2。替换通用解包中的运行时字段宽度、32 位掩码和移位表达式 | 编码、非正规、E4M3 NaN、E5M2 Inf/sNaN、符号和 FP6 高六位布局全部不变；逐编码验证有效字段。源码较窄不等于综合网表面积已下降 |
+| 优先实施；待 S1 时序验证 | 在 S1 寄存前做 A/B 配对分类、符号 XOR 和摘要归约；保存乘积符号、有限非零活动位、特殊摘要及 all_negative，减少 A/B 各自分类/符号寄存与后续选择 | 保留每槽数值活动信息；特殊摘要包含 NaN、invalid、正/负 Inf；0×Inf 和 sNaN 规则不变。原始乘积符号必须包含零项，不能由求和符号重建；Q 的未使用槽不参与归约 |
+| 优先检查；收益待网表确认 | Q 只保存四个不同的 U6 指数；E 的共同 e2 和只保存一次，MX/NV 使用常量零；消费端按格式恢复 | 不减小 Q 指数范围；先检查 DC 是否已合并相同寄存位，不能按 RTL 总线声明重复估算节省 |
+| 后续候选；需内部切点与时序验证 | S3 对齐后先做两路 pair，加法完整增长；S3 保存 2×(LOCAL_W+2)，S4 再求总和 | 只能在原四叶各自 RTZ 后求和，不能先合并再截断；S3 从默认 4×29=116 位变为 2×30=60 位，逻辑数据位减少 56/lane，八 lane 为 448 位。S3 多一层加法，当前余量很小，未通过 1GHz 不采用 |
+
+Q/E 的局部对齐仍需四条物理路径；只裁掉不可能的格式选择，不能因为 E 没有 Q 指数就删除 QE 共用的 Q 对齐器。HiF4 两 lane 指数差仍为 0/1/2，沿用现有 QE 截断坐标；不要直接混入 E-only 的 e2 融合坐标。
+
+固定字段解包和分类压缩的验收先比较组合真值，再比较 S2/S5 摘要及最终结果。若 S1 分类前移或 S3 pair 改变内部寄存内容，CModel trace 与 TB 必须描述新切点；S5 同坐标 token、S6/S7 及 S8 仍要求 bit-exact，L8/II=1 不变。寄存位差是逻辑规模推导，实际面积包含 ICG、MUX、缓冲及满足时序的驱动尺寸。

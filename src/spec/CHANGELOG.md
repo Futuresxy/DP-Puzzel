@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.1；修改时间：2026-11-07 23:51:07 +0800；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.2；修改时间：2026-11-08 02:24:09 +0800；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -29,17 +29,17 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [06-configuration.md](06-configuration.md) | v1.5.7 | 定义参数及其合法派生关系 |
 | [07-verification.md](07-verification.md) | v1.5.8 | 定义现用模型/RTL及未来实现的共用验收合同 |
 | [08-implementation-ppa.md](08-implementation-ppa.md) | v1.5.5 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.7.1 | 维护整体架构与文档版本时间线 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.7.2 | 维护整体架构与文档版本时间线 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.5.4 | 定义规格版本和历史修订规则 |
-| [dp/README.md](dp/README.md) | v1.7.1 | 按模块与共用合同组织 DP 规格 |
+| [dp/README.md](dp/README.md) | v1.7.2 | 按模块与共用合同组织 DP 规格 |
 | [dp/lane/README.md](dp/lane/README.md) | v1.7.1 | 定义 lane 规格目录与计算边界 |
-| [dp/lane/dp_lane_E.md](dp/lane/dp_lane_E.md) | v1.6 | 讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合 |
+| [dp/lane/dp_lane_E.md](dp/lane/dp_lane_E.md) | v1.7.2 | 讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合 |
 | [dp/lane/multiplier-sharing.md](dp/lane/multiplier-sharing.md) | v1.5.4 | 定义尾数乘法器共享和模式路由 |
 | [dp/lane/shifter-sharing.md](dp/lane/shifter-sharing.md) | v1.5.4 | 定义固定物理移位器的 mux 复用 |
 | [dp/lane/unpack.md](dp/lane/unpack.md) | v1.6.4 | 定义固定 E/M/S 解包数值布局 |
 | [dp/group/README.md](dp/group/README.md) | v1.7.1 | 定义 group 规格目录与计算边界 |
-| [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.6 | 讨论 E16 定点组规约及兼容的 group 输出 |
+| [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.7.2 | 讨论 E16 定点组规约及兼容的 group 输出 |
 | [dp/group/scale.md](dp/group/scale.md) | v1.5.5 | 定义 scale 统一解包和 bias 处理 |
 | [dp/group/shared-align.md](dp/group/shared-align.md) | v1.5.4 | 定义分组共享对齐微架构 |
 | [dp/dptop/README.md](dp/dptop/README.md) | v1.7.1 | 定义 DP 顶层规格目录与后端边界 |
@@ -63,8 +63,14 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 
 | 文档 | 固定版本 | 评审范围 |
 | --- | --- | --- |
-| [混合顶层](dp/dptop/mixed-precision-expansion.md) | v1.7.1 | 三种扩展装配、输入布局、屏蔽、MAX/树、L8 与验证计划 |
-| [QE lane](dp/lane/dp_lane_qe.md) | v1.7.1 | Q4E8 的紧凑解包、窄乘法和原 Q/E 流水 |
-| [QE group](dp/group/dp_group_qe.md) | v1.7.1 | Q8E16 组和、无符号 scale 与兼容 S5 token |
+| [混合顶层](dp/dptop/mixed-precision-expansion.md) | v1.7.2 | 三种扩展装配、输入布局、屏蔽、MAX/树、L8 与验证计划 |
+| [QE lane](dp/lane/dp_lane_qe.md) | v1.7.2 | Q4E8 的紧凑解包、窄乘法和原 Q/E 流水 |
+| [QE group](dp/group/dp_group_qe.md) | v1.7.2 | Q8E16 组和、无符号 scale 与兼容 S5 token |
 
 CModel 验证见 test/results/mixed-cmodel-v1.7.md；RTL 验证和本轮 DC 使用各自的新快照与回执。
+
+## 5. v1.7.2 优化方案修订
+
+按现有 N12 综合面积分解补充 [混合顶层优化约束](dp/dptop/mixed-precision-expansion.md#10-独立面积优化版本与验收)，将 QE 固定字段解包、分类/符号寄存压缩、E 符号压缩及扩展源整数选择裁剪分别放入所属模块文档。明确扩展仍支持 NVFP4/HiF4，原四组保留 INT8；记录 55%–65% 为目标，不是已实现收益。S3 pair 前移和小系数乘法作为待验证候选，现有流水和数值合同不变。修正 E lane 残留的复位极性说明为同步低有效 rst_n。
+
+此批仅更新规格，未修改 CModel/RTL、验证回执或 DC 实测数据；优化版本尚未实现。实现时按新快照重新验收，不继承旧报告的 PASS。

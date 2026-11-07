@@ -1,4 +1,4 @@
-> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[公共后端](../../../cmodel/lib/top/backend.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；多精度基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
+> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.7.2；修改时间：2026-11-08 02:24:09 +0800；对应代码：[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[公共后端](../../../cmodel/lib/top/backend.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；多精度基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
 
 # E 类专用 group 设计与实现
 
@@ -122,3 +122,11 @@ net = A_raw-E_max
 验证要求：对旧模型的 MX/NV 检查同坐标组 token；对 HiF4 检查上面的 m/A/z 转换，再检查 S6/S7/S8 bit-exact。覆盖三精度、scale 分类、HiF4 e1/e2、lane/组抵消、零符号、FP32 C、逐拍换型及复位，并按每个合法参数分别导出验证。新专用 RTL 未通过前不能用于 PPA。
 
 PPA 对比保持相同 E64 吞吐、L8、N12 工艺/PVT、工具/约束及同一真实负载；分别报告前端与整 DP 面积/功耗。CModel 的三格式各 961 笔与原结果一致，数学 max_ulp=0；独立逐级检查和 S5 坐标/S6–S8 对照见 [E 前端测试](../../../../test/tests/test_e_frontend.py)。专用纯 Verilog 与测试已建立，综合证据见上述对比记录；真实负载功耗仍待实施。SV 历史参考不接收新 E 单元。
+
+## 7. E group 优化约束
+
+当前实现已在 S4 保存 14 位幅值和符号，S5 才补齐兼容 token，避免宽中间寄存；新增优化不能将这部分既有结构再次计为收益。[E lane 的符号压缩与范围证明](../lane/dp_lane_E.md#7-e-扩展的进一步面积优化)适用于独立 E64 与混合顶层的 E 扩展组，修改后两种用法分别回归。
+
+保留 MXFP4/NVFP4/HiF4 三格式、HiF4 元数据和 NV/HiF 14×8 无符号 scale。第 4 节给出的补零前 LZD 等价关系可用于窄 LZD 实现比较，但零/特殊值需保持原约定；DC 可能已消除常量输入，不能凭源代码位宽声称节省。S5 输出静态低零可直接连线，宽 token 接口不构成新增寄存需求。
+
+继续保留完整 scale 指数范围、signed10 anchor 和 signed11 净差；E 元素较小并不意味着外部 scale 指数较小。优化组在 MX/NV 下要求原同坐标字段一致，在 HiF4 下按既定坐标转换及 S6–S8 结果验收；若新方案保持本 E group 坐标，则还应逐字段对照现有 E 实现。未通过真实验证和同工况综合前，不更新任何已测面积或时序结论。

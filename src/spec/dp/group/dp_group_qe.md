@@ -1,6 +1,6 @@
-> 功能：定义 Q8E16 专用 group 和兼容 S5 token；范围：两个 QE lane、公共指数、组和、scale 与 LZD；版本：v1.7.1（已批准）；修改时间：2026-11-07 23:51:07 +0800；对应代码：[QE CModel](../../../cmodel/lib/group/group_qe.cpp) 已实现；[dp_group_qe.v](../../../verilog/group/dp_group_qe.v)；现有对照为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)。
+> 功能：定义 Q8E16 专用 group 和兼容 S5 token；范围：两个 QE lane、公共指数、组和、scale 与 LZD；版本：v1.7.2；修改时间：2026-11-08 02:24:09 +0800；对应代码：[QE CModel](../../../cmodel/lib/group/group_qe.cpp) 已实现；[dp_group_qe.v](../../../verilog/group/dp_group_qe.v)；现有对照为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)。
 
-# Q8E16 专用 group 设计草案
+# Q8E16 专用 group 设计与优化
 
 `dp_group_qe` 由两个 [Q4E8 lane](../lane/dp_lane_qe.md) 组成，A/B 各 64 位；用于 [T8H16Q64E128](../dptop/mixed-precision-expansion.md) 的四个扩展组。它保留多精度 group 的 Q/E 数据流和 S5 到达拍，删除 T/H/INT8 能力。C 只在顶层处理，不进入本模块。
 
@@ -81,3 +81,14 @@ effective_exponent = A_raw - z
 已实现 `src/verilog/group/dp_group_qe.v` 与对应 CModel group/lane 能力实现，公共 token、scale 和顶层后端各保留一份定义。CModel 可复用共享 Q/E 算术，但 trace 必须对应 QE 的窄乘积和实际阶段，CModel 与 RTL 必须分别通过数值验证。
 
 评审后实施时，对相同两 lane 输入逐级对照原多精度 group 的全部七个 Q/E 子型，检查 S2 公共 r、S4 lane 和、S5 全部字段。测试还须覆盖两 lane 指数差、scale 边界/特殊值、符号抵消、Q/E 换型、气泡、复位和窗口变体。后续 DC 单独报告 QE 前端与整 DP，不用元素乘法器数量推算面积百分比。
+
+## 6. QE group 优化边界
+
+优化版本复用本页 S5 字段、坐标和到达拍，内部接入 [QE lane 优化](../lane/dp_lane_qe.md#7-面积优化qe-专用解包与寄存压缩)。四个原多精度 group 不裁剪 INT8；扩展 QE group 继续只接受四种 Q 和三种 E。第 1–5 节是现有实现合同，本节候选尚无新验证或 PPA 结果。
+
+- **保留 NVFP4/HiF4 scale 通路。** Q/MX 的 E8M0 只影响指数；NV/HiF 的非负尾数系数需要 S2 的 4×4 系数预乘和 S5 的 14×8 幅值乘法。已有无符号实现不能再次作为新增优化，也不能以只运行 MX 的实验代替完整七子型设计。
+- **内部按有效位保存，接口按合同恢复。** 检查 scale 系数、公共 r、类型及特殊摘要的重复寄存与重复选择；结构低零在接口拼接恢复，不能删掉实际有效尾数。S5 的 31 位兼容幅值容器并不要求所有中间节点都用 31 位；常量位是否已被 DC 删除须查网表。
+- **Q/E 共享硬件优先于复制两套前端。** Q 需要宽局部对齐，E 可走窄规约；若增加 E 专用子树，须同时计入额外 MUX、寄存和控制，不能只报告 E 单模式面积。共用器件的模式峰值不能叠加成资源节省。
+- **隔离与门控按请求控制。** 不使用的数据乘法支路可隔离，但动态选择 Q/MX 不会移除 NV/HiF 的物理乘法器。无效 payload 保持、valid 每拍推进，ICG 通过受支持的 DC 流程映射；功耗收益需另有活动证据。
+
+验收保留 S2 共同 r、S4 数值组输入、S5 token 的精确对照，覆盖 HiF4 两 lane 不同 e2、零/抵消、scale 特殊值、逐拍 Q/E 换型。缩短局部寄存或改变内部归约位置后，重新检查 S1、S3、S5 的关键路径，不能用原 group 已通过综合代替优化版本验收。
