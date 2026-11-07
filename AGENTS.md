@@ -4,13 +4,13 @@
 
 用户已明确旧 DP 设计过时，由用户重新定义整体架构 spec。新设计统一放在根目录 `src/spec/`、`src/cmodel/`、`src/chisel/`、`src/verilog/`，共用测试放在根目录 `test/`。先逐项完善并确认整体 spec，再编写 CModel，之后开发 Chisel 和独立手写可综合 Verilog；用户已授权实现单 DP 手写 Verilog，SystemVerilog 已冻结为当前 T8H16Q32E64 的历史参考，不再同步维护；CModel 与单 DP RTL 已建立共用验证，Chisel、阵列尚未实施，单 DP 已完成 N12 DC 综合。首批要求已写入 [新 spec 索引](src/spec/README.md)：TensorCore → DP-Group → DP，16×4 阵列由四个竖直 4×4 广播组组成；组内无脉动。具体格式、精度、K、≤8级流水、1.41 GHz 和功耗优先约束以新版 spec 为准，未决口径不得从旧设计补齐。
 
-E 专用前端已按所选 E64 方案实现 CModel（S2 pair、S3 lane 树、S4 组和/abs、S5 scale），与多精度前端共用 S5 Token/C 解包及 S6–S8。配置为 src/configs/dp/e64.json；E 纯 Verilog 顶层为 src/verilog/top/dp_top_e.v，专用 dp_lane_e/dp_group_e 使用 files_e.f，--frontend e 完成独立 Verilator/lint/断点/协议验证。混合组尚未实施；本轮用户明确授权 DC 综合并要求此次验证、综合及比较基线长期保留，精简证据见 test/results/e64-v1.5.8.md 与 hw/dc_syn/records/e64_n12_comparison_20261105.md，不把仿真通过作为时序/功耗证据。
+E 专用前端已按所选 E64 方案实现 CModel（S2 pair、S3 lane 树、S4 组和/abs、S5 scale），与多精度前端共用 S5 Token/C 解包及 S6–S8。配置为 src/configs/dp/e64.json；E 纯 Verilog 顶层为 src/verilog/top/dp_top_e.v，专用 dp_lane_e/dp_group_e 使用 files_e.f，--frontend e 完成独立 Verilator/lint/断点/协议验证。混合组 v1.7 已实现 QE CModel/Verilog 和三个固定配比顶层，验证入口为 test/run_mixed_verilog.py，阶段记录见 test/results/mixed-cmodel-v1.7.md、test/results/mixed-rtl-v1.7.md；本轮用户明确授权 DC 综合并要求此次验证、综合及比较基线长期保留，精简证据见 test/results/e64-v1.5.8.md 与 hw/dc_syn/records/e64_n12_comparison_20261105.md，不把仿真通过作为时序/功耗证据。
 
 历史 PE 实现及其规格、配置和验证从 Git 历史查阅。新版设计由 `src/spec/` 的共用合同和源码映射定义。
 
 当前工作目录使用根 `src/` 开发、`test/` 验证、`hw/` 做综合与功耗。分析前将设计冻结到 `hw/rtl/<export-id>/`，在 manifest 记录顶层、时钟、复位和来源。DC 流程自身的测试位于 `hw/dc_syn/tests/`。
 
-新版 spec 文档维护遵从 [版本与修订规则](src/spec/document-control.md)：每份 `src/spec/**/*.md` 第一行必须写功能、范围、固定版本、修改时间及时区、对应代码文件（未建时明确标注并指向现有入口）。当前架构及实现映射 v1.6；同架构修订追加 `.x`，架构合同修改升新 vM.N 并记录原因与影响。按用户最新要求，正文只展示当前有效合同，清除过时草案与重复历史；仅相邻两个主要版本的核心变更保留简短删除线对照，非核心小修直接更新。完整历史由 Git 保存，当前索引与两版摘要见 [版本记录](src/spec/CHANGELOG.md)。版本编号不代表待决规格已批准或实现已验证。
+新版 spec 文档维护遵从 [版本与修订规则](src/spec/document-control.md)：每份 `src/spec/**/*.md` 第一行必须写功能、范围、固定版本、修改时间及时区、对应代码文件（未建时明确标注并指向现有入口）。当前架构 v1.7、实现映射 v1.7.1；同架构修订追加 `.x`，架构合同修改升新 vM.N 并记录原因与影响。按用户最新要求，正文只展示当前有效合同，清除过时草案与重复历史；仅相邻两个主要版本的核心变更保留简短删除线对照，非核心小修直接更新。完整历史由 Git 保存，当前索引与两版摘要见 [版本记录](src/spec/CHANGELOG.md)。版本编号不代表待决规格已批准或实现已验证。
 
 用户于 2026-11-05 另行授权在本机 EDA 环境执行单 DP 的 N12 DC 综合及 1.41GHz 时序分析。此授权覆盖验证门禁与综合基础设施接入，不扩展计算阵列；后续按用户授权和真实证据运行对应 EDA 流程。
 

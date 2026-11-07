@@ -254,9 +254,9 @@ module dp_group_e #(
   dp_lib_DFFE #(.WIDTH(`DP_SPECIAL_W))
   ff_s4_s5_out_special (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d({nan_s4_q, 3'b000}), .out_q(out_special));
   dp_lib_DFFE #(.WIDTH(ANCHOR_W))
-  ff_s4_s5_out_anchor (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d((magnitude_active & ~nan_s4_q) ? anchor_s4_q : 0), .out_q(out_anchor));
+  ff_s4_s5_out_anchor (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d((magnitude_active & ~nan_s4_q) ? anchor_s4_q : {ANCHOR_W{1'b0}}), .out_q(out_anchor));
   dp_lib_DFFE #(.WIDTH($clog2(MAG_W + 1)))
-  ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(~nan_s4_q ? leading_d : 0), .out_q(out_z));
+  ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(~nan_s4_q ? leading_d : {$clog2(MAG_W+1){1'b0}}), .out_q(out_z));
   // verilog_format: on
 
 endmodule

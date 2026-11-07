@@ -9,42 +9,42 @@
 // INT8 + INT32       | 0     | 1      | 32 | MAG_W-32
 // Floating coordinates use E_max; INT8+INT32 bypasses the shift.
 module dp_mixed_global_align #(
-    // Four base groups and one C, plus the enabled low-precision branch.
-    parameter integer BASE_GROUPS = 4,
-    // 新增低精度 group 数量，E96 为 2，E128/Q64E128 为 4。
-    parameter integer EXT_GROUPS = 2,
-    // 参与公共后端的物理源数：所有 group 加一次 C。
-    parameter integer N = BASE_GROUPS + EXT_GROUPS + 1,
-    // 符号分离后的幅值位宽，不含符号。
-    parameter integer MAG_W = 39,
-    // 有符号指数坐标宽度，由合法幅值窗口推导。
-    parameter integer ANCHOR_W = 10,
-    parameter integer Z_W = $clog2(MAG_W + 1)
+  // Four base groups and one C, plus the enabled low-precision branch.
+  parameter integer BASE_GROUPS = 4,
+  // 新增低精度 group 数量，E96 为 2，E128/Q64E128 为 4。
+  parameter integer EXT_GROUPS = 2,
+  // 参与公共后端的物理源数：所有 group 加一次 C。
+  parameter integer N = BASE_GROUPS + EXT_GROUPS + 1,
+  // 符号分离后的幅值位宽，不含符号。
+  parameter integer MAG_W = 39,
+  // 有符号指数坐标宽度，由合法幅值窗口推导。
+  parameter integer ANCHOR_W = 10,
+  parameter integer Z_W = $clog2(MAG_W + 1)
 ) (
-    // Request-aligned group membership, with C always participating.
-    input wire [N-1:0] in_participate,
-    // INT8/INT32 模式选择，此时绕过浮点对齐。
-    input wire in_integer,
-    // S5 有效控制，屏蔽气泡期间的组合移位活动。
-    input wire in_enable,
-    // 已由顶层低位补零到共同 MAG_W 的每源幅值。
-    input wire [N*MAG_W-1:0] in_magnitude,
-    // 每源有符号 A_raw 指数坐标。
-    input wire [N*ANCHOR_W-1:0] in_anchor,
-    // 每源原幅值前导零数；低位补零不改变非零源 z。
-    input wire [N*Z_W-1:0] in_z,
-    // 每源独立符号位。
-    input wire [N-1:0] in_negative,
-    // 每源四位分类标志，屏蔽关闭源后参与归约。
-    input wire [N*`DP_SPECIAL_W-1:0] in_special,
-    // 移位后恢复为补码的各源叶子，供 S7 规约。
-    output wire [N*(MAG_W+1)-1:0] out_leaves,
-    // S5 token 原始指数坐标 A_raw，真实最高位指数为 A_raw-z。
-    output wire signed [ANCHOR_W-1:0] out_anchor,
-    // 所有参与叶子均为负零的归约标志。
-    output wire out_negative_zero,
-    // NaN/invalid/正 Inf/负 Inf 的独立分类摘要。
-    output wire [`DP_SPECIAL_W-1:0] out_special
+  // Request-aligned group membership, with C always participating.
+  input wire [N-1:0] in_participate,
+  // INT8/INT32 模式选择，此时绕过浮点对齐。
+  input wire in_integer,
+  // S5 有效控制，屏蔽气泡期间的组合移位活动。
+  input wire in_enable,
+  // 已由顶层低位补零到共同 MAG_W 的每源幅值。
+  input wire [N*MAG_W-1:0] in_magnitude,
+  // 每源有符号 A_raw 指数坐标。
+  input wire [N*ANCHOR_W-1:0] in_anchor,
+  // 每源原幅值前导零数；低位补零不改变非零源 z。
+  input wire [N*Z_W-1:0] in_z,
+  // 每源独立符号位。
+  input wire [N-1:0] in_negative,
+  // 每源四位分类标志，屏蔽关闭源后参与归约。
+  input wire [N*`DP_SPECIAL_W-1:0] in_special,
+  // 移位后恢复为补码的各源叶子，供 S7 规约。
+  output wire [N*(MAG_W+1)-1:0] out_leaves,
+  // S5 token 原始指数坐标 A_raw，真实最高位指数为 A_raw-z。
+  output wire signed [ANCHOR_W-1:0] out_anchor,
+  // 所有参与叶子均为负零的归约标志。
+  output wire out_negative_zero,
+  // NaN/invalid/正 Inf/负 Inf 的独立分类摘要。
+  output wire [`DP_SPECIAL_W-1:0] out_special
 );
   genvar source_index;
 

@@ -33,4 +33,3 @@ def poison_inactive(request, profile):
                         ('a_e1',4),('b_e1',4),('a_e2',2),('b_e2',2)]:
         result[field] = format(int(request[field],16) | (((1 << (bits*(groups-4)))-1) << (bits*4)), 'x')
     return result
-

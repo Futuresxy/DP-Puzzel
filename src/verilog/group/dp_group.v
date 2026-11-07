@@ -307,7 +307,7 @@ module dp_group #(
   dp_lib_DFFE #(.WIDTH(`DP_SPECIAL_W))
   ff_s4_s5_special (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(special_d), .out_q(special_q));
   dp_lib_DFFE #(.WIDTH($clog2(MAG_W + 1)))
-  ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(((special_d == 0) & (type_q[3] != `DP_DT_INT8)) ? z_d : 0), .out_q(out_z));
+  ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(((special_d == 0) & (type_q[3] != `DP_DT_INT8)) ? z_d : {$clog2(MAG_W+1){1'b0}}), .out_q(out_z));
   // verilog_format: on
 
 endmodule

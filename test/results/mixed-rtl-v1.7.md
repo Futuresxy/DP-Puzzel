@@ -4,11 +4,11 @@ CModel 检查点 `49ae9e6` 之后实现 QE lane/group 和三个混合顶层；�
 
 | 前端 | 固定数据输出 | 数值断点检查 | 导出 ID |
 | --- | ---: | ---: | --- |
-| t8h16q64e128 | 10747 | 315339 | `DP_verilog_t8h16q64e128_353c51b13a796504` |
-| t8h16q32e96 | 10747 | 248145 | `DP_verilog_t8h16q32e96_fa8317c9f49fc7d6` |
-| t8h16q32e128 | 10747 | 312735 | `DP_verilog_t8h16q32e128_57afa6687b4a0110` |
-| multi | 10747 | 231654 | `DP_verilog_f50f8fef9f741aaa` |
-| e | 2883 | 1106924 | `DP_verilog_e_bc58d9180cba1ac7` |
+| t8h16q64e128 | 10747 | 315339 | `DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2` |
+| t8h16q32e96 | 10747 | 248145 | `DP_verilog_t8h16q32e96_e6ec3988d4a438c2` |
+| t8h16q32e128 | 10747 | 312735 | `DP_verilog_t8h16q32e128_5445bcfaea80f9e9` |
+| multi | 10747 | 231654 | `DP_verilog_094a23e8843f8ee1` |
+| e | 2883 | 1106924 | `DP_verilog_e_c36605507c4d0709` |
 
 完整 run ID、各精度 exact/max_ulp、各窗口协议计数见 [JSON](mixed-rtl-v1.7.json)。工具为 Verilator 5.030；纯 Verilog-2005 DUT，Verilog TB。严格 lint 无警告，RTL 对有限位宽 CModel 逐位相同；固定数据数学最大误差为原 BF16 的3ULP，新增 Q/E 至多1ULP，没有超过4ULP。此误差结论仅针对已运行语料，不是任意抵消输入的误差保证。
 
@@ -39,3 +39,5 @@ CModel 检查点 `49ae9e6` 之后实现 QE lane/group 和三个混合顶层；�
 | 13 | 信号表达功能 | ✅ | magnitude/exponent/participation等 |
 | 14 | 打包边界明确 | ✅ | 复用紧凑M/E/S合同，未添加184位展开接口 |
 | 15 | 字段位片明确 | ✅ | DP字段宏、参数化槽偏移，固定profile接口单独声明 |
+
+第二次回归包含 DC elaboration 发现的 DFF 端口位宽修复：multi/QE 的 out_z 和 E group 的 out_anchor/out_z 条件表达式使用显式参数宽度零值，避免无尺寸0把模块端口扩为32位。五个前端均重新完整验证；上表和JSON已指向本次新快照。旧检查点611d58f保留用于回退，不用于后续综合。

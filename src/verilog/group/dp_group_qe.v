@@ -23,55 +23,55 @@
 // 旁带：S1 scale 解包，S2 系数积/指数和，再延迟到 S5；S2 公共 MAX 回送两 lane。
 // 两个 lane 共享 valid 和时钟，没有独立握手；MAX 只产生共同坐标，不等待 lane 结果。
 module dp_group_qe #(
-    // S3 局部幅值对齐窗口，改变时下游 lane/group 位宽同步推导。
-    parameter integer LOCAL_W = `DP_DEFAULT_LOCAL_W,
-    // S4 lane 和位宽：有符号叶子经四项树增加两位整数位。
-    parameter integer LANE_SOP_W = LOCAL_W + 1 + $clog2(`DP_Q_LANES),
-    // S5 两 lane 合并的补码总宽，较 lane 再增加一位。
-    parameter integer GROUP_W = LANE_SOP_W + $clog2(`DP_LANES),
-    // 符号分离后的幅值位宽，不含符号。
-    parameter integer MAG_W = GROUP_W - 1,
-    // 有符号指数坐标宽度，由合法幅值窗口推导。
-    parameter integer ANCHOR_W = anchor_width(MAG_W)
+  // S3 局部幅值对齐窗口，改变时下游 lane/group 位宽同步推导。
+  parameter integer LOCAL_W = `DP_DEFAULT_LOCAL_W,
+  // S4 lane 和位宽：有符号叶子经四项树增加两位整数位。
+  parameter integer LANE_SOP_W = LOCAL_W + 1 + $clog2(`DP_Q_LANES),
+  // S5 两 lane 合并的补码总宽，较 lane 再增加一位。
+  parameter integer GROUP_W = LANE_SOP_W + $clog2(`DP_LANES),
+  // 符号分离后的幅值位宽，不含符号。
+  parameter integer MAG_W = GROUP_W - 1,
+  // 有符号指数坐标宽度，由合法幅值窗口推导。
+  parameter integer ANCHOR_W = anchor_width(MAG_W)
 ) (
-    // 上升沿流水时钟。
-    input wire clock,
-    // 同步低有效复位，只复位控制；数据由 valid 屏蔽。
-    input wire rst_n,
-    // 原子请求有效，输入每拍最多接收一笔。
-    input wire in_valid,
-    // 本笔 Q/E 元素类型；由父层排除不支持的 T/H/INT8。
-    input wire [`DP_TYPE_W-1:0] in_datatype,
-    // A 原始打包操作数，按 group/lane 低位优先切片。
-    input wire [`DP_LANES*`DP_LANE_W-1:0] in_a,
-    // B 原始打包操作数，与 A 同容量且逐元素配对。
-    input wire [`DP_LANES*`DP_LANE_W-1:0] in_b,
-    // A 的每组 scale 字节，由测试/上游按格式广播到各组。
-    input wire [`DP_SCALE_W-1:0] in_scale_a,
-    // B 的每组 scale 字节，布局与 A 一致。
-    input wire [`DP_SCALE_W-1:0] in_scale_b,
-    // 两侧共用的已验证 scale 编码类型。
-    input wire [`DP_SCALE_TYPE_W-1:0] in_scale_datatype,
-    // HiF4 e1 元数据，每位对应四个元素。
-    input wire [3:0] in_e1_a,
-    // HiF4 e1 元数据，每位对应四个元素。
-    input wire [3:0] in_e1_b,
-    // HiF4 e2 元数据，每位对应一个八元素 lane。
-    input wire [1:0] in_e2_a,
-    // HiF4 e2 元数据，每位对应一个八元素 lane。
-    input wire [1:0] in_e2_b,
-    // 输出有效，延迟固定且不支持反压。
-    output wire out_valid,
-    // S5 token 的独立符号位，包含负零语义。
-    output wire out_negative,
-    // S5 token 幅值，保留原始坐标，不在此先移位规格化。
-    output wire [MAG_W-1:0] out_magnitude,
-    // S5 token 原始指数坐标 A_raw，真实最高位指数为 A_raw-z。
-    output wire signed [ANCHOR_W-1:0] out_anchor,
-    // 幅值前导零数，供 S6 合并规格化与对齐。
-    output wire [$clog2(MAG_W+1)-1:0] out_z,
-    // NaN/invalid/正 Inf/负 Inf 的独立分类摘要。
-    output wire [`DP_SPECIAL_W-1:0] out_special
+  // 上升沿流水时钟。
+  input wire clock,
+  // 同步低有效复位，只复位控制；数据由 valid 屏蔽。
+  input wire rst_n,
+  // 原子请求有效，输入每拍最多接收一笔。
+  input wire in_valid,
+  // 本笔 Q/E 元素类型；由父层排除不支持的 T/H/INT8。
+  input wire [`DP_TYPE_W-1:0] in_datatype,
+  // A 原始打包操作数，按 group/lane 低位优先切片。
+  input wire [`DP_LANES*`DP_LANE_W-1:0] in_a,
+  // B 原始打包操作数，与 A 同容量且逐元素配对。
+  input wire [`DP_LANES*`DP_LANE_W-1:0] in_b,
+  // A 的每组 scale 字节，由测试/上游按格式广播到各组。
+  input wire [`DP_SCALE_W-1:0] in_scale_a,
+  // B 的每组 scale 字节，布局与 A 一致。
+  input wire [`DP_SCALE_W-1:0] in_scale_b,
+  // 两侧共用的已验证 scale 编码类型。
+  input wire [`DP_SCALE_TYPE_W-1:0] in_scale_datatype,
+  // HiF4 e1 元数据，每位对应四个元素。
+  input wire [3:0] in_e1_a,
+  // HiF4 e1 元数据，每位对应四个元素。
+  input wire [3:0] in_e1_b,
+  // HiF4 e2 元数据，每位对应一个八元素 lane。
+  input wire [1:0] in_e2_a,
+  // HiF4 e2 元数据，每位对应一个八元素 lane。
+  input wire [1:0] in_e2_b,
+  // 输出有效，延迟固定且不支持反压。
+  output wire out_valid,
+  // S5 token 的独立符号位，包含负零语义。
+  output wire out_negative,
+  // S5 token 幅值，保留原始坐标，不在此先移位规格化。
+  output wire [MAG_W-1:0] out_magnitude,
+  // S5 token 原始指数坐标 A_raw，真实最高位指数为 A_raw-z。
+  output wire signed [ANCHOR_W-1:0] out_anchor,
+  // 幅值前导零数，供 S6 合并规格化与对齐。
+  output wire [$clog2(MAG_W+1)-1:0] out_z,
+  // NaN/invalid/正 Inf/负 Inf 的独立分类摘要。
+  output wire [`DP_SPECIAL_W-1:0] out_special
 );
   genvar lane_index;
 
@@ -357,7 +357,7 @@ module dp_group_qe #(
   dp_lib_DFFE #(.WIDTH(`DP_SPECIAL_W))
   ff_s4_s5_special (.clock(clock), .in_en(rst_n & r4_valid), .in_d(special_d), .out_q(r5_special));
   dp_lib_DFFE #(.WIDTH($clog2(MAG_W + 1)))
-  ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & r4_valid), .in_d(((special_d == 0)) ? z_d : 0), .out_q(out_z));
+  ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & r4_valid), .in_d(((special_d == 0)) ? z_d : {$clog2(MAG_W+1){1'b0}}), .out_q(out_z));
   // verilog_format: on
 
 endmodule
