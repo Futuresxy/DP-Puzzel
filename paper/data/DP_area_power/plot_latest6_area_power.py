@@ -9,7 +9,7 @@ import platform
 from pathlib import Path
 
 from plot_area_power import (
-    PAPER, STATIC_COLOR, Patch, MultipleLocator, matplotlib, np, plt,
+    PAPER, MultipleLocator, matplotlib, np, plt,
     read_csv, save_figure,
 )
 
@@ -162,8 +162,8 @@ def bracket(ax, x, height, ratio):
                 fontsize=7, color="#333333", zorder=4)
 
 
-def style_axes(ax, centers, maximum, ylabel, separators):
-    ax.set_xticks(centers, [c[1] for c in CONFIGS])
+def style_axes(ax, centers, maximum, ylabel, separators, labels=None):
+    ax.set_xticks(centers, labels if labels is not None else [c[1] for c in CONFIGS])
     ax.tick_params(axis="x", length=0, pad=5, labelsize=8)
     ax.set_xlabel("Throughput ratio (H:Q:E)", labelpad=6)
     ax.set_ylabel(ylabel, fontsize=10)
@@ -200,33 +200,29 @@ def draw(areas, groups, output, dpi):
     ax.set_xlim(-.5, 5.85)
     save_figure(fig, output, "latest6_area", dpi)
 
-    widths = np.array([len(g)+.9 for g in groups])
-    edges = np.r_[0, np.cumsum(widths)]
-    centers = (edges[:-1]+edges[1:])/2
-    fig, ax = plt.subplots(figsize=(8.4, 2.8))
-    fig.subplots_adjust(left=.10, right=.99, bottom=.24, top=.86)
-    for center, group in zip(centers, groups):
-        for j, row in enumerate(group):
-            x = center+j-(len(group)-1)/2
-            static, dynamic, total = (float(row[k+"_mw"]) for k in ("static", "dynamic", "total"))
-            ax.bar(x, static, width=.42, color=STATIC_COLOR, edgecolor="#7A7A7A", linewidth=.45, zorder=2)
-            ax.bar(x, dynamic, bottom=static, width=.42, color=COLORS[row["format"]],
-                   edgecolor="#7A7A7A", linewidth=.45, zorder=2)
-            if row["top"] == "dp_top" and row["format"] == "bf16":
-                ax.bar(x, total, width=.42, fill=False, edgecolor="#F39A24", linewidth=1.8, zorder=3)
-            ax.annotate(f"{total:.2f}", (x, total), xytext=(0, 3), textcoords="offset points",
-                        ha="center", va="bottom", fontsize=7.5)
+    fig, axes = plt.subplots(1, 3, figsize=(10.2, 2.8), sharey=True)
+    fig.subplots_adjust(left=.065, right=.99, bottom=.24, top=.86, wspace=.13)
+    maximum = max(float(r["total_mw"]) for g in groups for r in g)
+    ratios = {top: ratio for top, ratio, _ in CONFIGS}
+    for index, (ax, fmt, label) in enumerate(zip(axes, FORMATS, LABELS)):
+        rows = [r for group in groups for r in group if r["format"] == fmt]
+        centers = np.arange(len(rows))
+        totals = [float(r["total_mw"]) for r in rows]
+        baseline = [r["top"] == "dp_top" and fmt == "bf16" for r in rows]
+        bars = ax.bar(centers, totals, width=.42, color=COLORS[fmt],
+                      edgecolor=["#F39A24" if b else "#7A7A7A" for b in baseline],
+                      linewidth=[1.8 if b else .45 for b in baseline], zorder=2)
+        ax.bar_label(bars, labels=[f"{v:.2f}" for v in totals], padding=3, fontsize=7.5)
+        for x, total in zip(centers, totals):
             bracket(ax, x, total, total/power_ref)
-    style_axes(ax, centers, max(float(r["total_mw"]) for g in groups for r in g),
-               "DotProduct Power (mW)", edges[1:-1])
-    ax.set_xlim(edges[0], edges[-1])
-    handles = [Patch(facecolor=COLORS[fmt], edgecolor="#7A7A7A", linewidth=.45, label=label)
-               for fmt, label in zip(FORMATS, LABELS)]
-    handles.append(Patch(facecolor=STATIC_COLOR, edgecolor="#7A7A7A", linewidth=.45, label="Static (bottom)"))
-    ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(.5, 1.01), ncols=4,
-              frameon=False, fontsize=8, columnspacing=1.5, handletextpad=.4, handlelength=1.4)
+        style_axes(ax, centers, maximum, "Total Power (mW)" if index == 0 else "",
+                   np.arange(.5, len(rows)-1, 1), [ratios[r["top"]] for r in rows])
+        ax.set_xlim(-.5, len(rows)-.15)
+        ax.set_title(f"({chr(ord('a')+index)}) {label}", fontsize=10, pad=8)
     save_figure(fig, output, "latest6_power", dpi)
     return dict(area_bars=6, power_bars=15, formats=list(FORMATS),
+                power_layout="1 row, 3 panels", power_panels=["(a) BF16", "(b) MXFP8 E4M3", "(c) MXFP4 E2M1"],
+                power_panel_bars=[4, 5, 6], power_quantity="tool-reported total_mw", power_stacked=False,
                 area_reference_top="dp_top", area_reference_um2=area_ref,
                 power_reference_top="dp_top", power_reference_format="bf16",
                 power_reference_total_mw=power_ref, dpi=dpi,

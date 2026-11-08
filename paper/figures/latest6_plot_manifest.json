@@ -6,6 +6,19 @@
     "mxfp8_e4m3",
     "mxfp4_e2m1"
   ],
+  "power_layout": "1 row, 3 panels",
+  "power_panels": [
+    "(a) BF16",
+    "(b) MXFP8 E4M3",
+    "(c) MXFP4 E2M1"
+  ],
+  "power_panel_bars": [
+    4,
+    5,
+    6
+  ],
+  "power_quantity": "tool-reported total_mw",
+  "power_stacked": false,
   "area_reference_top": "dp_top",
   "area_reference_um2": 17782.087803,
   "power_reference_top": "dp_top",
@@ -38,7 +51,7 @@
   "scripts": [
     {
       "file": "plot_latest6_area_power.py",
-      "sha256": "068b138f7b1193b7d1cb9e2762efd7859ff78332e55501e9fe9535749487b029"
+      "sha256": "643b20e2a915ac3ae88298dd2c86c5809864a01107567c1febaf73467edbe344"
     },
     {
       "file": "plot_area_power.py",
@@ -52,7 +65,7 @@
     },
     {
       "file": "latest6_power.png",
-      "sha256": "e80cdd77735ca4e9b6eabc7bca4ab8443b4bae9ce556bc4b925e42191e3d0057"
+      "sha256": "475ea080a7ed94683cd659106d65e7da0e9757402c4011fe75dba6900f3ede13"
     }
   ]
 }

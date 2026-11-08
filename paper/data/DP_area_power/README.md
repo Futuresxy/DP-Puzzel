@@ -18,7 +18,8 @@
 | 1:4:8 | T8H16Q64E128 opt | dp_top_t8h16q64e128_opt |
 
 配比为 H/Q/E 原生 MAC/cycle 除以 16；共享单元的不同模式不能同时相加。
-功耗图使用实测 **BF16、MXFP8 E4M3、MXFP4 E2M1**，未测或不支持的组合不填零。
+功耗图横向排列三个子图：**(a) BF16、(b) MXFP8 E4M3、(c) MXFP4 E2M1**，分别为 4、5、6 根柱。
+每根柱只展示工具报告的 **total power**，三个子图共用纵轴范围；未测或不支持的组合不填零。
 面积倍率以 `dp_top` 为基准；所有功耗倍率统一以 `dp_top / BF16` 为基准。
 总功耗保留工具原值，动态=Internal+Switching，静态=Leakage；当前分项和与总值最大差约 0.00030 mW，校验容差为 0.0005 mW，绘图不改写测量值。
 
@@ -33,7 +34,7 @@ python3.11 paper/data/DP_area_power/plot_latest6_area_power.py
 
 输出为 `paper/figures/latest6_area.png`、`latest6_power.png`（400 dpi），
 同目录 `latest6_plot_manifest.json` 记录数据/脚本/图片 hash、基准和柱数。
-支持 `--output-dir` 与 `--dpi`；脚本沿用 `plot_area_power.py` 的浅色柱、紫色静态底部、橙色基准框、数值标签及竖直倍率括号。
+支持 `--output-dir` 与 `--dpi`；脚本沿用 `plot_area_power.py` 的浅色柱、橙色基准框、数值标签及竖直倍率括号，功耗使用总值单柱。
 
 测量条件：N12 TT / 0.7V / 85°C、1GHz、L8/II=1、ICG 开启；五种共享架构采用精度寄存器门控，E64 保持原设计。
 Qwen3-8B 第 0 层 MLP down_proj 同源 1024 笔输入，发射索引 256..767 的 512ns 窗口；VCS 原生门级 SAIF + Power Compiler。
