@@ -1,0 +1,7 @@
+top,architecture,ratio,H,Q,E,area_um2,combinational_area_um2,sequential_area_um2,process,frequency_mhz,corner,voltage_v,temperature_c,clock_gating,latency_cycles,initiation_interval_cycles,dc_run,export_id
+dp_top_e64,E64,0:0:4,0,0,64,5644.136492,4103.258183,1540.878309,TSMC CLN12FFCLL,1000.0,TT,0.7,85,True,8,1,hw/dc_syn/runs/dc_dp_top_e64_11080854,DP_verilog_e64_628e283760c4e830
+dp_top_q32e64,Q32E64,0:2:4,0,32,64,11873.120309,8789.815406,3083.304903,TSMC CLN12FFCLL,1000.0,TT,0.7,85,True,8,1,hw/dc_syn/runs/dc_dp_top_q32e64_11081629,DP_verilog_q32e64_8fc17d1108154f48
+dp_top,T8H16Q32E64,1:2:4,16,32,64,17782.087803,14102.286526,3679.801277,TSMC CLN12FFCLL,1000.0,TT,0.7,85,True,8,1,hw/dc_syn/runs/dc_dp_top_11081432,DP_verilog_a32ed7ef4b093ffa
+dp_top_t8h16q32e96,T8H16Q32E96,1:2:6,16,32,96,20368.871574,16024.817892,4344.053683,TSMC CLN12FFCLL,1000.0,TT,0.7,85,True,8,1,hw/dc_syn/runs/dc_dp_top_t8h16q32e96_11081649,DP_verilog_t8h16q32e96_300dc85956eabde8
+dp_top_t8h16q32e128,T8H16Q32E128,1:2:8,16,32,128,23981.211854,18764.21862,5216.993235,TSMC CLN12FFCLL,1000.0,TT,0.7,85,True,8,1,hw/dc_syn/runs/dc_dp_top_t8h16q32e128_11081739,DP_verilog_t8h16q32e128_703b37f461e5e9c5
+dp_top_t8h16q64e128_opt,T8H16Q64E128 opt,1:4:8,16,64,128,30596.198613,23800.799506,6795.399107,TSMC CLN12FFCLL,1000.0,TT,0.7,85,True,8,1,hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11081717,DP_verilog_t8h16q64e128_opt_5b3970766ee38480

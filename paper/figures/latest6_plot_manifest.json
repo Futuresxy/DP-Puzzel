@@ -1,0 +1,58 @@
+{
+  "area_bars": 6,
+  "power_bars": 15,
+  "formats": [
+    "bf16",
+    "mxfp8_e4m3",
+    "mxfp4_e2m1"
+  ],
+  "area_reference_top": "dp_top",
+  "area_reference_um2": 17782.087803,
+  "power_reference_top": "dp_top",
+  "power_reference_format": "bf16",
+  "power_reference_total_mw": 15.672550201416,
+  "dpi": 400,
+  "figures": [
+    "latest6_area.png",
+    "latest6_power.png"
+  ],
+  "runtime": {
+    "python": "3.11.13",
+    "numpy": "2.4.6",
+    "matplotlib": "3.11.2"
+  },
+  "inputs": [
+    {
+      "file": "latest6_area.csv",
+      "sha256": "4ff916780d3c1f30e6722df98baf75da08a68eddcb85982e45398ebb9c2aed7e"
+    },
+    {
+      "file": "latest6_power.csv",
+      "sha256": "f6033d98fdd3f0638f1364b8cbd0c4049943ffd207c4d6b54f35c96584f4eca6"
+    },
+    {
+      "file": "latest6_sources.json",
+      "sha256": "4586cf0c1fcca8215cd1fe9c2ba61ea00727ac480d37d12ef7544eb63b965f06"
+    }
+  ],
+  "scripts": [
+    {
+      "file": "plot_latest6_area_power.py",
+      "sha256": "068b138f7b1193b7d1cb9e2762efd7859ff78332e55501e9fe9535749487b029"
+    },
+    {
+      "file": "plot_area_power.py",
+      "sha256": "84d5ef70d74863d4be29e7abde78b43062cba8da11cdd6cb4c58007ce7e78877"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "latest6_area.png",
+      "sha256": "b07d71ab99c08227ea46a9b5c0bb09771d06cde7ddf0439c2b36c63596b8e2a1"
+    },
+    {
+      "file": "latest6_power.png",
+      "sha256": "e80cdd77735ca4e9b6eabc7bca4ab8443b4bae9ce556bc4b925e42191e3d0057"
+    }
+  ]
+}
