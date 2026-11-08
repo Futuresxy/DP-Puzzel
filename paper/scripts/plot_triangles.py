@@ -10,7 +10,7 @@ REGION_COLORS=("#ede8f2","#fce6d5","#dae3f5","#e3f2d9")
 def draw_figure(points, regions, objective, nv_points, models, ratios, output):
     """One compact panel; captions and shared model legend live in LaTeX."""
     plt.rcParams.update({'font.family':'Arial', 'font.size':7.5,
-                         'pdf.fonttype':42, 'ps.fonttype':42, 'mathtext.fontset':'stix',
+                         'mathtext.fontset':'stix',
                          'hatch.linewidth':.3})
     fig, ax = plt.subplots(figsize=(1.70, 1.57))
     if objective == 'energy':
@@ -63,6 +63,5 @@ def draw_figure(points, regions, objective, nv_points, models, ratios, output):
                         arrowprops=dict(arrowstyle='->',color=color,lw=.7,mutation_scale=5),zorder=9)
     ax.set_aspect('equal');ax.set_xlim(-.055,1.055);ax.set_ylim(-.095,.975);ax.axis('off')
     fig.subplots_adjust(left=.025,right=.975,bottom=.025,top=.975)
-    for suffix in ('pdf','png'):
-        fig.savefig(output/f'k4_n12_prefill_{objective}.{suffix}',dpi=400,bbox_inches='tight',pad_inches=.01)
+    fig.savefig(output/f'k4_n12_prefill_{objective}.png',dpi=400,bbox_inches='tight',pad_inches=.01)
     plt.close(fig)

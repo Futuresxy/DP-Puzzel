@@ -12,8 +12,7 @@ INK='#292929'; BLUE='#dae3f5'; GREEN='#e3f2d9'; PEACH='#fce6d5'; PURPLE='#ede8f2
 
 
 def main():
-    plt.rcParams.update({'font.family':'Arial','font.size':7.5,'pdf.fonttype':42,
-                         'ps.fonttype':42,'mathtext.fontset':'stix'})
+    plt.rcParams.update({'font.family':'Arial','font.size':7.5,'mathtext.fontset':'stix'})
     fig,ax=plt.subplots(figsize=(3.50,1.80))
     ax.set(xlim=(0,10),ylim=(0,4.85));ax.axis('off')
     def label(x,y,s,**kw):
@@ -63,8 +62,7 @@ def main():
         if i<4:arrow((x+1.77,.555),(x+2.02,.555))
     fig.subplots_adjust(left=.01,right=.99,bottom=.02,top=.99)
     OUT.mkdir(exist_ok=True)
-    for suffix in ('pdf','png'):
-        fig.savefig(OUT/f'tensor_dp_background.{suffix}',dpi=400,bbox_inches='tight',pad_inches=.01)
+    fig.savefig(OUT/'tensor_dp_background.png',dpi=400,bbox_inches='tight',pad_inches=.01)
     plt.close(fig)
 
 

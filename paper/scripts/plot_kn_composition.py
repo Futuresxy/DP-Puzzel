@@ -17,8 +17,6 @@ COLORS = {"K": "#e4dbea", "F": "#f0cccc", "E": "#deecd4"}
 plt.rcParams.update({
     "font.family": ["Arial", "DejaVu Sans"],
     "font.size": 7,
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
 })
 
 
@@ -68,7 +66,6 @@ def main():
     array(ax, [12, 29], ["F+E", "F+E"], [12, 12], [4, 37])
     array(ax, [55, 67, 79, 91], ["F", "F", "E", "E"], [8.2] * 4, [49, 97])
     OUT.mkdir(exist_ok=True)
-    fig.savefig(OUT / "kn_composition.pdf", metadata={"Title": None, "Author": None})
     fig.savefig(OUT / "kn_composition.png", dpi=400)
     plt.close(fig)
 
