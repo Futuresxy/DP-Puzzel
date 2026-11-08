@@ -33,7 +33,8 @@
       }
     ],
     "latex-workshop.view.pdf.viewer": "tab",
-    "latex-workshop.view.pdf.tab.editorGroup": "right"
+    "latex-workshop.view.pdf.tab.editorGroup": "right",
+    "latex-workshop.latex.build.enableMagicComments": true
   },
   "extensions": {
     "recommendations": [
