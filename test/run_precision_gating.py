@@ -39,9 +39,20 @@ def main():
             for second in DTYPES:
                 for mode in (first, second):
                     requests.append(random_request(mode, rng, 16, len(requests)))
-                requests.append(make(second, 16, ident=len(requests)))
-        reports.append(runner.campaign('all-mode-pairs-l'+str(local), 16, local, 40 if local != 32 else 64,
-                                       requests, exe, stress=True))
+                zero_request = make(second, 16, ident=len(requests))
+                zero_request.update(a='0', b='0')
+                requests.append(zero_request)
+        cfg = dict(frontend='multi', k_fp16=16, local_shift_mag_width=local,
+                   global_signed_align_width=40 if local != 32 else 64)
+        expected = runner.evaluate(requests, trace=True, config=cfg, run_dir=runner.RUN/'reference')
+        for request, result in zip(requests, expected):
+            result['exact_fp32_or_int32'] = f'{runner.reference(request, cfg, True)["bits"]:08x}'
+        reports.append(runner.campaign('all-mode-pairs-continuous-l'+str(local), 16, local,
+                                       cfg['global_signed_align_width'], requests, exe,
+                                       expected=expected, observe=True))
+        reports.append(runner.campaign('all-mode-pairs-reset-l'+str(local), 16, local,
+                                       cfg['global_signed_align_width'], requests, exe,
+                                       expected=expected, stress=True))
         # Includes all E raw codes and HiF4 metadata/cancellation boundaries.
         directed = runner.e_directed(16)
         for offset in range(0, len(directed), 1800):
