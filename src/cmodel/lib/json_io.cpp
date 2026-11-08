@@ -42,9 +42,9 @@ Config config_from_json(const Json &json_value) {
       const auto value = field_iterator.value().get<std::string>();
       if (value == "multi")
         config.frontend = Frontend::Multi;
-      else if (value == "e")
+      else if (value == "e" || value == "e64")
         config.frontend = Frontend::E;
-      else if (value == "qe") config.frontend = Frontend::QE;
+      else if (value == "qe" || value == "q32e64") config.frontend = Frontend::QE;
       else if (value == "t8h16q32e96") config.frontend = Frontend::MixedE96;
       else if (value == "t8h16q32e128") config.frontend = Frontend::MixedE128;
       // RTL implementation alias: identical arithmetic and S2-S8 numeric boundaries.
@@ -55,6 +55,11 @@ Config config_from_json(const Json &json_value) {
       throw std::invalid_argument("unknown configuration key: " + key);
   }
   config.validate();
+  // Fixed four-group low-precision tops reuse the existing numerical frontends.
+  const auto profile = json_value.value("frontend", std::string("multi"));
+  if ((profile == "e64" || profile == "q32e64") &&
+      (config.k_fp16 != 16 || config.post_scale_norm_extra_stage != 0))
+    throw std::invalid_argument("fixed low-precision profile requires K16 and L8");
   return config;
 }
 Request request_from_json(const Json &json_value) {
