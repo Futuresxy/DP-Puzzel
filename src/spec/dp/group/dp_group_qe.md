@@ -1,4 +1,4 @@
-> 功能：定义 Q8E16 专用 group 和兼容 S5 token；范围：两个 QE lane、公共指数、组和、scale 与 LZD；版本：v1.7.3；修改时间：2026-11-08 08:08:47 +0800；对应代码：[QE CModel](../../../cmodel/lib/group/group_qe.cpp) 已实现；[dp_group_qe.v](../../../verilog/group/dp_group_qe.v)；现有对照为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)。
+> 功能：定义 Q8E16 专用 group 和兼容 S5 token；范围：两个 QE lane、公共指数、组和、scale 与 LZD；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：[QE CModel](../../../cmodel/lib/group/group_qe.cpp) 已实现；[dp_group_qe.v](../../../verilog/group/dp_group_qe.v)；现有对照为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)。
 
 # Q8E16 专用 group 设计与优化
 
@@ -97,4 +97,4 @@ effective_exponent = A_raw - z
 
 `COMPACT_UNPACK` 是 elaboration 期能力参数，传给两条 QE lane；默认 0 保留参考实现，独立优化顶层设为 1。组内 S2 公共 MAX、scale、S5 组和/abs/14×8/LZD 与 token 布局不变，本轮不裁减 NVFP4/HiF4 或共享 scale 位宽。优化仅重组 lane 内 S1 表示，验证仍要求同坐标 S5 token 和 L8/II=1。
 
-首轮四个 QE group 的综合总面积为 9385.83 µm²（原 10240.01 µm²），约减少 8.34%；1GHz 整机验收及分解见 [最终比较](../../../../hw/dc_syn/records/qe_area_opt_n12_1000mhz_20261108.md)。仅 lane 解包/摘要和顶层静态路由发生本轮优化，S5 scale 位宽及数值坐标未变。
+首轮四个 QE group 的综合总面积为 9385.83 µm²（原 10240.01 µm²），约减少 8.34%；1GHz 整机验收及分解见 [最终比较](../../../../hw/dc_syn/records/README.md#历史记录)。仅 lane 解包/摘要和顶层静态路由发生本轮优化，S5 scale 位宽及数值坐标未变。

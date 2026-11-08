@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.6；修改时间：2026-11-08 09:27:17 +0800；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -27,19 +27,19 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [03-interfaces.md](03-interfaces.md) | v1.5.4 | 汇总共用输入输出协议 |
 | [04-timing-state.md](04-timing-state.md) | v1.5.4 | 定义周期和状态推进要求 |
 | [06-configuration.md](06-configuration.md) | v1.5.7 | 定义参数及其合法派生关系 |
-| [07-verification.md](07-verification.md) | v1.5.8 | 定义现用模型/RTL及未来实现的共用验收合同 |
-| [08-implementation-ppa.md](08-implementation-ppa.md) | v1.5.5 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.7.6 | 维护整体架构与文档版本时间线 |
+| [07-verification.md](07-verification.md) | v1.7.7 | 定义现用模型/RTL及未来实现的共用验收合同 |
+| [08-implementation-ppa.md](08-implementation-ppa.md) | v1.7.7 | 定义实现交付与 PPA 评价规则 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.7.7 | 维护整体架构与文档版本时间线 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.5.4 | 定义规格版本和历史修订规则 |
-| [dp/README.md](dp/README.md) | v1.7.3 | 按模块与共用合同组织 DP 规格 |
+| [dp/README.md](dp/README.md) | v1.7.7 | 按模块与共用合同组织 DP 规格 |
 | [dp/lane/README.md](dp/lane/README.md) | v1.7.1 | 定义 lane 规格目录与计算边界 |
 | [dp/lane/dp_lane_E.md](dp/lane/dp_lane_E.md) | v1.7.2 | 讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合 |
 | [dp/lane/multiplier-sharing.md](dp/lane/multiplier-sharing.md) | v1.5.4 | 定义尾数乘法器共享和模式路由 |
 | [dp/lane/shifter-sharing.md](dp/lane/shifter-sharing.md) | v1.5.4 | 定义固定物理移位器的 mux 复用 |
 | [dp/lane/unpack.md](dp/lane/unpack.md) | v1.6.4 | 定义固定 E/M/S 解包数值布局 |
 | [dp/group/README.md](dp/group/README.md) | v1.7.1 | 定义 group 规格目录与计算边界 |
-| [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.7.2 | 讨论 E16 定点组规约及兼容的 group 输出 |
+| [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.7.7 | 讨论 E16 定点组规约及兼容的 group 输出 |
 | [dp/group/scale.md](dp/group/scale.md) | v1.5.5 | 定义 scale 统一解包和 bias 处理 |
 | [dp/group/shared-align.md](dp/group/shared-align.md) | v1.5.4 | 定义分组共享对齐微架构 |
 | [dp/dptop/README.md](dp/dptop/README.md) | v1.7.6 | 定义 DP 顶层规格目录与后端边界 |
@@ -55,7 +55,7 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [dp/common/stage-formats.md](dp/common/stage-formats.md) | v1.5.4 | 列出每级数值出口的定点格式与指数范围 |
 | [dp/implementation/cmodel.md](dp/implementation/cmodel.md) | v1.7.4 | 定义 DP CModel、模块映射及共用测试接口 |
 | [dp/implementation/resource-accounting.md](dp/implementation/resource-accounting.md) | v1.5.6 | 定义可统计的功能模块边界 |
-| [dp/implementation/verilog.md](dp/implementation/verilog.md) | v1.7.6 | 定义手写 RTL 实现映射及验证合同 |
+| [dp/implementation/verilog.md](dp/implementation/verilog.md) | v1.7.7 | 定义手写 RTL 实现映射及验证合同 |
 | [dp-group/README.md](dp-group/README.md) | v1.4.1 | 定义广播计算组规格 |
 | [tensorcore/README.md](tensorcore/README.md) | v1.4.1 | 定义 TensorCore 阵列规格 |
 
@@ -63,10 +63,10 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 
 | 文档 | 固定版本 | 评审范围 |
 | --- | --- | --- |
-| [六种顶层总览](dp/dptop/top-architectures.md) | v1.7.6 | 对外入口、架构差异、共用核心及兼容入口 |
-| [混合顶层](dp/dptop/mixed-precision-expansion.md) | v1.7.6 | 三种现用扩展装配、输入布局、屏蔽、MAX/树、L8 与验证计划 |
-| [QE lane](dp/lane/dp_lane_qe.md) | v1.7.3 | Q4E8 的紧凑解包、窄乘法和原 Q/E 流水 |
-| [QE group](dp/group/dp_group_qe.md) | v1.7.3 | Q8E16 组和、无符号 scale 与兼容 S5 token |
+| [六种顶层总览](dp/dptop/top-architectures.md) | v1.7.7 | 对外入口、架构差异、共用核心及兼容入口 |
+| [混合顶层](dp/dptop/mixed-precision-expansion.md) | v1.7.7 | 三种现用扩展装配、输入布局、屏蔽、MAX/树、L8 与验证计划 |
+| [QE lane](dp/lane/dp_lane_qe.md) | v1.7.7 | Q4E8 的紧凑解包、窄乘法和原 Q/E 流水 |
+| [QE group](dp/group/dp_group_qe.md) | v1.7.7 | Q8E16 组和、无符号 scale 与兼容 S5 token |
 
 CModel 验证见 test/results/mixed-cmodel-v1.7.md；RTL 验证和本轮 DC 使用各自的新快照与回执。
 
@@ -74,7 +74,7 @@ CModel 验证见 test/results/mixed-cmodel-v1.7.md；RTL 验证和本轮 DC 使�
 
 按现有 N12 综合面积分解补充 [混合顶层优化约束](dp/dptop/mixed-precision-expansion.md#10-独立面积优化版本与验收)，将 QE 固定字段解包、分类/符号寄存压缩、E 符号压缩及扩展源整数选择裁剪分别放入所属模块文档。明确扩展仍支持 NVFP4/HiF4，原四组保留 INT8；记录 55%–65% 为目标，不是已实现收益。S3 pair 前移和小系数乘法作为待验证候选，现有流水和数值合同不变。修正 E lane 残留的复位极性说明为同步低有效 rst_n。
 
-v1.7.2 为优化方案修订；当前 v1.7.3 已实现独立优化顶层、固定字段 QE 解包和 S1 配对摘要，并静态裁减扩展源整数选择。保持原顶层默认实现、全部 Q/E 子型及 L8/II=1，S3 pair 前移和小系数乘法仍未实施。CModel 复用位精确算法并增加 profile 别名；新旧 unpack 319488 次对照、两顶层完整回归通过，见 [功能验收](../../test/results/qe-area-opt-v1.7.3.md)。独立 N12 TT/1GHz 综合与 hold 修复已通过，见 [最终比较](../../hw/dc_syn/records/qe_area_opt_n12_1000mhz_20261108.md)。面积 28191.89 µm²，相对原基础 DP 增长 66.53%，用户已接受本轮约 66% 增幅；不再为原 55%–65% 区间追加 RTL 修改。
+v1.7.2 为优化方案修订；当前 v1.7.3 已实现独立优化顶层、固定字段 QE 解包和 S1 配对摘要，并静态裁减扩展源整数选择。保持原顶层默认实现、全部 Q/E 子型及 L8/II=1，S3 pair 前移和小系数乘法仍未实施。CModel 复用位精确算法并增加 profile 别名；新旧 unpack 319488 次对照、两顶层完整回归通过，见 [功能验收](../../test/results/qe-area-opt-v1.7.3.md)。独立 N12 TT/1GHz 综合与 hold 修复已通过，见 [最终比较](../../hw/dc_syn/records/README.md#历史记录)。面积 28191.89 µm²，相对原基础 DP 增长 66.53%，用户已接受本轮约 66% 增幅；不再为原 55%–65% 区间追加 RTL 修改。
 
 ## v1.7.4 四组低精度装配
 
@@ -82,8 +82,12 @@ v1.7.2 为优化方案修订；当前 v1.7.3 已实现独立优化顶层、固�
 
 新增四组低精度验证见 [v1.7.4](../../test/results/lowp-tops-v1.7.4.md)，模型 `2db339d`、RTL `4045e00`。
 
-两顶层均通过N12 TT/1GHz、门控开启的综合，E64/Q32E64面积为5644.14/11542.08 µm²，见 [测量记录](../../hw/dc_syn/records/lowp_n12_1000mhz_20261108.md)。
+两顶层均通过N12 TT/1GHz、门控开启的综合，E64/Q32E64面积为5644.14/11542.08 µm²，见 [测量记录](../../hw/dc_syn/records/README.md#历史记录)。
 
 ## v1.7.6 顶层目录与架构范围
 
 按用户澄清保留六种架构：dp_top、E96扩展、E128扩展、优化Q64E128扩展、E64、Q32E64；加上dp_top_e兼容入口，top根目录恰好七个Verilog文件。恢复E128顶层、配置和导出/测试入口；未优化Q64E128仍退役。四个复用模块移到top/common/，模块名、算术和流水不变。详见 [六种架构对比](dp/dptop/top-architectures.md)。前次将E128移除的目录决定由本修订纠正，原测量证据不改写。
+
+## v1.7.7 综合记录归并
+
+按用户要求仅保留六种架构各自最新通过的综合结果，删除旧重复运行及摘要，将必要修复来源收进对应最终run的provenance/。当前面积、时序和后续功耗输入统一见 [六架构综合汇总](../../hw/dc_syn/records/latest_six_dp.md)。原始冻结RTL及验证回执保留，当前源码差异单独列明；本次不修改数值/流水合同，不新增综合或功耗测量。

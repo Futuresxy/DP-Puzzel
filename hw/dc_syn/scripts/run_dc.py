@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Prepare and run reproducible, evidence-gated DC synthesis. Python >= 3.6."""
 import argparse
+import hashlib
 from datetime import datetime, timezone, timedelta
 import json
 import math
@@ -72,6 +73,38 @@ def run_path(run_id):
     return path
 
 
+def repair_run_path(run_id):
+    """Resolve immutable repair ancestry moved beneath its retained final run."""
+    direct = run_path(run_id)
+    if direct.exists():
+        return direct
+    matches = sorted((DC / "runs").glob("*/provenance/repair_sources/" + run_id))
+    require(len(matches) == 1, "Missing or ambiguous repair provenance: " + run_id)
+    parent = matches[0]
+    base = DC / "runs"
+    require(all(not part.is_symlink() for part in (parent, *parent.parents)
+                if part == base or base in part.parents), "Symlinked repair provenance rejected")
+    provenance = parent.parent.parent
+    index_path = provenance / "index.json"
+    require(not index_path.is_symlink(), "Symlinked provenance index rejected")
+    index = read_json(index_path)
+    require(index.get("schema_version") == 1, "Unknown provenance schema")
+    entry = index["sources"][run_id]
+    require(entry["path"] == "repair_sources/" + run_id, "Repair provenance path mismatch")
+    hashes = entry["files_sha256"]
+    actual = {str(path.relative_to(parent)) for path in parent.rglob("*") if path.is_file()}
+    require(actual == set(hashes), "Repair provenance inventory changed")
+    for relative, digest in hashes.items():
+        require(not Path(relative).is_absolute() and ".." not in Path(relative).parts,
+                "Unsafe provenance file path")
+        path = parent / relative
+        require(all(not part.is_symlink() for part in (path, *path.parents)
+                    if part == parent or parent in part.parents), "Symlinked provenance file rejected")
+        require(hashlib.sha256(path.read_bytes()).hexdigest() == digest,
+                "Repair provenance changed: " + relative)
+    return parent
+
+
 def load_inputs(args):
     gate = verify_export(args.export_id, ROOT)
     tech, constraints, machine = [read_json(p) for p in (args.technology, args.constraints, args.machine)]
@@ -141,7 +174,7 @@ def load_inputs(args):
 def render_tcl(data):
     settings = dict(data["constraints"])
     repair = data.get("hold_repair") or data.get("timing_repair") or data.get("design_rule_repair")
-    settings["source_ddc"] = str(run_path(repair["source_run"]) / "netlist" / (data["gate"]["top"] + ".ddc")) if repair else ""
+    settings["source_ddc"] = str(repair_run_path(repair["source_run"]) / "netlist" / (data["gate"]["top"] + ".ddc")) if repair else ""
     settings["hold_repair_guardband_ns"] = repair.get("guardband_ns", 0.001) if repair else 0
     settings["timing_repair"] = bool(data.get("timing_repair"))
     settings["design_rule_repair"] = bool(data.get("design_rule_repair"))
@@ -215,7 +248,7 @@ def verify_repair_source(data):
     repair = data.get("hold_repair") or data.get("timing_repair") or data.get("design_rule_repair")
     if not repair:
         return
-    parent = run_path(repair["source_run"])
+    parent = repair_run_path(repair["source_run"])
     require(not (parent / ".running").exists(), "Source synthesis is still running")
     original = read_json(parent / "inputs/resolved.json")
     require(not original.get("design_rule_repair"), "No repeated design-rule repair chain")

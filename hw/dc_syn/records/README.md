@@ -1,37 +1,25 @@
-# 综合核心记录
+# 当前六种 DP 综合结果
 
-此处只提交简洁 JSON：综合目的、时间、工艺/PVT、RTL 源码路径、run 路径、工具版本、频率、clock gating 状态，以及面积、setup/hold 结果。未知测量为 null，时序失败保留 FAIL 和负 slack。
+统一入口：[最新面积与时序表](latest_six_dp.md)，机器可读数据：[latest_six_dp.json](latest_six_dp.json)。这里仅保留这份六架构汇总和本说明；每类原始报告在对应最终run的REPORT.md及reports/中。
 
-完整约束、原始报告、网表和日志放在对应 runs 目录，不在 records 重复列出每个文件的指纹、工具文件、源码输入清单或验证矩阵。RTL 本身仅有一个目录指纹，由 export manifest 和回归证据关联。
+六种架构为dp_top、T8H16Q32E96、T8H16Q32E128、优化T8H16Q64E128、E64、Q32E64。统一N12 TT/0.7V/85°C、1GHz、L8/II=1、LOCAL28/GLOBAL40、ICG开启。汇总核对原始报告、冻结RTL、原始数值回执、输入/输出校验及必要修复依赖，明确属于历史已测证据，不伪造当前源码的新门禁。
 
-从已核验 run 生成或更新记录：
+复核命令：`python3.11 hw/dc_syn/scripts/latest_synthesis.py --write`。只复核/发布，不启动EDA、不删除文件。新的综合完成后，按每种架构选择最新全部验收通过的run；不以较晚的失败实验替代有效结果。
 
-```bash
-bash scripts/dc_syn.sh report --run-id dc_dp_top_11050024 \
-  --record dp_n12_1410mhz_20261105.json
-```
+## 本地目录与功耗输入
 
-报告核验不通过时不会写正式记录。records 不包含机器私有路径、凭据、PDK 或大型产物；生成后审查 diff，再显式提交。
+runs根目录只保留六份最终结果。每份保留映射Verilog、DDC、SDC、报告、配置和日志；四份结果的原始修复来源位于各自provenance/repair_sources/，带完整文件hash索引。run_dc.py的repair_run_path/verify_repair_source支持这些不可变来源，拒绝缺失、歧义或被修改的内容。
 
-新版 DP 记录另包含输入 RTL 的单个目录指纹、参数、关键路径/分级摘要、WNS/TNS 与 Vt 配额状态；不记录工具/库/报告/网表的逐文件指纹。实测明细见 [流水分析](dp_n12_timing_20261105.md)。
+latest_six_dp.json固定后续功耗所需top/export/验证回执以及网表/DDC/SDC的路径和SHA-256；不含私有PDK路径或许可证。尚无门级等价、SAIF和注释覆盖结果，因此power_ready=false、power_mw=null。具体待办见 [功耗准备](../../power/README.md)。
 
-本机 `runs/` 保留 1.41 GHz 的 `dc_dp_top_11050024` 和 1 GHz 最终的 `dc_dp_top_11050215`。可直接读取其中的 `REPORT.md`、`reports/` 和 `netlist/`。原工作树清理前，将 1 GHz 首轮 `dc_dp_top_11050052` 和原 RTL 回执、输入快照归档到本机 `.cache/dp-dc-12nm-evidence.tar.gz`，并保留归档校验和。若要重新生成最终 1 GHz 的摘要，需先恢复其首轮 run 依赖。原始报告和配置快照保留运行时路径。
+## 历史记录
 
-[E64 同工况对比](e64_n12_comparison_20261105.md)及[机器可读摘要](e64_n12_comparison_20261105.json)为用户确认的重要节点：E64 的有效 run 为 dc_dp_top_e_11052108，多精度 28/40 基线复测为 dc_dp_top_11052111。两者均用 N12 TT、1GHz、L8/II1；E 面积减少69.24%，但仍有一条 −0.307322ps setup 违例。E 首轮无效诊断及多精度首次有效测量另存；完整网表/日志只保留本地，精简 JSON 和分析进入 Git。
-
-[E64 时序优先复测](e64_n12_timing_first_20261105.md)先核对 HiF4 token 坐标与 C 对齐，再在同一 RTL、库和1GHz预算下关闭显式面积回收。dc_dp_top_e_11052354 的 setup/hold/Vt 均通过，面积5686.972455µm²；S8余量+0.239730ps、全局最差+0.015974ps，仍无物理实现裕量保证。该 run 随本批重要结果长期保留，原失败结果不覆盖。
-
-混合组 v1.7.1 的同工况结果见 [L8 / 1GHz 面积与时序比较](mixed_n12_1000mhz_20261108.md)。比较入口要求基线与三个混合顶层使用一致的库、PVT、参数、工具和最终约束，并核验真实门控与八级报告。可用以下命令从保留的本地运行重新生成：
+用户于2026-11-08要求只保留六种架构最新综合结果及报告，覆盖此前对已删除旧run的保留约定。旧对比/诊断报告已从records移除，精简报告仍可从本地Git提交 `a368630` 读取，例如：
 
 ```bash
-python3.11 hw/dc_syn/scripts/compare_mixed.py \
-  --run dc_dp_top_11080044 \
-  --run dc_dp_top_t8h16q32e96_11080048 \
-  --run dc_dp_top_t8h16q32e128_11080056 \
-  --run dc_dp_top_t8h16q64e128_11080147 \
-  --record mixed_n12_1000mhz_20261108
+git show a368630:hw/dc_syn/records/mixed_n12_1000mhz_20261108.md
+git show a368630:hw/dc_syn/records/qe_area_opt_n12_1000mhz_20261108.md
+git show a368630:hw/dc_syn/records/dp_n12_timing_20261105.md
 ```
 
-比较 JSON 逐设计记录源检查点关联的 export/verification、容量、面积变化、setup/hold、各级关键路径、ICG 数量及寄存器门控比例。Q/E 容量除以面积的相对值只表示该模式原生 K 的面积效率；不能作为负载功耗或芯片吞吐测量。修复源运行由最终运行引用，清理时一并保护。
-
-QE 首轮优化见 [最终 1GHz / 面积比较](qe_area_opt_n12_1000mhz_20261108.md)：固定字段解包、S1 配对摘要与扩展源浮点选择；最终 28191.89 µm²，相对基础 DP +66.53%，setup/hold/VT/电气规则通过。用户接受本轮约66%增幅。[初次 run](qe_area_opt_n12_1000mhz_initial_20261108.md)保留 hold 失败及修复来源；比较脚本为 `scripts/compare_qe_area.py`，历史输入按冻结快照/原回执核验，新输入按当前完整门禁核验。
+这说明历史数值的原始语境，不能把旧报告作为当前RTL的新验收。清理清单见 [维护回执](../maintenance/latest_six_cleanup_20261108.json)：保留六份最终run、四份必要修复来源；删除十二份旧run，并用本汇总代替十八份旧记录。已删除原始网表/大产物不在Git中；Git只可恢复旧精简报告。未清理hw/rtl、test/runs或测试数据。

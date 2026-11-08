@@ -112,7 +112,7 @@ CModel GCC 8.5.0、Verilator 5.030、仿真器编译 GCC 10.3.1。
 超出容量会拒绝，不丢弃用例。真实使用的依赖 archive 校验和在 `dependencies/cmodel.json`。
 
 
-本次 [流水时序分析与边界](records/dp_n12_timing_20261105.md) 包含各级路径、通过/失败端点及优化建议。
+本次 [流水时序分析与边界](records/README.md#历史记录) 包含各级路径、通过/失败端点及优化建议。
 已完成 run 可用 `python3 hw/dc_syn/scripts/inspect_dc.py --run-id RUN_ID` 只读载入 DDC 补报；
 该入口不优化、不改网表，只有全局关键路径与原报告完全复现才接受分级结果。
 `report` 会更新派生摘要；setup/hold 和 LVT 配额分别报告，flow_pass 要求全部满足。
@@ -128,7 +128,7 @@ CModel GCC 8.5.0、Verilator 5.030、仿真器编译 GCC 10.3.1。
 
 E64 顶层为 dp_top_e，选择 `python3 test/run_verilog.py --frontend e --phase all`，门禁接受 `DP_verilog_e_<fingerprint>`。多精度顶层仍为 dp_top，使用默认回归。两者分别核对源清单、数值/协议、断点与回执，见 [输入合同](input-contract.md) 和 [E64 RTL 报告](../../test/results/e64-v1.5.8.md)。
 
-本批用户明确授权 E64 综合，并要求验证、DC 及比较基线作为重要结果长期保留。使用相同 N12 TT 0.7V/85°C、K16/28/40、L8/II1、dp-1000mhz.json、门控、层级和 Vt 预算，分别综合当前 E-only 和多精度设计；历史 27/40 数据只作背景，不能混入同参数面积百分比。[正式结果与路径](records/e64_n12_comparison_20261105.md)统一追踪两类测量。
+本批用户明确授权 E64 综合，并要求验证、DC 及比较基线作为重要结果长期保留。使用相同 N12 TT 0.7V/85°C、K16/28/40、L8/II1、dp-1000mhz.json、门控、层级和 Vt 预算，分别综合当前 E-only 和多精度设计；历史 27/40 数据只作背景，不能混入同参数面积百分比。[正式结果与路径](records/README.md#历史记录)统一追踪两类测量。
 
 DC 在 compile/optimize_netlist 后可能使此前缓存的 collection 失效。hold 修复前及修复编译后按稳定的 clock_port 名重新获取时钟；不复用过期的 `_sel...` 句柄，不更改时钟或 uncertainty。首轮若出现 CMD-036/UID-95，门禁判为无效，在新 run 重跑并保留原始诊断；不能引用该 run 的面积冒充有效测量。
 
@@ -136,7 +136,7 @@ DC 在 compile/optimize_netlist 后可能使此前缓存的 collection 失效。
 
 `constraints/dp-1000mhz-timing-first.json` 保持原1GHz时序、IO、门控、层级和工艺预算，只设置 `optimize_area=false`，跳过 `set_max_area 0` 与显式 `optimize_netlist -area`；仍保留工具正常映射、设计规则和 hold 修复。用该文件替换 check/prepare 的 `--constraints`，在新 run 中执行。它不保证所有设计时序必然通过，最终仍检查 setup/hold 和 Vt。
 
-E64 同一已验证快照的实测 run dc_dp_top_e_11052354 已全部通过，面积增加2.54%；[对齐逻辑核验和时序结果](records/e64_n12_timing_first_20261105.md)记录小数点转换、逐级核对及各级余量。与面积优先结果比较时须注明策略不同，不能覆盖旧报告或放宽负 slack 判据。
+E64 同一已验证快照的实测 run dc_dp_top_e_11052354 已全部通过，面积增加2.54%；[对齐逻辑核验和时序结果](records/README.md#历史记录)记录小数点转换、逐级核对及各级余量。与面积优先结果比较时须注明策略不同，不能覆盖旧报告或放宽负 slack 判据。
 
 ## 混合 DP / 1GHz
 
@@ -149,3 +149,7 @@ E64 同一已验证快照的实测 run dc_dp_top_e_11052354 已全部通过，�
 若 setup/hold 已通过但有 max_capacitance/max_transition/max_fanout 违例，使用 `prepare --design-rule-repair-from <source-run>` 先做设计规则修复，再修复 hold。该入口允许跟随一次 setup/hold 修复，但会逐级验证祖先运行完整性和输入一致性，不允许重复电气修复链。最终三类电气违例也纳入 flow_pass；泄漏优化产生的 Required=0 不作为已承诺的用户功耗预算。
 
 电气自动修复仍未解决的反相器负载可显式传入 `--resize-inverter <instance> <expected-ref> <target-ref>`，只允许用于电气修复。DC 校验当前实例引用、base 库两端口结构和输出函数一致后执行 size_cell，并保护该尺寸避免重新缩小。源 DDC、实例和两个引用名写入运行输入/精简记录，随后仍完整检查 setup/hold/电气规则/VT；不得用它替换不同逻辑或手改网表。
+
+## 当前六架构结果入口
+
+查看 [最新面积/时序汇总](records/latest_six_dp.md) 和 [功耗输入catalog](records/latest_six_dp.json)。runs根目录只保留每种架构最新有效结果，修复来源保存在其provenance/repair_sources/并校验hash。历史记录的清理与Git回看方法见 [records说明](records/README.md)。

@@ -1,6 +1,6 @@
 # DAC 2027 · 多精度张量计算算力配比 DSE
 
-**当前阶段：DP spec v1.5 / 实现映射 v1.5.1，单 DP 手写 RTL 与共用验证已建立。** 当前主方案为 T8H16Q32E64 分组共享八级 DP；维护 Verilog 主实现；SystemVerilog 冻结为 T8H16Q32E64 历史参考，当前默认局部/全局窗口为 28/40。S5 的 NVFP4/HiF4 幅值共用 14×8 无符号 scale 乘法。历史 27/40 的 N12 TT DC 在 1.41GHz setup 未通过，1GHz 经独立 hold 修复后 setup/hold 均通过，见 [时序分析](hw/dc_syn/records/dp_n12_timing_20261105.md)。E64 专用 CModel 与 [dp_top_e](src/verilog/top/dp_top_e.v) 已实现并通过同源 Verilator 验证，复用公共后端算术；[E64 测试](test/results/e64-v1.5.8.md)及[同工况面积对比](hw/dc_syn/records/e64_n12_comparison_20261105.md)按用户要求长期保留。后续[时序优先复测](hw/dc_syn/records/e64_n12_timing_first_20261105.md)保持 E64 RTL 不变，关闭显式面积回收后通过1GHz setup/hold，最差余量仍很小。Chisel、Cube 阵列尚未实施。
+**当前阶段：DP spec v1.5 / 实现映射 v1.5.1，单 DP 手写 RTL 与共用验证已建立。** 当前主方案为 T8H16Q32E64 分组共享八级 DP；维护 Verilog 主实现；SystemVerilog 冻结为 T8H16Q32E64 历史参考，当前默认局部/全局窗口为 28/40。S5 的 NVFP4/HiF4 幅值共用 14×8 无符号 scale 乘法。历史 27/40 的 N12 TT DC 在 1.41GHz setup 未通过，1GHz 经独立 hold 修复后 setup/hold 均通过，见 [时序分析](hw/dc_syn/records/README.md#历史记录)。E64 专用 CModel 与 [dp_top_e](src/verilog/top/dp_top_e.v) 已实现并通过同源 Verilator 验证，复用公共后端算术；[E64 测试](test/results/e64-v1.5.8.md)及[同工况面积对比](hw/dc_syn/records/README.md#历史记录)按用户要求长期保留。后续[时序优先复测](hw/dc_syn/records/README.md#历史记录)保持 E64 RTL 不变，关闭显式面积回收后通过1GHz setup/hold，最差余量仍很小。Chisel、Cube 阵列尚未实施。
 
 | 入口 | 内容 |
 | --- | --- |

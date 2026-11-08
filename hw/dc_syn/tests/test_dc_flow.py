@@ -1,5 +1,6 @@
 """Software-only fixtures: never launch DC, a simulator, or an EDA setup script."""
 import json
+import hashlib
 import os
 from pathlib import Path
 import shutil
@@ -311,6 +312,39 @@ class FlowTests(unittest.TestCase):
         os.utime(str(self.root / self.inputs[0]["path"]), (time.time() + 5, time.time() + 5))
         with self.assertRaisesRegex(ValueError, "Verification input changed"):
             verify_export(EXPORT, self.root)
+
+    def archive_fixture_source(self):
+        source = self.completed()
+        provenance = self.dc / "runs/dc_Fixture_10240002/provenance"
+        destination = provenance / "repair_sources" / source.name
+        destination.parent.mkdir(parents=True)
+        source.rename(destination)
+        hashes = {str(p.relative_to(destination)): hashlib.sha256(p.read_bytes()).hexdigest()
+                  for p in destination.rglob("*") if p.is_file()}
+        dump(provenance / "index.json", {"schema_version": 1, "sources": {
+            source.name: {"path": "repair_sources/" + source.name, "files_sha256": hashes}}})
+        return destination
+
+    def test_archived_repair_source_is_resolved_and_tampering_rejected(self):
+        source = self.archive_fixture_source()
+        prepared = self.cli("prepare", *self.selection(), "--run-id", "dc_Fixture_10240003",
+                            "--hold-repair-from", source.name)
+        self.assertEqual(prepared.returncode, 0, prepared.stderr.decode())
+        settings = (self.dc / "runs/dc_Fixture_10240003/inputs/resolved.tcl").read_text()
+        self.assertIn("set source_ddc " + tcl_string(source / "netlist/Fixture.ddc"), settings)
+        (source / "netlist/Fixture.ddc").write_text("changed fixture")
+        rejected = self.cli("prepare", *self.selection(), "--run-id", "dc_Fixture_10240004",
+                            "--hold-repair-from", source.name)
+        self.assertEqual(rejected.returncode, 2)
+        self.assertIn("provenance changed", rejected.stderr.decode())
+
+    def test_ambiguous_archived_repair_sources_are_rejected(self):
+        source = self.archive_fixture_source()
+        shutil.copytree(source.parent.parent, self.dc / "runs/dc_Fixture_10240005/provenance")
+        rejected = self.cli("prepare", *self.selection(), "--run-id", "dc_Fixture_10240003",
+                            "--hold-repair-from", source.name)
+        self.assertEqual(rejected.returncode, 2)
+        self.assertIn("ambiguous repair provenance", rejected.stderr.decode())
 
     def test_handwritten_sv_requires_real_byte_identical_source(self):
         source = self.root / "example.sv.in"

@@ -1,4 +1,4 @@
-> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.7.3；修改时间：2026-11-08 08:08:47 +0800；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
+> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
 
 # DP 规格导航
 
@@ -60,7 +60,7 @@ dp/
 
 ## 3. E 类优化方案入口
 
-[E8 lane 优化](lane/dp_lane_E.md) 与 [E16 group / E64 接入](group/dp_group_E.md) 已纳入对应模块目录。用户已明确 HiF4 e2 在 lane 内融合、先求和后局部左移、删除组内元素指数对齐，以及保持多精度 group 输出 layout 和 S5 到达拍。用户已选择优先讨论 E64 的 S2 乘法/pair、S3 四项 lane 树、S4 group 合并/abs、S5 scale/LZD 切分，专用 CModel 与 RTL 已实现并通过测试；面积/时序见 [同工况 DC 对比](../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)。
+[E8 lane 优化](lane/dp_lane_E.md) 与 [E16 group / E64 接入](group/dp_group_E.md) 已纳入对应模块目录。用户已明确 HiF4 e2 在 lane 内融合、先求和后局部左移、删除组内元素指数对齐，以及保持多精度 group 输出 layout 和 S5 到达拍。用户已选择优先讨论 E64 的 S2 乘法/pair、S3 四项 lane 树、S4 group 合并/abs、S5 scale/LZD 切分，专用 CModel 与 RTL 已实现并通过测试；面积/时序见 [同工况 DC 对比](../../../hw/dc_syn/records/README.md#历史记录)。
 
 E 专用候选通过兼容 token 接入既有 S6–S8；默认保留 40 位全局窗口。HiF4 融合 e2 后的定点坐标及 anchor/z 换算以专用 group 文档为准，不能套用多精度主实现的逐级字段值。
 
@@ -80,10 +80,10 @@ A/B 同格式，合法请求可逐拍换型；last 只透传，无输出背压�
 
 [混合顶层合同](dptop/mixed-precision-expansion.md) 定义保留四个多精度组后，新增 2/4 个 E 组形成 T8H16Q32E96/E128，或新增四个 [QE group](group/dp_group_qe.md) / [QE lane](lane/dp_lane_qe.md) 形成 T8H16Q64E128。后端按请求屏蔽扩展支的 MAX、移位、求和与特殊值，保持单次 C 和 L8/II=1。
 
-CModel 和 QE/混合 Verilog 已实现；三个顶层分别通过完整 Verilator 验证，保持 L8/II=1。同库同约束 N12 TT/1GHz 综合已完成，保持 L8/II=1，setup/hold/VT/电气规则均通过；面积、门控及各级时序见 [实测比较](../../../hw/dc_syn/records/mixed_n12_1000mhz_20261108.md)。
+CModel 和 QE/混合 Verilog 已实现；三个顶层分别通过完整 Verilator 验证，保持 L8/II=1。同库同约束 N12 TT/1GHz 综合已完成，保持 L8/II=1，setup/hold/VT/电气规则均通过；面积、门控及各级时序见 [实测比较](../../../hw/dc_syn/records/README.md#历史记录)。
 
 ## 7. 面积优化方案与证据边界
 
-[混合顶层第 10 节](dptop/mixed-precision-expansion.md#10-独立面积优化版本与验收)记录 Q64E128 的 +80.64% 面积来源、+55%–65% 目标、拟建独立优化版本和验收条件；实现细节分别归属 QE/E lane 与 group。首轮优化实现修订为 v1.7.3；独立优化顶层及原顶层已通过 [功能验证](../../../test/results/qe-area-opt-v1.7.3.md)，[新快照 DC 验收](../../../hw/dc_syn/records/qe_area_opt_n12_1000mhz_20261108.md)已通过 1GHz，面积增幅由 80.64% 降至 66.53%，用户接受本轮结果；历史 PPA 仍对应原快照。
+[混合顶层第 10 节](dptop/mixed-precision-expansion.md#10-独立面积优化版本与验收)记录 Q64E128 的 +80.64% 面积来源、+55%–65% 目标、拟建独立优化版本和验收条件；实现细节分别归属 QE/E lane 与 group。首轮优化实现修订为 v1.7.3；独立优化顶层及原顶层已通过 [功能验证](../../../test/results/qe-area-opt-v1.7.3.md)，[新快照 DC 验收](../../../hw/dc_syn/records/README.md#历史记录)已通过 1GHz，面积增幅由 80.64% 降至 66.53%，用户接受本轮结果；历史 PPA 仍对应原快照。
 
 扩展 QE 保留四种 MXFP8/6 与 MXFP4/NVFP4/HiF4，扩展 E 保留三种 E；只有基础四组支持 T/H/INT8。优先优化固定字段解包、分类/符号寄存和扩展源整数选择，默认窗口 28/40、L8/II=1、单次 C 与数值行为保持。未测的面积节省和功耗收益不写入实测结论。

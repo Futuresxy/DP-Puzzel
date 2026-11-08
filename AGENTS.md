@@ -16,6 +16,9 @@ E 专用前端已按所选 E64 方案实现 CModel（S2 pair、S3 lane 树、S4 
 
 用户于 2026-11-05 明确：`src/verilog/systemverilog/` 仅保留 T8H16Q32E64、K16/28/40、L8/II=1 的历史版本，后续新特性、数值/流水优化和 E 类专用 DP 不再同步到 SV。当前维护 CModel 与纯 Verilog；默认 RTL 回归只运行 Verilog，显式 SV 重放为历史参考检查，不作为新版本门禁。Chisel 仍按原计划待实施；测试台使用 Verilog/SystemVerilog 语言不改变 DUT 的维护范围。冻结来源见 [SV 说明](src/verilog/systemverilog/README.md)。
 
+
+用户于2026-11-08要求DC结果区只保留六种现用架构各自最新有效结果，覆盖此前对已删除旧run的保留约定。当前索引为 hw/dc_syn/records/latest_six_dp.{md,json}；修复来源放在最终run的provenance/repair_sources/并校验hash。旧精简报告从Git历史读取，清理回执在hw/dc_syn/maintenance/。后续功耗显式选择catalog中的最终网表；尚未完成门级等价/SAIF/活动审计，不能标注为功耗已就绪。
+
 ## 历史设计约定与通用工程规则
 
 本文件适用于整个仓库。目标是构建面向 AI 芯片张量计算的多精度算力配比 DSE 系统，对 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 等设计选择的面积、功耗和负载延迟进行成本收益权衡。

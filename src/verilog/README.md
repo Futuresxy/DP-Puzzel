@@ -92,7 +92,7 @@ RTL 单独执行 `-Wall` lint，位宽、锁存器、组合环类警告不豁免
 
 ## 当前边界
 
-当前两种前端只开放 L8；CModel 的 L9 探索未在 RTL 中开放。冻结 SV 的范围由其历史说明定义。未实现 Chisel、DP-Group、TensorCore/Cube、Q/QE、混合组或独立对齐方案。历史 27/40 的 N12 TT 在 1.41 GHz setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/dp_n12_timing_20261105.md)。E64 与当前 28/40 多精度单元的同工况测量见 [DC 对比](../../hw/dc_syn/records/e64_n12_comparison_20261105.md)。尚无布局布线或真实活动功耗。
+当前两种前端只开放 L8；CModel 的 L9 探索未在 RTL 中开放。冻结 SV 的范围由其历史说明定义。未实现 Chisel、DP-Group、TensorCore/Cube、Q/QE、混合组或独立对齐方案。历史 27/40 的 N12 TT 在 1.41 GHz setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/README.md#历史记录)。E64 与当前 28/40 多精度单元的同工况测量见 [DC 对比](../../hw/dc_syn/records/README.md#历史记录)。尚无布局布线或真实活动功耗。
 
 DC 接入使用 [统一门禁与流程](../../hw/dc_syn/README.md)。Verilog 的运行时 `lane_fraction` 已改为等价常量选择以兼容 DC；新快照重新完整回归，不继承旧 snapshot 的通过状态。
 

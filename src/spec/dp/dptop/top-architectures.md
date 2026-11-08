@@ -1,4 +1,4 @@
-> 功能：六种 DP 架构相对基线的修改点和代码/spec导航；范围：六种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.7.6；修改时间：2026-11-08 09:28:53 +0800；对应代码：src/verilog/top/下七个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
+> 功能：六种 DP 架构相对基线的修改点和代码/spec导航；范围：六种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：src/verilog/top/下七个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
 
 # 六种架构、七个顶层入口
 
@@ -127,10 +127,12 @@ flowchart TD
 
 本次恢复E128原实现及入口，四个共用模块只移动路径；没有改变算术、DFF、接口或流水。路径变化会改变export指纹，新EDA运行须重新导出/完整验证，旧manifest和回执不能手工改写。历史证据保持原快照路径：
 
-- 基线/E96/E128：[混合DC比较](../../../../hw/dc_syn/records/mixed_n12_1000mhz_20261108.md)。
-- 优化Q64E128：[QE优化DC比较](../../../../hw/dc_syn/records/qe_area_opt_n12_1000mhz_20261108.md)。
-- E64/Q32E64：[低精度DC比较](../../../../hw/dc_syn/records/lowp_n12_1000mhz_20261108.md)。
+- 基线/E96/E128：[混合DC比较](../../../../hw/dc_syn/records/README.md#历史记录)。
+- 优化Q64E128：[QE优化DC比较](../../../../hw/dc_syn/records/README.md#历史记录)。
+- E64/Q32E64：[低精度DC比较](../../../../hw/dc_syn/records/README.md#历史记录)。
 
 这些报告属于各自原始快照，不构成本次目录变更后的新测量。本批不运行DC或功耗分析。
 
 目录整理验证：根目录七个顶层、common四个复用模块的边界检查通过；恢复的E128与搬移的四模块内容逐字节等于来源版本。七个顶层Verilator lint、5项混合CModel检查、41项导出/DC流程门禁软件测试通过。未运行新的完整RTL数值回归或DC；以上检查不替代新export的完整验收。
+
+当前六种架构的最新已测面积、时序与后续功耗输入统一见 [综合汇总](../../../../hw/dc_syn/records/latest_six_dp.md)。旧报告已合并清理，历史分析通过Git版本查阅；E96/E128的源码版本差异与待复验范围在汇总中明确列出。

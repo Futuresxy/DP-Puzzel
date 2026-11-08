@@ -1,4 +1,4 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.7.6；修改时间：2026-11-08 09:27:17 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
@@ -31,7 +31,7 @@
 | 双向幅值移位 | [dp_bidir_shift.v](../../../verilog/arithmetic/dp_bidir_shift.v) | 组合；方向 bit reversal + 一个右移核心 |
 | FP32 输出 | [dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v) | 组合；S8 结果由 top 注册 |
 
-各路径命名可用于层级统计。多精度 S3 的 E pair/符号恢复归入 dp_lane_align，E 的 S2 pair 复用 N=2 的 dp_sum_tree；组 abs、特殊摘要与 transport 寄存器仍属于直接拥有它们的 lane/group/top；不能把它们在父子统计中重复计数。没有为了统计添加 `dont_touch`、时钟域或额外寄存级。v1.5 旧快照的 28/40 同工况面积/时序见 [E64 DC 对比](../../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)，v1.6 新快照尚未重跑 DC/功耗，旧结果不授予新 RTL。
+各路径命名可用于层级统计。多精度 S3 的 E pair/符号恢复归入 dp_lane_align，E 的 S2 pair 复用 N=2 的 dp_sum_tree；组 abs、特殊摘要与 transport 寄存器仍属于直接拥有它们的 lane/group/top；不能把它们在父子统计中重复计数。没有为了统计添加 `dont_touch`、时钟域或额外寄存级。v1.5 旧快照的 28/40 同工况面积/时序见 [E64 DC 对比](../../../../hw/dc_syn/records/README.md#历史记录)，v1.6 新快照尚未重跑 DC/功耗，旧结果不授予新 RTL。
 
 S1 每侧复用两份 E10/M16/S4，class/signaling 旁带单独保存；不为各精度复制寄存器。dp_lane_unpack 内部先按 A/B 对应元素配对特殊分类，再归约为四位摘要。尾数/指数 bank 直接接 M32/E20，不再经过每侧 184 位 Number 组合展开。详细字段、84 位/侧 S1 payload 口径与分类规则见 [解包接口](../lane/unpack.md#11-当前纯-verilog-的紧凑接口)。
 
@@ -85,7 +85,7 @@ Verilog 的 `lane_fraction` 使用 datatype 对常量进行选择，避免对运
 
 `python3 test/run_verilog.py --implementation verilog --phase all --local-w 29 --global-w 33` 可验证自选窗口。K16 固定向量使用同配置 CModel 重新生成有限位宽期望，数学参考仍来自同一批向量的精确结果。混合回归另外覆盖 K4/K8/K16 的树深和流水断点。
 
-测试配置和笔数见 [RTL 验证报告](../../../../test/results/verilog-v1.4.md)。N12 TT DC 结果对应历史 27/40 配置，见 [时序分析](../../../../hw/dc_syn/records/dp_n12_timing_20261105.md)。
+测试配置和笔数见 [RTL 验证报告](../../../../test/results/verilog-v1.4.md)。N12 TT DC 结果对应历史 27/40 配置，见 [时序分析](../../../../hw/dc_syn/records/README.md#历史记录)。
 
 ## 5. 修订记录
 

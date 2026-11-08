@@ -1,4 +1,4 @@
-> 功能：四组低精度独立 DP 装配；范围：E64、Q32E64 顶层与共用五源后端；版本：v1.7.6；修改时间：2026-11-08 09:27:17 +0800；对应代码：src/verilog/top/common/dp_top_lowp.v、dp_top_e64.v、dp_top_q32e64.v（已实现），src/cmodel/lib/json_io.cpp、现有 E/QE group 与 top/backend.cpp；Chisel 未实现。
+> 功能：四组低精度独立 DP 装配；范围：E64、Q32E64 顶层与共用五源后端；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：src/verilog/top/common/dp_top_lowp.v、dp_top_e64.v、dp_top_q32e64.v（已实现），src/cmodel/lib/json_io.cpp、现有 E/QE group 与 top/backend.cpp；Chisel 未实现。
 
 # 四组低精度 DP
 
@@ -67,6 +67,6 @@ CModel 配置 e64→E、q32e64→QE，复用已实现逐级数值路径及共同
 
 CModel 检查点 `2db339d`，RTL/Verilator 检查点 `4045e00`。E64 三种格式各961笔与数学参考完全一致；Q32E64 七种格式各961笔，最大1 ULP；三组窗口、S5–S7和原子接收/复位协议通过，见 [功能回执](../../../../test/results/lowp-tops-v1.7.4.md)。
 
-同工况 DC：E64 5644.14 µm²，Q32E64 11542.08 µm²，相对多精度基线16929.31 µm²分别减少66.66%/31.82%。setup/hold、VT≤20%和电气门禁通过；ICG实测覆盖97.34%/98.49%。这是指定TT角的预布局综合，最差setup仅0.022531/0.017643 ps，不能作为布线后裕量或工作负载功耗结论。详见 [面积/逐级时序对比](../../../../hw/dc_syn/records/lowp_n12_1000mhz_20261108.md)。
+同工况 DC：E64 5644.14 µm²，Q32E64 11542.08 µm²，相对多精度基线16929.31 µm²分别减少66.66%/31.82%。setup/hold、VT≤20%和电气门禁通过；ICG实测覆盖97.34%/98.49%。这是指定TT角的预布局综合，最差setup仅0.022531/0.017643 ps，不能作为布线后裕量或工作负载功耗结论。详见 [面积/逐级时序对比](../../../../hw/dc_syn/records/README.md#历史记录)。
 
 首轮完整综合面积/时序已通过，但逐级报告白名单遗漏新顶层名称；修正报告入口后用同一RTL、库和约束独立重跑，面积一致。最终run为 dc_dp_top_e64_11080854 / dc_dp_top_q32e64_11080855，未增加流水或进行额外时序修复。

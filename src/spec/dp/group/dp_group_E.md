@@ -1,8 +1,8 @@
-> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.7.2；修改时间：2026-11-08 02:24:09 +0800；对应代码：[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[公共后端](../../../cmodel/lib/top/backend.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；多精度基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
+> 功能：讨论 E16 定点组规约及兼容的 group 输出；范围：HiF4 e2 内部融合、S4 组和、S5 scale/LZD、E64 八级流水与原后端复用；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[公共后端](../../../cmodel/lib/top/backend.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；多精度基线为 [dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[dp_top.v](../../../verilog/top/dp_top.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)。
 
 # E 类专用 group 设计与实现
 
-用户已明确 group 输出 layout 与现有多精度版本对齐，group 外计算部分复用；HiF4 e2 在 lane 内融合，MX/NV 无元素指数差。CModel 已按这些边界实现 E64 的 S2 乘法+pair、S3 四项树、S4 组和/abs、S5 scale/LZD，直接复用公共后端函数。专用 RTL 已实现并通过完整 Verilator 回归；DC 采用与多精度基线相同的 N12 TT、1GHz 预算，实测结论见 [E64 综合对比](../../../../hw/dc_syn/records/e64_n12_comparison_20261105.md)。
+用户已明确 group 输出 layout 与现有多精度版本对齐，group 外计算部分复用；HiF4 e2 在 lane 内融合，MX/NV 无元素指数差。CModel 已按这些边界实现 E64 的 S2 乘法+pair、S3 四项树、S4 组和/abs、S5 scale/LZD，直接复用公共后端函数。专用 RTL 已实现并通过完整 Verilator 回归；DC 采用与多精度基线相同的 N12 TT、1GHz 预算，实测结论见 [E64 综合对比](../../../../hw/dc_syn/records/README.md#历史记录)。
 
 ## 1. 统一定点 E16 组
 
@@ -107,7 +107,7 @@ E_max = max_active(A_raw-z)
 net = A_raw-E_max
 ~~~
 
-全局对齐仍为 unsigned 左移或 RTZ 右移，进入 S7 前恢复 TC。G=4 时 S7 扇入为 4 组+C=5，默认 `GLOBAL_W`=40，输出 43 位；FP32 舍入语义和特殊值不变。复用后端并不证明其 1.41GHz 时序已解决，历史 N12 结论仍只适用于原冻结输入，见 [时序记录](../../../../hw/dc_syn/records/dp_n12_timing_20261105.md)。
+全局对齐仍为 unsigned 左移或 RTZ 右移，进入 S7 前恢复 TC。G=4 时 S7 扇入为 4 组+C=5，默认 `GLOBAL_W`=40，输出 43 位；FP32 舍入语义和特殊值不变。复用后端并不证明其 1.41GHz 时序已解决，历史 N12 结论仍只适用于原冻结输入，见 [时序记录](../../../../hw/dc_syn/records/README.md#历史记录)。
 
 非零有限组的原 anchor 范围为 MX：[−245,263]；NV：[−1,27]；融合 e2 后 HiF4：[−85,41]。MX 的 263 已超过 signed 9-bit，应继续使用顶层原 `ANCHOR_W`；默认 signed 10-bit。净差保留原 signed 11-bit 中间值，不因元素仅 4 位而截窄。
 
