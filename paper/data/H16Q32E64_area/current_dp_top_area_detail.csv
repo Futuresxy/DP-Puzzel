@@ -1,0 +1,35 @@
+category,function,component,cell_count,total_um2,area_percent
+Addition & accumulation,Final reduction tree,combinational,1227,203.74732799999884,1.1458009411853713
+Addition & accumulation,Group reduction adder,combinational,1029,173.6663039999995,0.9766361921339424
+Addition & accumulation,Lane group and final sum registers,register,295,196.78003200000072,1.1066194000447926
+Addition & accumulation,Lane reduction tree,combinational,6976,1002.4058879999394,5.6371664904488705
+Alignment & exponent selection,Global aligned operands and common exponent registers,register,220,150.22080000000003,0.8447871965497403
+Alignment & exponent selection,Global alignment MAX delta and sign restore,combinational,5851,1148.1292799999962,6.456661898537809
+Alignment & exponent selection,Group exponent MAX,combinational,276,55.3697279999999,0.3113792317098669
+Alignment & exponent selection,Lane anchor pipeline,register,216,146.46067199999996,0.8236416029183109
+Alignment & exponent selection,Lane exponent MAX,combinational,2715,509.97657599999536,2.867922963697914
+Alignment & exponent selection,Local alignment including pair preprocessing,combinational,19863,3604.8199679996546,20.272197690552524
+Alignment & exponent selection,S3 aligned leaf registers,register,928,616.4398079999916,3.466633497105414
+Data unpacking,C unpack,combinational,197,36.82713599999996,0.207102431743114
+Data unpacking,Operand unpack and S1 banks,combinational,16487,2496.0983039999237,14.037149905663243
+Data unpacking,Operand unpack and S1 banks,register,1280,849.3465599999851,4.776416443805073
+Data unpacking,S1 scale decode registers,register,100,66.3552000000001,0.3731575346722784
+Data unpacking,S5 C decode registers,register,45,30.855167999999995,0.1735182536226092
+Data unpacking,Scale unpack,combinational,416,81.10080000000002,0.4560814312661175
+Exponent arithmetic,Element exponent addition,combinational,2138,369.5984639999991,2.078487468124583
+Exponent arithmetic,Group scale exponent and S5 anchor registers,register,148,99.01670399999996,0.5568339656276322
+Exponent arithmetic,S2 element exponent registers,register,352,233.57030400000127,1.3135145220464253
+"LZD, normalization & rounding",C subnormal leading detection,combinational,141,21.860351999999953,0.12293467670036684
+"LZD, normalization & rounding",Final normalization rounding and encoding,combinational,1910,346.2266880000018,1.9470530920233624
+"LZD, normalization & rounding",Group leading detection,combinational,529,88.84224000000019,0.4996164769778842
+"LZD, normalization & rounding",Leading count and final output registers,register,57,39.813120000000005,0.22389452080336675
+Mantissa & scale multiplication,Element multiplier bank,combinational,10618,2679.5704319999245,15.068930489032095
+Mantissa & scale multiplication,Group magnitude scale multiplier,combinational,1536,385.4868480000004,2.167837966704452
+Mantissa & scale multiplication,S2 products and product sidebands,register,1000,663.8837759999902,3.733441134396085
+Mantissa & scale multiplication,S5 scaled or bypassed magnitude register,register,124,82.28044799999999,0.46271534299362455
+Mantissa & scale multiplication,Scale coefficient multiplier,combinational,164,34.94707199999998,0.19652963492739955
+Mantissa & scale multiplication,Scale coefficient pipeline,register,96,63.700992000000106,0.35823123328538736
+Others,Clock gating cells,icg,148,87.29395199999973,0.4909094678355285
+Others,Control and special-value registers,register,394,268.8491520000012,1.511909944647186
+Others,Inline shared control and unattributed combinational logic,combinational,4898,863.6129279999967,4.856645313759678
+Others,Raw C transport registers,register,128,84.93465599999998,0.4776416443805156
