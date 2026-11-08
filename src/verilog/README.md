@@ -125,3 +125,10 @@ python3.11 test/run_mixed_verilog.py --frontend t8h16q64e128
 每个顶层独立导出和 lint，完整运行11种精度的10747笔原生数据，再运行三组窗口的混格式/边界/协议/断点测试。`golden_exact` 使用本 profile 现场 CModel，`math_exact/max_ulp` 使用提交的独立数学 golden；不会覆写数据中的历史期望。验证记录见 [混合 RTL 验证](../../test/results/mixed-rtl-v1.7.md)。
 
 文件清单分别为 `files_t8h16q32e96.f`、`files_t8h16q32e128.f`、`files_t8h16q64e128.f`。三个 wrapper 共用 dp_top_mixed；基础四组保留原功能，新增组按类型有效使能，S6/S7 的参与旁带跟随当前在途请求。
+
+## 四组低精度独立顶层（v1.7.4）
+
+- `top/dp_top_e64.v` / `files_e64.f`：四个 `dp_group_e`，MXFP4/NVFP4/HiF4，E64。
+- `top/dp_top_q32e64.v` / `files_q32e64.f`：四个 `dp_group_qe(COMPACT_UNPACK=1)`，MXFP8/6 和三种 E，Q32E64。
+
+两个薄封装静态选择 `dp_top_lowp` 的前端，统一使用四组+C的五源后端、L8/II=1、LOCAL28/GLOBAL40；T/H/INT8拒收。旧 `dp_top_e` 参数化入口保留。详见 [组织合同](../spec/dp/dptop/low-precision-tops.md) 与 [独立快照验证](../../test/results/lowp-tops-v1.7.4.md)。

@@ -1,4 +1,4 @@
-> 功能：四组低精度独立 DP 装配；范围：E64、Q32E64 顶层与共用五源后端；版本：v1.7.4；修改时间：2026-11-08 +0800；对应代码：src/verilog/top/dp_top_lowp.v、dp_top_e64.v、dp_top_q32e64.v（本批实现），src/cmodel/lib/json_io.cpp、现有 E/QE group 与 top/backend.cpp；Chisel 未实现。
+> 功能：四组低精度独立 DP 装配；范围：E64、Q32E64 顶层与共用五源后端；版本：v1.7.4；修改时间：2026-11-08 09:03:06 +0800；对应代码：src/verilog/top/dp_top_lowp.v、dp_top_e64.v、dp_top_q32e64.v（已实现），src/cmodel/lib/json_io.cpp、现有 E/QE group 与 top/backend.cpp；Chisel 未实现。
 
 # 四组低精度 DP
 
@@ -60,4 +60,13 @@ S5 格式沿用 [E group](../group/dp_group_E.md) / [QE group](../group/dp_group
 
 CModel 配置 e64→E、q32e64→QE，复用已实现逐级数值路径及共同后端；固定容量配置拒绝非K16或L9。配置文件为 src/configs/dp/{e64,q32e64}_top.json。不复制第二套数值算法；S1紧凑字段由既有QE解包等价测试覆盖，顶层验证比较S5/S6/S7及最终结果。
 
-独立 files_e64.f/files_q32e64.f、独立快照与完整回执。各支持格式961笔数学golden和CModel比对；E定向覆盖、随机/非法类型、连续请求/气泡/复位、三个窗口参数。通过门禁后以 N12 TT 0.7V 85°C、1GHz、ICG开启、时序优先的同工况综合；检查setup/hold/电气/VT，报告完整面积和前端/后端分解。不得用四个group面积代替完整DP面积。当前状态：实现和测量进行中。
+独立 files_e64.f/files_q32e64.f、独立快照与完整回执。各支持格式961笔数学golden和CModel比对；E定向覆盖、随机/非法类型、连续请求/气泡/复位、三个窗口参数。通过门禁后以 N12 TT 0.7V 85°C、1GHz、ICG开启、时序优先的同工况综合；检查setup/hold/电气/VT，报告完整面积和前端/后端分解。不得用四个group面积代替完整DP面积。当前状态：CModel、Verilator 与 N12 TT/1GHz DC 均完成，L8/II=1 未改变。
+
+
+## 本批验收
+
+CModel 检查点 `2db339d`，RTL/Verilator 检查点 `4045e00`。E64 三种格式各961笔与数学参考完全一致；Q32E64 七种格式各961笔，最大1 ULP；三组窗口、S5–S7和原子接收/复位协议通过，见 [功能回执](../../../../test/results/lowp-tops-v1.7.4.md)。
+
+同工况 DC：E64 5644.14 µm²，Q32E64 11542.08 µm²，相对多精度基线16929.31 µm²分别减少66.66%/31.82%。setup/hold、VT≤20%和电气门禁通过；ICG实测覆盖97.34%/98.49%。这是指定TT角的预布局综合，最差setup仅0.022531/0.017643 ps，不能作为布线后裕量或工作负载功耗结论。详见 [面积/逐级时序对比](../../../../hw/dc_syn/records/lowp_n12_1000mhz_20261108.md)。
+
+首轮完整综合面积/时序已通过，但逐级报告白名单遗漏新顶层名称；修正报告入口后用同一RTL、库和约束独立重跑，面积一致。最终run为 dc_dp_top_e64_11080854 / dc_dp_top_q32e64_11080855，未增加流水或进行额外时序修复。

@@ -170,7 +170,7 @@ report_area -hierarchy -nosplit > reports/area_hierarchy.rpt
 report_qor -significant_digits 9 > reports/qor.rpt
 report_timing -delay_type max -max_paths $timing_max_paths -significant_digits 9 > reports/timing_setup.rpt
 report_timing -delay_type min -max_paths $timing_max_paths -significant_digits 9 > reports/timing_hold.rpt
-if {$top eq "dp_top" || $top eq "dp_top_e" || [string match "dp_top_t8h16*" $top]} {
+if {$top eq "dp_top" || $top eq "dp_top_e" || $top eq "dp_top_e64" || $top eq "dp_top_q32e64" || [string match "dp_top_t8h16*" $top]} {
   source inputs/dp_stages.tcl
   report_dp_stages
 }

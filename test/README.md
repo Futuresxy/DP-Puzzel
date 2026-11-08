@@ -59,3 +59,14 @@ python3.11 test/run_mixed_verilog.py --frontend t8h16q64e128
 ```
 
 每个顶层独立导出和 lint，完整运行11种精度的10747笔原生数据，再运行三组窗口的混格式/边界/协议/断点测试。`golden_exact` 使用本 profile 现场 CModel，`math_exact/max_ulp` 使用提交的独立数学 golden；不会覆写数据中的历史期望。验证记录见 [混合 RTL 验证](results/mixed-rtl-v1.7.md)。
+
+## E64 / Q32E64 独立顶层
+
+在已有 CModel/Verilator 构建环境下：
+
+```bash
+python3.11 test/run_lowp_verilog.py --frontend e64
+python3.11 test/run_lowp_verilog.py --frontend q32e64
+```
+
+每支持格式961笔，另测27/40、28/40、32/64三个窗口的S5–S7断点和L8协议；独立快照、门禁回执见 [v1.7.4](results/lowp-tops-v1.7.4.md)。该入口不调用DC或功耗工具。

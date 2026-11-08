@@ -1,8 +1,8 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.6.4；修改时间：2026-11-06 15:51:16 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.7.4；修改时间：2026-11-08 09:03:06 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
-本页记录 v1.6.4 手写 RTL，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
+本页记录现用手写 RTL 与 v1.7.4 顶层装配，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。
 
 ## 1. 文件组织与实现边界
 
@@ -158,3 +158,9 @@ E 前端无元素指数 MAX/差值/右移对齐；HiF4 e2 已融入 lane coeffic
 完整结果、来源、配置及长期保留声明见 [E64 验证报告](../../../../test/results/e64-v1.5.8.md)。时序/面积使用独立 DC 报告；没有真实负载功耗或布线后结论。
 
 E 解包模块化修订 v1.5.9 保持 S1–S8 边界和数值语义；新指纹已通过完整 E Verilator 回归（三格式各961笔、5288定向、六组参数及1106924个断点）。既有 DC 报告对应原冻结快照，结构修订不自动继承其 PPA 结论。
+
+## 四组低精度独立顶层（v1.7.4）
+
+`dp_top_e64` 和 `dp_top_q32e64` 各使用四个专用 group，通过静态参数选择 `dp_top_lowp`，共用 C 传递/解包及 S6–S8；QE 采用已验证紧凑解包。只支持各自低精度集合和 FP32 C/D，拒绝 T/H/INT8。三个新模块位于 src/verilog/top/，独立清单 files_e64.f/files_q32e64.f，旧 dp_top_e 保留。
+
+[顶层方案](../dptop/low-precision-tops.md) 规定组切片与五源后端；[Verilator 证据](../../../../test/results/lowp-tops-v1.7.4.md) 分别验证三种/七种格式、三组窗口参数、S5–S7与L8协议。综合使用真实通过快照，不借用旧E或混合版本面积。

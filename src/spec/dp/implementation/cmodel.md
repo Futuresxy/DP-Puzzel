@@ -1,8 +1,8 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.7.4；修改时间：2026-11-08 09:03:06 +0800；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
 
 # DP CModel 合同
 
-模型实现多精度分组共享前端和 E 专用前端，共用 S5 token 完成/C 路径及 S6–S8。默认 `multi` 为 T8H16Q32E64，`e` 为 E64，均为 L8、II=1。E 前端仅支持 MXFP4/NVFP4/HiF4，C/D 为 FP32；数学参考和请求接口复用。混合组组合、专用 Q/QE、阵列尚未实施；E RTL 及其 DC 另有验证证据。模型不以宿主 float/double 代替有限位宽运算。
+模型实现多精度分组共享前端和 E 专用前端，共用 S5 token 完成/C 路径及 S6–S8。默认 `multi` 为 T8H16Q32E64，`e` 为 E64，均为 L8、II=1。E 前端仅支持 MXFP4/NVFP4/HiF4，C/D 为 FP32；数学参考和请求接口复用。QE 和 E96/E128/Q64E128 混合组组合已实现，见混合顶层合同与独立验证；阵列尚未实施。各 RTL 及 DC 均有对应快照证据。模型不以宿主 float/double 代替有限位宽运算。
 
 ## 1. 实现与模块映射
 
@@ -93,7 +93,7 @@ src/cmodel/
 
 已抽出的公共后端保持原多精度配置的行为和周期。E 路径使用真实 S2 pair/S3 规约/S4 组和/S5 scale 阶段；每拍推进实际阶段，非预先计算后延迟输出。frontend 在构造 Config 时确定，每笔请求继续携带 datatype。
 
-src/configs/dp/e64.json 已作为 E64 CModel 配置接入现有 CLI，使用兼容四项数值参数加 frontend 字段。[RTL 框架](verilog.md#6-分类型模块与组合配置建议) 的 groups 列表及通用混合 profile schema 尚未接入 CModel/RTL；当前不支持同一 DP 混合 multi/E 组，不能仅把 k_fp16 改名就声称支持混合组合。
+src/configs/dp/e64.json 是参数化 E CModel 入口。当前固定混合 profile 已通过 Config 调度 multi/E/QE 组，见 [混合合同](../dptop/mixed-precision-expansion.md)；不支持任意用户输入 groups 列表。新增固定四组 e64/q32e64 分别映射 E/QE 数值前端，配置为 e64_top.json/q32e64_top.json，强制 K16/L8，公共后端不复制。详见 [低精度顶层合同](../dptop/low-precision-tops.md)。
 
 数学 reference 与原始输入数据共用一份，按实际输入、模式 K 和 scale 关系计算精确数学结果；各 profile 的有限位宽架构期望、周期记录与内部 cutpoint 分别生成。禁止用 E 的新 trace 覆盖多精度 expected 作为绕过验证的方式。内部字段允许不同，先检查各自 RTL/CModel，再按数值坐标映射对照公共 S5/S6 边界及最终输出。数学 oracle 保持独立，不直接调用被测 CModel 的算术函数。
 
