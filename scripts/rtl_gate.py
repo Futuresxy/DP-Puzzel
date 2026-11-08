@@ -135,6 +135,12 @@ def verify_export(export_id, root=ROOT):
             "verification_id": evidence["verification_id"]}
 
 
+def verify_power_input(point, replay_receipt, root=ROOT):
+    """Verify an original DC snapshot plus fresh workload RTL replay, for power only."""
+    from dp_power_gate import verify_workload_replay
+    return verify_workload_replay(root, point, replay_receipt)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("export_id")

@@ -1,6 +1,6 @@
 # 六种 DP 最新综合结果与功耗输入索引
 
-此表是已完成实验的最新有效结果汇总。本次只核验、整理及清理，没有重新综合或测量功耗。所有结果保持 **L8/II=1、K16/LOCAL28/GLOBAL40、1GHz、ICG开启**。
+此表归档六种架构的最新有效综合证据；按负载/精度区分的功耗验收单独保存在hw/power/records。所有综合结果保持 **L8/II=1、K16/LOCAL28/GLOBAL40、1GHz、ICG开启**。
 
 | 架构 | 面积 µm² | 相对dp_top | setup ps | hold ps | 验收 |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -30,7 +30,7 @@
 
 机器可读入口为 [latest_six_dp.json](latest_six_dp.json)。每个条目固定top、run、export、原始验证回执、PVT/频率、支持模式，以及映射网表/DDC/SDC路径与SHA-256。未来功耗应显式选择该记录中的一份网表，按精度测量，不能用模糊latest目录或混用另一个run的活动信息。
 
-当前power_ready=false，power_mw=null：尚未执行VCS门级等价重放、原生SAIF捕获或Power Compiler活动注释审计。流程见 [功耗准备说明](../../power/README.md)。时钟门控覆盖率不是功耗数据。
+power_ready=false、power_mw=null是综合catalog的占位，不能代表某个具体负载的测量状态。按精度完成的VCS门级重放、原生SAIF和Power Compiler活动审计及功耗结果，见 [功耗入口与结果](../../power/README.md)。时钟门控覆盖率不是功耗数据，也不能把一个已测格式的验收泛化为全部格式。
 
 现用源码经历顶层common目录搬移，部分旧混合快照还早于QE紧凑解包的共用源码更新。JSON逐文件列出当前源码与冻结源码的差异；差异不直接证明数值改变，也不能被忽略当作同一源码。旧快照仍绑定其原始通过回执；新EDA输入必须按选定范围重新验证，不能手改旧manifest。
 

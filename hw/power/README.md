@@ -1,42 +1,49 @@
 # 单 DP 真实负载功耗
 
-项目采用 VCS 原生门级 SAIF 和 Synopsys Power Compiler。方法与验收项见 [功耗 skill](../../.skill/power-analysis/SKILL.md)。已完成Qwen3-8B真实MLP数据和首批固定计划；单DP的仿真/测量执行器和实测结果待接入。具体程序分工、门禁和窗口见 [搭建方案](implementation-plan.md)，首批为BF16、MXFP8 E4M3、MXFP4 E2M1。
+使用 VCS native gate-level SAIF 和 Synopsys Power Compiler。首批六种架构的 BF16、MXFP8 E4M3、MXFP4 E2M1 共15个兼容点，使用固定 Qwen3-8B MLP 真实负载。方法见 [功耗 skill](../../.skill/power-analysis/SKILL.md)，测量合同见 [实施说明](implementation-plan.md)。
 
 | 位置 | 内容 |
 | --- | --- |
-| `test/data/dp/` | 已提交的 packed 事务、独立期望和数据来源 |
-| `test/data/power/` | 本轮 Qwen3-8B 原生 K 功耗负载及两套数值参考 |
-| `hw/rtl/<export-id>/` | 与 DC 匹配的已验证 RTL 快照 |
-| `hw/dc_syn/runs/<run-id>/` | 原始 DDC、网表、SDC 和时序结果 |
-| `hw/power/runs/` | 实测激励、原生 SAIF、注释审计、工具报告，保留在本机 |
-| `hw/power/records/` | 可提交的结果摘要和适用范围 |
+| `test/data/power/` | Qwen3-8B 原生K负载、CModel及数学参考 |
+| `hw/rtl/<export-id>/` | 与原DC匹配的已验证冻结RTL |
+| `hw/dc_syn/runs/<run-id>/` | 原始DDC、网表、SDC及通过的时序证据 |
+| `hw/power/plans/` | 显式选择15个架构/格式点及所有输入hash |
+| `hw/power/runs/<run-id>/` | 门级结果、原生与补齐SAIF、原始工具报告，本地保留 |
+| `hw/power/records/` | 完整测量批次的Markdown、JSON、CSV精简报告 |
 
-同一份通过时序的网表用于各精度重放。选择同源模型数据和固定窗口，逐笔核对 RTL 与门级输出，再检查真实引脚状态、SAIF 时长和 Power Compiler 注释覆盖。整 DP 平均功耗与按有效吞吐折算的 pJ/MAC 一起报告。待测内容、运行范围和工艺条件以明确选定的配置为准。
+## 当前结果
 
-普通功耗分析按 [统一保留入口](../../scripts/README.md#运行产物保留) 滚动保留最近两次终态运行。功耗运行记录其输入 DC run，重要功耗证据与用户确认后标记保留。
+已完成批次 [power_qwen8b_six_1108](records/power_qwen8b_six_1108.md)：六种架构、15个兼容格式点全部通过。静态/动态及内部/开关功耗、总功耗、pJ/MAC和活动审计同时保存在 [JSON](records/power_qwen8b_six_1108.json) 与 [CSV](records/power_qwen8b_six_1108.csv)。原生SAIF、门级输出及原始报告在本地 `runs/power_qwen8b_six_1108/`；该报告引用保护运行及其六份DC输入。
 
-## 下一轮：六种 DP 的固定综合输入
+## 执行
 
-从 [latest_six_dp.json](../dc_syn/records/latest_six_dp.json) 选择六种架构各自最新有效run；查看 [面积与时序表](../dc_syn/records/latest_six_dp.md)。每项已经固定top、1GHz/TT工况、export、原始验证回执及映射Verilog/DDC/SDC校验和，原始文件保留在各自run/netlist/。
-
-当前仅完成综合输入整理，**没有运行功耗测试**。不能把门控寄存器比例或旧vectorless结果当作真实负载功耗。
-
-下一轮执行顺序：
-
-1. 明确每个架构/精度的工作负载和同源数据，固定有效测量窗口。TF32/INT8有匹配真实负载后再加入，不用随机活动替代真实负载结论。
-2. 核对冻结RTL与映射网表范围。E96/E128原始快照早于QE优化的共用源码更新；当前还有top/common路径迁移。选择原测量快照重放，或对当前源码重新验证和综合，禁止混用不匹配的RTL活动与旧网表。
-3. 完成选定RTL的数值/周期门禁，再以匹配工艺单元模型执行VCS门级数值/协议对比，确认映射网表的功能与L8/II=1。
-4. 在排除初始化、填充和排空的负载窗口采集VCS native gate-level SAIF。
-5. Power Compiler读取对应DDC/DB/SAIF，完成层次、叶引脚活动、时钟概率/翻转率、注释覆盖和功耗引脚X/Z审计，再记录Internal/Switching/Leakage/Total及pJ/MAC。
-
-当前catalog的power_ready=false、power_mw=null表示这些功耗门禁仍未完成。四份综合修复依赖只用于来源核验，不是第二份功耗网表；功耗应读取对应最终run/netlist/。
-
-## Qwen3-8B 首批准备
-
-[已导入数据](../../test/results/qwen3-8b-power-data.md)覆盖7种格式和当前所需K，共15套、每套1024笔；与旧correct_961分目录保存。冻结选择见 [15点计划](plans/qwen3_8b_first3.json)：先运行dp_top的三个精度，再扩展到其余兼容顶层。当前只有只读准备入口可执行：
+先按 [固定依赖](../../dependencies/petile-power.json) 获取MIT解析与审计模块（只提取4个文件，不复制参考工程）：
 
 ```bash
-python3.11 hw/power/scripts/prepare_qwen_plan.py --output hw/power/plans/qwen3_8b_first3.json
+python3.11 hw/power/scripts/setup_dependency.py --source-repo /path/to/Quant_LLM_Chip_Codesign
 ```
 
-它检查数据/网表/DDC/SDC校验和并固定选择，不启动EDA，不替代统一RTL门禁或门级验证。完整执行器按 [implementation-plan.md](implementation-plan.md) 接入后，先生成VCS原生SAIF，再做Power Compiler测量。
+本机配置保存到忽略的 `hw/power/configs/machine.local.json`：`setup_script`、`dc_shell`、`iverilog`、`vvp` 和两个匹配N12 base/LVT的 `cell_models` 路径；VCS从setup后的PATH解析。DB直接使用固定DC run的原始resolved配置。禁止提交机器路径、商业库和许可证配置。
+
+```bash
+# 输入已选定；需要明确重新选择时才重新生成计划
+python3.11 hw/power/scripts/prepare_qwen_plan.py --output hw/power/plans/qwen3_8b_first3.json
+
+# 依次执行：冻结RTL重放 → VCS门级重放/原生SAIF → Power Compiler/活动审计
+python3.11 hw/power/scripts/run_power.py --run-id power_<new_name>
+
+# 仅接受15点全部完成且证据hash未变的批次
+python3.11 hw/power/scripts/report_power.py --run-id power_<new_name>
+
+python3.11 -m unittest discover -s hw/power/tests -v
+```
+
+`--max-points 1` 可用于首点调通，状态为partial，不发布六架构报告。`--resume`只复用已完成且hash一致的点；遇到未完成点保留诊断，使用新run ID重试，不能覆盖失败证据。源码、工具/单元模型或计划变更时也使用新run ID。
+
+使用固定计划中的最终网表，不再按目录时间选择“最新”。E96/E128沿用原快照；`scripts/rtl_gate.verify_power_input`核验原完整回归、冻结源码和本次工作负载重放，不修改旧manifest，也不放宽当前源码综合门禁。该负载下的RTL/网表比对不是全空间形式等价证明。
+
+每点1024笔一次性发射，初始化独立计数；第256笔驱动前开始，第768笔驱动前结束，1GHz下恰好512ns。全部结果、L8/II=1通过后，核验真实功耗引脚无X/Z、Nets/Ports/Pins显式注释100%、所有叶引脚概率/翻转率与SAIF一致。实际关闭的时钟保持实测零翻转。
+
+报告保留Internal、Switching、动态、静态Leakage、Total和pJ/MAC。测量为综合后零延迟、CTS/布线前活动功耗，不包含布线寄生和真实毛刺。TF32/INT8无相应真实负载时不产生实测结论。不支持的架构/格式显示“不支持”，不能填0。
+
+普通运行按 [统一保留入口](../../scripts/README.md#运行产物保留) 保留最近两次已结束且无引用结果；报告引用的功耗运行及其DC输入受到保护，原始SAIF和大型报告只在本机保存。重要节点需要长期pin时先与用户确认具体run。

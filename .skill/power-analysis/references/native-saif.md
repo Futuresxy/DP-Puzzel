@@ -2,7 +2,7 @@
 
 ## 输入与预检
 
-- 记录 Git 提交、明确的 export ID、DC run ID、目标格式、数据集和窗口。用 `python3 scripts/rtl_gate.py EXPORT_ID` 核对当前 RTL 证据。核对 `inputs/resolved.json`、`DC_COMPLETE`、`summary.json` 和原始报告。现用六种 DP 顶层及精确run映射见 [catalog](../../../hw/dc_syn/records/latest_six_dp.json)，另保留 `dp_top_e` 兼容入口；时钟 `clock`、同步低有效 `rst_n`，默认 `K_FP16=16, LOCAL_W=28, GLOBAL_W=40`、L8/II=1。历史 N12 网表可能使用高有效 `reset` 和 27/40 参数；必须读取所选 export/DC run 的 manifest 和约束，按该版本产生复位，不能把当前 TB 直接用于旧网表。现有六种架构已有对应DC结果，功耗尚未实测。当前源树与历史快照的新鲜度检查不得跳过，冻结版本重放接入见 [搭建方案](../../../hw/power/implementation-plan.md)。
+- 记录 Git 提交、明确的 export ID、DC run ID、目标格式、数据集和窗口。用 `python3 scripts/rtl_gate.py EXPORT_ID` 核对当前 RTL 证据。核对 `inputs/resolved.json`、`DC_COMPLETE`、`summary.json` 和原始报告。现用六种 DP 顶层及精确run映射见 [catalog](../../../hw/dc_syn/records/latest_six_dp.json)，另保留 `dp_top_e` 兼容入口；时钟 `clock`、同步低有效 `rst_n`，默认 `K_FP16=16, LOCAL_W=28, GLOBAL_W=40`、L8/II=1。历史 N12 网表可能使用高有效 `reset` 和 27/40 参数；必须读取所选 export/DC run 的 manifest 和约束，按该版本产生复位，不能把当前 TB 直接用于旧网表。现有六种架构已有对应DC结果。当前源树综合门禁保持不变；归档DC功耗复用必须经过独立的冻结版本和本次负载重放门禁，实现及边界见 [搭建方案](../../../hw/power/implementation-plan.md)。
 - 确认原始 `netlist/dp_top.ddc`、`dp_top.sdc`、`dp_top_mapped.v` 齐全，网表和映射数据库来自同一 run。核验实际链接库和 VCS 单元模型的工艺、发行版、base/LVT 和引脚。VCS、DC/Power Compiler 版本和许可证以本机实际运行验证。`power_ready` 保持原记录值，功耗流程另存自己的匹配、活动和注释证据。
 - 首轮选择以 [固定测量计划](../../../hw/power/plans/qwen3_8b_first3.json) 为准，先用 `dc_dp_top_11080044` 测BF16/E4M3/MXFP4，再扩展兼容顶层。工况为原N12 TT 0.7V/85°C、1GHz、门控开启。旧候选已按用户要求清理，不再作为功耗输入。
 

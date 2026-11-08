@@ -5,11 +5,11 @@ description: Plan or run single-DP workload power comparisons in DP-Puzzel using
 
 # 单 DP 真实负载功耗
 
-读取根 [AGENTS.md](../../AGENTS.md)、[功耗目录](../../hw/power/README.md) 和 [DC 输入契约](../../hw/dc_syn/input-contract.md)。任务要求搭建 skill 或讨论架构时，只整理方法和所需证据。任务授权实际测量时，先做输入预检，再按 [原生 SAIF 测量协议](references/native-saif.md) 执行。当前仓库尚无单 DP 的自动化功耗入口或实测结果。
+读取根 [AGENTS.md](../../AGENTS.md)、[功耗目录](../../hw/power/README.md) 和 [DC 输入契约](../../hw/dc_syn/input-contract.md)。任务要求搭建 skill 或讨论架构时，只整理方法和所需证据。任务授权实际测量时，先做输入预检，再按 [原生 SAIF 测量协议](references/native-saif.md) 执行。自动化入口为 `hw/power/scripts/run_power.py`，完整批次通过后用 `report_power.py` 发布；命令、固定依赖和本机配置见功耗目录README。
 
 1. 显式选择 `hw/rtl/<export-id>/` 的已验证快照和 `hw/dc_syn/runs/<run-id>/` 的完整映射结果。核对 RTL 门禁、输入指纹、参数、顶层、DC 结果、DDC/SDC/网表和实际库/模型。默认比较同一份已通过 setup/hold 的网表。时序违例的诊断实验单独标注，不能作为达标频率的功耗点。
-2. 固定工艺、PVT、时钟、约束和活动窗口。不同格式使用同源激活与权重，按各自格式编码及缩放。当前可从已提交数据中选择 Qwen3 `batch512_ai_load` 的九种浮点编码。先读 manifest 核对来源与实际行段。TF32 和 INT8 等有匹配的真实负载再加入。
-3. 先在已验证 RTL 上重放整个事务流，再用匹配的单元模型在 VCS 中运行映射网表。对照独立期望逐笔核对输出、类型、`last`、L8 和事务计数。复位、合法初始化、填充与排空均在测量窗之外。以 VCS 原生门级 SAIF 记录被测窗口。
+2. 固定工艺、PVT、时钟、约束和活动窗口。不同格式使用同源激活与权重，按各自格式编码及缩放。当前首批使用 `test/data/power/` 的 Qwen3-8B MLP 数据及 `hw/power/plans/qwen3_8b_first3.json` 的15个兼容测量点。先读 manifest 核对来源与实际行段。TF32 和 INT8 等有匹配的真实负载再加入。
+3. 先在已验证 RTL 上重放整个事务流，再用匹配的单元模型在 VCS 中运行映射网表。归档DC输入经 `rtl_gate.verify_power_input` 核验原完整回归、冻结源码和新的工作负载重放；它不放宽当前源树综合门禁，不修改旧manifest。对照独立期望逐笔核对输出、类型、`last`、L8 和事务计数。复位、合法初始化、填充与排空均在测量窗之外。以 VCS 原生门级 SAIF 记录被测窗口。
 4. Power Compiler 读取原 DDC、对应 DB 和 SAIF。核查时钟网络转换时间、SAIF 时长、真实功耗引脚无 X/Z、Nets/Ports/Pins 全部显式注释，以及每个叶引脚和时钟引脚的实测概率与翻转率。仅允许从已证明电气等价的标量连线或常量补全被省略的引脚记录。
 5. 每个格式记录 Internal、Switching、Leakage、Total、mW、有效 MAC/周期与 pJ/MAC，关联同一网表和同源负载。保存原始 SAIF、窗口、匹配结果和工具报告。精简结果和适用范围放入 `hw/power/records/`，原始工具产物保存在忽略的 `hw/power/runs/`。
 

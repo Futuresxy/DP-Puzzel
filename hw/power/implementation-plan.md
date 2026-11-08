@@ -1,6 +1,6 @@
 # 六种 DP 的真实负载功耗实施方案
 
-2026-11-08；本轮已完成数据导入、数学/CModel参考与固定测量计划。尚未生成 SAIF、执行 VCS 门级仿真或 Power Compiler。本方案对应单 DP，不包含阵列、存储或整个 Qwen 模型的功耗。
+2026-11-08；本轮已完成数据导入、数学/CModel参考、固定测量计划和执行器；首批15点已完成，验收及数值见 [power_qwen8b_six_1108](records/power_qwen8b_six_1108.md)。本方案对应单 DP，不包含阵列、存储或整个 Qwen 模型的功耗。
 
 ## 1. 已准备的输入
 
@@ -44,28 +44,29 @@ python3.11 hw/power/scripts/prepare_qwen_plan.py \
 
 ## 3. 程序组织与接入顺序
 
-以下执行器、TB和Tcl为待实现设计，不能作为当前已存在的命令使用。
+已实现入口及职责：
 
 ```text
 hw/power/
   scripts/
-    prepare_qwen_plan.py       # 已实现：固定数据和综合网表选择
-    run_power.py               # 待实现：prepare / rtl / saif / analyze / report / all
-    prepare_vectors.py         # 待实现：逻辑K数据→固定顶层端口，旁路区域填零
-    audit_activity.py          # 待实现：SAIF、叶引脚、别名与时钟活动审计
-    report_power.py            # 待实现：单位校验及汇总
-  tb/dp_power_tb.sv            # 待实现：同一TB用于冻结RTL和映射网表
-  tcl/power.tcl                # 待实现：原DDC+DB+SAIF，不重新compile
-  configs/machine.local.json   # 本机工具/库模型绑定，忽略提交
-  plans/qwen3_8b_first3.json    # 已实现：首批15点，状态plan_only
-  tests/                      # 后续流程测试，工具接口与拒绝不匹配输入
-  runs/<run-id>/               # 原始活动、日志、报告，仅本地
-  records/                    # 验收通过的精简功耗结果
+    prepare_qwen_plan.py       # 固定数据和综合网表选择
+    setup_dependency.py       # 从固定commit提取4个MIT审计/解析文件
+    run_power.py               # 端口激励、RTL/GLS、原生SAIF、PC与逐引脚审计
+    report_power.py            # 完整批次hash检查和Markdown/JSON/CSV汇总
+  tb/dp_power_tb.sv.in         # RTL与门级共用的固定top计分板模板
+  tcl/power.tcl               # 原DDC+DB+SAIF，不重新compile
+  configs/machine.local.json  # 本机工具/单元模型绑定，忽略提交
+  plans/qwen3_8b_first3.json   # 固定首批15点，计划本身不表示测量通过
+  tests/                     # 回执篡改、短回放、X/Z、时长和单位的拒绝测试
+  runs/<run-id>/              # 原始活动、日志、报告，仅本地
+  records/                   # 验收通过的精简功耗结果
 ```
+
+命令和本机配置字段见 [README](README.md)。统一入口 `scripts/rtl_gate.verify_power_input` 调用 `scripts/dp_power_gate.py`，显式限定为 archived_dc_reuse_only。RTL重放使用Icarus Verilog；门级使用VCS，同一TB核对D/类型/last及周期协议。审计模块来自固定MIT依赖 [清单](../../dependencies/petile-power.json)。
 
 阶段一：核验输入和环境。验证原DC最终结果、冻结RTL目录指纹和历史回执；确认VCS/Power Compiler许可证、匹配发行版的N12 base/LVT单元模型以及所有实际映射单元/引脚。机器路径与许可证配置只留本地。保持原TT0.7V85°C、1GHz、时钟门控、IO负载和约束，不为功耗重新综合或改动数据通路。
 
-现有RTL门禁包含当前源码/测试新鲜度检查，目录迁移或源码变化可能使历史快照无法直接通过。需在统一门禁中接入显式冻结版本重放：使用原始files.f/src、核验已有指纹，并由新RTL仿真生产绑定该快照和本次负载的新回执。不得把源树差异忽略后手改manifest。若冻结输入的数值/周期证据无法建立，该点停止。E96/E128的QE可选分支差异不要求仅为本次旧网表测量重新综合，但也不能自动宣称当前源树与它形式等价。
+现有RTL门禁包含当前源码/测试新鲜度检查，目录迁移或源码变化可能使历史快照无法直接通过。统一门禁已接入显式冻结版本重放：使用原始files.f/src、核验已有指纹，并由新RTL仿真生产绑定该快照和本次负载的新回执。不得把源树差异忽略后手改manifest。若冻结输入的数值/周期证据无法建立，该点停止。E96/E128的QE可选分支差异不要求仅为本次旧网表测量重新综合，但也不能自动宣称当前源树与它形式等价。
 
 阶段二：准备端口激励与计分板。复用test数据schema和数学操作数布局，logical K不是K_FP16。混合顶层扩展端口按物理宽度高补零，scale按已有基本group槽位装配，C只接入一次。对unsupported数据类型不发射。计分板读取expected.jsonl中与该网表前端匹配的cmodel_results字段，逐笔要求D、datatype、last位精确一致，并核对接受数、输出数和L8/II=1；精确数学参考另作误差统计，不能用ULP容差放过RTL/网表不一致。
 
@@ -93,7 +94,7 @@ hw/power/
 
 ## 5. 结果和失败判定
 
-每个run保存plan、输入/期望、冻结RTL重放回执、门级输出、VCS日志、窗口起止、原生SAIF、必要alias补齐及映射、Power Compiler Tcl/日志/报告和审计结果。只有全部检查通过才写records中的实测数字；当前计划中的power_mw均为null。
+每个run保存plan、输入/期望、冻结RTL重放回执、门级输出、VCS日志、窗口起止、原生SAIF、必要alias补齐及映射、Power Compiler Tcl/日志/报告和审计结果。只有全部检查通过才写records中的实测数字；计划中的power_mw保持null；完成数据只写测量记录，避免将计划误用为验收。
 
 报告整DP的平均mW，同时计算`pJ/MAC = Total_W / (logical_K × frequency_Hz) × 1e12`，C加数不另计MAC。K不同的架构必须同时给出功耗和能效；不能把整DP功耗直接解释为单MAC成本。若列OP按2 OP/MAC说明。窗口能量为Total_W×512ns。
 
