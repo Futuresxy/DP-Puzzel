@@ -1,0 +1,84 @@
+\section{多精度算力配比的可组合实现}
+\label{sec:architecture}
+
+为比较配比增配的代价，DP-Puzzle 以共享 DP 提供多精度基线，以精度子集模块增加目标吞吐。直接并列的浮点通路具有不同的移位范围与并行项数，难以共享对齐网络。本文先局部归约各模式的乘积，再逐级共享移位与累加；统一的中间接口进一步支持在归约维或输出维组合专用模块。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{DP-Architecture.png}
+\caption{DP-Puzzle overview. Precision-specific MidGroups extend H16Q32E64 along K and share final alignment, accumulation with C, and rounding.}
+\label{fig:dp_architecture}
+\end{figure}
+
+\subsection{分层组织与统一解码}
+\label{sec:brick_definition}
+\label{sec:unpack_recode}
+
+H、Q、E 分别表示 BF16/FP16、MXFP8/FP6 和 MXFP4/NVFP4/HiF4，后缀为每周期乘积数。图~\ref{fig:dp_architecture} 中，SubPE 提供 H1Q2E4，四个 SubPE 组成 PEGroup，四个 PEGroup 组成 H16Q32E64 MidGroup；一个或多个 MidGroup 共享与 $C$ 累加及 FP32 舍入后端，构成完整 DP。各精度模式互斥运行。PEGroup 同时作为尺度处理边界：E 模式下，NVFP4、MXFP4 和 HiF4 的缩放组分别覆盖一个、两个和四个 PEGroup~\cite{ocpmx2023,nvidia2024nvfp4,hifloat4}。
+
+统一解码的关键是将低精度有效数限制在四位，同时保留格式所需的指数与组尺度。图~\ref{fig:unpack_layout} 中，每个 16 位输入字容纳一个 H、两个 Q 或四个 E 元素，FP6 使用 8 位槽位。FP16 的 11 位有效数高位补零至 12 位，子乘积重组后提取 22 位精确乘积。
+
+\textbf{FP8/FP6。} 将各格式指数转换为偏置 15 的五位表示，恢复隐藏位并补足三位小数，得到 E5M3 内部编码和 I1F3 四位有效数。该转换保留有限数值；非正规数使用有效指数与零隐藏位，特殊值独立传播。
+
+\textbf{MXFP4/NVFP4。} E2M1 的正规与非正规有效数分别为 $1.f$ 和 $0.f$，有效指数仅取 $0,1,2$。将两位有效数左移至多两位，即可用四位 I3F1 定点幅值精确表示全部元素，例如最大值 $1.1_2\times2^2=110.0_2$。元素指数由此吸收到幅值中，组内乘积无需指数对齐，组尺度仍独立处理。
+
+\textbf{HiF4。} 三位幅值码 $u$ 吸收每四元素共享的一级微指数 $g_0$，形成四位幅值 $u2^{g_0}$；每八元素共享的二级微指数保留用于对齐。FP8/FP6、E2M1 和 HiF4 因而共用四位乘法输入，仅以三位、一位和两位小数的位置差异修正后续指数锚点。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{unpack_layout.png}
+\caption{Decoded layout per 16-bit input word. Low-precision magnitudes share a four-bit width; their binary points and remaining exponents depend on the format.}
+\label{fig:unpack_layout}
+\end{figure}
+
+\subsection{共享计算与精度保持}
+\label{sec:full_brick}
+
+SubPE 以 $8\times8$、$8\times4$、$4\times8$ 和 $4\times4$ 乘法器组合高精度乘积，并在低精度模式下并行工作~\cite{bitfusion2018}。两路 Q 乘积先对齐求和，四路 E 乘积先局部归约，统一为一个 SubPE 输出。PEGroup 和 MidGroup 逐级将部分和对齐到局部最大指数，最终与 $C$ 累加；最大项旁路移位，其余项按指数差对齐。局部归约将不同精度的并行度差异限制在下层，使上层移位器与加法树能够共享。参考 MMA-Sim 的逆向建模~\cite{xie2025mmasim}，FP8、FP16/BF16、MXFP4/NVFP4 分别保留 25、26、28 位小数，符号、整数与归约进位另计，最终舍入为 FP32。
+
+\textbf{零值感知的对齐。} 零乘积和局部相消产生的零和都可能携带较大指数，错误抬高上层对齐基准。SubPE 因此在指数比较前屏蔽零乘积的 anchor，PEGroup 在归约后屏蔽零和的 anchor，使对齐范围仅由非零贡献决定。
+
+例如，两组 NVFP4 的贡献为 $448^2(1-1)=0$ 和 $2^{-18}$。若仅依据尺度选择最大指数，零组会使非零组额外右移 28 位，超出有限保留窗口；排除零和的指数后，同样位宽即可保留 $2^{-18}$。局部判零因而不仅简化零值处理，也避免为已相消的数值占用对齐精度。
+
+\textbf{尺度乘法的缩窄与旁路。} 组尺度在局部归约后施加~\cite{ocpmx2023}，其指数并入 anchor，有效数单独相乘。Full 通路仅在 NVFP4/HiF4 模式下启用非单位尺度有效数乘法，其余格式由 MUX 旁路。乘法前剥离部分和中已知的低位零，仅计算紧凑有效位；旁路时隔离输入并保持尺度寄存器，抑制无效翻转。尺度处理由此避免驱动完整宽通路。
+
+\subsection{FP4 专用化与精度子集裁剪}
+\label{sec:specialized_midgroups}
+
+共享通路保留了高精度位宽与模式选择开销。FP4 专用模块 $\mathcal E$ 利用四位定点幅值，将 SubPE 缩为四个 $4\times4$ 乘法器，移除 H 的宽乘积拼接和 Q 的指数比较、动态移位。四路乘积归约为 11 位精确结果，替代 Full 的 29 位输出，并同步缩窄中间寄存器。PEGroup 中，MXFP4/NVFP4 无需元素指数移位；HiF4 仅对共享微指数的局部结果执行至多两位移位。保留尺度有效数乘法并删除结构零位后，该级输出由 33 位缩为 22 位。四个 PEGroup 构成 E64，两个构成 E32，分别用于完整和半份 FP4 扩展。
+
+Q/E 共享模块 $\mathcal L=\mathrm{Q32E64}$ 保留两种精度的乘法、归约与尺度处理，用于联合增配；仅支持 Q 或 H 的通路用于独立实现对照。各模块输出统一的符号、幅值与指数锚点，内部位宽按支持格式裁剪。
+
+
+\subsection{四配比的 K/N 实现}
+\label{sec:brick_composition}
+
+以 $\mathcal F=\mathrm{H16Q32E64}$ 为基准，附加 E32、E64 或 Q32E64 分别得到 $1:2:6$、$1:2:8$ 和 $1:4:8$。图~\ref{fig:dp_composition} 展示两种组合边界，表~\ref{tab:brick_compositions} 匹配各精度的绝对吞吐；其中 $\mathcal E_{1/2}$ 表示 E32，$\mathcal E$ 表示 E64。
+
+\textbf{K 扩展。} 多个 MidGroup 处理同一输出的不同归约片段，共享最终 C 累加、规格化和舍入。新增模块同时改变输入及尺度分配、末端对齐项、归约位宽与流水控制。若含 $g$ 个 MidGroup，末端需处理含 C 在内的 $g+1$ 项，平衡加法树深度为 $\lceil\log_2(g+1)\rceil$；移位器和中间寄存器随组合调整。因此，共享后端的收益伴随新增对齐与归约成本。
+
+\textbf{N 扩展。} 精度子集模块配置独立后端后，沿输出列部署为完整 DP。同行 PE 共享 A，各列维护独立输出，不支持当前模式的单元关闭。本文采用满足 $2\times2$ 广播约束的双列条带，并按活动 PE 的每周期乘积总数匹配 K 实现。$1:2:6$ 以两个基准 PE 为比较单位，避免半个完整 PE 的不合法部署。两种方案由此分别比较内部归约共享与独立输出并行的代价。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{kn_composition}\par
+\makebox[0.42\columnwidth][c]{\footnotesize (a) K: shared backend}\hfill
+\makebox[0.52\columnwidth][c]{\footnotesize (b) N: independent PEs}
+\caption{Capacity-matched $1:2:8$ implementations from a $2\times2$ Full base. Each box is a complete PE. K adds E64 within each PE; N adds independent E64 PEs.}
+\label{fig:dp_composition}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Capacity-matched compositions; each bracket denotes a complete PE.}
+\label{tab:brick_compositions}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}cll@{}}\toprule
+Ratio & $K$: shared backend & $N$: independent PEs \\\midrule
+$1:2:4$ & $[\mathcal F]$ & $[\mathcal F]$ \\
+$1:2:6$ & $2[\mathcal F+\mathcal E_{1/2}]$ & $2[\mathcal F]+[\mathcal E]$ \\
+$1:2:8$ & $[\mathcal F+\mathcal E]$ & $[\mathcal F]+[\mathcal E]$ \\
+$1:4:8$ & $[\mathcal F+\mathcal L]$ & $[\mathcal F]+[\mathcal L]$ \\
+\bottomrule
+\end{tabular*}\endgroup
+\end{table}

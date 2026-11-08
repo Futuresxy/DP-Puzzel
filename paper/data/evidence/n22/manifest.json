@@ -1,0 +1,18 @@
+{
+  "sources_sha256": {
+    "HS_codesign_analysis/area_power_model/data/petile21_area_relative_to_F.csv": "e730e2d8b5b342045af9d12379df8786a70ab12a96eb30668741626c441022bb",
+    "HS_codesign_analysis/area_power_model/data/petile21_area_power.csv": "5fc6d05c9106d0d9cdce5a51962cc34b64912e819dbd4a298601fae3582debc3",
+    "HS_codesign_analysis/area_power_model/array/results/PETile21_NLeakOnly_1030155818/predictions.csv": "7798ab62f522c5471f4b92f7be19e267c19ad0c5f3f02982a7fb32df2edb20b0",
+    "HW/dc_syn/syn_report/PETileFull_DatapathArea_1027222340/final/functional_area.csv": "2f43f5fd16cf7344873ec8976327726668a22c940f40dadefbe44d841a85e3e2",
+    "HW/dc_syn/syn_report/SubPEFull_MultiplierCompare_1027225048/comparison/comparison.csv": "a79ba155420a74dfe702b85bec6b5334b257cb7a485571d498563a41910728c2",
+    "HW/power_analysis/reports/PETileSeparate_N22PPA_1027131016/reuse_comparison.csv": "e3cb11a0f60f3f7b12798262ad4e3335cff819db6e2bba8aa4103f50d634b002",
+    "HW/power_analysis/reports/PETileFull_PrecisionGate_1027145733/gating_comparison.csv": "777c5c8712af5edf0dbb7e3a1ce677ae5c8df5e39d1c5e8fa0d0525cd952c2e9"
+  },
+  "generator": "DAC2027/scripts/build_ch34_results.py",
+  "checks": "PASS",
+  "measurement_rows": {
+    "area": 21,
+    "power": 169
+  },
+  "original_data_modified": false
+}
