@@ -71,13 +71,15 @@ def current_donut(ax, values, label, unit, colors):
     return wedges
 
 
-def plot_current(data_dir, figure_dir, results_dir, dpi, refined=False):
-    suffix = '_refined' if refined else ''
+def plot_current(data_dir, figure_dir, results_dir, dpi, refined=False, seven=False):
+    suffix = '_seven' if seven else ('_refined' if refined else '')
     area_path = data_dir / f'current_dp_top_area{suffix}.csv'
     power_path = data_dir / f'current_dp_top_power{suffix}.csv'
     areas = load_areas(area_path)
     categories = list(areas)
     colors = ['#8CB5D5', '#E7A39A', '#9BC69B', '#E6CA7C', '#B79BCB', '#D8A7C8', '#80C3C0', '#B6B6B6'] if refined else CURRENT_COLORS
+    if seven:
+        colors = ['#8CB5D5', '#E7A39A', '#9BC69B', '#E6CA7C', '#B79BCB', '#80C3C0', '#B6B6B6']
     if len(categories) != len(colors):
         raise ValueError('Category count does not match the selected accounting policy')
     plt.rcParams.update({'font.family': 'serif',
@@ -144,15 +146,17 @@ def main():
     parser.add_argument('--output',type=Path,default=PAPER/'figures/H16Q32E64_area_pie.png')
     parser.add_argument('--results-dir',type=Path,default=PAPER/'data/results/H16Q32E64_area')
     parser.add_argument('--dpi',type=int,default=600)
-    parser.add_argument('--refined', action='store_true', help='Use eight categories with separate sign conversion and combined logic control')
-    parser.add_argument('--current', action='store_true', help='Plot the current dp_top area and all three power formats')
+    policy = parser.add_mutually_exclusive_group()
+    policy.add_argument('--seven', action='store_true', help='Use the agreed seven categories: signed preparation in SOP, absolute value and shift deltas in alignment')
+    policy.add_argument('--refined', action='store_true', help='Use eight categories with separate sign conversion and combined logic control')
+    policy.add_argument('--current', action='store_true', help='Plot the original coarse dp_top area and all three power formats')
     parser.add_argument('--current-data-dir', type=Path, default=HERE)
     parser.add_argument('--figure-dir', type=Path, default=PAPER/'figures')
     args=parser.parse_args()
     if args.output.suffix.lower()!='.png':parser.error('--output must end in .png')
     if args.dpi<=0:parser.error('--dpi must be positive')
-    if args.current or args.refined:
-        plot_current(args.current_data_dir, args.figure_dir, args.results_dir, args.dpi, refined=args.refined)
+    if args.current or args.refined or args.seven:
+        plot_current(args.current_data_dir, args.figure_dir, args.results_dir, args.dpi, refined=args.refined, seven=args.seven)
         return
     areas=load_areas(args.data);total=sum(areas.values())
     args.output.parent.mkdir(parents=True,exist_ok=True)

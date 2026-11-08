@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "top": "dp_top",
+  "categories": [
+    "Data unpacking",
+    "Mantissa & scale multiplication",
+    "SOP accumulation",
+    "Exponent processing",
+    "Magnitude alignment",
+    "LZD, normalization & rounding",
+    "Others"
+  ],
+  "leaf_count": 82502,
+  "total_um2": 17782.08768001317,
+  "source_netlist": "hw/dc_syn/runs/dc_dp_top_11081432/netlist/dp_top_mapped.v",
+  "source_netlist_sha256": "f848e1e5b866d3e0ea5acc50ec8d6e20c76466e6b702e34d971fab9f546f8f50",
+  "source_eight_categories": "paper/data/H16Q32E64_area/current_dp_top_area_refined_sources.json",
+  "source_eight_categories_sha256": "1b53c7c2fdfd75f4e91d7fd8fc9024eedadbfe6a73e0e59bbc82028ad687bbd0",
+  "source_original": "paper/data/H16Q32E64_area/current_dp_top_sources.json",
+  "source_original_sha256": "2e283669b65bcbb386c12ea97199518fbecfbf6c6a3fc4e820ce0360916974eb",
+  "report_run": "hw/power/runs/dp_top_seven_1109_0015",
+  "cell_assignment_sha256": "017af30c090d83a6e420fd65cc6c91af6b0168296276d206a348e98b10986e1b",
+  "boundary_proofs_sha256": "760f6de9e1c8a87f417bca0f5fefcadb38b29a9c15f04c4c46ba581980957093",
+  "additional_sat_proved_bits": 160,
+  "decoder_instances": 128,
+  "policy": "Signed preparation and signed payload registers to SOP; abs and shift amounts to alignment; MAX/A_raw/A_raw-z and effective exponent banks to exponent processing.",
+  "decoder_policy": "Only effective-exponent-exclusive cones moved; shared extraction/classification remains unpack. These are not isolated rebias-adder measurements.",
+  "limitation": "Unseparable mixed cones retain their recorded ownership; no proportional allocation or resynthesis.",
+  "scripts_sha256": {
+    "classify_seven_functional.py": "72e32164cd05729bcaa040182997b59c84dfcf34efefedc3efe8b6cbf92ea3bb",
+    "functional_cones.py": "c5c287f6247dabdda3ed76c46ebece91d0bd9419b720022cc21833f94734aad2"
+  }
+}

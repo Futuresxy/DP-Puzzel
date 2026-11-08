@@ -1,8 +1,12 @@
 # H16Q32E64 面积占比图
 
-当前推荐查看 **[八类细分结果](current_dp_top_area_refined.md)**：符号转换独立，
-数据选择/旁路与控制/共享合并。面积 CSV 为 `current_dp_top_area_refined.csv`，
-重绘用 `plot_area.py --refined`。下面保留旧七类和 PETile 历史数据的说明。
+当前推荐查看 **[确认后的七类结果](current_dp_top_area_seven.md)**（2026-11-09）：
+符号化归 SOP，取幅值与移位差值归移位对齐，MAX/anchor 归指数处理。
+面积 CSV 为 `current_dp_top_area_seven.csv`，功耗为 `current_dp_top_power_seven.csv`，
+重绘用 `plot_area.py --seven`。总面积和功耗不变，只更新功能归属。
+
+[此前八类结果](current_dp_top_area_refined.md) 使用 `--refined` 重绘，保留用于追踪
+分类变化。下面是原始粗分类和 PETile 历史数据的说明，不是当前七类口径。
 
 修改 `area_data.csv` 后运行 `python3 plot_area.py`，或在 `paper/` 下执行 `make cost-figures`。
 
