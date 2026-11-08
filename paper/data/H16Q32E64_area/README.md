@@ -1,6 +1,10 @@
 # H16Q32E64 面积占比图
 
-当前推荐查看 **[确认后的七类结果](current_dp_top_area_seven.md)**（2026-11-09）：
+最新 RTL（固定解包版）的 **[模块面积分布](fixed_unpack_module_area.md)** 来自
+`dc_dp_top_11090056`，总面积16831.218 µm²，按真实 module 边界统计。
+下方七类功能面积/功耗仍对应优化前 `dc_dp_top_11081432`，请勿混用。
+
+优化前的功能分类查看 **[确认后的七类结果](current_dp_top_area_seven.md)**（2026-11-09）：
 符号化归 SOP，取幅值与移位差值归移位对齐，MAX/anchor 归指数处理。
 面积 CSV 为 `current_dp_top_area_seven.csv`，功耗为 `current_dp_top_power_seven.csv`，
 重绘用 `plot_area.py --seven`。总面积和功耗不变，只更新功能归属。

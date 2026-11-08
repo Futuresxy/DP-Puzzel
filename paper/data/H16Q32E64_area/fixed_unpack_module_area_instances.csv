@@ -1,0 +1,94 @@
+scope,owner_level,instance,area_um2,source,dp_percent
+Top C unpack (including subnormal LZD),top,u_c_unpack,58.6875,inclusive subtree,0.34868243510985747
+Top final SOP+C reduction tree,top,u_final_sop_tree,200.7613,inclusive subtree,1.1927912921801171
+Top abs/LZD/normalization/rounding/output select,top,u_fp32_output,355.0741,inclusive subtree,2.109616218657142
+Top global alignment (including MAX/sign/bypass),top,u_global_alignment,1134.2684,inclusive subtree,6.73907506334674
+"Top local registers, control and inline logic",top,dp_top,519.1556999999993,parent minus disjoint functional children,3.0844809146268353
+Group exponent MAX,group,g_group_0__u_group_unit/u_group_exponent_max,13.6765,inclusive subtree,0.08125674673107504
+Group LZD,group,g_group_0__u_group_unit/u_group_leading_detect,22.3027,inclusive subtree,0.1325079402858295
+Group magnitude scale multiply,group,g_group_0__u_group_unit/u_group_scale_mul,96.768,inclusive subtree,0.5749316614391597
+Group SOP adder,group,g_group_0__u_group_unit/u_group_sop_add,42.8728,inclusive subtree,0.2547219135928076
+Group scale coefficient multiply,group,g_group_0__u_group_unit/u_scale_pair_mul,8.7368,inclusive subtree,0.05190830584141091
+Group scale unpack A/B,group,g_group_0__u_group_unit/u_scale_unpack_a,10.2851,inclusive subtree,0.061107283720526435
+Group scale unpack A/B,group,g_group_0__u_group_unit/u_scale_unpack_b,10.2851,inclusive subtree,0.061107283720526435
+"Group local registers, control and inline logic",group,g_group_0__u_group_unit,178.23739999999998,parent minus disjoint functional children,1.0589691273209747
+Group exponent MAX,group,g_group_1__u_group_unit/u_group_exponent_max,14.3032,inclusive subtree,0.08498018497743665
+Group LZD,group,g_group_1__u_group_unit/u_group_leading_detect,22.1921,inclusive subtree,0.13185082799917305
+Group magnitude scale multiply,group,g_group_1__u_group_unit/u_group_scale_mul,96.5468,inclusive subtree,0.5736174368658469
+Group SOP adder,group,g_group_1__u_group_unit/u_group_sop_add,43.2046,inclusive subtree,0.25669325045277697
+Group scale coefficient multiply,group,g_group_1__u_group_unit/u_scale_pair_mul,8.7368,inclusive subtree,0.05190830584141091
+Group scale unpack A/B,group,g_group_1__u_group_unit/u_scale_unpack_a,10.2482,inclusive subtree,0.06088804824694937
+Group scale unpack A/B,group,g_group_1__u_group_unit/u_scale_unpack_b,10.2851,inclusive subtree,0.061107283720526435
+"Group local registers, control and inline logic",group,g_group_1__u_group_unit,177.64759999999978,parent minus disjoint functional children,1.0554649245481889
+Group exponent MAX,group,g_group_2__u_group_unit/u_group_exponent_max,15.8147,inclusive subtree,0.09396052151704984
+Group LZD,group,g_group_2__u_group_unit/u_group_leading_detect,22.1921,inclusive subtree,0.13185082799917305
+Group magnitude scale multiply,group,g_group_2__u_group_unit/u_group_scale_mul,97.4316,inclusive subtree,0.5788743351590985
+Group SOP adder,group,g_group_2__u_group_unit/u_group_sop_add,43.4995,inclusive subtree,0.2584453518391692
+Group scale coefficient multiply,group,g_group_2__u_group_unit/u_scale_pair_mul,8.7368,inclusive subtree,0.05190830584141091
+Group scale unpack A/B,group,g_group_2__u_group_unit/u_scale_unpack_a,10.2482,inclusive subtree,0.06088804824694937
+Group scale unpack A/B,group,g_group_2__u_group_unit/u_scale_unpack_b,10.2851,inclusive subtree,0.061107283720526435
+"Group local registers, control and inline logic",group,g_group_2__u_group_unit,178.60599999999977,parent minus disjoint functional children,1.061159105520445
+Group exponent MAX,group,g_group_3__u_group_unit/u_group_exponent_max,15.2617,inclusive subtree,0.0906749600837676
+Group LZD,group,g_group_3__u_group_unit/u_group_leading_detect,22.7451,inclusive subtree,0.13513638943245526
+Group magnitude scale multiply,group,g_group_3__u_group_unit/u_group_scale_mul,98.8324,inclusive subtree,0.5871969652779805
+Group SOP adder,group,g_group_3__u_group_unit/u_group_sop_add,43.2415,inclusive subtree,0.256912485926354
+Group scale coefficient multiply,group,g_group_3__u_group_unit/u_scale_pair_mul,8.7368,inclusive subtree,0.05190830584141091
+Group scale unpack A/B,group,g_group_3__u_group_unit/u_scale_unpack_a,10.2482,inclusive subtree,0.06088804824694937
+Group scale unpack A/B,group,g_group_3__u_group_unit/u_scale_unpack_b,10.2851,inclusive subtree,0.061107283720526435
+"Group local registers, control and inline logic",group,g_group_3__u_group_unit,178.05300000000034,parent minus disjoint functional children,1.0578735440871663
+Lane exponent add bank,lane,g_group_0__u_group_unit/g_lane_0__u_lane/u_exponent_add,45.9694,inclusive subtree,0.2731198693510387
+Lane exponent MAX,lane,g_group_0__u_group_unit/g_lane_0__u_lane/u_lane_exponent_max,64.0696,inclusive subtree,0.3806593251461473
+Lane SOP reduction tree,lane,g_group_0__u_group_unit/g_lane_0__u_lane/u_lane_sop_tree,125.3007,inclusive subtree,0.7444541545809538
+Lane operand unpack (including S1 banks),lane,g_group_0__u_group_unit/g_lane_0__u_lane/u_lane_unpack,297.2713,inclusive subtree,1.7661900877064616
+"Lane alignment, E pair and sign processing",lane,g_group_0__u_group_unit/g_lane_0__u_lane/u_local_alignment,451.4365,inclusive subtree,2.6821380722891788
+Lane mantissa multiplier bank,lane,g_group_0__u_group_unit/g_lane_0__u_lane/u_mantissa_mul_bank,335.4624,inclusive subtree,1.9930964263224205
+"Lane local registers, control and inline logic",lane,g_group_0__u_group_unit/g_lane_0__u_lane,309.5102999999999,parent minus disjoint functional children,1.8389061571132268
+Lane exponent add bank,lane,g_group_0__u_group_unit/g_lane_1__u_lane/u_exponent_add,45.6008,inclusive subtree,0.270929891151567
+Lane exponent MAX,lane,g_group_0__u_group_unit/g_lane_1__u_lane/u_lane_exponent_max,64.4751,inclusive subtree,0.38306853881919606
+Lane SOP reduction tree,lane,g_group_0__u_group_unit/g_lane_1__u_lane/u_lane_sop_tree,125.3007,inclusive subtree,0.7444541545809538
+Lane operand unpack (including S1 banks),lane,g_group_0__u_group_unit/g_lane_1__u_lane/u_lane_unpack,296.3128,inclusive subtree,1.7604953126001306
+"Lane alignment, E pair and sign processing",lane,g_group_0__u_group_unit/g_lane_1__u_lane/u_local_alignment,451.0679,inclusive subtree,2.679948094089707
+Lane mantissa multiplier bank,lane,g_group_0__u_group_unit/g_lane_1__u_lane/u_mantissa_mul_bank,339.1857,inclusive subtree,2.015217820327013
+"Lane local registers, control and inline logic",lane,g_group_0__u_group_unit/g_lane_1__u_lane,307.9619,parent minus disjoint functional children,1.829706585100037
+Lane exponent add bank,lane,g_group_1__u_group_unit/g_lane_0__u_lane/u_exponent_add,45.1953,inclusive subtree,0.26852067747851827
+Lane exponent MAX,lane,g_group_1__u_group_unit/g_lane_0__u_lane/u_lane_exponent_max,63.9959,inclusive subtree,0.380221448333068
+Lane SOP reduction tree,lane,g_group_1__u_group_unit/g_lane_0__u_lane/u_lane_sop_tree,125.3007,inclusive subtree,0.7444541545809538
+Lane operand unpack (including S1 banks),lane,g_group_1__u_group_unit/g_lane_0__u_lane/u_lane_unpack,296.3866,inclusive subtree,1.7609337835472847
+"Lane alignment, E pair and sign processing",lane,g_group_1__u_group_unit/g_lane_0__u_lane/u_local_alignment,453.3903,inclusive subtree,2.6937462638413434
+Lane mantissa multiplier bank,lane,g_group_1__u_group_unit/g_lane_0__u_lane/u_mantissa_mul_bank,336.4946,inclusive subtree,1.9992290782418307
+"Lane local registers, control and inline logic",lane,g_group_1__u_group_unit/g_lane_0__u_lane,308.9940999999999,parent minus disjoint functional children,1.8358392370194467
+Lane exponent add bank,lane,g_group_1__u_group_unit/g_lane_1__u_lane/u_exponent_add,46.8541,inclusive subtree,0.27837617351021554
+Lane exponent MAX,lane,g_group_1__u_group_unit/g_lane_1__u_lane/u_lane_exponent_max,67.3137,inclusive subtree,0.3999336286646119
+Lane SOP reduction tree,lane,g_group_1__u_group_unit/g_lane_1__u_lane/u_lane_sop_tree,125.3007,inclusive subtree,0.7444541545809538
+Lane operand unpack (including S1 banks),lane,g_group_1__u_group_unit/g_lane_1__u_lane/u_lane_unpack,296.6077,inclusive subtree,1.7622474139865234
+"Lane alignment, E pair and sign processing",lane,g_group_1__u_group_unit/g_lane_1__u_lane/u_local_alignment,449.0404,inclusive subtree,2.667902025724463
+Lane mantissa multiplier bank,lane,g_group_1__u_group_unit/g_lane_1__u_lane/u_mantissa_mul_bank,335.2781,inclusive subtree,1.9920014372226846
+"Lane local registers, control and inline logic",lane,g_group_1__u_group_unit/g_lane_1__u_lane,309.51020000000017,parent minus disjoint functional children,1.8389055629791533
+Lane exponent add bank,lane,g_group_2__u_group_unit/g_lane_0__u_lane/u_exponent_add,45.7114,inclusive subtree,0.27158700343822345
+Lane exponent MAX,lane,g_group_2__u_group_unit/g_lane_0__u_lane/u_lane_exponent_max,62.7425,inclusive subtree,0.37277457184034474
+Lane SOP reduction tree,lane,g_group_2__u_group_unit/g_lane_0__u_lane/u_lane_sop_tree,125.3007,inclusive subtree,0.7444541545809538
+Lane operand unpack (including S1 banks),lane,g_group_2__u_group_unit/g_lane_0__u_lane/u_lane_unpack,297.345,inclusive subtree,1.7666279645195415
+"Lane alignment, E pair and sign processing",lane,g_group_2__u_group_unit/g_lane_0__u_lane/u_local_alignment,449.4828,inclusive subtree,2.670530474871089
+Lane mantissa multiplier bank,lane,g_group_2__u_group_unit/g_lane_0__u_lane/u_mantissa_mul_bank,333.7667,inclusive subtree,1.9830216948171462
+"Lane local registers, control and inline logic",lane,g_group_2__u_group_unit/g_lane_0__u_lane,307.96180000000004,parent minus disjoint functional children,1.8297059909659623
+Lane exponent add bank,lane,g_group_2__u_group_unit/g_lane_1__u_lane/u_exponent_add,46.7436,inclusive subtree,0.2777196553576338
+Lane exponent MAX,lane,g_group_2__u_group_unit/g_lane_1__u_lane/u_lane_exponent_max,63.8116,inclusive subtree,0.37912645923333216
+Lane SOP reduction tree,lane,g_group_2__u_group_unit/g_lane_1__u_lane/u_lane_sop_tree,125.3745,inclusive subtree,0.7448926255281078
+Lane operand unpack (including S1 banks),lane,g_group_2__u_group_unit/g_lane_1__u_lane/u_lane_unpack,296.534,inclusive subtree,1.7618095371734435
+"Lane alignment, E pair and sign processing",lane,g_group_2__u_group_unit/g_lane_1__u_lane/u_local_alignment,448.8929,inclusive subtree,2.66702567796423
+Lane mantissa multiplier bank,lane,g_group_2__u_group_unit/g_lane_1__u_lane/u_mantissa_mul_bank,336.3471,inclusive subtree,1.9983527304815971
+"Lane local registers, control and inline logic",lane,g_group_2__u_group_unit/g_lane_1__u_lane,308.183,parent minus disjoint functional children,1.8310202155392747
+Lane exponent add bank,lane,g_group_3__u_group_unit/g_lane_0__u_lane/u_exponent_add,45.1215,inclusive subtree,0.26808220653136416
+Lane exponent MAX,lane,g_group_3__u_group_unit/g_lane_0__u_lane/u_lane_exponent_max,63.3692,inclusive subtree,0.37649801008670636
+Lane SOP reduction tree,lane,g_group_3__u_group_unit/g_lane_0__u_lane/u_lane_sop_tree,125.3007,inclusive subtree,0.7444541545809538
+Lane operand unpack (including S1 banks),lane,g_group_3__u_group_unit/g_lane_0__u_lane/u_lane_unpack,298.156,inclusive subtree,1.7714463918656387
+"Lane alignment, E pair and sign processing",lane,g_group_3__u_group_unit/g_lane_0__u_lane/u_local_alignment,452.2844,inclusive subtree,2.687175735108853
+Lane mantissa multiplier bank,lane,g_group_3__u_group_unit/g_lane_0__u_lane/u_mantissa_mul_bank,337.4899,inclusive subtree,2.005142494687664
+"Lane local registers, control and inline logic",lane,g_group_3__u_group_unit/g_lane_0__u_lane,308.36749999999984,parent minus disjoint functional children,1.8321163929071596
+Lane exponent add bank,lane,g_group_3__u_group_unit/g_lane_1__u_lane/u_exponent_add,45.3796,inclusive subtree,0.26961566657825414
+Lane exponent MAX,lane,g_group_3__u_group_unit/g_lane_1__u_lane/u_lane_exponent_max,63.9222,inclusive subtree,0.3797835715199886
+Lane SOP reduction tree,lane,g_group_3__u_group_unit/g_lane_1__u_lane/u_lane_sop_tree,125.3007,inclusive subtree,0.7444541545809538
+Lane operand unpack (including S1 banks),lane,g_group_3__u_group_unit/g_lane_1__u_lane/u_lane_unpack,296.8658,inclusive subtree,1.7637808740334129
+"Lane alignment, E pair and sign processing",lane,g_group_3__u_group_unit/g_lane_1__u_lane/u_local_alignment,452.8742,inclusive subtree,2.6906799378816375
+Lane mantissa multiplier bank,lane,g_group_3__u_group_unit/g_lane_1__u_lane/u_mantissa_mul_bank,333.6561,inclusive subtree,1.9823645825304894
+"Lane local registers, control and inline logic",lane,g_group_3__u_group_unit/g_lane_1__u_lane,307.85130000000004,parent minus disjoint functional children,1.8290494728133808
