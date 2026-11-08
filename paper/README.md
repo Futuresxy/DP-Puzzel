@@ -12,6 +12,7 @@ python3 -m pip install -r requirements.txt  # 缺少依赖时执行
 make                    # 仅编译正文，输出 build/main.pdf
 make reproduce          # 重算部署、负载、三角分区、两张图和两张表
 make diagrams           # 重绘 DP 背景和 K/N 组织示意图
+make cost-figures       # 按可编辑 CSV 重绘 select8 面积/功耗和 H16Q32E64 面积占比
 make check              # 重算默认实验，与迁移前的论文结果逐字段比较
 make test               # 临时目录内验证修改参数后的重算
 ```
@@ -83,3 +84,7 @@ E_j = sum_f(F_f*P_j,f/C_j,f)
 - `template/`、`submission/`：保留目标工程原有模板来源、投稿要求和 AI 使用记录。
 
 默认结果：405.5663803392 mm²，核心数 36/33/32/29，两类映射共 42 个点；迁移回归核对 1,843 个字段。论文保留六页正文与一页参考文献。作者仍需审核论文论断与最终投稿材料。
+
+## Select8 成本与 DP 面积占比图
+
+在 [data/DP_area_power/](data/DP_area_power/README.md) 修改 `selected8_area.csv` 的面积、`selected8_power.csv` 的动态/静态功耗；在 [data/H16Q32E64_area/](data/H16Q32E64_area/README.md) 修改 `area_data.csv` 的 `category` / `total_um2`。运行 `make cost-figures` 后，三个 PNG 更新到 `figures/`，总功耗、基线倍率、分类面积占比自动重算。该入口不含 selected14 或 21 配置合并；当前正文及图片引用保持不变，后续可引用这些图。

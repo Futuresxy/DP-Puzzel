@@ -1,0 +1,28 @@
+category,region,function,block,combinational_um2,ff_um2,icg_um2,other_sequential_um2,total_um2,ff_count,icg_count
+Multiplication,MidGroup,Data mantissa multiplication and product state,MG/mantissa_multiply,4788.573999999607,2665.600000000041,0,0,7454.17399999962,1600,0
+Addition & accumulation,MidGroup,Mantissa addition and reduction,MG/reduce_add,4822.971999999624,1942.5559999999825,0,0,6765.527999999569,1166,0
+Alignment & shifting,MidGroup,Mantissa alignment shifts and RTZ correction,MG/align_shift,3412.3599999995863,1830.9339999999866,0,0,5243.293999999383,1099,0
+Exponent processing,MidGroup,Exponent arithmetic and state,MG/exponent_add,2046.9260000000388,1959.5099999999818,0,0,4006.4359999998483,1176,0
+Data unpacking,MidGroup,A/B unpacking excluding separately counted exponent processing,MG/unpack,740.4880000000029,1119.5520000000122,0,0,1860.0400000000247,672,0
+Multiplication,MidGroup,Scale mantissa multiplication and coefficient pipeline,MG/scale,1113.2800000000111,519.7919999999993,0,0,1633.0720000000242,312,0
+Others,MidGroup,Cross-function shared combinational logic,MG/shared,1014.0060000000228,0,0,0,1014.0060000000228,0,0
+Exponent processing,MidGroup,Shared exponent arithmetic and comparison logic,MG/exponent_compare_shared,583.2960000000003,0,0,0,583.2960000000003,0,0
+Others,MidGroup,Special-value detection and propagation,MG/special_values,343.29400000000214,159.93599999999978,0,0,503.2300000000024,96,0
+Alignment & shifting,MidGroup,Exponent comparison and alignment selection,MG/align_control,207.95600000000053,135.53399999999982,0,0,343.49000000000126,81,0
+Others,MidGroup,Absolute value and mantissa normalization,MG/normalize,145.43199999999985,144.9419999999998,0,0,290.3740000000016,87,0
+Others,MidGroup,Integrated clock gating,MG/clock_gating,0,0,124.94999999999992,0,124.94999999999992,0,85
+Others,MidGroup,Format and pipeline control,MG/format_flow_control,10.191999999999997,99.95999999999988,0,0,110.15199999999982,60,0
+Others,MidGroup,Shared leading-zero detection and normalization logic,MG/normalize_shared,102.11599999999979,0,0,0,102.11599999999979,0,0
+Others,MidGroup,Dedicated leading-zero detection logic and count registers,MG/lzd,19.795999999999992,9.996,0,0,29.791999999999994,6,0
+Alignment & shifting,PETile outer logic,Dot-product/C alignment and shifting S12/S13,tile/align,482.5520000000012,326.5359999999995,0,0,809.0880000000016,196,0
+Others,PETile outer logic,Raw C pipeline delay S01-S09,tile/C_cache,3.4299999999999997,509.79599999999914,0,0,513.2259999999992,306,0
+Others,PETile outer logic,Rounding and FP32 packing S17/S18,tile/round_pack,233.24000000000066,164.93399999999977,0,0,398.1740000000019,99,0
+Others,PETile outer logic,"Final absolute value, normalization and exponent correction S15/S16",tile/normalize,170.81399999999996,184.92599999999973,0,0,355.7400000000014,111,0
+Data unpacking,PETile outer logic,C unpacking and two-stage state S10/S11,tile/C_unpack,137.78799999999956,131.61399999999983,0,0,269.40200000000135,79,0
+Addition & accumulation,PETile outer logic,Dot-product plus C accumulation S14,tile/accumulate,121.42199999999984,98.29399999999988,0,0,219.7160000000005,59,0
+Others,PETile outer logic,Shared final leading-zero detection and normalization logic,tile/normalize_shared,104.27199999999982,0,0,0,104.27199999999982,0,0
+Others,PETile outer logic,Configuration and batch control,tile/control,7.938,31.654000000000003,0,0,39.592000000000006,19,0
+Others,PETile outer logic,Dedicated final leading-zero detection logic and count registers,tile/lzd,20.482,9.996,0,0,30.478000000000005,6,0
+Others,PETile outer logic,Integrated clock gating,tile/clock_gating,0,0,27.929999999999993,0,27.929999999999993,0,19
+Others,PETile outer logic,Output interface logic,tile/output_logic,0.6859999999999999,0,0,0,0.6859999999999999,0,0
+Others,Cross-hierarchy shared,Cross-hierarchy shared logic and clock/reset control,global/shared,227.3600000000006,0,0,0,227.3600000000006,0,0
