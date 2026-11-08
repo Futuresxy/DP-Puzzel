@@ -2,11 +2,15 @@
 
 ## 输入与预检
 
-- 记录 Git 提交、明确的 export ID、DC run ID、目标格式、数据集和窗口。用 `python3 scripts/rtl_gate.py EXPORT_ID` 核对当前 RTL 证据。核对 `inputs/resolved.json`、`DC_COMPLETE`、`summary.json` 和原始报告。现用单 DP 顶层为 `dp_top` / `dp_top_e`、时钟 `clock`、同步低有效 `rst_n`，默认 `K_FP16=16, LOCAL_W=28, GLOBAL_W=40`、L8/II=1。历史 N12 网表可能使用高有效 `reset` 和 27/40 参数；必须读取所选 export/DC run 的 manifest 和约束，按该版本产生复位，不能把当前 TB 直接用于旧网表。v1.6 尚无新的 DC/功耗实测。
+- 记录 Git 提交、明确的 export ID、DC run ID、目标格式、数据集和窗口。用 `python3 scripts/rtl_gate.py EXPORT_ID` 核对当前 RTL 证据。核对 `inputs/resolved.json`、`DC_COMPLETE`、`summary.json` 和原始报告。现用六种 DP 顶层及精确run映射见 [catalog](../../../hw/dc_syn/records/latest_six_dp.json)，另保留 `dp_top_e` 兼容入口；时钟 `clock`、同步低有效 `rst_n`，默认 `K_FP16=16, LOCAL_W=28, GLOBAL_W=40`、L8/II=1。历史 N12 网表可能使用高有效 `reset` 和 27/40 参数；必须读取所选 export/DC run 的 manifest 和约束，按该版本产生复位，不能把当前 TB 直接用于旧网表。现有六种架构已有对应DC结果，功耗尚未实测。当前源树与历史快照的新鲜度检查不得跳过，冻结版本重放接入见 [搭建方案](../../../hw/power/implementation-plan.md)。
 - 确认原始 `netlist/dp_top.ddc`、`dp_top.sdc`、`dp_top_mapped.v` 齐全，网表和映射数据库来自同一 run。核验实际链接库和 VCS 单元模型的工艺、发行版、base/LVT 和引脚。VCS、DC/Power Compiler 版本和许可证以本机实际运行验证。`power_ready` 保持原记录值，功耗流程另存自己的匹配、活动和注释证据。
-- 首个候选是已通过时序的 `dc_dp_top_11050215`，TSMC CLN12FFCLL TT 0.7 V / 85 °C、1 GHz、ZeroWireload、base/LVT。后续改动以新通过的 RTL、网表和回执为准。该历史 hold 修复 run 的首轮证据在本机归档，按 [DC 记录说明](../../../hw/dc_syn/records/README.md) 取用。
+- 首轮选择以 [固定测量计划](../../../hw/power/plans/qwen3_8b_first3.json) 为准，先用 `dc_dp_top_11080044` 测BF16/E4M3/MXFP4，再扩展兼容顶层。工况为原N12 TT 0.7V/85°C、1GHz、门控开启。旧候选已按用户要求清理，不再作为功耗输入。
 
 ## 同源真实负载
+
+本轮采用 [Qwen3-8B MLP数据](../../../test/results/qwen3-8b-power-data.md)，每格式/K1024笔，默认窗口[256,768)、512周期。数据覆盖H16、Q32/Q64、E64/E96/E128；同源C为真实GEMM的BF16参考前缀累加值，不采用下述旧batch512的激活派生C。输入格式和每前端CModel期望见 [数据合同](../../../test/data/README.md#qwen3-8b-mlp-功耗数据)。
+
+以下batch512说明仅用于旧数据的显式重放：
 
 在 `test/data/dp/<format>/K<logical_k>/correct_961/manifest.json` 中按 `dataset` 精确选段。核对 `input_sha256`、`golden.expected_sha256`、段起止、事务数、`raw_sample_sha256`、模型 revision 和 C 策略。读取对应的 `inputs.txt` 与 `expected.jsonl` 行，不改变 A/B/C/scale 和 HiF4 metadata 的端口布局。跨格式比较要求同一底层样本集和同一窗口策略。
 

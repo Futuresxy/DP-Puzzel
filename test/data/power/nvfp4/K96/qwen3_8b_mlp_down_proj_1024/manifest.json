@@ -1,0 +1,152 @@
+{
+  "schema": "dp_logical_vectors_v1",
+  "format": "nvfp4",
+  "datatype": 8,
+  "logical_k": 96,
+  "count": 1024,
+  "dataset": "qwen3_8b_mlp_down_proj_1024",
+  "purpose": "workload_power",
+  "extraction": "native",
+  "selected_element_range": [
+    0,
+    96
+  ],
+  "source_ratio": "petile_full16_fp48",
+  "source_repository": {
+    "name": "Quant_LLM_Chip_Codesign",
+    "git_head": "5a5037ad03b656ea975ef594d0aca4dc5ef96a39"
+  },
+  "source_root": "HW/tests/data/petile_test_data/power_data/PETileRatio_Qwen8BMLPPower_1027202452/petile_ratio",
+  "source_case": "HW/tests/data/petile_test_data/power_data/PETileRatio_Qwen8BMLPPower_1027202452/petile_ratio/petile_full16_fp48/nvfp4/batch1024_qwen3_8b_layer0_mlp_down_proj",
+  "sources": {
+    "a_data.txt": "93a307c371e9d468e91ce05d334072c056783fdee1c1919215f858199d450925",
+    "a_scale.txt": "7fef239dfc64d157c93853da0a9b8308b2073925bdc71ebb4942280a748144a2",
+    "a_sf_group0.txt": "2df62508fcb8f0d227b3d66e75d263b8497ef78c05a24068ab848069218faa83",
+    "a_sf_group1.txt": "046d4956f22b0651b0e478f599b232e684c74499e142276a3d39dd8faaa70338",
+    "b_data.txt": "10eb7727d7852a75b14b005a4ca817a037c3867b28c64e73a9a8637f041632c9",
+    "b_scale.txt": "926ff63ee5cedbebd4092b87135c0cdbf5bdf3bd42342133ea4c49df910b8323",
+    "b_sf_group0.txt": "2df62508fcb8f0d227b3d66e75d263b8497ef78c05a24068ab848069218faa83",
+    "b_sf_group1.txt": "046d4956f22b0651b0e478f599b232e684c74499e142276a3d39dd8faaa70338",
+    "c_data.txt": "fd168e9909fe1381b5d739f5b39c53f9f3feaff0484106482c0fe81b95e5e1a4",
+    "golden_result_bits.txt": "54d2a3314b89ace8392a082d4af5b48fa51f033fa9d9a711032e0741ba401a16",
+    "golden_result_value.txt": "2a149d1453e0b8a9c54da16d2f2d0f0a79744d3db51ee44c17113cfe485b4f5d",
+    "meta.json": "7499cd1e90e3d0e028fdf853e9610a4f2973e524d9544c1f5a833694da1057fe"
+  },
+  "source_manifest_sha256": "8ac06b55da6f10bea94a71073888d74068baff273266a2634cd778ecadd9ee19",
+  "source_sample_files": {
+    "sources/down_proj_samples.pt": "07d73ab94bf9cd84a1a4050f6fbe0794ce2a544eb0529c44b01d8b7845a769e2",
+    "sources/source_metadata.json": "36a89f3b8c37a17edd5be5172f4a5d145cd24cd5a3b7d4cbf44e3e983f2fc707"
+  },
+  "distribution": {
+    "bias_tensor": null,
+    "c_source": "FP32 RNE of FP64 fsum(A_bf16[0:k_start]*W_bf16[0:k_start]); zero at k_start=0",
+    "golden": "fp64_dequant_dot_plus_c_v1",
+    "kind": "ai_load_qwen3_8b_layer0_mlp_down_proj",
+    "low_precision_source": "activation_fp16 and weight_fp16",
+    "raw_sample_file": "tests/data/petile_test_data/power_data/PETileRatio_Qwen8BMLPPower_1027202452/sources/down_proj_samples.pt",
+    "raw_sample_sha256": "07d73ab94bf9cd84a1a4050f6fbe0794ce2a544eb0529c44b01d8b7845a769e2",
+    "scale_slots": "one slot per PEGroup; routing follows each MidGroup's actual size",
+    "source_model": "Qwen/Qwen3-8B",
+    "source_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "projection": "down_proj",
+    "weight_tensor": "model.layers.0.mlp.down_proj.weight",
+    "activation_source": "SiLU(gate_proj(mlp_input))*up_proj(mlp_input)",
+    "c_semantics": "shared BF16-reference GEMM accumulator snapshot; each transaction replays an independent K slice",
+    "source_matrices_sha256": "4e3673bcc95e5d375486dc73336c6f69f79830a9dae41504fee8567ae5cd9812",
+    "source_mapping": "same sample/token/channel/k_start; contiguous active logical K prefix, inactive words zero",
+    "hif4_context": "full 64-element block, including unused tail for a two-PEGroup FP4 MidGroup"
+  },
+  "c_policy": "same_gemm_bf16_reference_prefix_accumulator_fp32",
+  "scale_policy": "quantized_from_fp16_source_per_fixed_midgroup_scale_slots",
+  "source_scale_indices_per_group": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "source_fp64_vs_exact": {
+    "count": 1024,
+    "bit_exact": 1024,
+    "max_ulp": 0,
+    "nonfinite_mismatches": 0,
+    "above_4": []
+  },
+  "cmodel_vs_exact": {
+    "t8h16q32e96": {
+      "count": 1024,
+      "bit_exact": 1024,
+      "max_ulp": 0,
+      "nonfinite_mismatches": 0,
+      "above_4": []
+    }
+  },
+  "cmodel_config": {
+    "k_fp16": 16,
+    "local_shift_mag_width": 28,
+    "global_signed_align_width": 40,
+    "post_scale_norm_extra_stage": 0
+  },
+  "cmodel_sources": {
+    "src/cmodel/CMakeLists.txt": "274e091985fb5f0c3e603da54b5b102755444dafe1a09eacb84fcec289d4086a",
+    "src/cmodel/include/dp/config.hpp": "5afa642b2fba69f64a6bc9feca21972df6c3b100cb29b005383e7c938da7cecd",
+    "src/cmodel/include/dp/model.hpp": "edc97d6de2e8f67dd975ee8ed90ef455bfb0a70c6550b767dbf623a40e360e3f",
+    "src/cmodel/lib/arithmetic.cpp": "d4e99489da3d53f024bf9520265c69b0e6fa71cf272f007bc38b2012459bc687",
+    "src/cmodel/lib/config.cpp": "5bcef63c73425fe18015ea048902627def7b7540900811f7e3ed7b85db3f854d",
+    "src/cmodel/lib/detail.hpp": "6e3ecc00ac93d71b7a00eff110077dd696e1ca8c2b6e9ac32617073c568607db",
+    "src/cmodel/lib/group/group_e.cpp": "5a722058d4f1eccde0144d669fbdff322bd85d17e78293ea89255104579746bc",
+    "src/cmodel/lib/group/group_qe.cpp": "9dc6259d931faf899d53f9c037794ea5ee43db8a45b501fa0d45030f322040b7",
+    "src/cmodel/lib/group.cpp": "e68ab701c605563f2dc14c6c488d51489e30a446091189e7f3b43121ea032fad",
+    "src/cmodel/lib/json_io.cpp": "eecba16ae20a380efcf70147852d3e7b639b19e0519e1450aa1ff69848c530b3",
+    "src/cmodel/lib/lane/lane_e.cpp": "0d77d2a2a8371e93d33cb8def54dad04075e89c553308880e0a447f7a4023754",
+    "src/cmodel/lib/lane/lane_qe.cpp": "c222b5140d0137eed99fdc3dc2c7b51f33cf6d4d347ba9ea434358e7acabe362",
+    "src/cmodel/lib/lane.cpp": "c31e1e924132abbd763a5a68d0389efc793a293554fb4ef4a1d0f20bac4c153d",
+    "src/cmodel/lib/model.cpp": "883a158722875c489e32b9310173cdf97a3d9949a248ea546b2da3b21747a280",
+    "src/cmodel/lib/top/backend.cpp": "c8227f6662249683d1adafcc917e73d3e65a62a4b191943d131006fa23a94d86",
+    "src/cmodel/lib/top/mixed.cpp": "ecba8439b4be4f41d422dfa2c2163a8b2a533bfa73b65cb6a86533a0989b9acb",
+    "src/cmodel/lib/unpack.cpp": "b2b492fc35606417ef0f37b5d2fa5c1a6c6037c66f6a7870f5ce64bcae9b8ce5",
+    "src/cmodel/main.cpp": "c4547c1c80e106da7978bafd6844a30521811fd7ab5cf059653cd7bcca554a3e"
+  },
+  "cmodel_binary_sha256": "eb689b1a978f181f8c40ad9f640c73ce04519a0105454008203ca0face04884c",
+  "reference_sources": {
+    "test/cases/import_qwen_power.py": "f867252130cefc48b6ce743674ef734c4f7427c29ae637c5a54b953ef3e9f208",
+    "test/cases/import_petile_ratio.py": "8988feaa6fa6b4c7f3104e2fd8a41bcf5040ab04fb3bd108a1e31ed47e386769",
+    "test/cases/import_legacy.py": "a41e788b60f16144a479fc4275b32877656e3d6e24613caeeff58bc1932f5a3b",
+    "test/adapters/cmodel.py": "d46488edd4a2f980f8cbefecd08cec0eeef25003db982562074493812e86465c",
+    "test/adapters/logical.py": "814dfee3d78ec89349ec1c7fa3af08749bac57f84cbfea8b38ea7baf67da69c9",
+    "test/reference/exact.py": "0a778dd2a901e0e9322e796635b2abe1a5c0bc9e77c989f7ce8274f14533bd96",
+    "test/reference/logical.py": "8216cdca313aa21a43def1ae20ee531ca4457762aa3499699a59fc93fa4aa240"
+  },
+  "mathematical_reference": "Fraction exact dequantized dot+C, one FP32 RNE",
+  "expected_semantics": "d uses cmodel_reference_frontend; choose cmodel_results by hardware frontend",
+  "rtl_status": "not_run_on_this_workload",
+  "ppa_eligible": false,
+  "recommended_measurement": {
+    "name": "dp-qwen8b-middle512-v1",
+    "first_source_index": 256,
+    "end_source_index_exclusive": 768,
+    "cycles": 512,
+    "frequency_hz": 1000000000,
+    "duration_ns": 512,
+    "issue_policy": "1024 independent transactions, once each, II=1",
+    "boundary": "same clock phase before driving transactions 256 and 768",
+    "pipeline": "includes steady-state in-flight transactions; not output-ID filtering"
+  },
+  "files_sha256": {
+    "inputs.jsonl": "607cce6b6ea409320952603fb5c92601ecb2a730bcfe4027748846b2406a14dc",
+    "expected.jsonl": "96fc14923c5ee3aa903725503a8093b2212f396c6e2aa310c4e2c95c2e80d3e2",
+    "source_reference.jsonl": "0bac1240aa077a699827d4e2aa1a3f368ebaafce9a13a481cb139ccc34a9686b"
+  },
+  "packed_widths": {
+    "a": 384,
+    "b": 384,
+    "c": 32,
+    "a_scale": 48,
+    "b_scale": 48,
+    "a_e1": 24,
+    "b_e1": 24,
+    "a_e2": 12,
+    "b_e2": 12
+  }
+}

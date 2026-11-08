@@ -1,10 +1,11 @@
 # 单 DP 真实负载功耗
 
-项目采用 VCS 原生门级 SAIF 和 Synopsys Power Compiler。方法与验收项见 [功耗 skill](../../.skill/power-analysis/SKILL.md)。目前处于 DP 架构与实现阶段，已定义测量流程，单 DP 功耗入口和实测结果待后续接入。
+项目采用 VCS 原生门级 SAIF 和 Synopsys Power Compiler。方法与验收项见 [功耗 skill](../../.skill/power-analysis/SKILL.md)。已完成Qwen3-8B真实MLP数据和首批固定计划；单DP的仿真/测量执行器和实测结果待接入。具体程序分工、门禁和窗口见 [搭建方案](implementation-plan.md)，首批为BF16、MXFP8 E4M3、MXFP4 E2M1。
 
 | 位置 | 内容 |
 | --- | --- |
 | `test/data/dp/` | 已提交的 packed 事务、独立期望和数据来源 |
+| `test/data/power/` | 本轮 Qwen3-8B 原生 K 功耗负载及两套数值参考 |
 | `hw/rtl/<export-id>/` | 与 DC 匹配的已验证 RTL 快照 |
 | `hw/dc_syn/runs/<run-id>/` | 原始 DDC、网表、SDC 和时序结果 |
 | `hw/power/runs/` | 实测激励、原生 SAIF、注释审计、工具报告，保留在本机 |
@@ -29,3 +30,13 @@
 5. Power Compiler读取对应DDC/DB/SAIF，完成层次、叶引脚活动、时钟概率/翻转率、注释覆盖和功耗引脚X/Z审计，再记录Internal/Switching/Leakage/Total及pJ/MAC。
 
 当前catalog的power_ready=false、power_mw=null表示这些功耗门禁仍未完成。四份综合修复依赖只用于来源核验，不是第二份功耗网表；功耗应读取对应最终run/netlist/。
+
+## Qwen3-8B 首批准备
+
+[已导入数据](../../test/results/qwen3-8b-power-data.md)覆盖7种格式和当前所需K，共15套、每套1024笔；与旧correct_961分目录保存。冻结选择见 [15点计划](plans/qwen3_8b_first3.json)：先运行dp_top的三个精度，再扩展到其余兼容顶层。当前只有只读准备入口可执行：
+
+```bash
+python3.11 hw/power/scripts/prepare_qwen_plan.py --output hw/power/plans/qwen3_8b_first3.json
+```
+
+它检查数据/网表/DDC/SDC校验和并固定选择，不启动EDA，不替代统一RTL门禁或门级验证。完整执行器按 [implementation-plan.md](implementation-plan.md) 接入后，先生成VCS原生SAIF，再做Power Compiler测量。

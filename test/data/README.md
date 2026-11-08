@@ -1,5 +1,15 @@
 # DP 共用测试数据
 
+## Qwen3-8B MLP 功耗数据
+
+新增`power/<format>/K<logical_k>/qwen3_8b_mlp_down_proj_1024/`，与correct_961等功能数据独立保存。7种格式、15套、每套1024笔：FP16/BF16 K16，MXFP8 E4M3/E5M2 K32/K64，MXFP4/NVFP4/HiF4 K64/K96/K128。原始数据来自Qwen3-8B第0层真实MLP down_proj，同源样本和C，保留原生K及量化参数；C为BF16参考前缀累加值，各笔是独立切片。
+
+H类沿用下文inputs.txt；Q/E沿用inputs.jsonl逻辑K格式。各目录expected.jsonl中的`d`对应`cmodel_reference_frontend`；`cmodel_results`保存该数据适用前端的逐位输出，`exact_fp32_or_int32`和`exact_value`分别保存精确数学参考的FP32编码与有理数。manifest记录来源校验和、scale槽位映射、模型/参考源码指纹及推荐窗口，`ppa_eligible=false`表示数据准备不构成RTL门禁。
+
+导入命令与验证数字见 [准备回执](../results/qwen3-8b-power-data.md)，后续流程见 [功耗搭建方案](../../hw/power/implementation-plan.md)。默认一次发射1024笔，测量输入发射区间[256,768)，1GHz下为512ns。
+
+## 原有共用输入合同
+
 功能：保存现用 CModel/Verilog 共用的 packed 端口数据，以及新混合 DP 的逻辑向量。更新于2026-11-07；现用适配器见 [cmodel.py](../adapters/cmodel.py)，新逻辑数据适配器见 [logical.py](../adapters/logical.py)。
 
 目录 `dp/<format>/K<logical_k>/<dataset>/` 的 K 是该格式的实际元素数。现用 `DP_INPUTS_V1` manifest 中 k_fp16 是硬件基准 K，两者不能混用；现用数据全部 k_fp16=16，因此 T8/H16/Q32/E64/INT32项。新增逻辑 schema 没有 k_fp16 字段。
