@@ -1,0 +1,84 @@
+\section{实现成本与负载驱动的配比选择}
+\label{sec:evaluation}
+
+\subsection{评估方法}
+\label{sec:eval_setup}
+
+单 DP 成本、复用消融与 K/N 比较采用 22\,nm 综合及活动驱动功耗评估~\cite{huangMPICCMultiplePrecisionInterCombined2025,mfsa2026}，条件为 TT、0.9\,V、85$^\circ$C、1.41\,GHz，均启用精度门控。以 Qwen3-8B~\cite{qwen3technicalreport} MLP 激活和权重驱动仿真，由 Power Compiler 估计内部、开关与泄漏功耗~\cite{synopsysActivityPower}；消融对照采用匹配的活动窗口。
+
+阵列面积由单元综合成本与结构开销建模，经七种配置校准，按配比留出的最大误差为 0.342\%。K 功耗包含阵列修正，N 功耗按活动 PE 功耗与关闭 PE 泄漏估计；后者未单独加入阵列外围动态项。整核负载分析另用独立 12\,nm 数据，条件为 0.7\,V、85$^\circ$C、1.41\,GHz，功耗来自 Qwen3-0.6B 活动样本；两套数据分别比较。成本均为工具评估或结构估计，不含外部存储及布线寄生；应用分析假定供数充分、计算阵列充分利用。
+
+\subsection{单 DP 增配的面积与功耗}
+\label{sec:dp_ratio_cost}
+\label{sec:reuse_evaluation}
+\label{sec:area_breakdown}
+
+表~\ref{tab:k_ratio_costs} 比较四种 K 扩展 DP，每种功耗均相对基线的同精度模式归一化。若吞吐、面积和模式功耗分别增长至 $g_f$、$a$、$p_f$ 倍，则相对算力密度为 $g_f/a$，相对单位计算能耗为 $p_f/g_f$。因此，功耗上升不等价于完成同一工作量所需能耗上升。
+
+\begin{table}[t]
+\centering
+\caption{Normalized N22 complete-DP costs. Each power uses its own format baseline: H/Q/E = BF16/MXFP8 E4M3/MXFP4 E2M1.}
+\label{tab:k_ratio_costs}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrr@{}}\toprule
+Ratio & $A/A_0$ & $P_H/P_{0,H}$ & $P_Q/P_{0,Q}$ & $P_E/P_{0,E}$ \\\midrule
+$1:2:4$ & 1.000 & 1.000 & 1.000 & 1.000 \\
+$1:2:6$ & 1.184 & 1.023 & 1.022 & 1.284 \\
+$1:2:8$ & 1.343 & 1.030 & 1.028 & 1.521 \\
+$1:4:8$ & 1.644 & 1.038 & 1.825 & 1.804 \\
+\bottomrule\end{tabular*}
+\par\smallskip
+\parbox{\columnwidth}{\raggedright $A_0=33.060\times10^3\,\mu$m$^2$; baseline H/Q/E power: 42.168/44.813/40.956 mW.}
+\endgroup
+\end{table}
+
+\textbf{专用增配使目标吞吐增长快于成本。} $1:2:6$ 将 FP4 吞吐提高至 1.5 倍，面积和 MXFP4 功耗分别增加 18.4\% 和 28.4\%，单位计算能耗降低 14.4\%。$1:2:8$ 以 34.3\% 面积和 52.1\% 功耗增量获得两倍 FP4 吞吐，算力密度提高 48.9\%，单位能耗降低 23.9\%。收益来自 FP4 通路的位宽裁剪与最终后端共享。
+
+\textbf{多精度覆盖需要额外成本。} $1:4:8$ 同时将 Q/E 吞吐翻倍，面积增加 64.4\%，两模式单位能耗分别降低 8.8\% 和 9.8\%。相比 $1:2:8$，它以更大的面积和 FP4 单位能耗换取 FP8 能力。三个增配方案的 H 吞吐均不变，BF16 功耗仍增加 2.3\%--3.8\%；新增资源也降低 H 模式算力密度。单模式收益因而不能替代混合负载评价。
+
+\textbf{共享建立基线，专用化改善增量效率。} 分段乘法器使 SubPE 面积降低 16.7\%；进一步共享对齐与归约后，Full 比同能力独立 H/Q/E 通路节省 29.1\% 面积。在独立的匹配窗口消融中，其 MXFP4 功耗却高出 29.8\%（表~\ref{tab:reuse_power}），原因是共享通路仍保留宽寄存器、移位与模式选择开销。基线 DP 的 C 处理和输出后端占面积的 8.37\%，可在 K 扩展时共享；新增 FP4 吞吐则由专用模块承担，避免复制完整高精度路径。
+
+\begin{table}[t]
+\centering
+\caption{Independent reuse ablation with matched activity windows: separate H/Q/E paths versus gated Full. Power: mW; area: $10^3\,\mu$m$^2$.}
+\label{tab:reuse_power}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrr@{}}\toprule
+Format & Separate & Gated Full \\\midrule
+BF16 & 39.836 & 41.240 \\
+MXFP8 E4M3 & 39.898 & 43.975 \\
+MXFP4 E2M1 & 32.340 & 41.976 \\
+\midrule
+Area ($10^3\,\mu$m$^2$) & 46.599 & 33.060 \\
+\bottomrule
+\end{tabular*}\endgroup
+\end{table}
+
+\subsection{同配比的 K/N 实现取舍}
+\label{sec:kn_evaluation}
+
+\textbf{后端共享降低面积，但不保证所有模式节能。} 在各精度绝对峰值匹配的 $4\times4$ 基础阵列上，K 比 N 节省 3.14\%--6.80\% 面积，NVFP4 功耗估计降低 3.79\%--8.03\%（表~\ref{tab:kn_costs}）。BF16 模式下，N 关闭附加 PE 的功耗则更低。结构模型外推至 $16\times4$ 时，K 仍保持面积优势，但 $1:2:6$ 的 NVFP4 功耗估计高出 2.01\%。共享后端与附加归约具有不同的规模效应，面积节省不能直接外推为能耗收益。
+
+\begin{table}[t]
+\centering
+\caption{Estimated K/N costs from a $4\times4$ Full base. Area: mm$^2$; power: W. H/Q/E: BF16/MXFP8 E4M3/NVFP4. N counts active-PE power and inactive leakage.}
+\label{tab:kn_costs}
+\begingroup\footnotesize\setlength{\tabcolsep}{2.5pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lcrrrr@{}}\toprule
+Ratio & Axis & Area & $P_H$ & $P_Q$ & $P_E$ \\\midrule
+$1:2:4$ & K/N & 0.534 & 0.672 & 0.716 & 0.695 \\
+$1:2:6$ & K & 0.636 & 0.698 & 0.742 & 0.891 \\
+$1:2:6$ & N & 0.656 & 0.679 & 0.721 & 0.926 \\
+$1:2:8$ & K & 0.724 & 0.713 & 0.757 & 1.058 \\
+$1:2:8$ & N & 0.777 & 0.683 & 0.725 & 1.150 \\
+$1:4:8$ & K & 0.883 & 0.718 & 1.306 & 1.238 \\
+$1:4:8$ & N & 0.937 & 0.688 & 1.397 & 1.340 \\
+\bottomrule
+\end{tabular*}\endgroup
+\end{table}
+
+\input{sections/kn_bandwidth.tex}
+
+K 的共享后端有利于面积，N 的独立 PE 便于关闭未启用通路；供数取舍则需结合已有的数据复用。以下固定 K 实现，将配比对混合负载的影响与实现方向分开考察。
+
+\input{sections/k4_fixed_area_prefill.tex}

@@ -1,1 +1,6 @@
-% TODO: approximately 100 words, after contributions and results are established.
+\begin{abstract}
+多精度张量阵列通过配置点积单元的归约并行度与独立输出数形成不同算力配比，但峰值比例不足以说明增配成本与负载收益。本文提出 DP-Puzzle，以跨精度资源复用和低精度专用化构造 $1:2:4$、$1:2:6$、$1:2:8$、$1:4:8$ 四种浮点算力配比，并比较归约维扩展与输出维扩展的实现代价。22\,nm 评估中，$1:2:8$ 以 34.3\% 的单元面积增量获得两倍 FP4 吞吐，MXFP4 单位计算能耗降低 23.9\%；相同峰值下，归约维共享后端节省面积，但功耗与供数收益取决于阵列组织。进一步结合独立 12\,nm 成本、整数核部署和混合精度工作量，建立固定面积下的吞吐与计算能耗选择区域。三个 DeepSeek 模型的参考 prefill 映射均偏向 $1:4:8$，而 FP4 专家量化使部分长上下文负载转向 $1:2:8$。这些结果将配比选择与实现成本、负载组成及执行精度演进联系起来，为低精度资源的前瞻性配置提供依据。
+\end{abstract}
+\begin{IEEEkeywords}
+Multi-Precision Tensor Cores, Throughput Ratios, Composable Dot-Product Units, Area--Energy Trade-offs
+\end{IEEEkeywords}

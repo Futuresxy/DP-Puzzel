@@ -1,0 +1,58 @@
+[
+  {
+    "model": "DeepSeek-V4-Flash",
+    "revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
+    "files": [
+      {
+        "path": "LICENSE",
+        "sha256": "f2c6c602815669d292889e5be8c802f2ed950653b77999b1584e8e6aed25d040",
+        "bytes": 1084,
+        "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/LICENSE"
+      },
+      {
+        "path": "inference/config.json",
+        "sha256": "6cc6f816ca73a8d38750194e330398e4f6955b4b45f674f7d29c96da14ccb733",
+        "bytes": 991,
+        "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/inference/config.json"
+      }
+    ]
+  },
+  {
+    "model": "DeepSeek-V4-Pro",
+    "revision": "b5968e9190ef611bbf34a7229255be88a0e937c1",
+    "files": [
+      {
+        "path": "LICENSE",
+        "sha256": "f2c6c602815669d292889e5be8c802f2ed950653b77999b1584e8e6aed25d040",
+        "bytes": 1084,
+        "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/resolve/b5968e9190ef611bbf34a7229255be88a0e937c1/LICENSE"
+      },
+      {
+        "path": "inference/config.json",
+        "sha256": "a6aded1806a2dbacbbab89bae2380d0422a6d0dcc55c946b421c7f5e06ef6094",
+        "bytes": 1070,
+        "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/resolve/b5968e9190ef611bbf34a7229255be88a0e937c1/inference/config.json"
+      }
+    ]
+  },
+  {
+    "model": "DeepSeek-V4.1-Flash",
+    "revision": "314113f8a7dadb388215396ba5fbee2c610a04d6",
+    "files": [
+      {
+        "path": "inference/config.json",
+        "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/314113f8a7dadb388215396ba5fbee2c610a04d6/inference/config.json",
+        "bytes": 1982,
+        "sha256": "2e84f45cf1dac8c7fcbb200e96667d4b913275690668ed496f24c7747207a809",
+        "identical_to_existing_snapshot": true
+      },
+      {
+        "path": "LICENSE",
+        "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/314113f8a7dadb388215396ba5fbee2c610a04d6/LICENSE",
+        "bytes": 1084,
+        "sha256": "f2c6c602815669d292889e5be8c802f2ed950653b77999b1584e8e6aed25d040",
+        "identical_to_existing_snapshot": true
+      }
+    ]
+  }
+]

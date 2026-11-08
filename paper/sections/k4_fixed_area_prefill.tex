@@ -1,0 +1,91 @@
+% N12 hardware and model workloads: tables/.
+% Numerical experiments are unchanged; prose follows the four-ratio comparison.
+\subsection{固定面积下的负载优势区域}
+\label{sec:k4_area}
+\label{sec:k4_simplex}
+
+\textbf{增配改变单核能力与可部署核数。} 采用 $16\times16$ K 扩展阵列和独立 12\,nm 成本，比较四种配比在相同整核面积预算下的部署。H/Q/E 分别以 BF16、MXFP8 E4M3、MXFP4 E2M1 为代表。公开 12\,nm RTL 研究中，Cube 簇占 AI Core 面积的 32.7\%，计算切片约占簇的 80\%~\cite{luo2024hifloat8area}。本文以此为参照，假设基准 DP 阵列占整核面积 $\alpha=0.30$，并取完整 Ascend 950 架构的 36 个 Cube 单元为基准数量 $N_0$~\cite{huawei950}。两项信息仅构造等效预算，不推断 950 的真实工艺或计算面积比例。
+
+令 $a_j$ 为单 DP 面积，$A_{T,j}=256a_j$ 为阵列面积，下标 0 表示 $1:2:4$。固定每核外围面积 $A_O$，预算与整数核数为
+\begin{align}
+A_O&=(\alpha^{-1}-1)A_{T,0},&
+A_{\mathrm{bud}}&=N_0A_{T,0}/\alpha,
+\label{eq:k4_area_definition}\\
+n_j&=\left\lfloor\frac{A_{\mathrm{bud}}}{A_O+A_{T,j}}\right\rfloor.
+\label{eq:core_area_budget}
+\end{align}
+设单 DP 每周期乘积数为 $k_{j,f}$、模式功耗为 $p_{j,f}$，频率为 $\nu$，部署后的模式算力与 DP 功耗为
+\begin{equation}
+C_{j,f}=2\nu\,256n_jk_{j,f},\qquad
+P_{j,f}=256n_jp_{j,f}.
+\label{eq:k4_capacity_power}
+\end{equation}
+在 $405.57$\,mm$^2$ 等效预算下，四种配比依次部署 36、33、32、29 个完整核心（表~\ref{tab:k4_absolute}）。$1:4:8$ 的 Q 总算力仍提高 61.1\%，H 总算力却下降 19.4\%。低精度增配必须补偿高精度阶段因核心减少而增加的时间，单 DP 峰值因而不足以判断收益。
+
+\begin{table}[t]
+\centering
+\caption{Area-constrained N12 deployment. $A_C$: core area (mm$^2$); $C$: TFLOP/s; $P$: DP-only power (W).}
+\label{tab:k4_absolute}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\input{tables/hardware_compact_table.tex}
+\endgroup
+\end{table}
+
+\textbf{时间与能耗对应不同的选择区域。} 令 $F$ 为 H/Q/E 有效 GEMM 总 FLOP，$x_f=F_f/F$ 且 $\sum_f x_f=1$。各精度阶段顺序执行、充分利用全部核心时，时间、有效算力和 DP 计算能耗为
+\begin{align}
+T_j&=F\sum_f\frac{x_f}{C_{j,f}},&
+C_{\mathrm{eff},j}&=F/T_j,
+\label{eq:k4_time}\\
+\mathcal E_j&=F\sum_f x_f\frac{P_{j,f}}{C_{j,f}},&
+\varepsilon_{j,f}&=\frac{P_{j,f}}{C_{j,f}}.
+\label{eq:k4_energy}
+\end{align}
+固定面积预算下，最短时间也对应最高的预算算力密度 $F/(T_jA_{\mathrm{bud}})$。能耗按各模式执行时间乘对应功耗累加，核心数在 $\varepsilon_{j,f}=p_{j,f}/(2\nu k_{j,f})$ 中抵消。因此，核数影响计算速度，而当前模型的单位工作能耗由模式功耗与吞吐之比决定；外围功耗和供数停顿未计入。
+
+$T_j$ 与 $\mathcal E_j$ 均随工作量组成线性变化，候选成本相等处构成边界。以 1 个百分点为步长扫描 H/Q/E 组成，并按最小时间与最小能耗分别划分图~\ref{fig:k4_time_prefill}。MXFP4/NVFP4 共用 E 峰值但单位能耗不同：若 E 中 NVFP4 占比为 $\rho$，则 $\varepsilon_{j,E}=(1-\rho)\varepsilon_{j,\mathrm{MX}}+\rho\varepsilon_{j,\mathrm{NV}}$。能耗图的实色区域在两种编码间保持相同赢家，斜线区域依赖编码组成；模型点采用各自的实际 MX/NV 比例。
+
+\begin{figure}[t]
+\centering
+\begin{minipage}[t]{0.49\columnwidth}
+\centering
+\includegraphics[width=\linewidth]{k4_n12_prefill_time}
+{\footnotesize (a) Effective throughput\par}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.49\columnwidth}
+\centering
+\includegraphics[width=\linewidth]{k4_n12_prefill_energy}
+{\footnotesize (b) DP compute energy\par}
+\end{minipage}
+\par\smallskip
+{\scriptsize $\circ$ V4-Flash\quad $\square$ V4-Pro\quad $\triangle$ V4.1-Flash\par}
+{\scriptsize Dashed: W4A8 experts\quad Solid: NVFP4 W4A4 experts\par}
+\caption{Four-ratio selection and prefill trajectories under a fixed area budget. H/Q/E denote BF16/FP8/FP4 FLOP shares. Arrows follow 1K, 4K, 16K, 64K, 256K, 512K and 1M contexts; filled markers denote 1M. Hatching in (b) marks encoding-dependent optima.}
+\label{fig:k4_time_prefill}
+\label{fig:k4_energy_prefill}
+\end{figure}
+
+H 密集负载偏向 $1:2:4$，E 密集负载偏向 $1:2:8$，增加 Q 则有利于 $1:4:8$。当前整数部署使 $1:2:6$ 在连续面积分配下狭小的时间优势区域消失，其三种代表精度的单位能耗又均高于 $1:2:8$，故两种目标下均无独立优势区域。中间峰值配比并不必然提供折中收益：核心部署粒度与剩余精度阶段的成本共同决定选择。
+
+\subsection{模型需求与执行精度迁移}
+\label{sec:k4_prefill}
+
+依据官方配置、推理实现与技术报告~\cite{deepseekv4,deepseekv4flashsource,deepseekv4prosource,deepseekv41source}，分析 V4-Flash、V4-Pro 和 V4.1-Flash 在 batch=1、1K--1M 上下文下的纯文本冷 prefill。参考映射将 MXFP4 索引点积归入 E，W4A8 路由专家和 FP8 投影归入 Q，BF16 注意力与分组输出投影归入 H。进一步依据已发布的 NVFP4 量化配置~\cite{nvidia2026v4flashnvfp4,nvidia2026v4pronvfp4,nvidia2026deepseeknvfp4}，将路由专家的三个 GEMM 映射为 NVFP4 W4A4，其余计算保持不变。量化在相同上下文下将部分 Q 转为 E，不改变 H 工作量；W4 权重存储本身不等价于 FP4 执行。
+
+GEMM 按 $2MNK$ 计数，MoE 仅计激活专家，注意力和索引器按因果、窗口、压缩及 top-$k$ 约束计入有效点积；V4.1 包含 CED prefill、缓存构建、有限窗口重放与跨层索引复用~\cite{deepseekv41source}。H/Q/E 覆盖所统计 GEMM FLOP 的 97.11\%--99.37\%，其余为 FP32。图中的两类轨迹各含 21 个模型点，表示模型结构与执行映射导出的计算需求，时间与能耗不包含非 GEMM、通信及供数停顿。
+
+\begin{table}[t]
+\centering
+\caption{Reference W4A8 prefill endpoints. H/Q/E shares use useful GEMM FLOPs; speedup and DP energy reduction compare $1:4:8$ with $1:2:4$.}
+\label{tab:k4_prefill_points}
+\begingroup\footnotesize\setlength{\tabcolsep}{4pt}
+\input{tables/prefill_compact_table.tex}
+\endgroup
+\end{table}
+
+\textbf{参考负载仍受益于 FP8 增配。} 三个模型在短上下文下均以 FP8 计算为主，全部参考采样点在两种目标下均选择 $1:4:8$。V4-Flash 在 1M 时的 E 占比已达 54.55\%，但 Q 仍占 26.39\%；FP8 阶段的加速足以补偿相对 $1:2:8$ 减少的 FP4 总算力。FP4 FLOP 占多数并不充分决定配比。
+
+\textbf{上下文增长改变收益，方向取决于模型结构。} V4-Pro 的 H 占比在 1M 时增至 25.59\%，$1:4:8$ 的加速比由 1.335 降至 1.098。V4.1-Flash 在 CED 与索引复用下形成不同轨迹：1M 时 Q 仍占 60.49\%，保持 1.291 倍加速和 10.47\% 的 DP 节能（表~\ref{tab:k4_prefill_points}）。高精度注意力、FP8 投影和 FP4 索引的相对增长决定各阶段的时间贡献。
+
+\textbf{专家 W4A4 使部分负载转向更高 FP4 配比。} 量化后，V4-Flash 的 E 占比由 1K 的 50.52\% 增至 1M 的 70.26\%，Q 降至 10.68\%。在采样点中，512K 时能耗最优先转向 $1:2:8$，1M 时吞吐也转向该配比。V4-Pro 与 V4.1-Flash 在 1M 时仍保留 18.46\% 和 24.54\% 的 Q 工作，均选择 $1:4:8$。FP4 专家执行与长上下文可共同触发选择变化，但剩余 H/Q 需求使迁移具有模型差异。
+
+这些轨迹给出前瞻性增配的条件：当前 FP8 阶段收益支持联合增配，而更充分的 FP4 执行可使定向增配受益。芯片设计应将预期负载映射到相应区域，同时检查实现与供数约束；单一模型点或 FP4 百分比不足以代表部署期的全部需求。

@@ -1,0 +1,58 @@
+% Analytical bandwidth model, checked by scripts/analyze_kn_bandwidth_reuse.py.
+% R holds A[m,k] across N output tiles, as confirmed by the author.
+\textbf{带宽增幅取决于新增资源的位置。} 设基阵列为 $m\times n$，每路基准 A/B 向量含尺度共 $w$ bit，目标模式吞吐增至 $r$ 倍。A 在行内广播并驻留复用 $R$ 次发射；B 在列内广播，每次更新。FP32 C/D 每 $\tau$ 次发射读写一次。先固定两方案的 $R,\tau$；每周期发射一次时，驻留存储上游的本地缓冲需求为
+\begin{equation}
+\begin{aligned}
+B_0 &= \frac{mw}{R}+nw+\frac{64mn}{\tau},\\
+B_K &= \frac{rmw}{R}+rnw+\frac{64mn}{\tau},\\
+B_N &= \frac{mw}{R}+rnw+\frac{64rmn}{\tau}.
+\end{aligned}
+\label{eq:kn_bandwidth}
+\end{equation}
+三项依次为 A、B、C/D，单位为 bit/cycle；乘频率 $\nu$ 得到 bit/s。K 增宽两路输入，N 增加 B 及独立输出。复用降低的是平均本地流量，各端口峰值仍取决于发射与填充调度。
+
+四配比均有 $r_H=1$，Q/E 的扩展倍数见表~\ref{tab:kn_bandwidth}。$1:2:8$ 与 $1:4:8$ 的 FP4 流量相同，后者另增 FP8 需求。基线倍数为 $G_K=B_K/B_0$、$G_N=B_N/B_0$。令 $a=mw/R$、$b=nw$、$c=64mn/\tau$，两方案的总带宽比与增量比分别为
+\begin{equation}
+\frac{B_N}{B_K}=\frac{a+r(b+c)}{r(a+b)+c},\qquad
+\frac{B_N-B_0}{B_K-B_0}=\frac{b+c}{a+b},
+\label{eq:kn_bandwidth_growth}
+\end{equation}
+其中增量比要求 $r>1$。
+
+\begin{table}[t]
+\centering
+\caption{Analytical NVFP4 bandwidth (bytes/cycle): $m=n=16$, $\tau=4$, $w=64\times4+4\times8=288$ bits. K/N use equal $R,\tau$.}
+\label{tab:kn_bandwidth}
+\begingroup\footnotesize\setlength{\tabcolsep}{2pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lcrrrr@{}}\toprule
+ & & \multicolumn{2}{c}{$R=1$} & \multicolumn{2}{c}{$R=4$} \\
+\cmidrule(lr){3-4}\cmidrule(l){5-6}
+Ratio & $r_Q,r_E$ & $B_K$ & $B_N$ & $B_K$ & $B_N$ \\\midrule
+$1:2:4$ & $1,1$ & 1664 & 1664 & 1232 & 1232 \\
+$1:2:6$ & $1,1.5$ & 2240 & 2208 & 1592 & 1776 \\
+$1:2:8$ & $1,2$ & 2816 & 2752 & 1952 & 2320 \\
+$1:4:8$ & $2,2$ & 2816 & 2752 & 1952 & 2320 \\
+\bottomrule\end{tabular*}\endgroup
+\end{table}
+
+\textbf{A 的多周期驻留削弱 N 扩展的额外输入收益。} 仅计 A/B 时，方阵的归一化需求为
+\begin{equation}
+G_{K,\mathrm{in}}=r,\qquad
+G_{N,\mathrm{in}}=\frac{1+rR}{1+R}.
+\label{eq:kn_input_reuse}
+\end{equation}
+$R=1$ 时，FP4 算力增至 1.5 倍，K/N 输入带宽分别增至 1.5/1.25 倍；算力翻倍时，分别增至 2/1.5 倍。$R=4$ 时，N 的对应需求为基准的 1.4 和 1.8 倍。故算力翻倍时，N 相对 K 的输入节省由 25\% 降为 10\%。A 驻留越充分，扩列的额外复用收益越小。
+
+\textbf{计入输出后，A 驻留可能改变带宽排序。} 两方案之差为
+\begin{equation}
+B_N-B_K=(r-1)m\left(\frac{64n}{\tau}-\frac{w}{R}\right).
+\label{eq:kn_bandwidth_difference}
+\end{equation}
+N 节省的 A 供数须覆盖新增 C/D 流量，即 $\tau>64nR/w$，总需求才低于 K。表~\ref{tab:kn_bandwidth} 中，$R=1$ 时 $1:2:8$ 的 N 需求略低于 K；$R=4$ 时两者分别为基准的 1.883 和 1.584 倍，N 总需求高出 18.9\%，增量为 K 的 1.51 倍。已有 A 驻留而 C/D 频繁交换时，K 更有利；延长部分和驻留则有利于 N。
+
+\textbf{空间与时间复用须联合计算。} 实际映射的 $R,\tau$ 由分块与存储容量决定~\cite{timeloop2019}。对相同且可整除的 GEMM，若 A 跨全部 N 输出块保留、部分和驻留至 K 维归约结束，则
+\begin{equation}
+R_N=R_K/r,\qquad \tau_N=r\tau_K.
+\label{eq:kn_same_gemm_reuse}
+\end{equation}
+代入式~\eqref{eq:kn_bandwidth}，两方案在该接口的平均总需求相等：N 将部分 A 时间复用转为空间复用，K 则更快完成每个输出的归约。空间扩展不必然减少完整 GEMM 的搬运量，其收益还取决于可实现的驻留方式与端口供数。

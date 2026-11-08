@@ -1,0 +1,23 @@
+{
+  "checked_date": "2026-11-04",
+  "models": [
+    {
+      "model": "DeepSeek-V4-Flash",
+      "url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4-Flash",
+      "revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
+      "last_modified": "2026-06-22T12:12:13.000Z"
+    },
+    {
+      "model": "DeepSeek-V4-Pro",
+      "url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4-Pro",
+      "revision": "b5968e9190ef611bbf34a7229255be88a0e937c1",
+      "last_modified": "2026-06-22T12:12:50.000Z"
+    },
+    {
+      "model": "DeepSeek-V4.1-Flash",
+      "url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4.1-Flash",
+      "revision": "314113f8a7dadb388215396ba5fbee2c610a04d6",
+      "last_modified": "2026-10-16T09:27:28.000Z"
+    }
+  ]
+}
