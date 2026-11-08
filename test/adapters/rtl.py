@@ -16,7 +16,7 @@ from dp_rtl_gate import DP_INTERFACE, PARAMETERS, payload, validate_scopes, veri
 def snapshot(implementation,frontend='multi'):
     base=ROOT/'src/verilog'
     if frontend not in ('multi','e') + MIXED_PROFILES + LOWP_PROFILES or (frontend!='multi' and implementation!='verilog'):
-        raise ValueError('E frontend requires maintained pure Verilog')
+        raise ValueError('Unsupported/retired frontend or implementation; use an active pure-Verilog profile')
     interface = DP_INTERFACE if implementation == 'verilog' else dict(DP_INTERFACE, reset_port='reset', reset_active='high')
     top=frontend_top(frontend)
     source_list=base/(frontend_list(frontend) if implementation=='verilog' else 'systemverilog/files.f')

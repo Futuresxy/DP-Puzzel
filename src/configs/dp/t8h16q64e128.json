@@ -1,7 +1,0 @@
-{
-  "frontend": "t8h16q64e128",
-  "k_fp16": 16,
-  "local_shift_mag_width": 28,
-  "global_signed_align_width": 40,
-  "post_scale_norm_extra_stage": 0
-}

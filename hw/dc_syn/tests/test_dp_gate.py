@@ -11,7 +11,7 @@ from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/'scripts'))
-from dp_rtl_gate import payload, verify_dp_export, validate_scopes
+from dp_rtl_gate import payload, verify_dp_export, validate_scopes, MIXED_PROFILES, LOWP_PROFILES, RETIRED_PROFILES
 spec=importlib.util.spec_from_file_location('dp_snapshot',ROOT/'test/adapters/rtl.py')
 adapter=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(adapter)
@@ -82,7 +82,7 @@ class DPGateTests(unittest.TestCase):
             validate_scopes([],self.root,0,1,'e')
 
     def test_mixed_identity_and_incomplete_campaign_rejected(self):
-        for frontend in ('t8h16q32e96','t8h16q32e128','t8h16q64e128','t8h16q64e128_opt','e64','q32e64'):
+        for frontend in MIXED_PROFILES + LOWP_PROFILES:
             with patch.object(adapter,'ROOT',self.root):
                 export,_=adapter.snapshot('verilog',frontend)
             manifest,_,_=payload(export,self.root)
@@ -91,6 +91,14 @@ class DPGateTests(unittest.TestCase):
                 verify_dp_export(export.name,self.root)
             with self.assertRaisesRegex(ValueError,'Full DP campaign'):
                 validate_scopes([],self.root,0,1,frontend)
+
+    def test_retired_profiles_cannot_be_exported(self):
+        for frontend in RETIRED_PROFILES:
+            with patch.object(adapter,'ROOT',self.root):
+                with self.assertRaises(ValueError):
+                    adapter.snapshot('verilog',frontend)
+            self.assertFalse((ROOT/'src/verilog'/('files_'+frontend+'.f')).exists())
+            self.assertFalse((ROOT/'src/verilog/top'/('dp_top_'+frontend+'.v')).exists())
 
     def test_stage_classification_preserves_top_and_lane_distinction(self):
         script='source {'+str(ROOT/'hw/dc_syn/templates/dp_stages.tcl')+'}\n'

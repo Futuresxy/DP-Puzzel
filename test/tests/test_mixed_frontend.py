@@ -11,7 +11,7 @@ from adapters.logical import read_logical_inputs
 from cases.common import random_request, make
 from reference.exact import DTYPES, ulp_distance, reference
 
-from cases.mixed import PROFILES, extended, corpus, poison_inactive
+from cases.mixed import PROFILES, extended, corpus, poison_inactive, qe_extension
 
 
 class MixedFrontend(unittest.TestCase):
@@ -88,12 +88,12 @@ class MixedFrontend(unittest.TestCase):
                                            ('a_e1',4),('b_e1',4),('a_e2',2),('b_e2',2)]:
                             sub[field]=format((int(request[field],16)>>(bits*group_index))&((1<<bits)-1),'x')
                         sub['c']='00000000'
-                        frontend='multi' if group_index<4 else 'qe' if profile in PROFILES[2:] else 'e'
+                        frontend='multi' if group_index<4 else 'qe' if qe_extension(profile) else 'e'
                         single=evaluate([sub],config=cfg|{'k_fp16':4,'frontend':frontend},trace=True)[0]
                         self.assertEqual(token,single['trace'][4]['data']['groups'][0])
                     aligned=list(map(int,result['trace'][5]['data']['aligned_tc']))
                     self.assertEqual(sum(aligned),int(result['trace'][6]['data']['sop_tc']))
-                    self.assertEqual(result['trace'][6]['data']['width'],glob+(3 if profile==PROFILES[0] else 4))
+                    self.assertEqual(result['trace'][6]['data']['width'],glob+(3 if profile=='t8h16q32e96' else 4))
 
     def test_mixed_cycle_switch_bubbles_reset(self):
         for profile in PROFILES:

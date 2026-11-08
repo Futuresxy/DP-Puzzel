@@ -112,19 +112,18 @@ E 元素解包独立位于 [unpack/dp_lane_unpack_e.v](unpack/dp_lane_unpack_e.v
 
 紧凑解包阅读入口：[A/B 解包及分类](unpack/dp_lane_unpack.v) → [单侧 S1 保存](unpack/dp_lane_operand_unpack.v) → [元素译码](unpack/dp_operand_unpack.v)。数值输出直接连接 [尾数 bank](lane/dp_mantissa_bank.v) 和 [指数 bank](lane/dp_exponent_bank.v)，不恢复每侧 184 位 Number；S1 声明寄存宽度保持 84 位/侧，L8/II=1 不变。[前后对比与验收](../../test/results/dp-compact-unpack-v1.6.4.md)记录接口、分类位置及回归证据。
 
-## 混合配比顶层（v1.7.1）
+## 现用混合配比顶层（v1.7.5）
 
-新增 `dp_lane_qe` / `dp_group_qe` 与三个固定 profile；详见 [混合架构](../spec/dp/dptop/mixed-precision-expansion.md)。
+新增 `dp_lane_qe` / `dp_group_qe` 与两个现用混合 profile；详见 [混合架构](../spec/dp/dptop/mixed-precision-expansion.md)。
 
 ```sh
 python3.11 test/run_mixed_verilog.py --frontend t8h16q32e96
-python3.11 test/run_mixed_verilog.py --frontend t8h16q32e128
-python3.11 test/run_mixed_verilog.py --frontend t8h16q64e128
+python3.11 test/run_mixed_verilog.py --frontend t8h16q64e128_opt
 ```
 
 每个顶层独立导出和 lint，完整运行11种精度的10747笔原生数据，再运行三组窗口的混格式/边界/协议/断点测试。`golden_exact` 使用本 profile 现场 CModel，`math_exact/max_ulp` 使用提交的独立数学 golden；不会覆写数据中的历史期望。验证记录见 [混合 RTL 验证](../../test/results/mixed-rtl-v1.7.md)。
 
-文件清单分别为 `files_t8h16q32e96.f`、`files_t8h16q32e128.f`、`files_t8h16q64e128.f`。三个 wrapper 共用 dp_top_mixed；基础四组保留原功能，新增组按类型有效使能，S6/S7 的参与旁带跟随当前在途请求。
+文件清单分别为 `files_t8h16q32e96.f`、`files_t8h16q64e128_opt.f`。两个 wrapper 共用 dp_top_mixed；基础四组保留原功能，新增组按类型有效使能，S6/S7 的参与旁带跟随当前在途请求。
 
 ## 四组低精度独立顶层（v1.7.4）
 
@@ -132,3 +131,7 @@ python3.11 test/run_mixed_verilog.py --frontend t8h16q64e128
 - `top/dp_top_q32e64.v` / `files_q32e64.f`：四个 `dp_group_qe(COMPACT_UNPACK=1)`，MXFP8/6 和三种 E，Q32E64。
 
 两个薄封装静态选择 `dp_top_lowp` 的前端，统一使用四组+C的五源后端、L8/II=1、LOCAL28/GLOBAL40；T/H/INT8拒收。旧 `dp_top_e` 参数化入口保留。详见 [组织合同](../spec/dp/dptop/low-precision-tops.md) 与 [独立快照验证](../../test/results/lowp-tops-v1.7.4.md)。
+
+## 五种现用架构与内部核心
+
+先读 [顶层架构总览](../spec/dp/dptop/top-architectures.md)。`dp_top_mixed`/`dp_top_lowp`是共用实现核心，`dp_top_e`是兼容参数化入口；五种现用配置包含原`dp_top`。原E128扩展及未优化QE128包装已退役，历史快照/测量保留。

@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.4；修改时间：2026-11-08 09:03:06 +0800；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.5；修改时间：2026-11-08 09:15:35 +0800；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -21,7 +21,7 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 
 | 文档 | 当前版本 | 功能 |
 | --- | --- | --- |
-| [README.md](README.md) | v1.7.4 | 汇总新版规格入口和生效范围 |
+| [README.md](README.md) | v1.7.5 | 汇总新版规格入口和生效范围 |
 | [00-system-scope.md](00-system-scope.md) | v1.5.8 | 定义系统边界和设计目标 |
 | [01-numerics.md](01-numerics.md) | v1.5.4 | 定义数值语义与保留精度 |
 | [03-interfaces.md](03-interfaces.md) | v1.5.4 | 汇总共用输入输出协议 |
@@ -42,7 +42,7 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.7.2 | 讨论 E16 定点组规约及兼容的 group 输出 |
 | [dp/group/scale.md](dp/group/scale.md) | v1.5.5 | 定义 scale 统一解包和 bias 处理 |
 | [dp/group/shared-align.md](dp/group/shared-align.md) | v1.5.4 | 定义分组共享对齐微架构 |
-| [dp/dptop/README.md](dp/dptop/README.md) | v1.7.1 | 定义 DP 顶层规格目录与后端边界 |
+| [dp/dptop/README.md](dp/dptop/README.md) | v1.7.5 | 定义 DP 顶层规格目录与后端边界 |
 | [dp/dptop/control.md](dp/dptop/control.md) | v1.6 | 定义 DP 逐请求控制与有效位推进 |
 | [dp/dptop/global-align.md](dp/dptop/global-align.md) | v1.5.4 | 定义 scale 后实际指数检测与合并对齐 |
 | [dp/dptop/independent-align.md](dp/dptop/independent-align.md) | v1.5.4 | 记录独立移位对齐对比方案 |
@@ -63,7 +63,8 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 
 | 文档 | 固定版本 | 评审范围 |
 | --- | --- | --- |
-| [混合顶层](dp/dptop/mixed-precision-expansion.md) | v1.7.3 | 三种扩展装配、输入布局、屏蔽、MAX/树、L8 与验证计划 |
+| [五种顶层总览](dp/dptop/top-architectures.md) | v1.7.5 | 对外入口、架构差异、共用核心及兼容入口 |
+| [混合顶层](dp/dptop/mixed-precision-expansion.md) | v1.7.5 | 两种现用扩展装配、输入布局、屏蔽、MAX/树、L8 与验证计划 |
 | [QE lane](dp/lane/dp_lane_qe.md) | v1.7.3 | Q4E8 的紧凑解包、窄乘法和原 Q/E 流水 |
 | [QE group](dp/group/dp_group_qe.md) | v1.7.3 | Q8E16 组和、无符号 scale 与兼容 S5 token |
 
@@ -82,3 +83,7 @@ v1.7.2 为优化方案修订；当前 v1.7.3 已实现独立优化顶层、固�
 新增四组低精度验证见 [v1.7.4](../../test/results/lowp-tops-v1.7.4.md)，模型 `2db339d`、RTL `4045e00`。
 
 两顶层均通过N12 TT/1GHz、门控开启的综合，E64/Q32E64面积为5644.14/11542.08 µm²，见 [测量记录](../../hw/dc_syn/records/lowp_n12_1000mhz_20261108.md)。
+
+## v1.7.5 顶层入口整理
+
+现用五种配置为dp_top、E96扩展、优化Q64E128扩展、E64、Q32E64。按用户要求移除E128扩展及未优化Q64E128包装、清单和配置；共用核心、E兼容入口和历史实验保留。保留RTL的算术/流水不变。增加 [五种架构总览](dp/dptop/top-architectures.md)，统一现用测试/导出profile目录。

@@ -28,7 +28,7 @@ def expand(request, profile):
     if not extended(profile, request['a_datatype']):
         return poison_inactive(request, profile)
     result=dict(request)
-    groups=6 if profile==PROFILES[0] else 8
+    groups=6 if profile=='t8h16q32e96' else 8
     for field,bits in [('a',64),('b',64),('a_scale',8),('b_scale',8),
                        ('a_e1',4),('b_e1',4),('a_e2',2),('b_e2',2)]:
         value=int(request[field],16)
@@ -48,7 +48,7 @@ def compile_tb(profile, local, glob):
                 f'-GLOCAL_W={local}',f'-GGLOBAL_W={glob}'],build/'lint.log')
     shared.run([shared.VERILATOR,'--binary','--timing','-j','4',*flags,
                 '-Wno-WIDTH','-Wno-TIMESCALEMOD','-Wno-INITIALDLY',
-                f'-DDP_MIXED_TOP={top}',f'-DDP_MIXED_GROUPS={6 if profile==PROFILES[0] else 8}',
+                f'-DDP_MIXED_TOP={top}',f"-DDP_MIXED_GROUPS={6 if profile=='t8h16q32e96' else 8}",
                 '--top-module','dp_tb','--Mdir',str(build),
                 f'-GLOCAL_W={local}',f'-GGLOBAL_W={glob}',
                 '-I'+str(shared.EXPORT/'src/src/verilog/parameter'),

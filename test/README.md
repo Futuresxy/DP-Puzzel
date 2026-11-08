@@ -48,14 +48,13 @@ python3 test/run_verilog.py --simulator iverilog --implementation verilog --phas
 
 九种原有浮点编码各 961 笔，INT8 为 1045 笔，TF32 为 1053 笔。混格式参数回归单独生成每种格式 48 笔，现场调用 CModel，并插入气泡和复位来覆盖协议。`reset_cancelled` 表示已接收但在输出前被复位清空的请求数。最终打印完整 JSON 报告路径。
 
-## 混合配比顶层（v1.7.1）
+## 现用混合配比顶层（v1.7.5）
 
-新增 `dp_lane_qe` / `dp_group_qe` 与三个固定 profile；详见 [混合架构](../src/spec/dp/dptop/mixed-precision-expansion.md)。
+新增 `dp_lane_qe` / `dp_group_qe` 与两个现用混合 profile；详见 [混合架构](../src/spec/dp/dptop/mixed-precision-expansion.md)。
 
 ```sh
 python3.11 test/run_mixed_verilog.py --frontend t8h16q32e96
-python3.11 test/run_mixed_verilog.py --frontend t8h16q32e128
-python3.11 test/run_mixed_verilog.py --frontend t8h16q64e128
+python3.11 test/run_mixed_verilog.py --frontend t8h16q64e128_opt
 ```
 
 每个顶层独立导出和 lint，完整运行11种精度的10747笔原生数据，再运行三组窗口的混格式/边界/协议/断点测试。`golden_exact` 使用本 profile 现场 CModel，`math_exact/max_ulp` 使用提交的独立数学 golden；不会覆写数据中的历史期望。验证记录见 [混合 RTL 验证](results/mixed-rtl-v1.7.md)。
