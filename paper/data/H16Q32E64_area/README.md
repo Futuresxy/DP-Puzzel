@@ -1,5 +1,9 @@
 # H16Q32E64 面积占比图
 
+当前推荐查看 **[八类细分结果](current_dp_top_area_refined.md)**：符号转换独立，
+数据选择/旁路与控制/共享合并。面积 CSV 为 `current_dp_top_area_refined.csv`，
+重绘用 `plot_area.py --refined`。下面保留旧七类和 PETile 历史数据的说明。
+
 修改 `area_data.csv` 后运行 `python3 plot_area.py`，或在 `paper/` 下执行 `make cost-figures`。
 
 脚本读取 `category` 和 `total_um2`：将相同类别的面积相加，再除以整份 CSV 的总面积。环图百分比、中心的完整 DP 面积随数据自动更新。单位为 µm²。其余字段保留原测量的功能块及组成信息，不参与计算；修改它们不会自动改变 `total_um2`。

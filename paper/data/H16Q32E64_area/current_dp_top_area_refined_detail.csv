@@ -1,0 +1,47 @@
+category,function,component,cell_count,total_um2,area_percent
+Data unpacking,C unpack,combinational,197,36.82713599999996,0.207102431743114
+Data unpacking,Operand unpack and S1 banks,combinational,16214,2450.5343999999377,13.780915065188356
+Data unpacking,Operand unpack and S1 banks,register,1280,849.3465599999851,4.776416443805073
+Data unpacking,S1 scale decode registers,register,100,66.3552000000001,0.3731575346722784
+Data unpacking,S5 C decode registers,register,44,30.191615999999996,0.16978667827588642
+Data unpacking,Scale unpack,combinational,416,81.10080000000002,0.4560814312661175
+Exponent processing,Anchor and exponent pipeline registers,register,276,187.08480000000048,1.0520969380343417
+Exponent processing,Element exponent addition,combinational,2138,369.5984639999991,2.078487468124583
+Exponent processing,Exponent MAX trees,combinational,3352,666.3536639999918,3.7473308870755626
+Exponent processing,Global anchor correction and net shift,combinational,655,130.97779200000002,0.7365715114947798
+Exponent processing,Group scale exponent and S5 anchor registers,register,108,71.66361600000006,0.4030101374460605
+Exponent processing,Group scale exponent and anchor correction,combinational,566,124.48972800000013,0.7000849969934909
+Exponent processing,Local exponent delta cone,combinational,1895,443.9900159999992,2.4968385264405035
+Exponent processing,S2 element exponent registers,register,352,233.57030400000127,1.3135145220464253
+"LZD, normalization & rounding",C subnormal leading detection,combinational,141,21.860351999999953,0.12293467670036684
+"LZD, normalization & rounding",Final normalization rounding and encoding,combinational,1666,294.46963200000243,1.6559902149789891
+"LZD, normalization & rounding",Group leading detection,combinational,529,88.84224000000019,0.4996164769778842
+"LZD, normalization & rounding",Leading count and final output registers,register,57,39.813120000000005,0.22389452080336675
+Logic control & shared logic,Clock gating,icg,148,87.29395199999973,0.4909094678355285
+Logic control & shared logic,Control and special-value registers,register,394,268.8491520000012,1.511909944647186
+Logic control & shared logic,Global active isolation and shared selection,combinational,429,52.45747199999987,0.2950017621325834
+Logic control & shared logic,Inline shared control and unattributed combinational logic,combinational,4328,738.8282879999969,4.154901838834312
+Logic control & shared logic,Pair enable and shared control,combinational,201,33.95174399999993,0.1909322719073151
+Logic control & shared logic,Product active registers,register,64,42.467328000000016,0.23882082219025794
+Logic control & shared logic,Raw C transport registers,register,128,84.93465599999998,0.4776416443805156
+Logic control & shared logic,Recovered integer bypass selection,combinational,358,81.80121599999988,0.46002031635432417
+Logic control & shared logic,Unresolved mixed alignment logic,combinational,3196,552.0015360000078,3.104256068990427
+Magnitude shifting,Dedicated RTZ or bidirectional shift core,combinational,8560,1419.6326399999696,7.983498144571731
+Mantissa & scale multiplication,Element multiplier bank,combinational,10618,2679.5704319999245,15.068930489032095
+Mantissa & scale multiplication,Group magnitude scale multiplier,combinational,1536,385.4868480000004,2.167837966704452
+Mantissa & scale multiplication,S2 products and product sidebands,register,872,578.9491199999926,3.255799490015583
+Mantissa & scale multiplication,S5 scaled or bypassed magnitude register,register,124,82.28044799999999,0.46271534299362455
+Mantissa & scale multiplication,Scale coefficient multiplier,combinational,164,34.94707199999998,0.19652963492739955
+Mantissa & scale multiplication,Scale coefficient pipeline,register,96,63.700992000000106,0.35823123328538736
+SOP accumulation,Final reduction tree,combinational,1227,203.74732799999884,1.1458009411853713
+SOP accumulation,Group reduction adder,combinational,1029,173.6663039999995,0.9766361921339424
+SOP accumulation,Lane group and final sum registers,register,291,193.57286400000066,1.0885834525356322
+SOP accumulation,Lane reduction tree,combinational,6976,1002.4058879999394,5.6371664904488705
+SOP accumulation,SAT-recovered E pair sum cones,combinational,679,284.07398399999914,1.5975288678803137
+Sign conversion,E pair operand sign preparation,combinational,2081,500.28134399999726,2.8134005016874752
+Sign conversion,Final sum absolute-value cone,combinational,244,51.757055999999864,0.291062877044376
+Sign conversion,Global complement restore after recovered bypass boundary,combinational,1446,258.1217279999996,1.4515828098751589
+Sign conversion,Group absolute-value cone,combinational,4,0.294912,0.0016584779318767906
+Sign conversion,Post-shift complement restoration,combinational,5853,894.652415999965,5.031200116089532
+Sign conversion,Product sign XOR and sign routing,combinational,273,45.56390399999987,0.2562348404749634
+Sign conversion,Signed payload and sign pipeline registers,register,1197,799.7276159999876,4.497377531766817

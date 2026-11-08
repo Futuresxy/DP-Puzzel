@@ -71,26 +71,28 @@ def current_donut(ax, values, label, unit, colors):
     return wedges
 
 
-def plot_current(data_dir, figure_dir, results_dir, dpi):
-    area_path = data_dir / 'current_dp_top_area.csv'
-    power_path = data_dir / 'current_dp_top_power.csv'
+def plot_current(data_dir, figure_dir, results_dir, dpi, refined=False):
+    suffix = '_refined' if refined else ''
+    area_path = data_dir / f'current_dp_top_area{suffix}.csv'
+    power_path = data_dir / f'current_dp_top_power{suffix}.csv'
     areas = load_areas(area_path)
     categories = list(areas)
-    if len(categories) != len(CURRENT_COLORS):
-        raise ValueError('Current policy requires exactly seven functional categories')
+    colors = ['#8CB5D5', '#E7A39A', '#9BC69B', '#E6CA7C', '#B79BCB', '#D8A7C8', '#80C3C0', '#B6B6B6'] if refined else CURRENT_COLORS
+    if len(categories) != len(colors):
+        raise ValueError('Category count does not match the selected accounting policy')
     plt.rcParams.update({'font.family': 'serif',
         'font.serif': ['Times New Roman', 'Liberation Serif', 'DejaVu Serif'], 'font.size': 11})
     figure_dir.mkdir(parents=True, exist_ok=True)
     results_dir.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(10, 5))
-    wedges = current_donut(ax, list(areas.values()), 'dp_top', 'µm²', CURRENT_COLORS)
+    wedges = current_donut(ax, list(areas.values()), 'dp_top', 'µm²', colors)
     ax.set_title('T8H16Q32E64: functional cell area', pad=14)
     ax.legend(wedges, categories, loc='center left', bbox_to_anchor=(1, .5),
               frameon=False, labelspacing=1.1)
     fig.text(.5, .025, 'N12 TT · 0.7 V · 85 °C · 1 GHz · precision register gating',
              ha='center', fontsize=10)
     fig.tight_layout(rect=(0, .05, 1, 1))
-    area_output = figure_dir / 'current_dp_top_area_share.png'
+    area_output = figure_dir / f'current_dp_top_area{suffix}_share.png'
     fig.savefig(area_output, dpi=dpi, bbox_inches='tight', facecolor='white')
     plt.close(fig)
 
@@ -110,7 +112,7 @@ def plot_current(data_dir, figure_dir, results_dir, dpi):
         for column, (metric, metric_title) in enumerate(metrics):
             values = [float(power[(mode, category)][metric]) for category in categories]
             ax = axes[row_index, column]
-            wedges = current_donut(ax, values, title, 'mW', CURRENT_COLORS)
+            wedges = current_donut(ax, values, title, 'mW', colors)
             totals[mode][metric] = sum(values)
             if row_index == 0:
                 ax.set_title(metric_title, fontsize=14, pad=12)
@@ -120,7 +122,7 @@ def plot_current(data_dir, figure_dir, results_dir, dpi):
     fig.text(.5, .012, 'N12 TT · 0.7 V · 85 °C · 1 GHz | Qwen3-8B MLP | native gate SAIF, pre-CTS',
              ha='center', fontsize=10)
     fig.tight_layout(rect=(0, .16, 1, .965), h_pad=1)
-    power_output = figure_dir / 'current_dp_top_power_share.png'
+    power_output = figure_dir / f'current_dp_top_power{suffix}_share.png'
     fig.savefig(power_output, dpi=dpi, bbox_inches='tight', facecolor='white')
     plt.close(fig)
     manifest = dict(
@@ -132,7 +134,7 @@ def plot_current(data_dir, figure_dir, results_dir, dpi):
         outputs=[area_output.name, power_output.name], dpi=dpi,
         denominator='exclusive leaf-cell sum; see current_dp_top_reconciliation.csv',
         percentage_labels='Values below 2% omitted from chart labels; all categories retained')
-    (results_dir / 'current_dp_top_plot_manifest.json').write_text(
+    (results_dir / f'current_dp_top{suffix}_plot_manifest.json').write_text(
         json.dumps(manifest, indent=2) + '\n')
     print(f'Current dp_top: {sum(areas.values()):.6f} um2; {area_output}; {power_output}')
 
@@ -142,14 +144,15 @@ def main():
     parser.add_argument('--output',type=Path,default=PAPER/'figures/H16Q32E64_area_pie.png')
     parser.add_argument('--results-dir',type=Path,default=PAPER/'data/results/H16Q32E64_area')
     parser.add_argument('--dpi',type=int,default=600)
+    parser.add_argument('--refined', action='store_true', help='Use eight categories with separate sign conversion and combined logic control')
     parser.add_argument('--current', action='store_true', help='Plot the current dp_top area and all three power formats')
     parser.add_argument('--current-data-dir', type=Path, default=HERE)
     parser.add_argument('--figure-dir', type=Path, default=PAPER/'figures')
     args=parser.parse_args()
     if args.output.suffix.lower()!='.png':parser.error('--output must end in .png')
     if args.dpi<=0:parser.error('--dpi must be positive')
-    if args.current:
-        plot_current(args.current_data_dir, args.figure_dir, args.results_dir, args.dpi)
+    if args.current or args.refined:
+        plot_current(args.current_data_dir, args.figure_dir, args.results_dir, args.dpi, refined=args.refined)
         return
     areas=load_areas(args.data);total=sum(areas.values())
     args.output.parent.mkdir(parents=True,exist_ok=True)

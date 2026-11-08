@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "categories": [
+    "Data unpacking",
+    "Mantissa & scale multiplication",
+    "SOP accumulation",
+    "Exponent processing",
+    "Magnitude shifting",
+    "Sign conversion",
+    "LZD, normalization & rounding",
+    "Logic control & shared logic"
+  ],
+  "leaf_count": 82502,
+  "total_um2": 17782.08768001317,
+  "mapped_netlist": "hw/dc_syn/runs/dc_dp_top_11081432/netlist/dp_top_mapped.v",
+  "mapped_netlist_sha256": "f848e1e5b866d3e0ea5acc50ec8d6e20c76466e6b702e34d971fab9f546f8f50",
+  "report_run": "hw/power/runs/dp_top_cones_1108_232611",
+  "function_table_sha256": "c5bdfccef17f3786e4061db49d61021c76b873c4c1983ffb86738206f2d01549",
+  "boundary_proofs_sha256": "af6ab47c76e3ad6ab660e7fc3788faac304a72db9ddf6cf1d1d08b465dd43e85",
+  "cell_assignment_sha256": "83a273943708bc2fc66af0bfee842614156e27a482c8696bed4b063f3db73908",
+  "original_sources_sha256": "2e283669b65bcbb386c12ea97199518fbecfbf6c6a3fc4e820ce0360916974eb",
+  "pair_sum_recovered_bits": 264,
+  "methodology": "1024 deterministic random patterns select candidates; every accepted node/inversion is proved with Z3 (unsat miter). Constant targets excluded.",
+  "sat_proven_bits": 1473,
+  "overlap_cells": 0,
+  "policy": "Eight exclusive categories; registers follow stored producer function; ICG in control.",
+  "limitation": "Unrecovered or fused arithmetic and format selection remain explicitly in control/shared; no proportional allocation.",
+  "scripts_sha256": {
+    "reclassify_functional_area.py": "3ef4a69bc658559559cac1d81c16b3fc1c371e8ebe8b8c529763b1368b102b2b",
+    "functional_cones.py": "c5c287f6247dabdda3ed76c46ebece91d0bd9419b720022cc21833f94734aad2",
+    "export_functional_cones.tcl": "dca6fa7e8c08b81ca9e2eec09481567b8f7e75a84689674f51d1b921b2c544d3",
+    "summarize_functional_power.py": "2d641e037e912484f4937b6d756b71b1b7531ead6067bc11596ea61fa459e16f"
+  }
+}
