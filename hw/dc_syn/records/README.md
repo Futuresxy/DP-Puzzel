@@ -33,3 +33,5 @@ python3.11 hw/dc_syn/scripts/compare_mixed.py \
 ```
 
 比较 JSON 逐设计记录源检查点关联的 export/verification、容量、面积变化、setup/hold、各级关键路径、ICG 数量及寄存器门控比例。Q/E 容量除以面积的相对值只表示该模式原生 K 的面积效率；不能作为负载功耗或芯片吞吐测量。修复源运行由最终运行引用，清理时一并保护。
+
+QE 首轮优化见 [最终 1GHz / 面积比较](qe_area_opt_n12_1000mhz_20261108.md)：固定字段解包、S1 配对摘要与扩展源浮点选择；最终 28191.89 µm²，相对基础 DP +66.53%，setup/hold/VT/电气规则通过。用户接受本轮约66%增幅。[初次 run](qe_area_opt_n12_1000mhz_initial_20261108.md)保留 hold 失败及修复来源；比较脚本为 `scripts/compare_qe_area.py`，历史输入按冻结快照/原回执核验，新输入按当前完整门禁核验。

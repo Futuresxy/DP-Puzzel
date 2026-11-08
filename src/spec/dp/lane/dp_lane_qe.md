@@ -1,4 +1,4 @@
-> 功能：定义 Q4E8 专用 lane 的计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.3；修改时间：2026-11-08 07:35:46 +0800；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；[dp_lane_qe.v](../../../verilog/lane/dp_lane_qe.v)、[dp_qe_product_bank.v](../../../verilog/lane/dp_qe_product_bank.v)；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
+> 功能：定义 Q4E8 专用 lane 的计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.3；修改时间：2026-11-08 08:08:47 +0800；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；[dp_lane_qe.v](../../../verilog/lane/dp_lane_qe.v)、[dp_qe_product_bank.v](../../../verilog/lane/dp_qe_product_bank.v)；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
 
 # Q4E8 专用 lane 设计与优化
 
@@ -83,8 +83,8 @@ Q 的 W8 幅值低补 `LOCAL_W-8` 位后进入局部 RTZ。E pair 的 W10 TC 先
 
 | 优先级 / 状态 | 修改方向 | 等价条件与验收 |
 | --- | --- | --- |
-| 首轮已实现/功能通过；PPA 待测 | 按四种 Q 编码固定切片、固定偏置校正，再选择 M4/E5；E 直接产生 M4 与必要 e2。替换通用解包中的运行时字段宽度、32 位掩码和移位表达式 | 编码、非正规、E4M3 NaN、E5M2 Inf/sNaN、符号和 FP6 高六位布局全部不变；逐编码验证有效字段。源码较窄不等于综合网表面积已下降 |
-| 首轮已实现/功能通过；S1 时序待测 | 在 S1 寄存前做 A/B 配对分类、符号 XOR 和摘要归约；保存乘积符号、有限非零活动位、特殊摘要及 all_negative，减少 A/B 各自分类/符号寄存与后续选择 | 保留每槽数值活动信息；特殊摘要包含 NaN、invalid、正/负 Inf；0×Inf 和 sNaN 规则不变。原始乘积符号必须包含零项，不能由求和符号重建；Q 的未使用槽不参与归约 |
+| 首轮功能/1GHz 综合通过 | 按四种 Q 编码固定切片、固定偏置校正，再选择 M4/E5；E 直接产生 M4 与必要 e2。替换通用解包中的运行时字段宽度、32 位掩码和移位表达式 | 编码、非正规、E4M3 NaN、E5M2 Inf/sNaN、符号和 FP6 高六位布局全部不变；逐编码验证有效字段。源码较窄不等于综合网表面积已下降 |
+| 首轮功能/1GHz 综合通过 | 在 S1 寄存前做 A/B 配对分类、符号 XOR 和摘要归约；保存乘积符号、有限非零活动位、特殊摘要及 all_negative，减少 A/B 各自分类/符号寄存与后续选择 | 保留每槽数值活动信息；特殊摘要包含 NaN、invalid、正/负 Inf；0×Inf 和 sNaN 规则不变。原始乘积符号必须包含零项，不能由求和符号重建；Q 的未使用槽不参与归约 |
 | 优先检查；收益待网表确认 | Q 只保存四个不同的 U6 指数；E 的共同 e2 和只保存一次，MX/NV 使用常量零；消费端按格式恢复 | 不减小 Q 指数范围；先检查 DC 是否已合并相同寄存位，不能按 RTL 总线声明重复估算节省 |
 | 后续候选；需内部切点与时序验证 | S3 对齐后先做两路 pair，加法完整增长；S3 保存 2×(LOCAL_W+2)，S4 再求总和 | 只能在原四叶各自 RTZ 后求和，不能先合并再截断；S3 从默认 4×29=116 位变为 2×30=60 位，逻辑数据位减少 56/lane，八 lane 为 448 位。S3 多一层加法，当前余量很小，未通过 1GHz 不采用 |
 
@@ -99,3 +99,5 @@ Q/E 的局部对齐仍需四条物理路径；只裁掉不可能的格式选择�
 S1 的摘要寄存位置改变，但 S2 捕获的乘积/指数/分类与原实现一致，S3 四叶和 S4 树保持。本轮没有前移 S3 pair、缩减乘积/移位窗口，或改变指数 bank。CModel 的优化 profile 映射到原 MixedQE128 数值模型；模型的数值 trace 是对照基准，不声称逐位描述优化版 S1 的物理寄存布局。
 
 新旧 unpack 对照 TB 为 [dp_qe_unpack_equivalence_tb.v](../../../../test/rtl_tb/dp_qe_unpack_equivalence_tb.v)：Q 全编码对、E 全编码/元数据及随机换型/保持共 319488 次，通过。整 DP 与 DC 的独立验收以本轮结果报告为准，解包对照本身不授予 PPA 资格。
+
+首轮同工况综合及独立 hold 修复已通过，见 [最终比较](../../../../hw/dc_syn/records/qe_area_opt_n12_1000mhz_20261108.md)。八条 QE lane 的解包层合计由 2453.23 降至 1874.39 µm²；这是固定解码与 S1 摘要共同实施后的层级结果，不分别声称两项各自节省多少。S2–S4 数值与位宽保持原合同。

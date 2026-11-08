@@ -1,0 +1,632 @@
+{
+  "records": {
+    "baseline": {
+      "purpose": "Repair remaining baseline hold path with 1ps temporary guardband; unchanged final 1GHz constraints",
+      "time": "2026-11-08T00:44:11+08:00",
+      "technology": {
+        "schema_version": 1,
+        "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+        "process": "TSMC CLN12FFCLL",
+        "pvt": {
+          "corner": "TT",
+          "voltage_v": 0.7,
+          "temperature_c": 85
+        },
+        "target_libraries": [
+          "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"
+        ],
+        "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "operating_condition": "tt0p7v85c",
+        "wire_load_model": "ZeroWireload",
+        "area_unit": "um2",
+        "multi_vt": {
+          "base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c",
+          "max_lvt_percent": 20.0
+        },
+        "library_release": "120a (Liberty revision 120)",
+        "standard_cell_type": "BWP6T16P96CPD, 6-track standard cells",
+        "time_unit": "ns",
+        "capacitance_unit": "pF",
+        "area_unit_evidence": "Liberty area cross-checked against matching 120a LEF cell SIZE product (micrometres squared)",
+        "corner_basis": "Existing project N12 TT setup analysis profile; not worst-corner or multi-corner signoff"
+      },
+      "export_id": "DP_verilog_094a23e8843f8ee1",
+      "rtl_fingerprint": "d7c3249801db0c73c3109f674d9a412255230aa8b39897b0330223d11bbf10bd",
+      "parameters": {
+        "K_FP16": 16,
+        "LOCAL_W": 28,
+        "GLOBAL_W": 40
+      },
+      "multi_vt": {
+        "max_cell_percent": 20.0,
+        "measured_nonblackbox_cell_percent": 16.95,
+        "measured_all_cell_percent": 16.94,
+        "status": "PASS"
+      },
+      "hold_repair": {
+        "source_run": "dc_dp_top_11080022",
+        "guardband_ns": 0.001
+      },
+      "timing_repair": null,
+      "design_rule_repair": null,
+      "electrical_violations": [],
+      "critical_setup_path": {
+        "startpoint": "g_group_3__u_group_unit/g_lane_1__u_lane/ff_s0_s1_type_s1_ff_storage_out_q_reg_0_",
+        "endpoint": "g_group_3__u_group_unit/g_lane_1__u_lane/ff_s1_s2_products_ff_storage_out_q_reg_38_",
+        "path_group": "clock",
+        "arrival_ns": 0.996072173,
+        "required_ns": 0.996073067,
+        "slack_ns": 8.94e-07
+      },
+      "stage_setup_paths": {
+        "S1": {
+          "startpoint": "in_a_datatype[2]",
+          "endpoint": "g_group_1__u_group_unit/g_lane_1__u_lane/u_lane_unpack/u_operand_a/g_atom_1__ff_s0_s1_classes_ff_storage_out_q_reg_0_",
+          "path_group": "clock",
+          "arrival_ns": 1.000658154,
+          "required_ns": 1.000665069,
+          "slack_ns": 6.914e-06
+        },
+        "S2": {
+          "startpoint": "g_group_3__u_group_unit/g_lane_1__u_lane/ff_s0_s1_type_s1_ff_storage_out_q_reg_0_",
+          "endpoint": "g_group_3__u_group_unit/g_lane_1__u_lane/ff_s1_s2_products_ff_storage_out_q_reg_38_",
+          "path_group": "clock",
+          "arrival_ns": 0.996072173,
+          "required_ns": 0.996073067,
+          "slack_ns": 8.94e-07
+        },
+        "S3": {
+          "startpoint": "g_group_1__u_group_unit/g_lane_0__u_lane/ff_s1_s2_products_ff_storage_out_q_reg_67_",
+          "endpoint": "g_group_1__u_group_unit/g_lane_0__u_lane/ff_s2_s3_leaves_ff_storage_out_q_reg_44_",
+          "path_group": "clock",
+          "arrival_ns": 1.003212094,
+          "required_ns": 1.003244519,
+          "slack_ns": 3.2425e-05
+        },
+        "S4": {
+          "startpoint": "g_group_0__u_group_unit/g_lane_0__u_lane/ff_s2_s3_leaves_ff_storage_out_q_reg_90_",
+          "endpoint": "g_group_0__u_group_unit/g_lane_0__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_29_",
+          "path_group": "clock",
+          "arrival_ns": 1.001281142,
+          "required_ns": 1.001309037,
+          "slack_ns": 2.7895e-05
+        },
+        "S5": {
+          "startpoint": "g_group_2__u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_6_",
+          "endpoint": "g_group_2__u_group_unit/ff_s4_s5_out_z_ff_storage_out_q_reg_0_",
+          "path_group": "clock",
+          "arrival_ns": 1.004577756,
+          "required_ns": 1.004601955,
+          "slack_ns": 2.4199e-05
+        },
+        "S6": {
+          "startpoint": "g_group_0__u_group_unit/ff_s4_s5_out_magnitude_ff_storage_out_q_reg_17_",
+          "endpoint": "ff_s5_s6_leaves_ff_storage_out_q_reg_111_",
+          "path_group": "clock",
+          "arrival_ns": 1.002545953,
+          "required_ns": 1.002548218,
+          "slack_ns": 2.265e-06
+        },
+        "S7": {
+          "startpoint": "ff_s5_s6_leaves_ff_storage_out_q_reg_54_",
+          "endpoint": "ff_s6_s7_sum_ff_storage_out_q_reg_42_",
+          "path_group": "clock",
+          "arrival_ns": 1.002625465,
+          "required_ns": 1.002858043,
+          "slack_ns": 0.000232577
+        },
+        "S8": {
+          "startpoint": "ff_s6_s7_c_datatype_ff_storage_out_q_reg_0_",
+          "endpoint": "ff_s7_s8_out_d_ff_storage_out_q_reg_26_",
+          "path_group": "clock",
+          "arrival_ns": 1.002776027,
+          "required_ns": 1.002794385,
+          "slack_ns": 1.8358e-05
+        }
+      },
+      "source_files": [
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_dff_en.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_dff_sync_reset.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_lib_DFFE.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_lib_DFFRE.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_lib_DFFRU.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_lib_DFFSE.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_lib_DFFSU.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_lib_DFFU.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_lib_bin2onehot.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_lib_onehot2bin.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/common/dp_lib_onehot_mux.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/arithmetic/dp_bidir_shift.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/arithmetic/dp_exponent_add.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/arithmetic/dp_fp32_round.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/arithmetic/dp_lzd.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/arithmetic/dp_max_tree.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/arithmetic/dp_mul_unsigned.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/arithmetic/dp_rtz_shift.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/arithmetic/dp_scale_multiply.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/arithmetic/dp_sum_tree.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/group/dp_group.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/lane/dp_exponent_bank.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/lane/dp_lane_align.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/lane/dp_lane.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/lane/dp_mantissa_bank.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/top/dp_global_align.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/top/dp_top.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/unpack/dp_c_unpack.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/unpack/dp_lane_operand_unpack.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/unpack/dp_lane_unpack.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/unpack/dp_operand_unpack.v",
+        "hw/rtl/DP_verilog_094a23e8843f8ee1/src/src/verilog/unpack/dp_scale_unpack.v"
+      ],
+      "run": "hw/dc_syn/runs/dc_dp_top_11080044",
+      "dc_version": "X-2025.06",
+      "frequency_mhz": 1000.0,
+      "clock_gating": true,
+      "result": {
+        "synthesis_valid": true,
+        "total_area_um2": 16929.312873,
+        "combinational_area_um2": 13132.136627,
+        "sequential_area_um2": 3797.176246,
+        "setup": "PASS",
+        "hold": "PASS",
+        "flow_pass": true,
+        "setup_wns_ns": 0.0,
+        "setup_tns_ns": 0.0,
+        "setup_violating_paths": 0,
+        "setup_slack_ns": 8.94e-07,
+        "hold_slack_ns": 0.001063913
+      },
+      "top": "dp_top",
+      "verification_id": "20261107T155940228035Z",
+      "evidence_scope": "archived_snapshot_and_original_receipt",
+      "clock_gating_measurement": {
+        "gating_elements": 76,
+        "gated_registers": 5563,
+        "total_registers": 5639,
+        "gated_percent": 98.65
+      },
+      "hierarchy_area_um2": {
+        "base_groups": 14816.932,
+        "qe_groups": 0,
+        "global_alignment": 1044.2834,
+        "qe_unpack": 0,
+        "qe_local_alignment": 0,
+        "qe_product_bank": 0,
+        "qe_lane_tree": 0,
+        "qe_sequential": 0
+      },
+      "area_delta_percent": 0.0
+    },
+    "reference": {
+      "purpose": "Q64E128 verified same-function inverter drive sizing for one max-capacitance violation; recheck full 1GHz setup/hold/electrical/VT",
+      "time": "2026-11-08T01:47:24+08:00",
+      "technology": {
+        "schema_version": 1,
+        "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+        "process": "TSMC CLN12FFCLL",
+        "pvt": {
+          "corner": "TT",
+          "voltage_v": 0.7,
+          "temperature_c": 85
+        },
+        "target_libraries": [
+          "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"
+        ],
+        "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "operating_condition": "tt0p7v85c",
+        "wire_load_model": "ZeroWireload",
+        "area_unit": "um2",
+        "multi_vt": {
+          "base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c",
+          "max_lvt_percent": 20.0
+        },
+        "library_release": "120a (Liberty revision 120)",
+        "standard_cell_type": "BWP6T16P96CPD, 6-track standard cells",
+        "time_unit": "ns",
+        "capacitance_unit": "pF",
+        "area_unit_evidence": "Liberty area cross-checked against matching 120a LEF cell SIZE product (micrometres squared)",
+        "corner_basis": "Existing project N12 TT setup analysis profile; not worst-corner or multi-corner signoff"
+      },
+      "export_id": "DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2",
+      "rtl_fingerprint": "c80aa69544ce309cb7324a1ed9a013c70420b9a19b2f64c9900ae35001d00972",
+      "parameters": {
+        "K_FP16": 16,
+        "LOCAL_W": 28,
+        "GLOBAL_W": 40
+      },
+      "multi_vt": {
+        "max_cell_percent": 20.0,
+        "measured_nonblackbox_cell_percent": 19.88,
+        "measured_all_cell_percent": 19.86,
+        "status": "PASS"
+      },
+      "hold_repair": null,
+      "timing_repair": null,
+      "design_rule_repair": {
+        "source_run": "dc_dp_top_t8h16q64e128_11080110",
+        "resize_inverters": [
+          [
+            "u_core/u_global_alignment/U987",
+            "INVD1BWP6T16P96CPD",
+            "INVD2BWP6T16P96CPD"
+          ]
+        ]
+      },
+      "electrical_violations": [],
+      "critical_setup_path": {
+        "startpoint": "in_a_datatype[2]",
+        "endpoint": "u_core/g_group_1__g_base_u_group_unit/g_lane_0__u_lane/u_lane_unpack/u_operand_b/g_atom_1__ff_s0_s1_classes_ff_storage_out_q_reg_0_",
+        "path_group": "clock",
+        "arrival_ns": 0.989624619,
+        "required_ns": 0.989662766,
+        "slack_ns": 3.8147e-05
+      },
+      "stage_setup_paths": {
+        "S1": {
+          "startpoint": "in_a_datatype[2]",
+          "endpoint": "u_core/g_group_1__g_base_u_group_unit/g_lane_0__u_lane/u_lane_unpack/u_operand_b/g_atom_1__ff_s0_s1_classes_ff_storage_out_q_reg_0_",
+          "path_group": "clock",
+          "arrival_ns": 0.989624619,
+          "required_ns": 0.989662766,
+          "slack_ns": 3.8147e-05
+        },
+        "S2": {
+          "startpoint": "u_core/g_group_2__g_base_u_group_unit/g_lane_0__u_lane/ff_s0_s1_type_s1_ff_storage_out_q_reg_3_",
+          "endpoint": "u_core/g_group_2__g_base_u_group_unit/g_lane_0__u_lane/ff_s1_s2_products_ff_storage_out_q_reg_42_",
+          "path_group": "clock",
+          "arrival_ns": 0.990703881,
+          "required_ns": 0.991473854,
+          "slack_ns": 0.000769973
+        },
+        "S3": {
+          "startpoint": "u_core/g_group_6__g_qe_u_group_unit/g_lane_1__u_lane/ff_s1_s2_type_s2_ff_storage_out_q_reg_3_",
+          "endpoint": "u_core/g_group_6__g_qe_u_group_unit/g_lane_1__u_lane/ff_s2_s3_leaves_ff_storage_out_q_reg_75_",
+          "path_group": "clock",
+          "arrival_ns": 0.991373539,
+          "required_ns": 0.991425216,
+          "slack_ns": 5.1677e-05
+        },
+        "S4": {
+          "startpoint": "u_core/g_group_1__g_base_u_group_unit/g_lane_0__u_lane/ff_s2_s3_leaves_ff_storage_out_q_reg_87_",
+          "endpoint": "u_core/g_group_1__g_base_u_group_unit/g_lane_0__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_30_",
+          "path_group": "clock",
+          "arrival_ns": 0.979138613,
+          "required_ns": 0.991445601,
+          "slack_ns": 0.012306988
+        },
+        "S5": {
+          "startpoint": "u_core/g_group_7__g_qe_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_3_",
+          "endpoint": "u_core/g_group_7__g_qe_u_group_unit/ff_s4_s5_out_z_ff_storage_out_q_reg_1_",
+          "path_group": "clock",
+          "arrival_ns": 1.002210021,
+          "required_ns": 1.002346873,
+          "slack_ns": 0.000136852
+        },
+        "S6": {
+          "startpoint": "u_core/ff_s4_s5_c_datatype_ff_storage_out_q_reg_0_",
+          "endpoint": "u_core/ff_s5_s6_leaves_ff_storage_out_q_reg_355_",
+          "path_group": "clock",
+          "arrival_ns": 1.005081892,
+          "required_ns": 1.005315185,
+          "slack_ns": 0.000233293
+        },
+        "S7": {
+          "startpoint": "u_core/ff_s5_s6_leaves_ff_storage_out_q_reg_120_",
+          "endpoint": "u_core/ff_s6_s7_sum_ff_storage_out_q_reg_42_",
+          "path_group": "clock",
+          "arrival_ns": 0.9851529,
+          "required_ns": 0.992628574,
+          "slack_ns": 0.007475674
+        },
+        "S8": {
+          "startpoint": "u_core/ff_s6_s7_c_datatype_ff_storage_out_q_reg_0_",
+          "endpoint": "u_core/ff_s7_s8_out_d_ff_storage_out_q_reg_26_",
+          "path_group": "clock",
+          "arrival_ns": 0.996922612,
+          "required_ns": 1.004906893,
+          "slack_ns": 0.007984281
+        }
+      },
+      "source_files": [
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_dff_en.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_dff_sync_reset.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_lib_DFFE.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_lib_DFFRE.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_lib_DFFRU.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_lib_DFFSE.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_lib_DFFSU.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_lib_DFFU.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_lib_bin2onehot.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_lib_onehot2bin.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/common/dp_lib_onehot_mux.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/arithmetic/dp_bidir_shift.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/arithmetic/dp_exponent_add.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/arithmetic/dp_fp32_round.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/arithmetic/dp_lzd.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/arithmetic/dp_max_tree.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/arithmetic/dp_mul_unsigned.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/arithmetic/dp_rtz_shift.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/arithmetic/dp_scale_multiply.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/arithmetic/dp_sum_tree.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/group/dp_group.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/lane/dp_exponent_bank.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/lane/dp_lane_align.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/lane/dp_lane.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/lane/dp_mantissa_bank.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/top/dp_global_align.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/unpack/dp_c_unpack.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/unpack/dp_lane_operand_unpack.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/unpack/dp_lane_unpack.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/unpack/dp_operand_unpack.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/unpack/dp_scale_unpack.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/lane/dp_lane_e_shift.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/lane/dp_lane_e.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/group/dp_group_e.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/unpack/dp_lane_unpack_e.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/lane/dp_qe_product_bank.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/lane/dp_lane_qe.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/group/dp_group_qe.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/top/dp_mixed_global_align.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/top/dp_top_mixed.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src/src/verilog/top/dp_top_t8h16q64e128.v"
+      ],
+      "run": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_11080147",
+      "dc_version": "X-2025.06",
+      "frequency_mhz": 1000.0,
+      "clock_gating": true,
+      "result": {
+        "synthesis_valid": true,
+        "total_area_um2": 30580.900027,
+        "combinational_area_um2": 23551.820032,
+        "sequential_area_um2": 7029.079994,
+        "setup": "PASS",
+        "hold": "PASS",
+        "flow_pass": true,
+        "setup_wns_ns": 0.0,
+        "setup_tns_ns": 0.0,
+        "setup_violating_paths": 0,
+        "setup_slack_ns": 3.8147e-05,
+        "hold_slack_ns": 0.001051381
+      },
+      "top": "dp_top_t8h16q64e128",
+      "verification_id": "20261107T155749808687Z",
+      "evidence_scope": "archived_snapshot_and_original_receipt",
+      "clock_gating_measurement": {
+        "gating_elements": 144,
+        "gated_registers": 9972,
+        "total_registers": 10106,
+        "gated_percent": 98.67
+      },
+      "hierarchy_area_um2": {
+        "base_groups": 15410.5531,
+        "qe_groups": 10240.0082,
+        "global_alignment": 3356.8727,
+        "qe_unpack": 2453.2256,
+        "qe_local_alignment": 2779.3981000000003,
+        "qe_product_bank": 854.6179999999999,
+        "qe_lane_tree": 714.9035,
+        "qe_sequential": 2960.6944000000026
+      },
+      "area_delta_percent": 80.63875513679272
+    },
+    "optimized": {
+      "purpose": "QE area round 1 hold closure: repair initial -7.49ps hold, restore identical 1GHz final constraints, no RTL change",
+      "time": "2026-11-08T08:04:03+08:00",
+      "technology": {
+        "schema_version": 1,
+        "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+        "process": "TSMC CLN12FFCLL",
+        "pvt": {
+          "corner": "TT",
+          "voltage_v": 0.7,
+          "temperature_c": 85
+        },
+        "target_libraries": [
+          "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"
+        ],
+        "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "operating_condition": "tt0p7v85c",
+        "wire_load_model": "ZeroWireload",
+        "area_unit": "um2",
+        "multi_vt": {
+          "base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c",
+          "max_lvt_percent": 20.0
+        },
+        "library_release": "120a (Liberty revision 120)",
+        "standard_cell_type": "BWP6T16P96CPD, 6-track standard cells",
+        "time_unit": "ns",
+        "capacitance_unit": "pF",
+        "area_unit_evidence": "Liberty area cross-checked against matching 120a LEF cell SIZE product (micrometres squared)",
+        "corner_basis": "Existing project N12 TT setup analysis profile; not worst-corner or multi-corner signoff"
+      },
+      "export_id": "DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69",
+      "rtl_fingerprint": "dfa6ab77cb9a96f48507a10b10ac7e4807c76f3f02972d9fe774975329dd301f",
+      "parameters": {
+        "K_FP16": 16,
+        "LOCAL_W": 28,
+        "GLOBAL_W": 40
+      },
+      "multi_vt": {
+        "max_cell_percent": 20.0,
+        "measured_nonblackbox_cell_percent": 17.1,
+        "measured_all_cell_percent": 17.08,
+        "status": "PASS"
+      },
+      "hold_repair": {
+        "source_run": "dc_dp_top_t8h16q64e128_opt_11080736",
+        "guardband_ns": 0.001
+      },
+      "timing_repair": null,
+      "design_rule_repair": null,
+      "electrical_violations": [],
+      "critical_setup_path": {
+        "startpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_1__u_lane/ff_s2_s3_leaves_ff_storage_out_q_reg_90_",
+        "endpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_28_",
+        "path_group": "clock",
+        "arrival_ns": 1.002888441,
+        "required_ns": 1.002889633,
+        "slack_ns": 1.192e-06
+      },
+      "stage_setup_paths": {
+        "S1": {
+          "startpoint": "in_a_datatype[2]",
+          "endpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_0__u_lane/u_lane_unpack/u_operand_b/g_atom_1__ff_s0_s1_classes_ff_storage_out_q_reg_0_",
+          "path_group": "clock",
+          "arrival_ns": 1.001130819,
+          "required_ns": 1.00158453,
+          "slack_ns": 0.000453711
+        },
+        "S2": {
+          "startpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_0__u_lane/ff_s0_s1_type_s1_ff_storage_out_q_reg_2_",
+          "endpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_0__u_lane/ff_s1_s2_products_ff_storage_out_q_reg_43_",
+          "path_group": "clock",
+          "arrival_ns": 1.001562953,
+          "required_ns": 1.001569748,
+          "slack_ns": 6.795e-06
+        },
+        "S3": {
+          "startpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_0__u_lane/ff_s1_s2_products_ff_storage_out_q_reg_24_",
+          "endpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_0__u_lane/ff_s2_s3_leaves_ff_storage_out_q_reg_21_",
+          "path_group": "clock",
+          "arrival_ns": 1.00241518,
+          "required_ns": 1.00241673,
+          "slack_ns": 1.55e-06
+        },
+        "S4": {
+          "startpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_1__u_lane/ff_s2_s3_leaves_ff_storage_out_q_reg_90_",
+          "endpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_28_",
+          "path_group": "clock",
+          "arrival_ns": 1.002888441,
+          "required_ns": 1.002889633,
+          "slack_ns": 1.192e-06
+        },
+        "S5": {
+          "startpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_0__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_1_",
+          "endpoint": "u_core/g_group_0__g_base_u_group_unit/ff_s4_s5_out_z_ff_storage_out_q_reg_1_",
+          "path_group": "clock",
+          "arrival_ns": 1.002540708,
+          "required_ns": 1.002580762,
+          "slack_ns": 4.0054e-05
+        },
+        "S6": {
+          "startpoint": "u_core/ff_s4_s5_c_datatype_ff_storage_out_q_reg_0_",
+          "endpoint": "u_core/ff_s5_s6_leaves_ff_storage_out_q_reg_152_",
+          "path_group": "clock",
+          "arrival_ns": 1.001169801,
+          "required_ns": 1.001276016,
+          "slack_ns": 0.000106215
+        },
+        "S7": {
+          "startpoint": "u_core/ff_s5_s6_extension_ff_storage_out_q_reg_0_",
+          "endpoint": "u_core/ff_s6_s7_sum_ff_storage_out_q_reg_42_",
+          "path_group": "clock",
+          "arrival_ns": 1.00507772,
+          "required_ns": 1.005091548,
+          "slack_ns": 1.3828e-05
+        },
+        "S8": {
+          "startpoint": "u_core/ff_s6_s7_sum_ff_storage_out_q_reg_31_",
+          "endpoint": "u_core/ff_s7_s8_out_d_ff_storage_out_q_reg_20_",
+          "path_group": "clock",
+          "arrival_ns": 1.003735185,
+          "required_ns": 1.003810525,
+          "slack_ns": 7.534e-05
+        }
+      },
+      "source_files": [
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_dff_en.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_dff_sync_reset.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_lib_DFFE.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_lib_DFFRE.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_lib_DFFRU.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_lib_DFFSE.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_lib_DFFSU.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_lib_DFFU.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_lib_bin2onehot.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_lib_onehot2bin.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/common/dp_lib_onehot_mux.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/arithmetic/dp_bidir_shift.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/arithmetic/dp_exponent_add.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/arithmetic/dp_fp32_round.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/arithmetic/dp_lzd.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/arithmetic/dp_max_tree.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/arithmetic/dp_mul_unsigned.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/arithmetic/dp_rtz_shift.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/arithmetic/dp_scale_multiply.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/arithmetic/dp_sum_tree.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/group/dp_group.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/lane/dp_exponent_bank.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/lane/dp_lane_align.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/lane/dp_lane.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/lane/dp_mantissa_bank.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/top/dp_global_align.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/unpack/dp_c_unpack.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/unpack/dp_lane_operand_unpack.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/unpack/dp_lane_unpack.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/unpack/dp_operand_unpack.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/unpack/dp_operand_unpack_qe.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/unpack/dp_lane_unpack_qe.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/unpack/dp_scale_unpack.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/lane/dp_lane_e_shift.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/lane/dp_lane_e.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/group/dp_group_e.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/unpack/dp_lane_unpack_e.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/lane/dp_qe_product_bank.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/lane/dp_lane_qe.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/group/dp_group_qe.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/top/dp_mixed_global_align.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/top/dp_top_mixed.v",
+        "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69/src/src/verilog/top/dp_top_t8h16q64e128_opt.v"
+      ],
+      "run": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11080804",
+      "dc_version": "X-2025.06",
+      "frequency_mhz": 1000.0,
+      "clock_gating": true,
+      "result": {
+        "synthesis_valid": true,
+        "total_area_um2": 28191.891622,
+        "combinational_area_um2": 21544.317213,
+        "sequential_area_um2": 6647.574408,
+        "setup": "PASS",
+        "hold": "PASS",
+        "flow_pass": true,
+        "setup_wns_ns": 0.0,
+        "setup_tns_ns": 0.0,
+        "setup_violating_paths": 0,
+        "setup_slack_ns": 1.192e-06,
+        "hold_slack_ns": 0.001019686
+      },
+      "top": "dp_top_t8h16q64e128_opt",
+      "verification_id": "20261107T233427568086Z",
+      "evidence_scope": "fresh_gate",
+      "clock_gating_measurement": {
+        "gating_elements": 136,
+        "gated_registers": 9692,
+        "total_registers": 9826,
+        "gated_percent": 98.64
+      },
+      "hierarchy_area_um2": {
+        "base_groups": 14820.876400000001,
+        "qe_groups": 9385.8324,
+        "global_alignment": 2550.5096,
+        "qe_unpack": 1874.3870000000002,
+        "qe_local_alignment": 2681.7087,
+        "qe_product_bank": 822.1778,
+        "qe_lane_tree": 681.2836,
+        "qe_sequential": 2714.000000000002
+      },
+      "area_delta_percent": 66.52708726862929
+    }
+  },
+  "saved_vs_reference_um2": 2389.0084050000005,
+  "saved_vs_reference_percent": 7.812093178718527,
+  "target_65_area_um2": 27933.366240449996,
+  "excess_over_65_target_um2": 258.52538155000366,
+  "target_65_met": false
+}
