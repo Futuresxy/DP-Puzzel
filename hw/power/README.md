@@ -15,6 +15,8 @@
 
 已完成批次 [power_qwen8b_six_1108](records/power_qwen8b_six_1108.md)：六种架构、15个兼容格式点全部通过。静态/动态及内部/开关功耗、总功耗、pJ/MAC和活动审计同时保存在 [JSON](records/power_qwen8b_six_1108.json) 与 [CSV](records/power_qwen8b_six_1108.csv)。原生SAIF、门级输出及原始报告在本地 `runs/power_qwen8b_six_1108/`；该报告引用保护运行及其六份DC输入。
 
+新增 [dp_top 精度寄存器门控比较](records/precision_register_gating_1108.md)：保持共享算术和 L8/II=1，S1–S3 分段使能。在同源负载下 MXFP4 动态功耗降低19.97%，面积增加5.04%；BF16/E4M3 的动态功耗分别降低5.61%/2.33%。新旧网表分别绑定自己的SAIF；原六架构测量仍作为历史比较基线。
+
 ## 执行
 
 先按 [固定依赖](../../dependencies/petile-power.json) 获取MIT解析与审计模块（只提取4个文件，不复制参考工程）：

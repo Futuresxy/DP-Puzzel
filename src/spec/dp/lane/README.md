@@ -1,4 +1,4 @@
-> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.7.2；修改时间：2026-11-08 14:30:18 +0800；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
+> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.7.2；修改时间：2026-11-08 14:51:24 +0800；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
 
 # lane：解包、元素乘法与局部规约
 
@@ -43,3 +43,5 @@
 - 统一 DFFE 描述使能，由 DC 的标准 ICG 流程映射；禁止组合门直接切时钟。验收包括全精度/参数回归、所有格式有序切换、HiF4 metadata 和零/特殊值边界、门级一致性、时序及原生 SAIF 的实际关闭时钟统计。
 
 补充验证入口：`python3 test/run_precision_gating.py --export-id <已验证快照>`。它不取代 `test/run_verilog.py --phase all` 的 PPA 门禁。
+
+当前实现已通过全量/精度切换/四态验证及1GHz综合，实测结果见[精度寄存器门控功耗比较](../../../../hw/power/records/precision_register_gating_1108.md)。数值合同不变；测量结论只适用于记录的工况和负载。

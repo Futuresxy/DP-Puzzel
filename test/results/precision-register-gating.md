@@ -15,3 +15,5 @@ S1 保留 ZERO/FINITE 分类低位，关闭 E 不需要的指数高位/特殊值
 功能验证不等于综合时序或功耗证据；后端结果单独记录。
 
 四态补充：`test/runs/verilog/precision_gating_four_state_1108/result.json`，Icarus Verilog 从复位后首先进入 E 模式，混合 E/FP16/BF16/E4M3/INT8，195 笔输出与断点通过，15 笔被复位取消；检查初始未更新寄存器中的 X 不污染有效结果。脚本与命令留在该运行目录。
+
+后端已完成：[1GHz综合](../../hw/dc_syn/records/precision_register_gating_1108.md)、[三格式同负载功耗](../../hw/power/records/precision_register_gating_1108.md)。RTL、DC和功耗分别有独立证据。
