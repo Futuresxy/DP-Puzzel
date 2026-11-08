@@ -1,4 +1,4 @@
-> 功能：四组低精度独立 DP 装配；范围：E64、Q32E64 顶层与共用五源后端；版本：v1.7.4；修改时间：2026-11-08 09:03:06 +0800；对应代码：src/verilog/top/dp_top_lowp.v、dp_top_e64.v、dp_top_q32e64.v（已实现），src/cmodel/lib/json_io.cpp、现有 E/QE group 与 top/backend.cpp；Chisel 未实现。
+> 功能：四组低精度独立 DP 装配；范围：E64、Q32E64 顶层与共用五源后端；版本：v1.7.6；修改时间：2026-11-08 09:27:17 +0800；对应代码：src/verilog/top/common/dp_top_lowp.v、dp_top_e64.v、dp_top_q32e64.v（已实现），src/cmodel/lib/json_io.cpp、现有 E/QE group 与 top/backend.cpp；Chisel 未实现。
 
 # 四组低精度 DP
 

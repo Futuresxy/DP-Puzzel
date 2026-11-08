@@ -18,8 +18,8 @@ CONFIGS = ((4,27,40), (8,27,40), DEFAULT_SCOPE, (4,28,48), (8,32,64), (16,32,64)
 
 LOWP_PROFILES = ('e64', 'q32e64')
 # Retired wrappers remain only in frozen snapshots/Git, never in new exports.
-RETIRED_PROFILES = ('t8h16q32e128', 't8h16q64e128')
-MIXED_PROFILES = ('t8h16q32e96', 't8h16q64e128_opt')
+RETIRED_PROFILES = ('t8h16q64e128',)
+MIXED_PROFILES = ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128_opt')
 MIXED_CONFIGS = ((16,27,40), DEFAULT_SCOPE, (16,32,64))
 
 def frontend_top(frontend):

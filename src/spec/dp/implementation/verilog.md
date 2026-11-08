@@ -1,4 +1,4 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.7.4；修改时间：2026-11-08 09:03:06 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.7.6；修改时间：2026-11-08 09:27:17 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
 
 # 单 DP 手写 RTL 实现合同
 
@@ -27,7 +27,7 @@
 | SOP 规约 | [dp_sum_tree.v](../../../verilog/arithmetic/dp_sum_tree.v) | 组合；lane/group/top 三个层级分别注册 |
 | scale 注入 | [dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v) | 组合；公共 14×8 无符号，输出 22 位幅值 |
 | LZD | [dp_lzd.v](../../../verilog/arithmetic/dp_lzd.v) | 组合；S5 group/C、S8 output 独立实例 |
-| 全局对齐 | [dp_global_align.v](../../../verilog/top/dp_global_align.v) | 组合；MAX、net、符号恢复归入本模块 |
+| 全局对齐 | [dp_global_align.v](../../../verilog/top/common/dp_global_align.v) | 组合；MAX、net、符号恢复归入本模块 |
 | 双向幅值移位 | [dp_bidir_shift.v](../../../verilog/arithmetic/dp_bidir_shift.v) | 组合；方向 bit reversal + 一个右移核心 |
 | FP32 输出 | [dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v) | 组合；S8 结果由 top 注册 |
 
@@ -161,6 +161,6 @@ E 解包模块化修订 v1.5.9 保持 S1–S8 边界和数值语义；新指纹�
 
 ## 四组低精度独立顶层（v1.7.4）
 
-`dp_top_e64` 和 `dp_top_q32e64` 各使用四个专用 group，通过静态参数选择 `dp_top_lowp`，共用 C 传递/解包及 S6–S8；QE 采用已验证紧凑解包。只支持各自低精度集合和 FP32 C/D，拒绝 T/H/INT8。三个新模块位于 src/verilog/top/，独立清单 files_e64.f/files_q32e64.f，旧 dp_top_e 保留。
+`dp_top_e64` 和 `dp_top_q32e64` 各使用四个专用 group，通过静态参数选择 `dp_top_lowp`，共用 C 传递/解包及 S6–S8；QE 采用已验证紧凑解包。只支持各自低精度集合和 FP32 C/D，拒绝 T/H/INT8。两个固定包装位于 src/verilog/top/，共用核心位于 src/verilog/top/common/dp_top_lowp.v；独立清单 files_e64.f/files_q32e64.f，旧 dp_top_e 保留。
 
 [顶层方案](../dptop/low-precision-tops.md) 规定组切片与五源后端；[Verilator 证据](../../../../test/results/lowp-tops-v1.7.4.md) 分别验证三种/七种格式、三组窗口参数、S5–S7与L8协议。综合使用真实通过快照，不借用旧E或混合版本面积。

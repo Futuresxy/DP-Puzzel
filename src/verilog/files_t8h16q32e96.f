@@ -24,7 +24,7 @@ src/verilog/lane/dp_exponent_bank.v
 src/verilog/lane/dp_lane_align.v
 src/verilog/lane/dp_lane.v
 src/verilog/lane/dp_mantissa_bank.v
-src/verilog/top/dp_global_align.v
+src/verilog/top/common/dp_global_align.v
 src/verilog/unpack/dp_c_unpack.v
 src/verilog/unpack/dp_lane_operand_unpack.v
 src/verilog/unpack/dp_lane_unpack.v
@@ -39,6 +39,6 @@ src/verilog/unpack/dp_lane_unpack_e.v
 src/verilog/lane/dp_qe_product_bank.v
 src/verilog/lane/dp_lane_qe.v
 src/verilog/group/dp_group_qe.v
-src/verilog/top/dp_mixed_global_align.v
-src/verilog/top/dp_top_mixed.v
+src/verilog/top/common/dp_mixed_global_align.v
+src/verilog/top/common/dp_top_mixed.v
 src/verilog/top/dp_top_t8h16q32e96.v

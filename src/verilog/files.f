@@ -24,7 +24,7 @@ src/verilog/lane/dp_exponent_bank.v
 src/verilog/lane/dp_lane_align.v
 src/verilog/lane/dp_lane.v
 src/verilog/lane/dp_mantissa_bank.v
-src/verilog/top/dp_global_align.v
+src/verilog/top/common/dp_global_align.v
 src/verilog/top/dp_top.v
 src/verilog/unpack/dp_c_unpack.v
 src/verilog/unpack/dp_lane_operand_unpack.v

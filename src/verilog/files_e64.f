@@ -21,9 +21,9 @@ src/verilog/arithmetic/dp_sum_tree.v
 src/verilog/lane/dp_lane_e_shift.v
 src/verilog/lane/dp_lane_e.v
 src/verilog/group/dp_group_e.v
-src/verilog/top/dp_global_align.v
+src/verilog/top/common/dp_global_align.v
 src/verilog/unpack/dp_c_unpack.v
 src/verilog/unpack/dp_lane_unpack_e.v
 src/verilog/unpack/dp_scale_unpack.v
-src/verilog/top/dp_top_lowp.v
+src/verilog/top/common/dp_top_lowp.v
 src/verilog/top/dp_top_e64.v

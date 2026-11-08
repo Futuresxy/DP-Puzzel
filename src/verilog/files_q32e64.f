@@ -20,7 +20,7 @@ src/verilog/arithmetic/dp_rtz_shift.v
 src/verilog/arithmetic/dp_scale_multiply.v
 src/verilog/arithmetic/dp_sum_tree.v
 src/verilog/lane/dp_lane_align.v
-src/verilog/top/dp_global_align.v
+src/verilog/top/common/dp_global_align.v
 src/verilog/unpack/dp_c_unpack.v
 src/verilog/unpack/dp_lane_operand_unpack.v
 src/verilog/unpack/dp_lane_unpack.v
@@ -31,5 +31,5 @@ src/verilog/unpack/dp_scale_unpack.v
 src/verilog/lane/dp_qe_product_bank.v
 src/verilog/lane/dp_lane_qe.v
 src/verilog/group/dp_group_qe.v
-src/verilog/top/dp_top_lowp.v
+src/verilog/top/common/dp_top_lowp.v
 src/verilog/top/dp_top_q32e64.v
