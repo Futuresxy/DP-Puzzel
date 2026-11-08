@@ -13,11 +13,11 @@
 
 ## 当前结果
 
-已完成批次 [power_qwen8b_six_1108](records/power_qwen8b_six_1108.md)：六种架构、15个兼容格式点全部通过。静态/动态及内部/开关功耗、总功耗、pJ/MAC和活动审计同时保存在 [JSON](records/power_qwen8b_six_1108.json) 与 [CSV](records/power_qwen8b_six_1108.csv)。原生SAIF、门级输出及原始报告在本地 `runs/power_qwen8b_six_1108/`；该报告引用保护运行及其六份DC输入。
+统一入口：[六种DP精度门控后面积与功耗](records/current_six_precision_gated.md)，同时提供[JSON](records/current_six_precision_gated.json)和[CSV](records/current_six_precision_gated.csv)。15个兼容点：三种混合架构本轮新测，dp_top/Q32E64复用已完成门控版测量，E64保留原结果。每个点绑定对应的最新DC网表及自己的SAIF。
 
-新增 [dp_top 精度寄存器门控比较](records/precision_register_gating_1108.md)：保持共享算术和 L8/II=1，S1–S3 分段使能。在同源负载下 MXFP4 动态功耗降低19.97%，面积增加5.04%；BF16/E4M3 的动态功耗分别降低5.61%/2.33%。新旧网表分别绑定自己的SAIF；原六架构测量仍作为历史比较基线。
+固定选择：[current_six_precision_gated.json](plans/current_six_precision_gated.json)。复核：`python3.11 hw/power/scripts/report_current_six.py`。该文件只选择已完成的测量点，用于汇总，不是run_power.py的仿真输入计划。
 
-新增 [Q32E64 精度寄存器门控比较](records/qe_precision_register_gating_1108.md)：专用 QE lane 保持算术与 L8/II=1，E4M3/MXFP4 动态功耗分别降低1.79%/14.21%，面积增加2.87%，1GHz通过；同源负载的静态、总功耗与时钟活动审计一并保留。
+按用户最新要求，全部旧功耗数据、报告和其依赖的DC/RTL/验证证据保留，作为新旧对照；仅清理无引用旧测试与综合候选。清单见[清理回执](../dc_syn/maintenance/precision_gated_six_cleanup_20261108.json)。原批次见[六架构基线](records/power_qwen8b_six_1108.md)，局部实验见[dp_top门控比较](records/precision_register_gating_1108.md)与[Q32E64门控比较](records/qe_precision_register_gating_1108.md)。
 
 ## 执行
 
@@ -30,21 +30,21 @@ python3.11 hw/power/scripts/setup_dependency.py --source-repo /path/to/Quant_LLM
 本机配置保存到忽略的 `hw/power/configs/machine.local.json`：`setup_script`、`dc_shell`、`iverilog`、`vvp` 和两个匹配N12 base/LVT的 `cell_models` 路径；VCS从setup后的PATH解析。DB直接使用固定DC run的原始resolved配置。禁止提交机器路径、商业库和许可证配置。
 
 ```bash
-# 输入已选定；需要明确重新选择时才重新生成计划
-python3.11 hw/power/scripts/prepare_qwen_plan.py --output hw/power/plans/qwen3_8b_first3.json
-
+# 例：使用本轮E96的固定输入计划重新测量；使用新的run ID
 # 依次执行：冻结RTL重放 → VCS门级重放/原生SAIF → Power Compiler/活动审计
-python3.11 hw/power/scripts/run_power.py --run-id power_<new_name>
+python3.11 hw/power/scripts/run_power.py \
+  --plan hw/power/plans/precision_gated_t8h16q32e96_1108.json \
+  --run-id power_<new_name>
 
-# 仅接受15点全部完成且证据hash未变的批次
-python3.11 hw/power/scripts/report_power.py --run-id power_<new_name>
+# 核验当前选定的六架构15点；新增测量经审查后显式更新选择文件
+python3.11 hw/power/scripts/report_current_six.py
 
 python3.11 -m unittest discover -s hw/power/tests -v
 ```
 
 `--max-points 1` 可用于首点调通，状态为partial，不发布六架构报告。`--resume`只复用已完成且hash一致的点；遇到未完成点保留诊断，使用新run ID重试，不能覆盖失败证据。源码、工具/单元模型或计划变更时也使用新run ID。
 
-使用固定计划中的最终网表，不再按目录时间选择“最新”。E96/E128沿用原快照；`scripts/rtl_gate.verify_power_input`核验原完整回归、冻结源码和本次工作负载重放，不修改旧manifest，也不放宽当前源码综合门禁。该负载下的RTL/网表比对不是全空间形式等价证明。
+使用固定计划中的最终网表，不再按目录时间选择“最新”。各点使用计划中明确指定的已验证快照；`scripts/rtl_gate.verify_power_input`核验原完整回归、冻结源码和本次工作负载重放，不修改旧manifest，也不放宽当前源码综合门禁。该负载下的RTL/网表比对不是全空间形式等价证明。
 
 每点1024笔一次性发射，初始化独立计数；第256笔驱动前开始，第768笔驱动前结束，1GHz下恰好512ns。全部结果、L8/II=1通过后，核验真实功耗引脚无X/Z、Nets/Ports/Pins显式注释100%、所有叶引脚概率/翻转率与SAIF一致。实际关闭的时钟保持实测零翻转。
 

@@ -17,7 +17,7 @@ E 专用前端已按所选 E64 方案实现 CModel（S2 pair、S3 lane 树、S4 
 用户于 2026-11-05 明确：`src/verilog/systemverilog/` 仅保留 T8H16Q32E64、K16/28/40、L8/II=1 的历史版本，后续新特性、数值/流水优化和 E 类专用 DP 不再同步到 SV。当前维护 CModel 与纯 Verilog；默认 RTL 回归只运行 Verilog，显式 SV 重放为历史参考检查，不作为新版本门禁。Chisel 仍按原计划待实施；测试台使用 Verilog/SystemVerilog 语言不改变 DUT 的维护范围。冻结来源见 [SV 说明](src/verilog/systemverilog/README.md)。
 
 
-用户于2026-11-08要求DC结果区只保留六种现用架构各自最新有效结果，覆盖此前对已删除旧run的保留约定。当前索引为 hw/dc_syn/records/latest_six_dp.{md,json}；修复来源放在最终run的provenance/repair_sources/并校验hash。旧精简报告从Git历史读取，清理回执在hw/dc_syn/maintenance/。功耗显式选择catalog中的最终网表。2026-11-08已按用户授权完成六种架构的BF16/MXFP8 E4M3/MXFP4 E2M1共15个兼容测量点，结果见 hw/power/records/power_qwen8b_six_1108.{md,json,csv}。每点1024笔冻结RTL/门级数值与L8协议检查通过，VCS原生SAIF为512ns，Power Compiler叶引脚和时钟活动核对通过、显式注释100%、真实功耗引脚X/Z为0。工况N12 TT/0.7V/85°C、1GHz、原网表ICG开启；这是综合后零延迟、CTS/布线前功耗，不是全空间形式等价或其他未测格式的验收。归档输入复用走scripts/rtl_gate.verify_power_input，不修改历史manifest、不放宽当前源码综合门禁。原始SAIF和大型报告留在本地hw/power/runs/power_qwen8b_six_1108/，精简汇总及hash进入Git。
+用户于2026-11-08最新要求：补齐精度寄存器门控后三种混合顶层的1GHz DC/真实负载功耗，汇总六种架构，E64保持原设计。用户随后明确要求全部旧功耗数据先不删除、保留作对照，因此其依赖的历史DC、RTL快照和验证回执也保留；该要求优先于此前仅留新结果的清理口径。现用综合索引为 hw/dc_syn/records/latest_six_dp.{md,json}，面积/动态/静态/总功耗统一报告为 hw/power/records/current_six_precision_gated.{md,json,csv}。15个兼容格式点经冻结RTL/门级1024笔及L8检查、512ns VCS原生SAIF、Power Compiler显式注释100%和真实引脚无X/Z审计。三种混合架构本轮新测；dp_top/Q32E64复用已测门控版，E64复用未变的原结果。工况N12 TT/0.7V/85°C、1GHz、L8/II=1、ICG开启，限于综合后零延迟、CTS/布线前。仅清理无引用旧测试大产物与被替代快照，失效快照元数据保留在hw/rtl/retired；回执为hw/dc_syn/maintenance/precision_gated_six_cleanup_20261108.json。旧精简测试摘要保留作历史索引，不代表其大产物仍存在。现用及历史功耗点的冻结RTL、完整回归、网表/SAIF与必要修复依赖均保留；功耗复用仍走scripts/rtl_gate.verify_power_input，不放宽当前源码综合门禁。
 
 ## 历史设计约定与通用工程规则
 

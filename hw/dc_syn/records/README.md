@@ -1,25 +1,11 @@
 # 当前六种 DP 综合结果
 
-统一入口：[最新面积与时序表](latest_six_dp.md)，机器可读数据：[latest_six_dp.json](latest_six_dp.json)。这里仅保留这份六架构汇总和本说明；每类原始报告在对应最终run的REPORT.md及reports/中。
+统一入口：[面积与时序](latest_six_dp.md)、[机器索引](latest_six_dp.json)。五种复用架构为精度寄存器门控版，E64沿用原专用E设计；均为N12 TT/0.7V/85°C、1GHz、L8/II=1、LOCAL28/GLOBAL40、ICG开启。
 
-六种架构为dp_top、T8H16Q32E96、T8H16Q32E128、优化T8H16Q64E128、E64、Q32E64。统一N12 TT/0.7V/85°C、1GHz、L8/II=1、LOCAL28/GLOBAL40、ICG开启。汇总核对原始报告、冻结RTL、原始数值回执、输入/输出校验及必要修复依赖，明确属于历史已测证据，不伪造当前源码的新门禁。
+runs中保留六份当前最终结果及旧功耗对照依赖的五份历史DC基线；必要修复祖先收在最终run的provenance/repair_sources，带完整文件hash索引。全部现用及功耗对照的网表/DDC/SDC、工具配置、报告、冻结快照和回归证据保留。
 
-复核命令：`python3.11 hw/dc_syn/scripts/latest_synthesis.py --write`。只复核/发布，不启动EDA、不删除文件。新的综合完成后，按每种架构选择最新全部验收通过的run；不以较晚的失败实验替代有效结果。
+功耗以独立的[六架构报告](../../power/records/current_six_precision_gated.md)为准。catalog中的power_ready=false与power_mw=null属于综合流程占位；具体负载已通过门级重放、SAIF与注释审计，证据由功耗报告绑定。
 
-## 本地目录与功耗输入
+复核：`python3.11 hw/dc_syn/scripts/latest_synthesis.py --write`。只发布通过全部验收的综合结果，不启动EDA。当前源码与冻结输入分别核验，不能用旧报告替代新源码验证。
 
-runs根目录只保留六份最终结果。每份保留映射Verilog、DDC、SDC、报告、配置和日志；四份结果的原始修复来源位于各自provenance/repair_sources/，带完整文件hash索引。run_dc.py的repair_run_path/verify_repair_source支持这些不可变来源，拒绝缺失、歧义或被修改的内容。
-
-latest_six_dp.json固定后续功耗所需top/export/验证回执以及网表/DDC/SDC的路径和SHA-256；不含私有PDK路径或许可证。尚无门级等价、SAIF和注释覆盖结果，因此power_ready=false、power_mw=null。具体待办见 [功耗准备](../../power/README.md)。
-
-## 历史记录
-
-用户于2026-11-08要求只保留六种架构最新综合结果及报告，覆盖此前对已删除旧run的保留约定。旧对比/诊断报告已从records移除，精简报告仍可从本地Git提交 `a368630` 读取，例如：
-
-```bash
-git show a368630:hw/dc_syn/records/mixed_n12_1000mhz_20261108.md
-git show a368630:hw/dc_syn/records/qe_area_opt_n12_1000mhz_20261108.md
-git show a368630:hw/dc_syn/records/dp_n12_timing_20261105.md
-```
-
-这说明历史数值的原始语境，不能把旧报告作为当前RTL的新验收。清理清单见 [维护回执](../maintenance/latest_six_cleanup_20261108.json)：保留六份最终run、四份必要修复来源；删除十二份旧run，并用本汇总代替十八份旧记录。已删除原始网表/大产物不在Git中；Git只可恢复旧精简报告。未清理hw/rtl、test/runs或测试数据。
+本轮[清理回执](../maintenance/precision_gated_six_cleanup_20261108.json)记录无引用测试/快照的清理及保留依赖；已退役快照只保留manifest/README等失效说明。全部旧功耗对照数据和现存DC比较摘要继续保留。此前清理的记录见[历史维护回执](../maintenance/latest_six_cleanup_20261108.json)；已删除的大产物不能从Git恢复。

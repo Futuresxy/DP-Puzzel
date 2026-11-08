@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "dc_catalog": "hw/dc_syn/records/latest_six_dp.json",
+  "points": [
+    {
+      "top": "dp_top",
+      "format": "bf16",
+      "campaign": "hw/power/runs/power_precision_register_gating_1108",
+      "reused": true
+    },
+    {
+      "top": "dp_top",
+      "format": "mxfp8_e4m3",
+      "campaign": "hw/power/runs/power_precision_register_gating_1108",
+      "reused": true
+    },
+    {
+      "top": "dp_top",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_precision_register_gating_1108",
+      "reused": true
+    },
+    {
+      "top": "dp_top_t8h16q32e96",
+      "format": "bf16",
+      "campaign": "hw/power/runs/power_precision_gated_t8h16q32e96_1108",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e96",
+      "format": "mxfp8_e4m3",
+      "campaign": "hw/power/runs/power_precision_gated_t8h16q32e96_1108",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e96",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_precision_gated_t8h16q32e96_1108",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e128",
+      "format": "bf16",
+      "campaign": "hw/power/runs/power_precision_gated_t8h16q32e128_1108",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e128",
+      "format": "mxfp8_e4m3",
+      "campaign": "hw/power/runs/power_precision_gated_t8h16q32e128_1108",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e128",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_precision_gated_t8h16q32e128_1108",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q64e128_opt",
+      "format": "bf16",
+      "campaign": "hw/power/runs/power_precision_gated_t8h16q64e128_opt_1108",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q64e128_opt",
+      "format": "mxfp8_e4m3",
+      "campaign": "hw/power/runs/power_precision_gated_t8h16q64e128_opt_1108",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q64e128_opt",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_precision_gated_t8h16q64e128_opt_1108",
+      "reused": false
+    },
+    {
+      "top": "dp_top_e64",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_qwen8b_six_1108",
+      "reused": true
+    },
+    {
+      "top": "dp_top_q32e64",
+      "format": "mxfp8_e4m3",
+      "campaign": "hw/power/runs/power_qe_precision_register_gating_1108",
+      "reused": true
+    },
+    {
+      "top": "dp_top_q32e64",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_qe_precision_register_gating_1108",
+      "reused": true
+    }
+  ],
+  "comparison_baseline": "hw/power/runs/power_qwen8b_six_1108"
+}

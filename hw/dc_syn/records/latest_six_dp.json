@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "audited_utc": "2026-11-08T09:42:12.910475+00:00",
+  "audited_utc": "2026-11-08T09:53:36.230147+00:00",
   "scope": "six latest passing archived measurements; not new synthesis or power",
   "records": [
     {
