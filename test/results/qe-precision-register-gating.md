@@ -22,3 +22,5 @@ python3.11 test/run_precision_gating.py --frontend q32e64 --export-id DP_verilog
 ```
 
 四态复现脚本与命令保存在对应运行目录。补充检查不替代完整 RTL/PPA 门禁；DC 与功耗结果另行记录。
+
+后端已完成：[1GHz综合](../../hw/dc_syn/records/qe_precision_register_gating_1108.md)、[同负载功耗对比](../../hw/power/records/qe_precision_register_gating_1108.md)。独立 Q32E64 两个功耗点均完成冻结RTL、VCS门级结果匹配及SAIF活动审计。

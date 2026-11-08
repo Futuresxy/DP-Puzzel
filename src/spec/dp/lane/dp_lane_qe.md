@@ -1,4 +1,4 @@
-> 功能：定义 Q4E8 专用 lane 的计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.8；修改时间：2026-11-08 16:28:24 +0800；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；[dp_lane_qe.v](../../../verilog/lane/dp_lane_qe.v)、[dp_qe_product_bank.v](../../../verilog/lane/dp_qe_product_bank.v)；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
+> 功能：定义 Q4E8 专用 lane 的计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.8；修改时间：2026-11-08 16:42:19 +0800；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；[dp_lane_qe.v](../../../verilog/lane/dp_lane_qe.v)、[dp_qe_product_bank.v](../../../verilog/lane/dp_qe_product_bank.v)；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
 
 # Q4E8 专用 lane 设计与优化
 
@@ -116,3 +116,5 @@ S1 的摘要寄存位置改变，但 S2 捕获的乘积/指数/分类与原实�
 S3 的 E pair 为 10 位补码，HiF4 两 lane 的最大指数差为 2；因此低 `LEAF_W-12` 位恒为零。默认 `LOCAL_W=28` 时关闭每叶 17 位。此结论包含负数补码，不是丢弃有效小数位。精度切换时，写使能使用源级类型，字段重构使用目的级已寄存类型，避免旧数据或无复位 X 值泄漏；valid 每拍推进，气泡不更新 payload。
 
 验证包含七种精度的完整原生数值样本、逐拍 Q/E 类型切换、HiF4 元数据边界、气泡/复位及 S5–S7 断点；真实功耗收益以同库、同约束、同负载的独立 DC/SAIF/Power Compiler 对比为准。
+
+实现验收：[QE门控功能验证](../../../../test/results/qe-precision-register-gating.md)、[1GHz综合](../../../../hw/dc_syn/records/qe_precision_register_gating_1108.md)、[Qwen同负载功耗](../../../../hw/power/records/qe_precision_register_gating_1108.md)。独立Q32E64面积增加2.87%，E4M3/MXFP4动态功耗分别降低1.79%/14.21%；其他精度与混合顶层未在本轮重测功耗。
