@@ -169,7 +169,7 @@ module dp_lane #(
   // unpack 只做一次编码译码；bank 只选择紧凑字段，不重新解码 hidden bit/特殊值。
   // 分类在 unpack 内按 A/B 对应元素配对再归约，仍由本模块 S2 DFF 捕获。
   // 原始 A/B 符号输出在本层无需使用，乘积符号及 all_negative 已由 unpack 生成。
-  dp_lane_unpack u_lane_unpack (
+  dp_lane_unpack #(.PRECISION_GATING(1)) u_lane_unpack (
     .clock                 (clock),
     .rst_n                 (rst_n),
     .in_valid              (in_valid),
@@ -248,14 +248,54 @@ module dp_lane #(
     .out_products  (product_magnitudes_d)
   );
 
+  // [精度门控] 每级捕获使用源级类型，消费使用目标级类型；允许逐拍混精度。
+  // E coefficient 4x4 幅值乘积只需 8 位；其余位是共享容器扩展位。
+  localparam integer E_PRODUCT_W = 2 * `DP_MUL_LO;
+  // 四项 E pair 含 HiF4 两位对齐余量；默认 29 位叶子低 17 位恒零。
+  localparam integer E_LEAF_W = `DP_E_PAIR_W + `DP_E_GUARD;
+  localparam integer E_LEAF_PAD = LEAF_W - E_LEAF_W;
+  // 与各级有效载荷同拍的 E/HiF4 选择，不使用当前 top 输入控制在途数据。
+  wire r1_is_e;
+  wire r2_is_e;
+  wire r3_is_e;
+  wire r1_is_hif4;
+  wire r2_is_hif4;
+  assign r1_is_e    = (r1_datatype == `DP_DT_MXFP4) | (r1_datatype == `DP_DT_NVFP4) | (r1_datatype == `DP_DT_HIF4);
+  assign r2_is_e    = (r2_datatype == `DP_DT_MXFP4) | (r2_datatype == `DP_DT_NVFP4) | (r2_datatype == `DP_DT_HIF4);
+  assign r3_is_e    = (r3_datatype == `DP_DT_MXFP4) | (r3_datatype == `DP_DT_NVFP4) | (r3_datatype == `DP_DT_HIF4);
+  assign r1_is_hif4 = r1_datatype == `DP_DT_HIF4;
+  assign r2_is_hif4 = r2_datatype == `DP_DT_HIF4;
+
   // [S2 寄存边界] 捕获乘积、指数/公共 anchor、符号和特殊分类，供 S3 对齐使用。
   // verilog_format: off
   dp_lib_DFFRU #(.WIDTH(1))
   ff_s1_s2_valid (.clock(clock), .rst_n(rst_n), .in_d(r1_valid), .out_q(r2_valid));
-  dp_lib_DFFE #(.WIDTH(`DP_E_LANES * `DP_PRODUCT_W))
-  ff_s1_s2_products (.clock(clock), .in_en(rst_n & r1_valid), .in_d(product_magnitudes_d), .out_q(r2_product_magnitudes));
+  // 按槽拆分乘积的低位和高位；未用槽及关闭的高位在读取时补零，不能泄漏旧值。
+  genvar product_index;
+  generate
+    for (product_index = 0; product_index < `DP_E_LANES; product_index = product_index + 1) begin : g_product_register
+      wire product_slot_en;
+      wire product_upper_en;
+      wire [E_PRODUCT_W-1:0] r2_product_low;
+      wire [`DP_PRODUCT_W-E_PRODUCT_W-1:0] r2_product_upper;
+      assign product_slot_en  = rst_n & r1_valid & (product_index < elements(r1_datatype));
+      assign product_upper_en = product_slot_en & ~r1_is_e;
+      dp_lib_DFFE #(.WIDTH(E_PRODUCT_W))
+      ff_s1_s2_product_low (.clock(clock), .in_en(product_slot_en), .in_d(product_magnitudes_d[product_index*`DP_PRODUCT_W+:E_PRODUCT_W]), .out_q(r2_product_low));
+      dp_lib_DFFE #(.WIDTH(`DP_PRODUCT_W-E_PRODUCT_W))
+      ff_s1_s2_product_upper (.clock(clock), .in_en(product_upper_en), .in_d(product_magnitudes_d[product_index*`DP_PRODUCT_W+E_PRODUCT_W+:`DP_PRODUCT_W-E_PRODUCT_W]), .out_q(r2_product_upper));
+      assign r2_product_magnitudes[product_index*`DP_PRODUCT_W+:`DP_PRODUCT_W] = (product_index >= elements(r2_datatype)) ? {`DP_PRODUCT_W{1'b0}} :
+        { (r2_is_e ? {(`DP_PRODUCT_W-E_PRODUCT_W){1'b0}} : r2_product_upper), r2_product_low };
+    end
+  endgenerate
+  // 非 E 指数保持原布局；HiF4 只保存一次两位 e2 和，其余 E 在消费端恢复零。
+  wire [`DP_E_LANES*`DP_PRODUCT_EXP_W-1:0] r2_non_e_exponents;
+  wire [`DP_E_GUARD-1:0] r2_hif4_exponent;
   dp_lib_DFFE #(.WIDTH(`DP_E_LANES * `DP_PRODUCT_EXP_W))
-  ff_s1_s2_exponents (.clock(clock), .in_en(rst_n & r1_valid), .in_d(product_exponents_d), .out_q(r2_product_exponents));
+  ff_s1_s2_exponents (.clock(clock), .in_en(rst_n & r1_valid & ~r1_is_e), .in_d(product_exponents_d), .out_q(r2_non_e_exponents));
+  dp_lib_DFFE #(.WIDTH(`DP_E_GUARD))
+  ff_s1_s2_hif4_exponent (.clock(clock), .in_en(rst_n & r1_valid & r1_is_hif4), .in_d(product_exponents_d[0+:`DP_E_GUARD]), .out_q(r2_hif4_exponent));
+  assign r2_product_exponents = r2_is_e ? {`DP_E_LANES{ {(`DP_PRODUCT_EXP_W-`DP_E_GUARD){1'b0}}, (r2_is_hif4 ? r2_hif4_exponent : {`DP_E_GUARD{1'b0}}) }} : r2_non_e_exponents;
   dp_lib_DFFE #(.WIDTH(`DP_E_LANES))
   ff_s1_s2_negative (.clock(clock), .in_en(rst_n & r1_valid), .in_d(product_negative_d), .out_q(r2_product_negative));
   dp_lib_DFFE #(.WIDTH(`DP_E_LANES))
@@ -290,8 +330,20 @@ module dp_lane #(
   // verilog_format: off
   dp_lib_DFFRU #(.WIDTH(1))
   ff_s2_s3_valid (.clock(clock), .rst_n(rst_n), .in_d(r2_valid), .out_q(r3_valid));
-  dp_lib_DFFE #(.WIDTH(`DP_Q_LANES * LEAF_W))
-  ff_s2_s3_leaves (.clock(clock), .in_en(rst_n & r2_valid), .in_d(aligned_leaves_d), .out_q(r3_aligned_leaves));
+  // E 的 pair/原 RTZ 运算不变，仅关闭结果中已证明恒零的低位寄存器。
+  // HiF4 delta<=2，故低 LEAF_W-(PAIR_W+GUARD) 位恒零；高位包含补码符号。
+  genvar leaf_index;
+  generate
+    for (leaf_index = 0; leaf_index < `DP_Q_LANES; leaf_index = leaf_index + 1) begin : g_leaf_register
+      wire [E_LEAF_W-1:0] r3_leaf_upper;
+      wire [E_LEAF_PAD-1:0] r3_leaf_lower;
+      dp_lib_DFFE #(.WIDTH(E_LEAF_W))
+      ff_s2_s3_leaf_upper (.clock(clock), .in_en(rst_n & r2_valid), .in_d(aligned_leaves_d[leaf_index*LEAF_W+E_LEAF_PAD+:E_LEAF_W]), .out_q(r3_leaf_upper));
+      dp_lib_DFFE #(.WIDTH(E_LEAF_PAD))
+      ff_s2_s3_leaf_lower (.clock(clock), .in_en(rst_n & r2_valid & ~r2_is_e), .in_d(aligned_leaves_d[leaf_index*LEAF_W+:E_LEAF_PAD]), .out_q(r3_leaf_lower));
+      assign r3_aligned_leaves[leaf_index*LEAF_W+:LEAF_W] = {r3_leaf_upper, (r3_is_e ? {E_LEAF_PAD{1'b0}} : r3_leaf_lower)};
+    end
+  endgenerate
   dp_lib_DFFE #(.WIDTH(`DP_PRODUCT_EXP_W))
   ff_s2_s3_anchor_s3 (.clock(clock), .in_en(rst_n & r2_valid), .in_d(r2_group_anchor), .out_q(r3_group_anchor));
   dp_lib_DFFE #(.WIDTH(`DP_TYPE_W))

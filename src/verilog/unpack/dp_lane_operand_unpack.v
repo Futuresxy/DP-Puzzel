@@ -6,7 +6,9 @@
 // M 是无符号 coefficient：T/H 保留原 F10/F7；Q 为 F3；MX/NV 为 F1；HiF 为 F2。
 module dp_lane_operand_unpack #(
   // Static format capability, not a runtime functional input.
-  parameter integer QE_ONLY = 0
+  parameter integer QE_ONLY = 0,
+  // 分段时钟使能开关；关闭时完全保留旧寄存器实现。
+  parameter integer PRECISION_GATING = 0
 ) (
   // 上升沿流水时钟。
   // verilog_format: off
@@ -17,6 +19,8 @@ module dp_lane_operand_unpack #(
   input wire                           in_valid,
   // 当前输入格式；按该格式完成 S1 译码。
   input wire [`DP_TYPE_W-1:0]          in_datatype,
+  // 与 S1 寄存值同拍的类型，用于恢复被关闭的常量字段。
+  input wire [`DP_TYPE_W-1:0]          in_registered_datatype,
   // 单侧原始 32 位 lane 输入，按 datatype 解释各元素。
   input wire [`DP_LANE_W-1:0]          in_data,
   // HiF4 两个 e1 位，每位作用于四个元素，融入幅值一次。
@@ -63,6 +67,8 @@ module dp_lane_operand_unpack #(
   genvar atom_index;
   // 生成期 atom 内槽索引，E 模式使用全部四槽。
   genvar slot_index;
+  // 静态分类字段索引。
+  genvar class_index;
   generate
     for (
       element_index = 0; element_index < `DP_E_LANES; element_index = element_index + 1
@@ -162,14 +168,55 @@ module dp_lane_operand_unpack #(
       // verilog_format: off
       dp_lib_DFFE #(.WIDTH(`DP_HALF_W))
       ff_s0_s1_mantissas (.clock(clock), .in_en(rst_n & in_valid), .in_d(mantissa_d), .out_q(r1_mantissas[atom_index]));
+      if (PRECISION_GATING != 0) begin : g_precision_exponents
+        // HiF4 只需要最低 e2 位；MX/NV 指数全为零。按捕获类型使能、按 S1 类型重构。
+        wire exponent_low_en;
+        wire exponent_upper_en;
+        wire r1_is_e;
+        wire r1_is_hif4;
+        wire r1_exponent_low;
+        wire [`DP_UNPACK_ATOM_EXP_W-2:0] r1_exponent_upper;
+        assign exponent_low_en   = rst_n & in_valid & (~select_e | (in_datatype == `DP_DT_HIF4));
+        assign exponent_upper_en = rst_n & in_valid & ~select_e;
+        assign r1_is_e            = (in_registered_datatype == `DP_DT_MXFP4) | (in_registered_datatype == `DP_DT_NVFP4) | (in_registered_datatype == `DP_DT_HIF4);
+        assign r1_is_hif4         = in_registered_datatype == `DP_DT_HIF4;
+        dp_lib_DFFE #(.WIDTH(1))
+        ff_s0_s1_exponent_low (.clock(clock), .in_en(exponent_low_en), .in_d(exponent_d[0]), .out_q(r1_exponent_low));
+        dp_lib_DFFE #(.WIDTH(`DP_UNPACK_ATOM_EXP_W-1))
+        ff_s0_s1_exponent_upper (.clock(clock), .in_en(exponent_upper_en), .in_d(exponent_d[`DP_UNPACK_ATOM_EXP_W-1:1]), .out_q(r1_exponent_upper));
+        assign r1_exponents[atom_index] = r1_is_e ? {{(`DP_UNPACK_ATOM_EXP_W-1){1'b0}}, (r1_is_hif4 & r1_exponent_low)} : {r1_exponent_upper, r1_exponent_low};
+      end else begin : g_full_exponents
       dp_lib_DFFE #(.WIDTH(`DP_UNPACK_ATOM_EXP_W))
       ff_s0_s1_exponents (.clock(clock), .in_en(rst_n & in_valid), .in_d(exponent_d), .out_q(r1_exponents[atom_index]));
+      end
       dp_lib_DFFE #(.WIDTH(`DP_UNPACK_ATOM_SIGN_W))
       ff_s0_s1_signs (.clock(clock), .in_en(rst_n & in_valid), .in_d(signs_d), .out_q(r1_signs[atom_index]));
+      if (PRECISION_GATING != 0) begin : g_precision_classes
+        // E 只有 ZERO/FINITE，分类 bit0 仍需保存；bit1 与 sNaN 在读取时恢复零。
+        wire special_fields_en;
+        wire r1_is_e;
+        wire [`DP_UNPACK_ATOM_SIGN_W-1:0] r1_signaling_raw;
+        assign special_fields_en = rst_n & in_valid & ~select_e;
+        assign r1_is_e = (in_registered_datatype == `DP_DT_MXFP4) | (in_registered_datatype == `DP_DT_NVFP4) | (in_registered_datatype == `DP_DT_HIF4);
+        for (class_index = 0; class_index < `DP_UNPACK_ATOM_SIGN_W; class_index = class_index + 1) begin : g_class
+          // 分类低位保留零/有限区别，高位仅在支持特殊值的格式下更新。
+          wire r1_class_low;
+          wire r1_class_high;
+          dp_lib_DFFE #(.WIDTH(1))
+          ff_s0_s1_class_low (.clock(clock), .in_en(rst_n & in_valid), .in_d(classes_d[class_index*`DP_NUM_CLASS_W]), .out_q(r1_class_low));
+          dp_lib_DFFE #(.WIDTH(1))
+          ff_s0_s1_class_high (.clock(clock), .in_en(special_fields_en), .in_d(classes_d[class_index*`DP_NUM_CLASS_W+1]), .out_q(r1_class_high));
+          assign r1_classes[atom_index][class_index*`DP_NUM_CLASS_W+:`DP_NUM_CLASS_W] = {(~r1_is_e & r1_class_high), r1_class_low};
+        end
+        dp_lib_DFFE #(.WIDTH(`DP_UNPACK_ATOM_SIGN_W))
+        ff_s0_s1_signaling (.clock(clock), .in_en(special_fields_en), .in_d(signaling_d), .out_q(r1_signaling_raw));
+        assign r1_signaling[atom_index] = r1_is_e ? {`DP_UNPACK_ATOM_SIGN_W{1'b0}} : r1_signaling_raw;
+      end else begin : g_full_classes
       dp_lib_DFFE #(.WIDTH(`DP_UNPACK_ATOM_CLASS_W))
       ff_s0_s1_classes (.clock(clock), .in_en(rst_n & in_valid), .in_d(classes_d), .out_q(r1_classes[atom_index]));
       dp_lib_DFFE #(.WIDTH(`DP_UNPACK_ATOM_SIGN_W))
       ff_s0_s1_signaling (.clock(clock), .in_en(rst_n & in_valid), .in_d(signaling_d), .out_q(r1_signaling[atom_index]));
+      end
       // verilog_format: on
 
       // S1 输出直接连接紧凑字段，不进行逐元素数值展开。

@@ -5,7 +5,9 @@
 // 输出符号保持 atom 紧凑槽；product_negative/active 是 S2 逐乘积掩码。
 module dp_lane_unpack #(
   // Static format capability, not a runtime functional input.
-  parameter integer QE_ONLY = 0
+  parameter integer QE_ONLY = 0,
+  // 仅多精度 lane 启用分段寄存器门控；QE 原实现保持默认。
+  parameter integer PRECISION_GATING = 0
 ) (
   // 上升沿流水时钟。
   // verilog_format: off
@@ -64,11 +66,12 @@ module dp_lane_unpack #(
   wire [`DP_UNPACK_SIGN_W-1:0]  r1_b_signaling;
   // verilog_format: on
 
-  dp_lane_operand_unpack #(.QE_ONLY(QE_ONLY)) u_operand_a (
+  dp_lane_operand_unpack #(.QE_ONLY(QE_ONLY), .PRECISION_GATING(PRECISION_GATING)) u_operand_a (
     .clock        (clock),
     .rst_n        (rst_n),
     .in_valid     (in_valid),
     .in_datatype  (in_datatype),
+    .in_registered_datatype(in_registered_datatype),
     .in_data      (in_a),
     .in_e1        (in_e1_a),
     .in_e2        (in_e2_a),
@@ -79,11 +82,12 @@ module dp_lane_unpack #(
     .out_signaling(r1_a_signaling)
   );
 
-  dp_lane_operand_unpack #(.QE_ONLY(QE_ONLY)) u_operand_b (
+  dp_lane_operand_unpack #(.QE_ONLY(QE_ONLY), .PRECISION_GATING(PRECISION_GATING)) u_operand_b (
     .clock        (clock),
     .rst_n        (rst_n),
     .in_valid     (in_valid),
     .in_datatype  (in_datatype),
+    .in_registered_datatype(in_registered_datatype),
     .in_data      (in_b),
     .in_e1        (in_e1_b),
     .in_e2        (in_e2_b),

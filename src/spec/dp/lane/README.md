@@ -1,4 +1,4 @@
-> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.7.1；修改时间：2026-11-07 23:51:07 +0800；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
+> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.7.2；修改时间：2026-11-08 14:30:18 +0800；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
 
 # lane：解包、元素乘法与局部规约
 
@@ -31,3 +31,15 @@
 ## 4. QE 专用实现
 
 [dp_lane_qe.md](dp_lane_qe.md) 定义 Q4E8：仅保留四种 Q 与三种 E，S2 使用 8 个 4×4 乘法器（Q 激活四个），沿用多精度的 S3 局部对齐和 S4 lane 树，裁掉 T/H/INT8。v1.7.1 已实现 QE CModel/RTL并完成混合顶层验证；与 E-only 的窄树切分分别维护。
+
+## 4. 多精度 lane 的精度寄存器门控
+
+保持 S1–S4 算术、S/I/F、group 接口和 L8/II=1 不变。只改变寄存器保存方式，CModel 数值合同不变；不得将其视为已测功耗收益。
+
+- S1：M32/S8 保持共用。E 指数高位不更新，最低位只在 HiF4 更新；MX/NV 消费端恢复零。分类低位保存 ZERO/FINITE；E 的分类高位和 sNaN 不更新，消费端恢复零。此开关由多精度 dp_lane 启用，QE 的解包默认行为不变。
+- S2：每项乘积分为低 `2*DP_MUL_LO=8` 位与高位，按格式的有效槽捕获；E 关闭高位并在读取时补零。非 E 指数关闭于 E 请求，HiF4 仅保存一次 2 位 e2 和并广播，MX/NV 恢复零。不以乘积是否为零作为寄存器使能。
+- S3：每项补码叶子分为高 `DP_E_PAIR_W+DP_E_GUARD=12` 位和低 `LEAF_W-12` 位。E 保持高位更新、关闭低位，消费端补零；默认窗口下为 12+17。原 pair/幅值 RTZ/符号恢复计算不变。依据：pair 有符号 10 位，初始低补 `LEAF_W-10` 个零，HiF4 最大右移 2 位，因此所有 E 的低 `LEAF_W-12` 位恒零，包括负数补码结果。
+- 每级使能采用源级 valid/type，恢复字段采用目标级 type。valid 每拍推进，类型随有效请求更新，允许任意逐拍换型；被关闭寄存器中的旧值/初始未知值不能进入有效运算。
+- 统一 DFFE 描述使能，由 DC 的标准 ICG 流程映射；禁止组合门直接切时钟。验收包括全精度/参数回归、所有格式有序切换、HiF4 metadata 和零/特殊值边界、门级一致性、时序及原生 SAIF 的实际关闭时钟统计。
+
+补充验证入口：`python3 test/run_precision_gating.py --export-id <已验证快照>`。它不取代 `test/run_verilog.py --phase all` 的 PPA 门禁。
