@@ -1,4 +1,4 @@
-> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.6.4；修改时间：2026-11-06 15:51:16 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.7.1；修改时间：2026-11-09 01:00:00 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 模块层级、所有权与 S6 扩展点
 
@@ -71,7 +71,7 @@ CModel 应按同一模块边界提供 S1 解包、S2 MAX/乘积、S3 移位、S4
 
 | 层级 | 多精度主路 | E 专用主路 | 保存位置 |
 | --- | --- | --- | --- |
-| lane 解包 | dp_lane_unpack → dp_lane_operand_unpack → dp_operand_unpack | dp_lane_unpack_e | S1，分别由单侧解包模块/E lane 保存；主路输出紧凑 M/E/S |
+| lane 解包 | dp_lane_unpack → dp_lane_operand_unpack → dp_unpack_atom | dp_lane_unpack_e | S1，分别由单侧解包模块/E lane 保存；主路输出紧凑 M/E/S |
 | lane 特殊分类 | dp_lane_unpack 内部 A/B 配对、lane 归约 | E lane/group 原分类路径 | 主路在 S2 lane 捕获；不改 S1/S2 边界 |
 | lane 乘积 | dp_mantissa_bank、dp_exponent_bank | dp_mul_unsigned + dp_sum_tree(N=2) pair | S2 lane |
 | lane 局部规约 | dp_lane_align：E pair/幅值落位/RTZ/符号恢复 → dp_sum_tree | dp_sum_tree 四项规约 → dp_lane_e_shift 精确左移 | 主路 S3 叶/S4 和；E S3 和，左移结果进入 group S4 |

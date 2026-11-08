@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.8；修改时间：2026-11-08 18:45:29 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.9；修改时间：2026-11-09 01:00:00 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -15,7 +15,9 @@ v1.6 → v1.7：~~仅多精度/E64 独立顶层~~ → 保留原顶层，增加 E
 
 v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)。旧 N12 综合报告仍对应其原 export ID；本次不以功能回归证明面积、时序或功耗。Chisel 与阵列未新增实现；混合组新增 CModel 和纯 Verilog，采用独立验证证据。
 
-当前实现小修 v1.6.4：多精度 dp_lane_unpack 改为 A/B 紧凑 M/E/S 入口，内部完成配对特殊分类；新增 dp_lane_operand_unpack 保存原 S1 字段。尾数/指数 bank 直接选 M32/E20，移除 184 位 Number 展开接口。CModel、数值布局、S1/S2 边界和 L8/II=1 不变。沿用 rN 功能命名、就地 DFF 与完整语义排版；同步测试探针。代码对比与验收见 [紧凑解包验证](../../test/results/dp-compact-unpack-v1.6.4.md)。
+紧凑接口基础 v1.6.4：多精度 dp_lane_unpack 改为 A/B 紧凑 M/E/S 入口，内部完成配对特殊分类；新增 dp_lane_operand_unpack 保存原 S1 字段。尾数/指数 bank 直接选 M32/E20，移除 184 位 Number 展开接口。CModel、数值布局、S1/S2 边界和 L8/II=1 不变。沿用 rN 功能命名、就地 DFF 与完整语义排版；同步测试探针。代码对比与验收见 [紧凑解包验证](../../test/results/dp-compact-unpack-v1.6.4.md)。
+
+实现小修（2026-11-09）：多精度解包改为 `dp_unpack_atom` 固定字段直接生成 M16/E10/S4，移除活动通路的通用可变宽度解码与二次打包。分类在原始编码上判定，S1 分类存储和 S2 配对边界保持；CModel、数值、门控、L8/II=1 不变。[固定解包验证与综合对照](../../test/results/dp-fixed-unpack-20261109.md)限定本批验收为 dp_top。
 
 文档小修 v1.7.8：按现用六种顶层重绘[可编辑嵌套架构图](dp/draw.io/README.md)，明确每组两条 lane、E 与多精度/QE 流水差异、扩展参与屏蔽和共享后端。仅修订图纸与导航，算术、接口、L8/II=1 和 RTL 不变。
 
@@ -31,7 +33,7 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [06-configuration.md](06-configuration.md) | v1.5.7 | 定义参数及其合法派生关系 |
 | [07-verification.md](07-verification.md) | v1.7.7 | 定义现用模型/RTL及未来实现的共用验收合同 |
 | [08-implementation-ppa.md](08-implementation-ppa.md) | v1.7.7 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.7.8 | 维护整体架构与文档版本时间线 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.7.9 | 维护整体架构与文档版本时间线 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.5.4 | 定义规格版本和历史修订规则 |
 | [dp/README.md](dp/README.md) | v1.7.7 | 按模块与共用合同组织 DP 规格 |
@@ -39,7 +41,7 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [dp/lane/dp_lane_E.md](dp/lane/dp_lane_E.md) | v1.7.2 | 讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合 |
 | [dp/lane/multiplier-sharing.md](dp/lane/multiplier-sharing.md) | v1.5.4 | 定义尾数乘法器共享和模式路由 |
 | [dp/lane/shifter-sharing.md](dp/lane/shifter-sharing.md) | v1.5.4 | 定义固定物理移位器的 mux 复用 |
-| [dp/lane/unpack.md](dp/lane/unpack.md) | v1.6.4 | 定义固定 E/M/S 解包数值布局 |
+| [dp/lane/unpack.md](dp/lane/unpack.md) | v1.7.1 | 定义固定 E/M/S 解包数值布局 |
 | [dp/group/README.md](dp/group/README.md) | v1.7.1 | 定义 group 规格目录与计算边界 |
 | [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.7.7 | 讨论 E16 定点组规约及兼容的 group 输出 |
 | [dp/group/scale.md](dp/group/scale.md) | v1.5.5 | 定义 scale 统一解包和 bias 处理 |
@@ -50,7 +52,7 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [dp/dptop/independent-align.md](dp/dptop/independent-align.md) | v1.5.4 | 记录独立移位对齐对比方案 |
 | [dp/dptop/interface.md](dp/dptop/interface.md) | v1.6 | 定义 DP 顶层和模块接口 |
 | [dp/dptop/layout-and-scales.md](dp/dptop/layout-and-scales.md) | v1.5.4 | 定义 DP 容量与输入布局 |
-| [dp/dptop/module-hierarchy.md](dp/dptop/module-hierarchy.md) | v1.6.4 | 定义 DP 模块层级与未来 S6 接入合同 |
+| [dp/dptop/module-hierarchy.md](dp/dptop/module-hierarchy.md) | v1.7.1 | 定义 DP 模块层级与未来 S6 接入合同 |
 | [dp/dptop/pipeline.md](dp/dptop/pipeline.md) | v1.6 | 定义分组共享 DP 的流水候选 |
 | [dp/common/numeric-layout.md](dp/common/numeric-layout.md) | v1.5.5 | 推导逐级位宽和统一对齐坐标 |
 | [dp/common/special-values.md](dp/common/special-values.md) | v1.5.4 | 定义浮点分类与特殊值传播 |

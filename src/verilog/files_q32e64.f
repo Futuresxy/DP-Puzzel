@@ -22,6 +22,7 @@ src/verilog/arithmetic/dp_sum_tree.v
 src/verilog/lane/dp_lane_align.v
 src/verilog/top/common/dp_global_align.v
 src/verilog/unpack/dp_c_unpack.v
+src/verilog/unpack/dp_unpack_atom.v
 src/verilog/unpack/dp_lane_operand_unpack.v
 src/verilog/unpack/dp_lane_unpack.v
 src/verilog/unpack/dp_operand_unpack.v

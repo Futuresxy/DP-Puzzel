@@ -1,4 +1,4 @@
-> 功能：定义固定 E/M/S 解包数值布局；范围：T/H/Q/E、HiF4 e1/e2 和 E6M2 块 scale；版本：v1.6.4；修改时间：2026-11-06 15:51:16 +08:00；对应代码：[CModel lib/unpack.cpp](../../../cmodel/lib/unpack.cpp)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_operand_unpack.v](../../../verilog/unpack/dp_lane_operand_unpack.v)、[dp_operand_unpack.v](../../../verilog/unpack/dp_operand_unpack.v)；Chisel 尚未实现。
+> 功能：定义固定 E/M/S 解包数值布局；范围：T/H/Q/E、HiF4 e1/e2 和 E6M2 块 scale；版本：v1.7.1；修改时间：2026-11-09 01:00:00 +08:00；对应代码：[CModel lib/unpack.cpp](../../../cmodel/lib/unpack.cpp)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_operand_unpack.v](../../../verilog/unpack/dp_lane_operand_unpack.v)、[dp_unpack_atom.v](../../../verilog/unpack/dp_unpack_atom.v)；Chisel 尚未实现。
 
 # 固定 E/M/S 解包布局
 
@@ -119,7 +119,7 @@ C 的 S5 物理输出统一为 sign+M32：FP32 自然 M24/F23 在低位补 8 零
 
 ## 11. 当前纯 Verilog 的紧凑接口
 
-`dp_lane` 实例化一个 A/B 入口 `u_lane_unpack`，入口内部有两份 `dp_lane_operand_unpack`。单侧模块完成元素数值/分类译码，并用 `ff_s0_s1_*` 保存两份紧凑 atom；`dp_operand_unpack` 只输出分离的 magnitude、exponent、negative、class、signaling，不再提供复合 Number 端口。
+`dp_lane` 实例化一个 A/B 入口 `u_lane_unpack`，入口内部有两份 `dp_lane_operand_unpack`。单侧模块实例化两份 `dp_unpack_atom`，按格式固定取位、分类并直接生成 M16/E10/S4，再用原 `ff_s0_s1_*` 保存。`dp_top` 活动路径不再实例化通用 `dp_operand_unpack`，不经过逐元素宽字段解码后重新打包。
 
 | dp_lane_unpack 输出 | 每侧/总宽度 | 消费者与语义 |
 | --- | ---: | --- |
@@ -144,4 +144,24 @@ C 的 S5 物理输出统一为 sign+M32：FP32 自然 M24/F23 在低位补 8 零
 
 单侧 class/signaling 保留元素位置，仅在入口内部使用，不向数值 bank 传递。bank 只按本页位号选择系数或指数，不再判定原编码的 hidden bit、subnormal、NaN/Inf；特殊值数值占位也只由元素译码器生成。
 
-实现组织参考 `Quant_LLM_Chip_Codesign/HW/PE/PEGroup/DataUnpack.scala` 的字段分离与 A/B 配对摘要，数值布局保持本 DP 合同：FP16/TF32 为 I1F10，Q 两个 nibble 位于 M[7:0]，scale 仍由 group 负责，L8/II=1 不变。代码前后对比和验证见 [紧凑解包验收](../../../../test/results/dp-compact-unpack-v1.6.4.md)。
+实现组织参考 `Quant_LLM_Chip_Codesign/HW/PE/PEGroup/DataUnpack.scala` 的字段分离与 A/B 配对摘要，数值布局保持本 DP 合同：FP16/TF32 为 I1F10，Q 两个 nibble 位于 M[7:0]，scale 仍由 group 负责，L8/II=1 不变。紧凑接口的原验收见 [紧凑解包验收](../../../../test/results/dp-compact-unpack-v1.6.4.md)；固定格式实现及同约束综合对比见 [固定解包验证](../../../../test/results/dp-fixed-unpack-20261109.md)。
+
+## 12. 固定格式直接打包实现
+
+`dp_unpack_atom` 每份对应单侧一个 16 位 atom。格式生成循环仅组织源码：
+`EXP_FIELD_W`、`FRACTION_W`、`RAW_LSB` 等全部为生成期 localparam，不是运行时
+信号。每个候选固定提取原编码、恢复 hidden bit、判定 Zero/Inf/NaN/sNaN，并直接
+写入第 2 节约定的 M/E/S/class 槽；互斥 datatype 掩码选择候选，无匹配时输出零。
+
+- TF32 固定读取 `[31:13]`，仅 atom0 有效；atom1 全零。
+- FP16/BF16 固定读取对应半字；Q 固定读取两个字节，FP6 固定去掉低两位 padding。
+- Q 的 F2→F3 通过低位拼零，bias 补偿为固定小位宽常量加法。
+- MXFP4/NVFP4 共用 E2M1 coefficient 表；HiF4 e1 用两种固定拼接选择，e2 写 E[0]。
+- INT8 每 atom 两项，保留 abs(-128)=128。基线支持集合不减少。
+
+本次只改变组合解码组织。S1 的 M/E/S/class/sNaN 寄存布局、精度门控、S2 的 A/B
+配对特殊摘要及 L8/II=1 不变；不能把组合中间连线减少计作寄存器节省。特殊值在解包内
+判定，但本次没有把 S2 配对逻辑提前到 S1，也没有手动删改分类旁带寄存器声明；综合可裁剪由固定布局显式确定的恒零位。
+
+CModel 数值语义不变，不需更新 golden。共享该前端的混合顶层会继承代码变化；本批
+功能和 DC 验收限定为 `dp_top`，其他顶层的旧网表仍对应其旧快照。
