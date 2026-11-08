@@ -1,4 +1,4 @@
-> 功能：定义 Q4E8 专用 lane 的计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；[dp_lane_qe.v](../../../verilog/lane/dp_lane_qe.v)、[dp_qe_product_bank.v](../../../verilog/lane/dp_qe_product_bank.v)；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
+> 功能：定义 Q4E8 专用 lane 的计算通路；范围：紧凑解包、4×4 乘法、局部对齐及 S1–S4；版本：v1.7.8；修改时间：2026-11-08 16:28:24 +0800；对应代码：[QE CModel](../../../cmodel/lib/lane/lane_qe.cpp) 已实现；[dp_lane_qe.v](../../../verilog/lane/dp_lane_qe.v)、[dp_qe_product_bank.v](../../../verilog/lane/dp_qe_product_bank.v)；现有对照为 [dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_lane_unpack.v](../../../verilog/unpack/dp_lane_unpack.v)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)。
 
 # Q4E8 专用 lane 设计与优化
 
@@ -101,3 +101,18 @@ S1 的摘要寄存位置改变，但 S2 捕获的乘积/指数/分类与原实�
 新旧 unpack 对照 TB 为 [dp_qe_unpack_equivalence_tb.v](../../../../test/rtl_tb/dp_qe_unpack_equivalence_tb.v)：Q 全编码对、E 全编码/元数据及随机换型/保持共 319488 次，通过。整 DP 与 DC 的独立验收以本轮结果报告为准，解包对照本身不授予 PPA 资格。
 
 首轮同工况综合及独立 hold 修复已通过，见 [最终比较](../../../../hw/dc_syn/records/README.md#历史记录)。八条 QE lane 的解包层合计由 2453.23 降至 1874.39 µm²；这是固定解码与 S1 摘要共同实施后的层级结果，不分别声称两项各自节省多少。S2–S4 数值与位宽保持原合同。
+
+## 精度寄存器门控（v1.7.8）
+
+`dp_lane_qe` 的 S1–S3 按源级精度控制 DFFE 使能，DC 用已验证 ICG 单元实现门控；不改变乘法、pair、移位、加法树和 S4 输出布局，保持 L8/II=1。适用于 Q32E64 和优化混合顶层的 QE 扩展组。CModel 数值合同不变。
+
+| 寄存边界 | Q 模式 | E 模式 |
+| --- | --- | --- |
+| S1 E10 指数 atom | 捕获完整指数 | MX/NV 不捕获；HiF4 仅捕获最低 e2 位 |
+| S2 8 位乘积槽 | 只捕获前四槽，后四槽读回零 | 捕获八槽 |
+| S2 逐项指数 | 捕获 Q 指数数组 | MX/NV 恢复零；HiF4 捕获共享 2 位 e2 和并广播 |
+| S3 四路补码叶子 | 捕获完整 `LEAF_W` | 仅捕获高 `DP_E_PAIR_W+DP_E_GUARD=12` 位，低位读回零 |
+
+S3 的 E pair 为 10 位补码，HiF4 两 lane 的最大指数差为 2；因此低 `LEAF_W-12` 位恒为零。默认 `LOCAL_W=28` 时关闭每叶 17 位。此结论包含负数补码，不是丢弃有效小数位。精度切换时，写使能使用源级类型，字段重构使用目的级已寄存类型，避免旧数据或无复位 X 值泄漏；valid 每拍推进，气泡不更新 payload。
+
+验证包含七种精度的完整原生数值样本、逐拍 Q/E 类型切换、HiF4 元数据边界、气泡/复位及 S5–S7 断点；真实功耗收益以同库、同约束、同负载的独立 DC/SAIF/Power Compiler 对比为准。

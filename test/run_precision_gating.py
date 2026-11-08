@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Supplement full DP regression with stale-register mode transitions and E boundaries.
+"""Supplement DP/QE regression with stale-register mode transitions and E boundaries.
 
 Uses the ordinary numerical/cycle/cutpoint testbench and unmodified CModel.
 This supplementary receipt does not replace the full RTL-to-PPA gate.
@@ -19,8 +19,10 @@ from reference.exact import DTYPES
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--verilator', default=os.environ.get('VERILATOR', 'verilator'))
+    parser.add_argument('--frontend', choices=('multi', 'q32e64'), default='multi')
     parser.add_argument('--export-id', required=True, help='Frozen RTL from the full regression')
     args = parser.parse_args()
+    runner.FRONTEND = args.frontend
     runner.VERILATOR = args.verilator
     runner.RUN = runner.ROOT / 'test/runs/verilog' / ('precision_gating_' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'))
     runner.RUN.mkdir(parents=True)
@@ -33,16 +35,21 @@ def main():
     reports = []
     # Each ordered pair of types, dirty payload -> destination, then explicit zeros.
     for local in (27, 28, 32):
-        exe = runner.compile_tb(16, local, 40 if local != 32 else 64)
+        if args.frontend == 'q32e64':
+            from run_lowp_verilog import compile_tb
+            exe = compile_tb(args.frontend, local, 40 if local != 32 else 64)
+        else:
+            exe = runner.compile_tb(16, local, 40 if local != 32 else 64)
         requests = []
-        for first in DTYPES:
-            for second in DTYPES:
+        modes = [mode for mode, code in DTYPES.items() if args.frontend == 'multi' or 3 <= code <= 9]
+        for first in modes:
+            for second in modes:
                 for mode in (first, second):
                     requests.append(random_request(mode, rng, 16, len(requests)))
                 zero_request = make(second, 16, ident=len(requests))
                 zero_request.update(a='0', b='0')
                 requests.append(zero_request)
-        cfg = dict(frontend='multi', k_fp16=16, local_shift_mag_width=local,
+        cfg = dict(frontend=args.frontend, k_fp16=16, local_shift_mag_width=local,
                    global_signed_align_width=40 if local != 32 else 64)
         expected = runner.evaluate(requests, trace=True, config=cfg, run_dir=runner.RUN/'reference')
         for request, result in zip(requests, expected):
@@ -57,7 +64,7 @@ def main():
         directed = runner.e_directed(16)
         for offset in range(0, len(directed), 1800):
             batch = directed[offset:offset+1800]
-            cfg = dict(frontend='multi', k_fp16=16, local_shift_mag_width=local,
+            cfg = dict(frontend=args.frontend, k_fp16=16, local_shift_mag_width=local,
                        global_signed_align_width=40 if local != 32 else 64)
             expected = runner.evaluate(batch, trace=True, config=cfg, run_dir=runner.RUN/'reference')
             for request, result in zip(batch, expected):

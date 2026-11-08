@@ -173,6 +173,7 @@ module dp_lane_qe #(
         .rst_n                  (rst_n),
         .in_valid               (in_valid),
         .in_datatype            (in_datatype),
+        .in_registered_datatype (r1_datatype),
         .in_a                   (in_a),
         .in_b                   (in_b),
         .in_e1_a                (in_e1_a),
@@ -191,7 +192,7 @@ module dp_lane_qe #(
       assign unpack_lane_a_signs = {`DP_UNPACK_SIGN_W{1'b0}};
       assign unpack_lane_b_signs = {`DP_UNPACK_SIGN_W{1'b0}};
     end else begin : g_reference_unpack
-      dp_lane_unpack #(.QE_ONLY(1)) u_lane_unpack (
+      dp_lane_unpack #(.QE_ONLY(1), .PRECISION_GATING(1)) u_lane_unpack (
         .clock                  (clock),
         .rst_n                  (rst_n),
         .in_valid               (in_valid),
@@ -268,14 +269,49 @@ module dp_lane_qe #(
     .out_exponents  (product_exponents_d)
   );
 
+  // E pair 为 10 位补码，HiF4 最多右移 2 位；其余低位始终为补零。
+  localparam integer E_LEAF_W = `DP_E_PAIR_W + `DP_E_GUARD;
+  // 随 LOCAL_W 自动变化的 E 结构零位数，Q 模式仍完整保存。
+  localparam integer E_LEAF_PAD = LEAF_W - E_LEAF_W;
+  // 各阶段类型判断：写使能使用源级类型，读回恢复使用目的级类型。
+  wire r1_is_e;
+  wire r2_is_e;
+  wire r3_is_e;
+  wire r1_is_hif4;
+  wire r2_is_hif4;
+  // Q 的逐项指数与 HiF4 的 lane 共享 e2 和分别保存。
+  wire [`DP_E_LANES*(`DP_Q_EXP_W+1)-1:0] r2_q_exponents;
+  wire [`DP_E_GUARD-1:0] r2_hif4_exponent;
+  // 静态乘积槽和对齐叶子索引。
+  genvar product_index;
+  genvar leaf_index;
+  // verilog_format: off
+  assign r1_is_e    = (r1_datatype == `DP_DT_MXFP4) | (r1_datatype == `DP_DT_NVFP4) | (r1_datatype == `DP_DT_HIF4);
+  assign r2_is_e    = (r2_datatype == `DP_DT_MXFP4) | (r2_datatype == `DP_DT_NVFP4) | (r2_datatype == `DP_DT_HIF4);
+  assign r3_is_e    = (r3_datatype == `DP_DT_MXFP4) | (r3_datatype == `DP_DT_NVFP4) | (r3_datatype == `DP_DT_HIF4);
+  assign r1_is_hif4 = r1_datatype == `DP_DT_HIF4;
+  assign r2_is_hif4 = r2_datatype == `DP_DT_HIF4;
+  // 只关闭 Q 未使用的后四槽；所有 E 槽仍参与，零符号语义不变。
+  generate
+    for (product_index = 0; product_index < `DP_E_LANES; product_index = product_index + 1) begin : g_product_register
+      // 槽内保存的 8 位无符号乘积，未使用时可保留旧值。
+      wire [2*`DP_EIGHTH_W-1:0] r2_product;
+      dp_lib_DFFE #(.WIDTH(2*`DP_EIGHTH_W))
+      ff_s1_s2_product (.clock(clock), .in_en(rst_n & r1_valid & (r1_is_e | (product_index < `DP_Q_LANES))), .in_d(product_magnitudes_d[product_index*(2*`DP_EIGHTH_W)+:(2*`DP_EIGHTH_W)]), .out_q(r2_product));
+      assign r2_product_magnitudes[product_index*(2*`DP_EIGHTH_W)+:(2*`DP_EIGHTH_W)] = (r2_is_e | (product_index < `DP_Q_LANES)) ? r2_product : {(2*`DP_EIGHTH_W){1'b0}};
+    end
+  endgenerate
+  dp_lib_DFFE #(.WIDTH(`DP_E_LANES*(`DP_Q_EXP_W+1)))
+  ff_s1_s2_q_exponents (.clock(clock), .in_en(rst_n & r1_valid & ~r1_is_e), .in_d(product_exponents_d), .out_q(r2_q_exponents));
+  dp_lib_DFFE #(.WIDTH(`DP_E_GUARD))
+  ff_s1_s2_hif4_exponent (.clock(clock), .in_en(rst_n & r1_valid & r1_is_hif4), .in_d(product_exponents_d[0+:`DP_E_GUARD]), .out_q(r2_hif4_exponent));
+  assign r2_product_exponents = r2_is_e ? {`DP_E_LANES{ {(`DP_Q_EXP_W+1-`DP_E_GUARD){1'b0}}, (r2_is_hif4 ? r2_hif4_exponent : {`DP_E_GUARD{1'b0}}) }} : r2_q_exponents;
+  // verilog_format: on
+
   // [S2 寄存边界] 捕获乘积、指数/公共 anchor、符号和特殊分类，供 S3 对齐使用。
   // verilog_format: off
   dp_lib_DFFRU #(.WIDTH(1))
   ff_s1_s2_valid (.clock(clock), .rst_n(rst_n), .in_d(r1_valid), .out_q(r2_valid));
-  dp_lib_DFFE #(.WIDTH(`DP_E_LANES * (2*`DP_EIGHTH_W)))
-  ff_s1_s2_products (.clock(clock), .in_en(rst_n & r1_valid), .in_d(product_magnitudes_d), .out_q(r2_product_magnitudes));
-  dp_lib_DFFE #(.WIDTH(`DP_E_LANES * (`DP_Q_EXP_W+1)))
-  ff_s1_s2_exponents (.clock(clock), .in_en(rst_n & r1_valid), .in_d(product_exponents_d), .out_q(r2_product_exponents));
   dp_lib_DFFE #(.WIDTH(`DP_E_LANES))
   ff_s1_s2_negative (.clock(clock), .in_en(rst_n & r1_valid), .in_d(product_negative_d), .out_q(r2_product_negative));
   dp_lib_DFFE #(.WIDTH(`DP_E_LANES))
@@ -291,7 +327,7 @@ module dp_lane_qe #(
   // verilog_format: on
 
   // [S3 局部对齐] 整个选择/pair/幅值移位/符号恢复由一个组合模块负责。
-  // 输入是 S2 寄存器；输出在 ff_s2_s3_leaves 捕获，随后进入 S4 累加树。
+  // 输入是 S2 寄存器；输出在 g_leaf_register 捕获，随后进入 S4 累加树。
   dp_lane_align #(
     .LOCAL_W    (LOCAL_W),
     .LEAF_W     (LEAF_W),
@@ -313,8 +349,20 @@ module dp_lane_qe #(
   // verilog_format: off
   dp_lib_DFFRU #(.WIDTH(1))
   ff_s2_s3_valid (.clock(clock), .rst_n(rst_n), .in_d(r2_valid), .out_q(r3_valid));
-  dp_lib_DFFE #(.WIDTH(`DP_Q_LANES * LEAF_W))
-  ff_s2_s3_leaves (.clock(clock), .in_en(rst_n & r2_valid), .in_d(aligned_leaves_d), .out_q(r3_aligned_leaves));
+  // E 仅捕获高 E_LEAF_W 位；Q 捕获完整叶子。恢复零避免跨模式旧值泄漏。
+  generate
+    for (leaf_index = 0; leaf_index < `DP_Q_LANES; leaf_index = leaf_index + 1) begin : g_leaf_register
+      // 高位含符号与 E 模式全部有效位，所有格式都需要捕获。
+      wire [E_LEAF_W-1:0] r3_leaf_upper;
+      // 低位仅 Q 需要；E 读出为结构零，无需复位数据寄存器。
+      wire [E_LEAF_PAD-1:0] r3_leaf_lower;
+      dp_lib_DFFE #(.WIDTH(E_LEAF_W))
+      ff_s2_s3_leaf_upper (.clock(clock), .in_en(rst_n & r2_valid), .in_d(aligned_leaves_d[leaf_index*LEAF_W+E_LEAF_PAD+:E_LEAF_W]), .out_q(r3_leaf_upper));
+      dp_lib_DFFE #(.WIDTH(E_LEAF_PAD))
+      ff_s2_s3_leaf_lower (.clock(clock), .in_en(rst_n & r2_valid & ~r2_is_e), .in_d(aligned_leaves_d[leaf_index*LEAF_W+:E_LEAF_PAD]), .out_q(r3_leaf_lower));
+      assign r3_aligned_leaves[leaf_index*LEAF_W+:LEAF_W] = {r3_leaf_upper, (r3_is_e ? {E_LEAF_PAD{1'b0}} : r3_leaf_lower)};
+    end
+  endgenerate
   dp_lib_DFFE #(.WIDTH((`DP_Q_EXP_W+1)))
   ff_s2_s3_anchor_s3 (.clock(clock), .in_en(rst_n & r2_valid), .in_d(r2_group_anchor), .out_q(r3_group_anchor));
   dp_lib_DFFE #(.WIDTH(`DP_TYPE_W))

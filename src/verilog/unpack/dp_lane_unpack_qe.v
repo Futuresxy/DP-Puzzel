@@ -14,6 +14,8 @@ module dp_lane_unpack_qe (
   input wire in_valid,
   // 本拍格式；配对摘要和数值字段都依据同一请求生成。
   input wire [`DP_TYPE_W-1:0] in_datatype,
+  // 父 lane 同拍保存的 S1 类型，用于屏蔽关闭字段的旧值/未初始化值。
+  input wire [`DP_TYPE_W-1:0] in_registered_datatype,
   // 原始 A/B lane 编码，各 32 位。
   input wire [`DP_LANE_W-1:0] in_a,
   input wire [`DP_LANE_W-1:0] in_b,
@@ -41,6 +43,15 @@ module dp_lane_unpack_qe (
   wire select_e;
   assign select_e = (in_datatype == `DP_DT_MXFP4) | (in_datatype == `DP_DT_NVFP4) |
                     (in_datatype == `DP_DT_HIF4);
+  // 源级 HiF4 需要保存 e2；目的级类型决定输出字段恢复。
+  wire select_hif4;
+  wire r1_select_e;
+  wire r1_select_hif4;
+  // verilog_format: off
+  assign select_hif4    = in_datatype == `DP_DT_HIF4;
+  assign r1_select_e    = (in_registered_datatype == `DP_DT_MXFP4) | (in_registered_datatype == `DP_DT_NVFP4) | (in_registered_datatype == `DP_DT_HIF4);
+  assign r1_select_hif4 = in_registered_datatype == `DP_DT_HIF4;
+  // verilog_format: on
   // A 逐元素四位无符号幅值，常量 generate 索引。
   wire [`DP_EIGHTH_W-1:0] a_magnitudes[0:`DP_E_LANES-1];
   // A 逐元素五位重编码指数，常量 generate 索引。
@@ -158,16 +169,31 @@ module dp_lane_unpack_qe (
         assign a_e_mantissas[slot_index*`DP_EIGHTH_W+:`DP_EIGHTH_W] = a_magnitudes[atom_index*`DP_UNPACK_ATOM_SIGN_W+slot_index];
         assign b_e_mantissas[slot_index*`DP_EIGHTH_W+:`DP_EIGHTH_W] = b_magnitudes[atom_index*`DP_UNPACK_ATOM_SIGN_W+slot_index];
       end
-      // S1 数值寄存：保持两 atom 布局，payload 无复位、按有效输入使能。
+      // S1 指数拆分：Q 使用完整 E10，HiF4 只用最低 e2 位，MX/NV 全零。
+      // 写使能看当前请求，输出恢复看 r1 类型，允许连续 Q/E 切换。
+      // A 指数低位可供 Q/HiF4 共用，高位仅 Q 捕获。
+      wire r1_a_exponent_low;
+      wire [`DP_UNPACK_ATOM_EXP_W-2:0] r1_a_exponent_high;
       // verilog_format: off
       dp_lib_DFFE #(.WIDTH(`DP_HALF_W))
       ff_s0_s1_a_mantissas (.clock(clock), .in_en(rst_n & in_valid), .in_d(a_mantissas_d), .out_q(out_a_mantissas[atom_index*`DP_HALF_W+:`DP_HALF_W]));
-      dp_lib_DFFE #(.WIDTH(`DP_UNPACK_ATOM_EXP_W))
-      ff_s0_s1_a_exponents (.clock(clock), .in_en(rst_n & in_valid), .in_d(a_exponents_d), .out_q(out_a_exponents[atom_index*`DP_UNPACK_ATOM_EXP_W+:`DP_UNPACK_ATOM_EXP_W]));
+      dp_lib_DFFE #(.WIDTH(1))
+      ff_s0_s1_a_exponent_low (.clock(clock), .in_en(rst_n & in_valid & (~select_e | select_hif4)), .in_d(a_exponents_d[0]), .out_q(r1_a_exponent_low));
+      dp_lib_DFFE #(.WIDTH(`DP_UNPACK_ATOM_EXP_W-1))
+      ff_s0_s1_a_exponent_high (.clock(clock), .in_en(rst_n & in_valid & ~select_e), .in_d(a_exponents_d[`DP_UNPACK_ATOM_EXP_W-1:1]), .out_q(r1_a_exponent_high));
+      assign out_a_exponents[atom_index*`DP_UNPACK_ATOM_EXP_W+:`DP_UNPACK_ATOM_EXP_W] = r1_select_e ? { {(`DP_UNPACK_ATOM_EXP_W-1){1'b0}}, (r1_select_hif4 ? r1_a_exponent_low : 1'b0) } : {r1_a_exponent_high, r1_a_exponent_low};
+      // verilog_format: on
+      // B 指数低位可供 Q/HiF4 共用，高位仅 Q 捕获。
+      wire r1_b_exponent_low;
+      wire [`DP_UNPACK_ATOM_EXP_W-2:0] r1_b_exponent_high;
+      // verilog_format: off
       dp_lib_DFFE #(.WIDTH(`DP_HALF_W))
       ff_s0_s1_b_mantissas (.clock(clock), .in_en(rst_n & in_valid), .in_d(b_mantissas_d), .out_q(out_b_mantissas[atom_index*`DP_HALF_W+:`DP_HALF_W]));
-      dp_lib_DFFE #(.WIDTH(`DP_UNPACK_ATOM_EXP_W))
-      ff_s0_s1_b_exponents (.clock(clock), .in_en(rst_n & in_valid), .in_d(b_exponents_d), .out_q(out_b_exponents[atom_index*`DP_UNPACK_ATOM_EXP_W+:`DP_UNPACK_ATOM_EXP_W]));
+      dp_lib_DFFE #(.WIDTH(1))
+      ff_s0_s1_b_exponent_low (.clock(clock), .in_en(rst_n & in_valid & (~select_e | select_hif4)), .in_d(b_exponents_d[0]), .out_q(r1_b_exponent_low));
+      dp_lib_DFFE #(.WIDTH(`DP_UNPACK_ATOM_EXP_W-1))
+      ff_s0_s1_b_exponent_high (.clock(clock), .in_en(rst_n & in_valid & ~select_e), .in_d(b_exponents_d[`DP_UNPACK_ATOM_EXP_W-1:1]), .out_q(r1_b_exponent_high));
+      assign out_b_exponents[atom_index*`DP_UNPACK_ATOM_EXP_W+:`DP_UNPACK_ATOM_EXP_W] = r1_select_e ? { {(`DP_UNPACK_ATOM_EXP_W-1){1'b0}}, (r1_select_hif4 ? r1_b_exponent_low : 1'b0) } : {r1_b_exponent_high, r1_b_exponent_low};
       // verilog_format: on
     end
   endgenerate
