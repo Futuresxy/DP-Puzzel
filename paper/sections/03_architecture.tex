@@ -1,8 +1,8 @@
 % !TeX root = ../main.tex
-\section{多精度算力配比的可组合实现}
+\section{多精度算力配比的分层可组合点积架构}
 \label{sec:architecture}
 
-为比较配比增配的代价，DP-Puzzle 以共享 DP 提供多精度基线，以精度子集模块增加目标吞吐。直接并列的浮点通路具有不同的移位范围与并行项数，难以共享对齐网络。本文先局部归约各模式的乘积，再逐级共享移位与累加；统一的中间接口进一步支持在归约维或输出维组合专用模块。
+DP-Puzzle 将乘法、移位和累加组织为跨精度共享的分层点积通路。位级分解已用于复用整数乘法器~\cite{bitfusion2018}，多精度 NPU 也在 INT4/INT8/FP16 间共享乘法与归约资源~\cite{parkMultimode8KMACHWutilizationaware2022}。浮点计算的主要障碍在于指数对齐：低精度增加并行乘积数，高精度要求更宽的数据与移位范围，直接并列的对齐网络难以共享。与重构移位器或调整累加位置的设计~\cite{transdot2026,lutzFusedFP84Way2024} 相比，本文以局部归约统一各精度的中间结果，再逐级共享对齐与累加；低精度专用模块则沿同一层次扩展吞吐。
 
 \begin{figure}[t]
 \centering
@@ -32,7 +32,7 @@ H、Q、E 分别表示 BF16/FP16、MXFP8/FP6 和 MXFP4/NVFP4/HiF4，后缀为每
 \label{fig:unpack_layout}
 \end{figure}
 
-\subsection{共享计算与精度保持}
+\subsection{共享乘法与分级对齐}
 \label{sec:full_brick}
 
 SubPE 以 $8\times8$、$8\times4$、$4\times8$ 和 $4\times4$ 乘法器组合高精度乘积，并在低精度模式下并行工作~\cite{bitfusion2018}。两路 Q 乘积先对齐求和，四路 E 乘积先局部归约，统一为一个 SubPE 输出。PEGroup 和 MidGroup 逐级将部分和对齐到局部最大指数，最终与 $C$ 累加；最大项旁路移位，其余项按指数差对齐。局部归约将不同精度的并行度差异限制在下层，使上层移位器与加法树能够共享。参考 MMA-Sim 的逆向建模~\cite{xie2025mmasim}，FP8、FP16/BF16、MXFP4/NVFP4 分别保留 25、26、28 位小数，符号、整数与归约进位另计，最终舍入为 FP32。
@@ -46,26 +46,23 @@ SubPE 以 $8\times8$、$8\times4$、$4\times8$ 和 $4\times4$ 乘法器组合高
 \subsection{FP4 专用化与精度子集裁剪}
 \label{sec:specialized_midgroups}
 
-共享通路保留了高精度位宽与模式选择开销。FP4 专用模块 $\mathcal E$ 利用四位定点幅值，将 SubPE 缩为四个 $4\times4$ 乘法器，移除 H 的宽乘积拼接和 Q 的指数比较、动态移位。四路乘积归约为 11 位精确结果，替代 Full 的 29 位输出，并同步缩窄中间寄存器。PEGroup 中，MXFP4/NVFP4 无需元素指数移位；HiF4 仅对共享微指数的局部结果执行至多两位移位。保留尺度有效数乘法并删除结构零位后，该级输出由 33 位缩为 22 位。四个 PEGroup 构成 E64，两个构成 E32，分别用于完整和半份 FP4 扩展。
+共享通路保留了高精度位宽与模式选择开销。FP4 专用核 $\mathcal E$ 利用四位定点幅值，将 SubPE 缩为四个 $4\times4$ 乘法器，移除 H 的宽乘积拼接和 Q 的指数比较、动态移位。四路乘积归约为 11 位精确结果，替代 Full 的 29 位输出，并同步缩窄中间寄存器。PEGroup 中，MXFP4/NVFP4 无需元素指数移位；HiF4 仅对共享微指数的局部结果执行至多两位移位。保留尺度有效数乘法并删除结构零位后，该级输出由 33 位缩为 22 位。四个 PEGroup 构成 E64，两个构成 E32，分别用于完整和半份 FP4 扩展。
 
-Q/E 共享模块 $\mathcal L=\mathrm{Q32E64}$ 保留两种精度的乘法、归约与尺度处理，用于联合增配；仅支持 Q 或 H 的通路用于独立实现对照。各模块输出统一的符号、幅值与指数锚点，内部位宽按支持格式裁剪。
+其余精度子集采用相同的输出接口：$\mathcal Q=\mathrm{Q32}$ 保留 Q 乘法与对齐，$\mathcal L=\mathrm{Q32E64}$ 共享 Q/E 归约及尺度处理，$\mathcal H=\mathrm{H16}$ 仅保留高精度路径。各核输出统一的符号、幅值与指数锚点，内部位宽按支持格式裁剪，使后端组合独立于核内实现。
 
-
-\subsection{四配比的 K/N 实现}
+\subsection{归约维与输出维组合}
 \label{sec:brick_composition}
 
-以 $\mathcal F=\mathrm{H16Q32E64}$ 为基准，附加 E32、E64 或 Q32E64 分别得到 $1:2:6$、$1:2:8$ 和 $1:4:8$。图~\ref{fig:dp_composition} 展示两种组合边界，表~\ref{tab:brick_compositions} 匹配各精度的绝对吞吐；其中 $\mathcal E_{1/2}$ 表示 E32，$\mathcal E$ 表示 E64。
+以 $\mathcal F=\mathrm{H16Q32E64}$ 为基准，附加 E32、E64 或 Q32E64 分别得到 $1:2:6$、$1:2:8$ 和 $1:4:8$。图~\ref{fig:dp_composition} 的两种组织提供相同的精度能力，却具有不同的后端共享范围；表~\ref{tab:brick_compositions} 给出各精度绝对算力匹配的组合。
 
-\textbf{K 扩展。} 多个 MidGroup 处理同一输出的不同归约片段，共享最终 C 累加、规格化和舍入。新增模块同时改变输入及尺度分配、末端对齐项、归约位宽与流水控制。若含 $g$ 个 MidGroup，末端需处理含 C 在内的 $g+1$ 项，平衡加法树深度为 $\lceil\log_2(g+1)\rceil$；移位器和中间寄存器随组合调整。因此，共享后端的收益伴随新增对齐与归约成本。
+\textbf{$K$ 向组合}让多个 MidGroup 处理同一输出的不同归约片段，并共享与 $C$ 对齐、规格化和舍入。改变配比主要调整输入分配与末端归约，核内通路可直接复用。若含 $m$ 个 MidGroup，末端有 $m+1$ 个对齐项，移位器数量和归约位宽随之增加，平衡加法树深度为 $\lceil\log_2(m+1)\rceil$。因此，共享后端节省的面积需抵消新增对齐与归约开销。
 
-\textbf{N 扩展。} 精度子集模块配置独立后端后，沿输出列部署为完整 DP。同行 PE 共享 A，各列维护独立输出，不支持当前模式的单元关闭。本文采用满足 $2\times2$ 广播约束的双列条带，并按活动 PE 的每周期乘积总数匹配 K 实现。$1:2:6$ 以两个基准 PE 为比较单位，避免半个完整 PE 的不合法部署。两种方案由此分别比较内部归约共享与独立输出并行的代价。
+\textbf{$N$ 向组合}为各核配置独立后端，再沿输出列部署完整 DP；同行共享 A，各列产生独立输出，不支持当前精度的单元关闭。本文采用满足 $2\times2$ 广播约束的双列条带。$K$ 扩展提高单个输出的归约并行度，$N$ 扩展增加输出并行度，二者分别偏向后端共享和独立输出调度。
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{kn_composition}\par
-\makebox[0.42\columnwidth][c]{\footnotesize (a) K: shared backend}\hfill
-\makebox[0.52\columnwidth][c]{\footnotesize (b) N: independent PEs}
-\caption{Capacity-matched $1:2:8$ implementations from a $2\times2$ Full base. Each box is a complete PE. K adds E64 within each PE; N adds independent E64 PEs.}
+\includegraphics[width=\columnwidth]{KorMN_expend.png}
+\caption{Two expansion axes: K increases reduction parallelism inside each DP (left); M/N adds independent output DPs (right, N expansion shown).}
 \label{fig:dp_composition}
 \end{figure}
 

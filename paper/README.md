@@ -1,6 +1,6 @@
 # DAC 2027 论文
 
-后续写作入口为 `main.tex`。引言与背景以 DP-puzzle-SW/paper 版本为主，统一到四配比研究范围；架构、评估、结论和实验图表迁自 DAC2027 当前稿，按章节拆分；研究范围为四种配比的 DP 成本、K/N 实现差异、固定面积下的负载选择。文献仅保留正文引用的条目，图片仅保留实际使用的七张。旧稿、扩展配比扫描、整份文献库和 EDA 大型产物不在此目录。
+后续写作入口为 `main.tex`，正文按章节放在 `sections/`。当前全文以 DP-puzzle-SW/paper 的指定中文版本恢复；删除原图 7、十三种扩展配比的构造与分析，以及摘要和贡献中的“16 种新增配比”表述。其余文字、图表和引用沿用源稿，保留已有 PNG 重绘及 XeLaTeX 预览配置。继续使用 10 pt 中文工作稿，不为当前篇幅调整字体或压缩正文。
 
 ## 保存后预览 PDF
 
@@ -26,7 +26,7 @@
 cd paper
 python3 -m pip install -r requirements.txt  # 缺少依赖时执行
 make                    # 仅编译正文，输出 build/main.pdf
-make reproduce          # 重算部署、负载、三角分区、两张图和两张表
+make reproduce          # 重算部署、负载、三角分区、两张图和三张表
 make diagrams           # 重绘 DP 背景和 K/N 组织示意图
 make cost-figures       # 按可编辑 CSV 重绘 select8 面积/功耗和 H16Q32E64 面积占比
 make check              # 重算默认实验，与迁移前的论文结果逐字段比较
@@ -89,18 +89,18 @@ E_j = sum_f(F_f*P_j,f/C_j,f)
 
 ## 目录与结果
 
-- `sections/`：摘要、引言、背景、架构、评估、结论；带宽和固定面积评估分别维护。
-- `references/references.bib`：正文所需 35 条文献及 1 个 BibTeX 格式控制条目。
-- `figures/`：正文插图；三张原有架构/格式图保留 PNG，其余提供绘图代码。
-- `tables/`：固定面积部署和 prefill 端点表，由脚本生成。其余 RQ1/RQ2 表仍在正文内维护。
+- `sections/`：摘要、引言、背景、架构、评估、结论；固定面积与模型评估位于 `k4_fixed_area_prefill.tex`。
+- `references/references.bib`：正文所需 32 条文献及 1 个 BibTeX 格式控制条目。
+- `figures/`：正文插图；四张原有架构/格式图保留 PNG，其余提供绘图代码。
+- `tables/`：固定面积部署、MXFP4 区域占比及 prefill 端点三张表，由脚本生成。其余表格在章节内维护。
 - `data/inputs/`：可修改的实验输入。
 - `data/results/`：重新计算的核数/算力/功耗 CSV、两类模型点与逐配比结果、工作量账本、扫描结果、精确区域及输入 hash。由 Git 忽略，随时重建。
 - `data/expected/`：迁移前论文的五份精简基准，用于数值回归，不参与新结果计算。
 - `data/evidence/`：输入来源、版本、校验和及其他正文表格的紧凑证据；原始路径仅用于溯源，不是运行依赖。
 - `template/`、`submission/`：保留目标工程原有模板来源、投稿要求和 AI 使用记录。
 
-默认结果：405.5663803392 mm²，核心数 36/33/32/29，两类映射共 42 个点；迁移回归核对 1,843 个字段。论文保留六页正文与一页参考文献。作者仍需审核论文论断与最终投稿材料。
+默认结果：405.5663803392 mm²，核心数 36/33/32/29，两类映射共 42 个点；迁移回归核对 1,843 个字段。当前保持 10 pt 中文工作稿的自然篇幅，英文稿确定后再核对最终投稿页数。作者仍需审核论文论断与最终投稿材料。
 
 ## Select8 成本与 DP 面积占比图
 
-在 [data/DP_area_power/](data/DP_area_power/README.md) 修改 `selected8_area.csv` 的面积、`selected8_power.csv` 的动态/静态功耗；在 [data/H16Q32E64_area/](data/H16Q32E64_area/README.md) 修改 `area_data.csv` 的 `category` / `total_um2`。运行 `make cost-figures` 后，三个 PNG 更新到 `figures/`，总功耗、基线倍率、分类面积占比自动重算。该入口不含 selected14 或 21 配置合并；当前正文及图片引用保持不变，后续可引用这些图。
+在 [data/DP_area_power/](data/DP_area_power/README.md) 修改 `selected8_area.csv` 的面积、`selected8_power.csv` 的动态/静态功耗；在 [data/H16Q32E64_area/](data/H16Q32E64_area/README.md) 修改 `area_data.csv` 的 `category` / `total_um2`。运行 `make cost-figures` 后，三个 PNG 更新到 `figures/`，总功耗、基线倍率、分类面积占比自动重算。该入口不含 selected14 或 21 配置合并；恢复后的评估章节已引用这三张 PNG。

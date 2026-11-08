@@ -161,6 +161,11 @@ def run(config_path, output):
             '/'.join(f'{100*p[k]:.2f}' for k in ('x_H','x_Q','x_E')),
             f'{p["speedup_148"]:.3f}',f'{100*p["energy_saving_148"]:.2f}']
            for p in ref if p['context_tokens'] in (contexts[0],contexts[-1])])
+    continuous_regions = winner_regions(1/np.array([d['capacity'][:3] for d in continuous]))
+    table(tables/'region_table.tex','lrrr',
+          ['Ratio','Time (cont.)','Time (int.)','DP energy'],
+          [[f'${r}$',*[f'{group[j]["fraction"]*100:.2f}\\%' for group in
+            (continuous_regions,regions['time'],regions['energy'])]] for j,r in enumerate(ratios)])
     for objective in ('time','energy'):
         draw_figure(ref,regions['time'] if objective=='time' else robust,objective,nv,cfg['models'],ratios,figures)
     inputs = [config_path,hp]+[workloads.SOURCE/m/'inference/config.json' for m in cfg['models']]

@@ -5,7 +5,7 @@
 \subsection{浮点精度与微缩放格式}
 \label{sec:formats}
 
-浮点张量的数值表示既取决于元素编码，也取决于是否引入组共享尺度，如图~\ref{fig:fpformats} 所示。BF16 与 FP16 不包含额外的分组尺度，其指数与有效数位宽决定动态范围和表示精度~\cite{burgess2019bfloat16,ocpmx2023}。微缩放及其衍生格式将低位宽元素与组共享尺度共同编码。以 $g$ 表示分组大小，OCP MXFP8/6/4 采用 $g=32$ 和 E8M0 尺度~\cite{ocpmx2023}；NVFP4 的局部微缩放块采用 $g=16$、E2M1 元素与 E4M3 尺度~\cite{nvidia2024nvfp4}；HiF4 采用 $g=64$、S1P2 元素与无符号 E6M2 基础尺度，并为每 8 个、每 4 个元素分别配置一位微指数~\cite{hifloat4}。元素编码、分组大小与尺度编码分别决定解码与乘积生成、组内归约边界和缩放处理。本文以 H/Q/E 表示高精度、8/6 位和 4 位通路；FP6 占用 Q 通路的 8 位槽位，配比按 16/8/4 位代表模式标记。
+浮点张量的数值表示既取决于元素编码，也取决于是否引入组共享尺度，如图~\ref{fig:fpformats} 所示。BF16与FP16高精度格式不包含额外的分组尺度，其指数与有效数位宽决定动态范围和表示精度~\cite{burgess2019bfloat16,ocpmx2023}。而微缩放及其衍生格式则将若干低位宽元素如:（E5M2,E4M3,E3M2,E2M3,E2M1,S1P2）与一个共享尺度共同编码。以 $g$ 表示分组大小，OCP MXFP8/6/4 采用 $g=32$ 和 E8M0 尺度~\cite{ocpmx2023}；NVFP4 的局部微缩放块采用 $g=16$、E2M1 元素与 E4M3 尺度~\cite{nvidia2024nvfp4}；HiF4 采用 $g=64$、S1P2 元素与无符号 E6M2 基础尺度，并为每 8 个、每 4 个元素分别配置一位微指数~\cite{hifloat4}。这些格式差异对应三类硬件需求：元素编码决定解码与乘积生成方式，分组大小决定组内归约边界，尺度编码决定组结果的缩放处理。
 
 \begin{figure}[t]
 \centering
@@ -18,18 +18,11 @@
 \subsection{张量计算与点积单元}
 \label{sec:tensor_organization}
 
-矩阵乘累加 $D=C+AB$ 的 $M,N$ 为输出维，$K$ 为归约维。分离的浮点乘法与加法需要分别规格化与舍入；融合乘加（FMA）将一次乘加合并为一次舍入；点积单元对齐多个乘积后集中归约，共享累加与输出后端，降低每项乘积的处理成本~\cite{lutzFusedFP84Way2024}。
+对于矩阵乘累加 $D=C+AB$，$M$、$N$ 是输出维度，$K$ 是归约维度。张量阵列的处理单元（processing element，PE）可采用分离的乘法与加法、融合乘加（fused multiply-add，FMA）或局部点积等组织，其选择直接影响功耗、性能与面积（power, performance, and area，PPA）。分离单元便于独立调度，但中间浮点结果需要分别规格化与舍入；FMA 将一次乘加融合为一次最终舍入，适合逐项或短链累加；点积单元则对齐多个乘积后集中归约，共享累加与输出后端，以摊薄向量内积中每项乘积的处理成本~\cite{lutzFusedFP84Way2024}。
 
-本文以点积单元（DP）作为 PE。硬件并行度记为 $m,n,k$：$m\times n$ 个 DP 分别接收 A 的行片段、B 的列片段和标量部分和，计算长度为 $k$ 的点积加 $c$（图~\ref{fig:tensor_dp_background}）。$k=1$ 退化为 MAC 阵列，TPU、Gemmini 的脉动阵列是典型案例~\cite{googletpuarchitecture,gemmini}；$k>1$ 则在每个 PE 内并行归约。A 在同行复用、B 在同列复用；大矩阵由 M/N 输出分块和 K 片段累加完成。本文以 FP16/BF16 的 $k=16$ 为基线，考察不同精度的归约并行度与输出并行度如何改变配比。
+本文以局部点积单元作为 PE，选取 FP16/BF16 下归约长度 $L=16$ 的点积块作为分析基线。这一粒度与已有数值建模研究识别出的 Hopper、Blackwell 点积累加粒度一致~\cite{xie2025mmasim}。阵列采用输出驻留（output-stationary，OS）组织：$A$、$B$ 在 PE 间传递或广播，各 PE 在本地归约乘积并累加到对应输出；当任务的 $K>L$ 时，通过多个局部点积块完成计算。后续配比比较以此组织为共同起点，考察单元内计算规模与阵列输出并行度的变化。
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{tensor_dp_background}
-\caption{Tensor computation from an $m\times n$ PE array. Each PE computes a length-$k$ dot product plus a scalar partial sum; $k=1$ gives a scalar MAC. The bottom row summarizes floating-point dot-product processing.}
-\label{fig:tensor_dp_background}
-\end{figure}
-
-有无组尺度的格式可用同一局部点积结构描述。依据 OCP 的点积定义，共享尺度可提出组内归约~\cite{ocpmx2023}。将 $k$ 项乘积按缩放组边界划分为 $G=\lceil k/g\rceil$ 组，末组不足部分补零，加入累加输入 $c$ 后，有
+有无组尺度的格式可用同一局部点积结构描述。依据 OCP 的点积定义，共享尺度可提出组内归约~\cite{ocpmx2023}。将 $L$ 项乘积按缩放组边界划分为 $G=\lceil L/g\rceil$ 组，末组不足部分补零，加入累加输入 $c$ 后，有
 \begin{equation}
 d=c+\sum_{j=0}^{G-1}X_j^{(A)}X_j^{(B)}
 \underbrace{\sum_{i=0}^{g-1}P_{j,i}^{(A)}P_{j,i}^{(B)}}_{q_j}.
@@ -37,24 +30,24 @@ d=c+\sum_{j=0}^{G-1}X_j^{(A)}X_j^{(B)}
 \end{equation}
 其中，$X_j^{(A)}$、$X_j^{(B)}$ 为两路输入第 $j$ 组的共享尺度，$P_{j,i}^{(A)}$、$P_{j,i}^{(B)}$ 为组内元素的解码值，$q_j$ 为组内点积；HiF4 的局部微指数计入元素解码。对于无组尺度的格式，令 $X_j^{(A)}=X_j^{(B)}=1$，即可得到普通点积累加。
 
-式~\eqref{eq:blockdot} 给出元素乘积、组内归约、尺度处理与跨组累加的共享结构；内部位宽及舍入位置仍由具体实现决定。
+式~\eqref{eq:blockdot} 将元素乘法与对齐、组内归约、尺度处理及跨组累加组织为共同的算术结构，为跨精度通路复用与后文的分层组合提供边界。该式描述计算语义；内部位宽、运算顺序及舍入位置仍由具体实现约束~\cite{ocpmx2023}。
 
 
 
 \subsection{通路复用与设计空间探索}
 \label{sec:datapath_sharing}
 
-BitFusion 采用位级分解复用整数乘法器，三星多模式 NPU 共享 INT4/INT8/FP16 算术资源~\cite{bitfusion2018,parkMultimode8KMACHWutilizationaware2022}。浮点设计中，TransDot 重组乘法与对齐资源~\cite{transdot2026}，MPICC 通过统一内部表示复用计算通路~\cite{huangMPICCMultiplePrecisionInterCombined2025}；融合 FP8 点积复用 FP32 FMA 后端~\cite{lutzFusedFP84Way2024}，Ten-Four 则将融合点积集成到 GPGPU 张量阵列~\cite{tenfour2026}。这些工作提供了共享基线，配比增配还需区分可共享后端与新增乘积、尺度及归约资源。
+已有多精度算术设计主要通过复用乘法、移位对齐及归约累加电路，减少独立通路带来的面积与功耗开销。TransDot 将乘法器和移位器按精度重组，使较宽运算与多路低精度点积共享硬件~\cite{transdot2026}；MPICC 将不同格式解码为统一内部表示，复用点积计算通路~\cite{huangMPICCMultiplePrecisionInterCombined2025}；融合 FP8 点积设计则比较专用后端与复用 FP32 FMA 加法器的实现，说明累加、规格化与舍入电路也是重要的共享对象~\cite{lutzFusedFP84Way2024}。这些工作为降低多精度点积单元的内部开销提供了基础。
 
-设计空间探索进一步连接数值与硬件成本：Crafton 等联合探索格式与 MAC 微架构~\cite{paretomac2025}，MX-like Tensor Core 评估共享尺度及权重、激活格式~\cite{zhao2026mxlike}，Timeloop 通过循环分块、空间展开与存储层次建模计算映射~\cite{timeloop2019}。本文将峰值算力配比作为设计变量，在相同配比下比较不同实现，并将成本映射到混合精度负载的收益。
+另一类工作通过设计空间探索分析数值表示、计算组织与硬件成本之间的关系。Crafton 等联合探索低精度格式与 MAC 微架构，比较数值误差、面积和功耗的帕累托权衡~\cite{paretomac2025}；MX-like Tensor Core 将共享尺度、权重与激活格式纳入联合评估~\cite{zhao2026mxlike}。在阵列层面，Timeloop 等框架通过循环分块、空间展开与存储层次建模，探索包括归约维 $K$ 分块在内的计算映射及阵列组织~\cite{timeloop2019}。上述优化主要围绕单元内部结构、格式及阵列参数展开，对将 16 位、8 位、4 位峰值算力配比作为独立设计变量，以及同配比下不同组合方式的成本差异，仍缺少系统对比。
+
+
 
 \subsection{算力配比的设计动机}
 \label{sec:commercial_ratios}
 \label{sec:ratio_motivation}
 
-在频率 $\nu$ 下，阵列每周期可执行 $mnk_f$ 次 MAC，即 $2\nu mnk_f$ FLOP/s。相同元素供数位宽下，16 位可容纳一个 BF16/FP16、两个 FP8 或四个 FP4；配置相应乘积资源并保持输出数量不变，即自然形成 $k_{16}:k_8:k_4=1:2:4$。组尺度仍需额外供数，该打包关系并不保证面积或能耗最优。
-
-表~\ref{tab:vendor_ratios} 展示了超出该基线的产业选择。保持高精度能力不变，低精度增配既可增加单个输出的归约长度 K，也可增加独立输出数 N；M/N 在计算表达上对称，本文以 N 代表输出扩展方向。这两种实现具有不同的后端共享范围与数据供给需求。
+表~\ref{tab:vendor_ratios} 汇总了商用 AI 产品及研发路线的代表性配比。以各产品自身的 16 位矩阵峰值归一化，配比已从经典的 $1:2:4$ 扩展至 $1:2:6$、约 $1:4:8$，以及 $1:2:8$ 的路线目标。低精度算力的相对增配使配比成为需要主动规划的架构变量。结合引言所述的芯片设计与模型迭代周期差异，这类规划既要覆盖当前需求，也要为未来负载预留低精度计算能力。
 
 \begin{table}[t]
 \centering
@@ -80,4 +73,4 @@ Ascend 960PR$^\dagger$~\cite{huawei960roadmap} & 1.000 & 2.000 & 8.000 & $1:2:8$
 \endgroup
 \end{table}
 
-本文据此回答三个问题：目标精度吞吐增长需要多少单 DP 面积与功耗；同峰值下 K/N 两种实现如何取舍；固定整核面积下，各配比适用于怎样的 H/Q/E 工作量组成。四种代表配比构成统一的比较集合，模型上下文与执行精度的变化用于分析选择如何迁移。研究范围限于单个张量模块的组织及同构部署，不扩展至芯片级异构 Tensor Core 调度。
+面向这些配比，需要回答两个问题。其一，如何结合跨精度复用、低精度专用计算模块与点积单元组合，快速构造目标配比？其二，在同配比且各精度绝对计算能力匹配时，单元内沿 $K$ 维扩展与阵列级沿 $M/N$ 维扩展，其面积、功耗、带宽需求及算力收益有何差异？前者增加单个输出的归约并行度，后者增加独立输出数量，因而具有不同的后端共享范围与数据供给需求。回答这两个问题，需要可组合点积架构，以及统一的 PPA 与带宽评估方法，将配比选择落实到可实现、可比较的硬件组织。第~\ref{sec:architecture} 节据此介绍 DP-Puzzle 的分层组合方法。
