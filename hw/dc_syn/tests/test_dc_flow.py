@@ -263,6 +263,19 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(rejected.returncode, 2)
         self.assertIn("valid source synthesis", rejected.stderr.decode())
 
+    def test_register_sizing_requires_same_family_and_repair(self):
+        parent = self.completed()
+        args = ["prepare", *self.selection(), "--run-id", "dc_Fixture_10240003",
+                "--resize-register", "core/register", "DFQD1Fixture", "DFQD4Fixture"]
+        self.assertNotEqual(self.cli(*args).returncode, 0)
+        invalid = args[:-1] + ["DFQD4OtherVT"]
+        self.assertNotEqual(self.cli(*invalid, "--design-rule-repair-from", parent.name).returncode, 0)
+        result = self.cli(*args, "--design-rule-repair-from", parent.name)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        data = json.loads((self.dc / "runs/dc_Fixture_10240003/inputs/resolved.json").read_text())
+        self.assertEqual(data["design_rule_repair"]["resize_registers"],
+                         [["core/register", "DFQD1Fixture", "DFQD4Fixture"]])
+
     def test_timing_repair_requires_same_valid_source(self):
         parent = self.completed()
         repair_id = "dc_Fixture_10240002"

@@ -193,6 +193,8 @@ def render_tcl(data):
     text += "set expand_depth {}\n".format(hierarchy["expand_depth"])
     resizes = data.get("design_rule_repair", {}).get("resize_inverters", [])
     text += "set resize_inverters [list " + " ".join("[list " + " ".join(tcl_string(v) for v in row) + "]" for row in resizes) + "]\n"
+    registers = data.get("design_rule_repair", {}).get("resize_registers", [])
+    text += "set resize_registers [list " + " ".join("[list " + " ".join(tcl_string(v) for v in row) + "]" for row in registers) + "]\n"
     for key, values in (("target_dbs", data["target_dbs"]),
                         ("target_library_names", data["technology"]["target_libraries"]),
                         ("rtl_sources", data["gate"]["sources"]), ("include_dirs", data["gate"]["include_dirs"]),
@@ -214,9 +216,19 @@ def prepare(args, data):
                     all(re.fullmatch(r"INVD[0-9]+[A-Za-z0-9_]+", cell) for cell in (expected, replacement)),
                     "Expected a named mapped inverter and same-function drive variant")
         data["design_rule_repair"] = {"source_run": args.design_rule_repair_from, "resize_inverters": resizes}
+        registers = getattr(args, "resize_register", None) or []
+        for instance, expected, replacement in registers:
+            old = re.fullmatch(r"DFQD([0-9]+)([A-Za-z][A-Za-z0-9_]*)", expected)
+            new = re.fullmatch(r"DFQD([0-9]+)([A-Za-z][A-Za-z0-9_]*)", replacement)
+            require(re.fullmatch(r"[A-Za-z0-9_/]+", instance) and old and new and
+                    old.group(2) == new.group(2) and int(new.group(1)) > int(old.group(1)),
+                    "Register sizing requires an upsized DFQD of the identical family/VT")
+        if registers:
+            data["design_rule_repair"]["resize_registers"] = registers
         verify_repair_source(data)
     else:
         require(not getattr(args, "resize_inverter", None), "Inverter sizing requires design-rule repair")
+        require(not getattr(args, "resize_register", None), "Register sizing requires design-rule repair")
     if getattr(args, "timing_repair_from", None):
         data["timing_repair"] = {"source_run": args.timing_repair_from, "setup_guardband_ns": 0.05}
         verify_repair_source(data)
@@ -371,6 +383,7 @@ def main():
             sub.add_argument("--run-id")
             sub.add_argument("--purpose", default="RTL 综合面积与时序检查")
             sub.add_argument("--hold-repair-from", help="Load this valid run's DDC and repair hold only, with identical inputs")
+            sub.add_argument("--resize-register", action="append", nargs=3, metavar=("INSTANCE", "EXPECTED_REF", "TARGET_REF"), help="Upsize a same-family/VT base-library DFQD register; preserve CP/D/Q function")
             sub.add_argument("--resize-inverter", action="append", nargs=3, metavar=("INSTANCE", "EXPECTED_REF", "TARGET_REF"), help="Verified same-function base-library inverter drive sizing in a design-rule repair")
             sub.add_argument("--design-rule-repair-from", help="Repair electrical design rules then hold; accepts a verified original or single setup/hold repair")
             sub.add_argument("--timing-repair-from", help="Load a valid DDC; incremental setup optimization with temporary 50ps guardband, restore final budget")

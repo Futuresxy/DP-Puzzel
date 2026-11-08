@@ -153,3 +153,7 @@ E64 同一已验证快照的实测 run dc_dp_top_e_11052354 已全部通过，�
 ## 当前六架构结果入口
 
 查看 [最新面积/时序汇总](records/latest_six_dp.md) 和 [功耗输入catalog](records/latest_six_dp.json)。runs根目录只保留每种架构最新有效结果，修复来源保存在其provenance/repair_sources/并校验hash。历史记录的清理与Git回看方法见 [records说明](records/README.md)。
+
+## 同功能寄存器驱动修复
+
+已定位到映射后寄存器驱动瓶颈时，可在新的 `--design-rule-repair-from <run>` 中显式传入 `--resize-register <instance> <expected_ref> <target_ref>`。仅允许同一 DFQD 家族/VT 的驱动增强；DC核对实际源实例、顺序单元属性、CP/D/Q端口与输出函数，执行 `size_cell` 并保存来源，不手改网表、不增加流水。所选库模型的功能体等价检查放在该run的provenance。随后必须重新检查setup/hold、VT、电气规则和门级结果，诊断候选的正slack不能代替正式验收。

@@ -15,3 +15,5 @@
 其他三种架构：dp_top 和 Q32E64沿用已验证门控版，分别见 [多精度门控验证](precision-register-gating.md)、[QE门控验证](qe-precision-register-gating.md)；E64保持原专用前端，沿用 `DP_verilog_e64_628e283760c4e830` / `20261108T004627771406Z` 的通过回执。
 
 当前结果统一入口：[六种综合索引](../../hw/dc_syn/records/latest_six_dp.md)、[六种面积与功耗报告](../../hw/power/records/current_six_precision_gated.md)。功耗的冻结RTL与门级逐位匹配、原生SAIF及注释审计独立于上述RTL回归。旧生成结果按本轮用户明确要求清理；当前六种设计的原始证据及必要依赖保留，删除范围由维护回执记录。
+
+本轮DC全部通过1GHz。E96直接通过；E128经增量setup/hold修复及同库DFQD1→DFQD4寄存器驱动增强，Q64E128经增量修复通过。最终约束不变，不增加流水、不修改RTL算术。E128单元功能模型归一化hash一致，正式run另行复查全部时序/VT/电气规则，之后仍须门级负载验证。DC流程新增受限的同家族/VT寄存器驱动修复选项，44项流程测试通过。

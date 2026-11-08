@@ -135,7 +135,7 @@ def markdown(catalog):
       '', '## 后续功耗测试准备', '',
       '机器可读入口为 [latest_six_dp.json](latest_six_dp.json)。每个条目固定top、run、export、原始验证回执、PVT/频率、支持模式，以及映射网表/DDC/SDC路径与SHA-256。未来功耗应显式选择该记录中的一份网表，按精度测量，不能用模糊latest目录或混用另一个run的活动信息。',
       '', 'power_ready=false、power_mw=null是综合catalog的占位，不能代表某个具体负载的测量状态。按精度完成的VCS门级重放、原生SAIF和Power Compiler活动审计及功耗结果，见 [功耗入口与结果](../../power/README.md)。时钟门控覆盖率不是功耗数据，也不能把一个已测格式的验收泛化为全部格式。',
-      '', '现用源码经历顶层common目录搬移，部分旧混合快照还早于QE紧凑解包的共用源码更新。JSON逐文件列出当前源码与冻结源码的差异；差异不直接证明数值改变，也不能被忽略当作同一源码。旧快照仍绑定其原始通过回执；新EDA输入必须按选定范围重新验证，不能手改旧manifest。',
+      '', 'JSON逐文件核对当前源码与冻结源码的差异及目录搬移。门控版采用各自通过的快照；E64按用户要求复用未变的专用E设计。任何后续源码差异仍需重新验证，不能将历史网表视为新RTL的验收。',
       '', '## 捕获级 setup slack（ps）', '', '| 架构 | S1 | S2 | S3 | S4 | S5 | S6 | S7 | S8 |', '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |']
     for rec in catalog['records']:
         lines.append('| '+rec['capacity']+' | '+' | '.join(f"{rec['stage_setup_paths'][f'S{i}']['slack_ns']*1000:.6f}" for i in range(1,9))+' |')

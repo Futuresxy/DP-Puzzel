@@ -143,6 +143,35 @@ if {$design_rule_repair} {
     size_cell $cell ${base_library}/${replacement}
     set_dont_touch $cell true
   }
+  # A drive-strength change of the same DFQD family is not a pipeline change.
+  foreach row $resize_registers {
+    lassign $row instance expected replacement
+    set cell [get_cells -quiet $instance]
+    if {[sizeof_collection $cell] != 1 || [get_attribute $cell ref_name] ne $expected} {
+      error "Register resize source mismatch: $instance"
+    }
+    set old_cell [get_lib_cells ${base_library}/${expected}]
+    set new_cell [get_lib_cells ${base_library}/${replacement}]
+    if {![get_attribute $old_cell is_sequential] || ![get_attribute $new_cell is_sequential]} {
+      error "Register sizing requires sequential cells"
+    }
+    foreach ref [list $expected $replacement] {
+      set pins [get_lib_pins ${base_library}/${ref}/*]
+      if {[sizeof_collection $pins] != 3} { error "Expected CP/D/Q-only DFQD" }
+      foreach name {CP D Q} {
+        if {[sizeof_collection [get_lib_pins -quiet ${base_library}/${ref}/${name}]] != 1} {
+          error "Register pin interface mismatch"
+        }
+      }
+    }
+    if {[get_attribute [get_lib_pins ${base_library}/${expected}/Q] function] ne
+        [get_attribute [get_lib_pins ${base_library}/${replacement}/Q] function]} {
+      error "Register output function mismatch"
+    }
+    puts "DP_REGISTER_RESIZE $instance $expected $replacement"
+    size_cell $cell ${base_library}/${replacement}
+    set_dont_touch $cell true
+  }
   compile -incremental_mapping -only_design_rule
 }
 if {$hold_fix} {
