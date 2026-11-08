@@ -120,7 +120,7 @@ def precision_metrics(outputs,expected):
 def legal_tuple(r):
     t=r['a_datatype']
     scale=0 if t in (0,1,2,10) else 1 if t in (3,4,5,6,7) else 2 if t==8 else 3
-    return 0<=t<=10 and (FRONTEND!='e' or t in (7,8,9)) and r['b_datatype']==t and r['c_datatype']==int(t==10) and r['a_scale_datatype']==scale and r['b_scale_datatype']==scale
+    return 0<=t<=10 and (FRONTEND not in ('e','e64') or t in (7,8,9)) and (FRONTEND!='q32e64' or 3<=t<=9) and r['b_datatype']==t and r['c_datatype']==int(t==10) and r['a_scale_datatype']==scale and r['b_scale_datatype']==scale
 
 def check_schedule(schedule,requests,expected,actual):
     pipeline=[None]*8; want=[]

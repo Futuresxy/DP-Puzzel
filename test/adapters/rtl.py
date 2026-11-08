@@ -11,11 +11,11 @@ import sys
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT/'scripts'))
-from dp_rtl_gate import DP_INTERFACE, PARAMETERS, payload, validate_scopes, verification_inputs, MIXED_PROFILES, frontend_top, frontend_list
+from dp_rtl_gate import DP_INTERFACE, PARAMETERS, payload, validate_scopes, verification_inputs, MIXED_PROFILES, LOWP_PROFILES, frontend_top, frontend_list
 
 def snapshot(implementation,frontend='multi'):
     base=ROOT/'src/verilog'
-    if frontend not in ('multi','e') + MIXED_PROFILES or (frontend!='multi' and implementation!='verilog'):
+    if frontend not in ('multi','e') + MIXED_PROFILES + LOWP_PROFILES or (frontend!='multi' and implementation!='verilog'):
         raise ValueError('E frontend requires maintained pure Verilog')
     interface = DP_INTERFACE if implementation == 'verilog' else dict(DP_INTERFACE, reset_port='reset', reset_active='high')
     top=frontend_top(frontend)

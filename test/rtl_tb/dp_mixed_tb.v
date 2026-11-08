@@ -106,6 +106,9 @@ module dp_tb;
       legal=(in_a_datatype<=`DP_DT_INT8 && in_a_datatype==in_b_datatype &&
         in_c_datatype==(in_a_datatype==`DP_DT_INT8) &&
         in_scale_a_datatype==scale_type(in_a_datatype) && in_scale_b_datatype==scale_type(in_a_datatype));
+`ifdef DP_QE_FRONTEND
+      legal=legal && in_a_datatype>=`DP_DT_MX8_E4M3 && in_a_datatype<=`DP_DT_HIF4;
+`endif
 `ifdef DP_E_FRONTEND
       legal=legal && (in_a_datatype==`DP_DT_MXFP4 || in_a_datatype==`DP_DT_NVFP4 || in_a_datatype==`DP_DT_HIF4);
 `endif
@@ -147,10 +150,16 @@ module dp_tb;
   genvar group_index;
   generate for(group_index=0;group_index<G;group_index=group_index+1) begin: g_trace_group
     always @(negedge clock) if(trace_fd && dut.u_core.r5_valid) begin
+`ifdef DP_LOWP_FRONTEND
+      if(dut.u_core.g_group[group_index].group_top_valid !== 1'b1) begin
+        $display("FAIL lowp group participation %0d",group_index); $finish;
+      end
+`else
       if(dut.u_core.g_group[group_index].group_top_valid !== (group_index<4 || dut.u_core.r5_extension)) begin
         $display("FAIL group participation %0d",group_index); $finish;
       end
       if(group_index<4 || dut.u_core.r5_extension)
+`endif
         $fdisplay(trace_fd,"%0d 5 group %0d %h %0d %0d %0d %h",pending[4],group_index,
           dut.u_core.g_group[group_index].group_align_magnitude,
           $signed(dut.u_core.g_group[group_index].group_align_anchor),

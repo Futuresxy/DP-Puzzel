@@ -82,7 +82,7 @@ class DPGateTests(unittest.TestCase):
             validate_scopes([],self.root,0,1,'e')
 
     def test_mixed_identity_and_incomplete_campaign_rejected(self):
-        for frontend in ('t8h16q32e96','t8h16q32e128','t8h16q64e128','t8h16q64e128_opt'):
+        for frontend in ('t8h16q32e96','t8h16q32e128','t8h16q64e128','t8h16q64e128_opt','e64','q32e64'):
             with patch.object(adapter,'ROOT',self.root):
                 export,_=adapter.snapshot('verilog',frontend)
             manifest,_,_=payload(export,self.root)
