@@ -1,3 +1,4 @@
+% !TeX root = ../main.tex
 % Analytical bandwidth model, checked by scripts/analyze_kn_bandwidth_reuse.py.
 % R holds A[m,k] across N output tiles, as confirmed by the author.
 \textbf{带宽增幅取决于新增资源的位置。} 设基阵列为 $m\times n$，每路基准 A/B 向量含尺度共 $w$ bit，目标模式吞吐增至 $r$ 倍。A 在行内广播并驻留复用 $R$ 次发射；B 在列内广播，每次更新。FP32 C/D 每 $\tau$ 次发射读写一次。先固定两方案的 $R,\tau$；每周期发射一次时，驻留存储上游的本地缓冲需求为

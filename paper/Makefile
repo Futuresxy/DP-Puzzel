@@ -1,5 +1,5 @@
 PYTHON ?= python3
-.PHONY: all pdf reproduce diagrams cost-figures check test clean
+.PHONY: all pdf watch reproduce diagrams cost-figures check test clean
 all: pdf
 pdf:
 	latexmk -xelatex -interaction=nonstopmode -halt-on-error -file-line-error main.tex
@@ -19,3 +19,7 @@ clean:
 cost-figures:
 	$(PYTHON) data/DP_area_power/plot_area_power.py
 	$(PYTHON) data/H16Q32E64_area/plot_area.py
+
+# Optional terminal watcher; Ctrl-C stops it. The VS Code recipe already builds on save.
+watch:
+	latexmk -pvc -view=none -xelatex -interaction=nonstopmode -halt-on-error -file-line-error main.tex

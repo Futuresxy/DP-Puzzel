@@ -2,6 +2,18 @@
 
 后续写作入口为 `main.tex`。引言与背景以 DP-puzzle-SW/paper 版本为主，统一到四配比研究范围；架构、评估、结论和实验图表迁自 DAC2027 当前稿，按章节拆分；研究范围为四种配比的 DP 成本、K/N 实现差异、固定面积下的负载选择。文献仅保留正文引用的条目，图片仅保留实际使用的七张。旧稿、扩展配比扫描、整份文献库和 EDA 大型产物不在此目录。
 
+## 保存后预览 PDF
+
+本机 VS Code 项目已配置 LaTeX Workshop；也可使用「文件 → 从文件打开工作区」打开 [paper.code-workspace](paper.code-workspace)，直接进入论文写作区。
+
+1. 打开 `main.tex`，按 `Ctrl+Alt+B` 首次编译。
+2. 按 `Ctrl+Alt+V`，在右侧打开内置 PDF 预览。
+3. 编辑 `sections/*.tex` 后按 `Ctrl+S`；插件自动编译完整论文，成功后刷新 PDF。
+
+各章节首行的 `% !TeX root = ../main.tex` 指定完整论文入口。编译使用 XeLaTeX 与现有 `.latexmkrc`，输出始终为 `build/main.pdf`；`Ctrl+Alt+J` 可从源码光标跳转到 PDF 对应位置。若编译失败，预览保留上一次成功结果，可在 LaTeX Workshop 输出面板查看错误。
+
+不使用插件自动编译时，可在 `paper/` 运行 `make watch` 持续监视文件，按 `Ctrl+C` 停止；不必同时运行两套自动编译。`make` 仍可用于单次编译，`make cost-figures` 用于更新面积/功耗 PNG。
+
 ## 编译与重绘
 
 需要 XeLaTeX、latexmk、BibTeX（TeX Live 的 xeCJK、IEEEtran 相关依赖），以及 Python 3、NumPy、Matplotlib。正文采用 TeX Gyre 和 Fandol 字体；图中文字优先 Arial。IEEE 模板随目录保留，来源见 [template/SOURCE.md](template/SOURCE.md)。
