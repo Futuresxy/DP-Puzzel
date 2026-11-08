@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.7.8；修改时间：2026-11-08 18:45:29 +08:00；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -17,6 +17,8 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 
 当前实现小修 v1.6.4：多精度 dp_lane_unpack 改为 A/B 紧凑 M/E/S 入口，内部完成配对特殊分类；新增 dp_lane_operand_unpack 保存原 S1 字段。尾数/指数 bank 直接选 M32/E20，移除 184 位 Number 展开接口。CModel、数值布局、S1/S2 边界和 L8/II=1 不变。沿用 rN 功能命名、就地 DFF 与完整语义排版；同步测试探针。代码对比与验收见 [紧凑解包验证](../../test/results/dp-compact-unpack-v1.6.4.md)。
 
+文档小修 v1.7.8：按现用六种顶层重绘[可编辑嵌套架构图](dp/draw.io/README.md)，明确每组两条 lane、E 与多精度/QE 流水差异、扩展参与屏蔽和共享后端。仅修订图纸与导航，算术、接口、L8/II=1 和 RTL 不变。
+
 ## 3. 当前文件索引
 
 | 文档 | 当前版本 | 功能 |
@@ -29,7 +31,7 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [06-configuration.md](06-configuration.md) | v1.5.7 | 定义参数及其合法派生关系 |
 | [07-verification.md](07-verification.md) | v1.7.7 | 定义现用模型/RTL及未来实现的共用验收合同 |
 | [08-implementation-ppa.md](08-implementation-ppa.md) | v1.7.7 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.7.7 | 维护整体架构与文档版本时间线 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.7.8 | 维护整体架构与文档版本时间线 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.5.4 | 定义规格版本和历史修订规则 |
 | [dp/README.md](dp/README.md) | v1.7.7 | 按模块与共用合同组织 DP 规格 |
@@ -63,7 +65,8 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 
 | 文档 | 固定版本 | 评审范围 |
 | --- | --- | --- |
-| [六种顶层总览](dp/dptop/top-architectures.md) | v1.7.7 | 对外入口、架构差异、共用核心及兼容入口 |
+| [六种顶层总览](dp/dptop/top-architectures.md) | v1.7.8 | 对外入口、架构差异、共用核心及兼容入口 |
+| [dp/draw.io/README.md](dp/draw.io/README.md) | v1.7.8 | 六种原生可编辑架构图、嵌套关系与图例 |
 | [混合顶层](dp/dptop/mixed-precision-expansion.md) | v1.7.7 | 三种现用扩展装配、输入布局、屏蔽、MAX/树、L8 与验证计划 |
 | [QE lane](dp/lane/dp_lane_qe.md) | v1.7.7 | Q4E8 的紧凑解包、窄乘法和原 Q/E 流水 |
 | [QE group](dp/group/dp_group_qe.md) | v1.7.7 | Q8E16 组和、无符号 scale 与兼容 S5 token |

@@ -1,10 +1,12 @@
-> 功能：六种 DP 架构相对基线的修改点和代码/spec导航；范围：六种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：src/verilog/top/下七个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
+> 功能：六种 DP 架构相对基线的修改点和代码/spec导航；范围：六种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.7.8；修改时间：2026-11-08 18:45:29 +08:00；对应代码：src/verilog/top/下七个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
 
 # 六种架构、七个顶层入口
 
 六种架构包括原 `dp_top`，另保留 `dp_top_e` 参数化兼容入口，所以 `src/verilog/top/` 根目录共七个 `.v` 文件。`dp_top_t8h16q32e128` 与 `dp_top_t8h16q64e128_opt` 分别扩展 E 和 Q/E，**两者均保留**；未优化的 `dp_top_t8h16q64e128` 不作为现用入口。
 
 下文采用默认 LOCAL_W=28、GLOBAL_W=40。T=TF32；H=FP16/BF16；Q=MXFP8 E4M3/E5M2、MXFP6 E3M2/E2M3；E=MXFP4/NVFP4/HiF4。各模式容量是单笔请求的原生点积项数，不能同时相加。全部保持 L8/II=1，C在DP内部只累加一次。
+
+六种架构的原生可编辑图见 [draw.io 图纸索引](../draw.io/README.md)：分别展示 DP → group → 两条 lane 的嵌套结构、S1–S8 计算分工及基础/扩展参与关系。每种架构独立一个 `.drawio` 文件，重复 group 用叠层与数量标识。
 
 ## 1. 目录与入口
 
