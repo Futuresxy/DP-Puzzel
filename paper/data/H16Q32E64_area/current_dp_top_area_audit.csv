@@ -1,0 +1,15 @@
+category,subfunction,component,cell_count,total_um2,total_design_percent,within_category_percent
+Addition & accumulation,1 final reduction tree: 5 operands,combinational,1227,203.74732799999884,1.1458009411853713,12.923213617658494
+Addition & accumulation,4 group adders: 2 operands each,combinational,1029,173.6663039999995,0.9766361921339423,11.015245043023219
+Addition & accumulation,8 lane reduction trees: 4 operands each,combinational,6976,1002.4058879999394,5.6371664904488705,63.58024691357889
+Addition & accumulation,Assigned pipeline registers,register,295,196.78003200000072,1.1066194000447926,12.481294425739401
+Alignment & exponent selection,32 local RTZ shift cores,combinational,6043,910.6513919999497,5.1211725438937625,14.613873803523095
+Alignment & exponent selection,5 global bidirectional shift cores,combinational,2517,508.98124800000323,2.862325600677874,8.167985896662582
+Alignment & exponent selection,Assigned pipeline registers,register,1364,913.1212799999847,5.135062296573427,14.653509861688093
+Alignment & exponent selection,Global mixed logic: anchor delta sign selection,combinational,2973,538.1406720000014,3.0263076061921814,8.635928016185987
+Alignment & exponent selection,Lane group and global MAX trees,combinational,3352,666.3536639999918,3.7473308870755626,10.69345354299052
+Alignment & exponent selection,Local mixed logic: pair sign placement delta selection,combinational,13820,2694.168575999884,15.15102514665977,43.23524887894972
+Exponent arithmetic,16 narrow exponent add cores (5-bit inputs),combinational,132,58.09766399999992,0.3267201525797273,8.273834523309514
+Exponent arithmetic,16 wide exponent add cores (8-bit inputs),combinational,761,132.67353599999973,0.7461077596030696,18.894372112557694
+Exponent arithmetic,Assigned pipeline registers,register,500,332.5870079999994,1.870348487674047,47.36455270894569
+Exponent arithmetic,Exponent bank input and output routing,combinational,1245,178.82726400000166,1.0056595559417982,25.467240655187105

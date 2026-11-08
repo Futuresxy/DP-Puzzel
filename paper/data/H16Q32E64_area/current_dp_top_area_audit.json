@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "method": "All ancestor inclusive totals independently cross-checked against original DC report",
+  "leaf_count": 82502,
+  "hierarchy_count": 1063,
+  "max_abs_hierarchy_difference_um2": 0.00011998683112324215,
+  "hierarchy_tolerance_um2": 0.0005,
+  "source_report": "hw/dc_syn/runs/dc_dp_top_11081432/reports/area_hierarchy.rpt",
+  "source_report_sha256": "d4abbd3c310d938662a81ea257bc9206de58b68624365a6b3543d97a8efc3484",
+  "leaf_input": "hw/power/runs/dp_top_functional_1108_224637/bf16/leaf_area.tsv",
+  "leaf_input_sha256": "5a00a2cb7f7da1bdfe80e64272d3843bf94dabaa3cdf62434d8b4043e7bb2c36",
+  "script_sha256": "c65dea642741dda02b527407aa677831ff397b1e33ff482d69c76748e2a21195",
+  "scope": "Hierarchical area accounting correct; mixed parent-local arithmetic is not separately attributed"
+}
