@@ -7,6 +7,7 @@
 namespace dp {
 void advance(const Config &config, State &state, unsigned stage) {
   state.stage = stage;
+  if (stage == 1) state.baseline_v18 = config.baseline_v18();
   if (config.mixed() && stage <= 5) {
     stage_mixed_frontends(config, state, stage);
     return;

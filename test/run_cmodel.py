@@ -12,7 +12,8 @@ TEST=Path(__file__).resolve().parent
 sys.path.insert(0,str(TEST))
 from adapters.cmodel import ROOT, DEFAULT_CONFIG, read_inputs, sha256, evaluate
 from cases.import_legacy import import_existing
-from reference.exact import reference, error_bound_ok, ulp_distance, fp64_tf32
+from reference.exact import error_bound_ok, ulp_distance, fp64_tf32
+from reference.architecture import reference
 
 
 def fingerprint(paths):

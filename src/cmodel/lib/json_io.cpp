@@ -38,6 +38,8 @@ Config config_from_json(const Json &json_value) {
       config.global_signed_align_width = field(json_value, key.c_str());
     else if (key == "post_scale_norm_extra_stage")
       config.post_scale_norm_extra_stage = field(json_value, key.c_str());
+    else if (key == "legacy_multi")
+      config.legacy_multi = field_iterator.value().get<bool>();
     else if (key == "frontend") {
       const auto value = field_iterator.value().get<std::string>();
       if (value == "multi")
@@ -85,7 +87,7 @@ Request request_from_json(const Json &json_value) {
   return request;
 }
 Json config_json(const Config &config) {
-  Json result = {{"frontend", name(config.frontend)},
+  Json result = {{"frontend", name(config.frontend)}, {"baseline_v18", config.baseline_v18()},
                  {"k_fp16", config.k_fp16},
                  {"local_shift_mag_width", config.local_shift_mag_width},
                  {"global_signed_align_width", config.global_signed_align_width},

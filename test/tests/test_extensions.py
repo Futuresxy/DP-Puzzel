@@ -7,7 +7,7 @@ import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from adapters.cmodel import evaluate, invoke, DEFAULT_CONFIG
 from cases.common import make, random_request
-from reference.exact import reference
+from reference.architecture import reference
 
 
 class ExtensionModel(unittest.TestCase):

@@ -85,6 +85,8 @@ unsigned Config::lane_fraction(DataType datatype) const {
   const auto element_count = format(datatype).lane_elements;
   if (datatype == DataType::INT8)
     return lane_bits() - (int_product_bits + ceil_log2(element_count));
+  if (element_count == e_elements_per_lane && baseline_v18())
+    return e_group_fraction_bits + lane_bits() - e_lane_fused_bits;
   if (element_count == e_elements_per_lane) {
     const unsigned natural = e_pair_bits + e_guard_bits + ceil_log2(element_count / 2);
     const unsigned product_f = datatype == DataType::HIF4 ? 4 : 2;

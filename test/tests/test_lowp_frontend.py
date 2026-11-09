@@ -18,7 +18,7 @@ class LowpFrontend(unittest.TestCase):
                 cfg=dict(local_shift_mag_width=local,global_signed_align_width=glob)
                 got=evaluate(requests,config=cfg|{'frontend':profile},trace=True)
                 self.assertEqual(got,evaluate(requests,config=cfg|{'frontend':oracle},trace=True))
-                if oracle=='qe': self.assertEqual(got,evaluate(requests,config=cfg,trace=True))
+                if oracle=='qe': self.assertEqual(got,evaluate(requests,config=cfg|{'legacy_multi':True},trace=True))
                 for result in got:
                     self.assertEqual(len(result['trace'][4]['data']['groups']),4)
                     aligned=list(map(int,result['trace'][5]['data']['aligned_tc']))

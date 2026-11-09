@@ -16,7 +16,8 @@ namespace dp {
 // Precision | A S | A I | A F | B S | B I | B F | Y S | Y I | Y F
 // --------- | --- | --- | --- | --- | --- | --- | --- | --- | ---
 // NVFP4     | 0   | 10  | 4   | 0   | 2   | 6   | 0   | 12  | 10
-// HiF4      | 0   | 8   | 6   | 0   | 2   | 6   | 0   | 10  | 12
+// HiF4 v1.8 | 0   | 10  | 4   | 0   | 2   | 6   | 0   | 12  | 10
+// HiF4 legacy keeps I8F6 -> I10F12.
 // Product low padding is group_mag_bits()-22; sign travels separately.
 // P=c.local_fraction() (default 26). SM carries one separate sign bit.
 // S5 group output (SM).
@@ -27,7 +28,8 @@ namespace dp {
 // MXFP8 / MXFP6      | 1 | 5  | P
 // MXFP4              | 1 | 10 | P-5
 // NVFP4              | 1 | 12 | P-7
-// HiF4               | 1 | 10 | P-5
+// HiF4 v1.8          | 1 | 12 | P-7
+// HiF4 legacy        | 1 | 10 | P-5
 // INT8               | 1 | 18 | P-13
 // LZD reads the listed I/F as unsigned magnitude (S=0).
 void stage_group(const Config &config, State &state, bool do_detect) {
@@ -92,9 +94,12 @@ void stage_group(const Config &config, State &state, bool do_detect) {
                                                    : static_cast<int>(format_info.bias));
       int alpha = state.group_max_exponents[group_index] - 2 * element_exponent_bias;
       if (format_info.scale != ScaleType::NONE)
-        alpha += scale_a.exponent + scale_b.exponent - 2 * static_cast<int>(scale_bias);
+        alpha += scale_a.exponent + scale_b.exponent -
+                 (config.baseline_v18() ? 0 : 2 * static_cast<int>(scale_bias));
       out.anchor_raw = alpha - static_cast<int>(fraction) + static_cast<int>(out.width) - 1;
     }
+    if (config.baseline_v18() && out.anchor_raw != state.group_raw_anchors[group_index])
+      throw std::logic_error("S3 precomputed anchor disagrees with S5 format");
     state.groups.push_back(out);
   }
   finish_group_stage(state, do_detect, scale_trace);

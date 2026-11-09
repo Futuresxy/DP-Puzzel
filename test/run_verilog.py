@@ -18,7 +18,8 @@ from datetime import datetime, timezone
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from adapters.cmodel import ROOT, read_inputs, write_inputs, evaluate
 from cases.common import random_request, make
-from reference.exact import DTYPES, ulp_distance, reference
+from reference.exact import DTYPES, ulp_distance
+from reference.architecture import reference
 from adapters.rtl import snapshot, record_validation
 from dp_rtl_gate import CONFIGS, DEFAULT_SCOPE
 

@@ -9,7 +9,8 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from adapters.cmodel import DEFAULT_CONFIG, evaluate, invoke, read_inputs, write_inputs, ROOT
 from cases.common import make, random_request
 from cases.import_legacy import EXISTING
-from reference.exact import reference, error_bound_ok, FORMATS, DTYPES, unpack, power
+from reference.exact import error_bound_ok, FORMATS, DTYPES, unpack, power
+from reference.architecture import reference
 
 
 class ExistingModel(unittest.TestCase):
@@ -103,7 +104,7 @@ class ExistingModel(unittest.TestCase):
         hif_meta=([1]*16,[1]*16,[0]*8,[0]*8)
         cases=[
             (make('nvfp4',a=nv,b=positive,sa=max_nv_scale,sb=max_nv_scale,ident=0),9216,225,True),
-            (make('hif4',a=nv,b=positive,sa=[195],sb=[195],metadata=hif_meta,ident=1),12544,196,True),
+            (make('hif4',a=nv,b=positive,sa=[195],sb=[195],metadata=hif_meta,ident=1),3136,196,True),
             (make('nvfp4',a=nv,b=positive,c=c_negative_zero,sa=[0]*4,ident=2),9216,0,True),
             (make('nvfp4',a=[8]*64,b=positive,c=c_negative_zero,ident=3),0,64,True),
             (make('nvfp4',a=([15]*8+[7]*8)*4,b=positive,c=c_negative_zero,ident=4),0,64,False),

@@ -65,6 +65,9 @@ struct Config {
   unsigned global_signed_align_width = 40;
   unsigned post_scale_norm_extra_stage = 0;
   Frontend frontend = Frontend::Multi;
+  // Compatibility for unconverted mixed tops; standalone Multi defaults to v1.8.
+  bool legacy_multi = false;
+  bool baseline_v18() const { return frontend == Frontend::Multi && !legacy_multi; }
   void validate() const;
   bool mixed() const {
     return frontend == Frontend::MixedE96 || frontend == Frontend::MixedE128 ||

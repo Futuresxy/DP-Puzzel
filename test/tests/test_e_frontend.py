@@ -19,7 +19,7 @@ class EFrontend(unittest.TestCase):
     def test_shared_saved_vectors_and_backend(self):
         for mode in MODES:
             _, requests = read_inputs(ROOT / 'test/data/dp' / mode / 'K64/correct_961/inputs.txt')
-            old = evaluate(requests, trace=True)
+            old = evaluate(requests, config={'legacy_multi': True}, trace=True)
             new = evaluate(requests, config={'frontend': 'e'}, trace=True)
             for req, multi, e in zip(requests, old, new):
                 self.assertEqual({k: v for k, v in multi.items() if k != 'trace'},
@@ -174,7 +174,9 @@ class EFrontend(unittest.TestCase):
         negative_scale['a_scale'] = '80808080'
         bad.append(negative_scale)
         self.assertTrue(all('error' in r for r in evaluate(bad, config={'frontend': 'e'}, allow_errors=True)))
-        for frontend in ('e64', 'unknown', 1):
+        # e64 is a supported fixed-capacity alias since the lowp-top implementation.
+        self.assertEqual(invoke([dict(op='config')], config={'frontend':'e64'})[0]['k_e'], 64)
+        for frontend in ('unknown', 1):
             with self.assertRaises(RuntimeError):
                 invoke([dict(op='config')], config={'frontend': frontend})
 

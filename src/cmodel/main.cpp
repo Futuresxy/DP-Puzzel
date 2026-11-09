@@ -21,8 +21,8 @@ int main(int argc, char **argv) {
         config = dp::config_from_json(json_value);
       } else if (arg == "--version") {
         std::cout << dp::Json({{"model", "dp-cmodel-2"},
-                               {"architecture", "dp-cube/v1.6"},
-                               {"frontends", dp::Json::array({"multi", "e"})},
+                               {"architecture", "dp_top/v1.8; other frontends/v1.7"},
+                               {"frontends", dp::Json::array({"multi", "e", "qe", "t8h16q32e96", "t8h16q32e128", "t8h16q64e128"})},
                                {"boost", BOOST_LIB_VERSION},
                                {"json", NLOHMANN_JSON_VERSION_MAJOR * 10000 +
                                             NLOHMANN_JSON_VERSION_MINOR * 100 +

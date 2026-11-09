@@ -29,6 +29,7 @@ struct Product {
 struct Token {
   Big magnitude = 0;
   int anchor_raw = 0;
+  int compare_exp = 0; // S5 registered MAX key; C v1.8 uses the raw exponent.
   unsigned width = 0;
   unsigned fractional_bits = 0;
   unsigned leading_zero_count = 0;
@@ -52,6 +53,7 @@ struct State {
   std::vector<State> frontends;
   std::vector<bool> participate;
   bool tracing = false;
+  bool baseline_v18 = false;
   unsigned stage = 0;
   std::vector<Number> operands_a;
   std::vector<Number> operands_b;
@@ -59,6 +61,7 @@ struct State {
   std::vector<Number> scale_b;
   std::vector<Product> products;
   std::vector<int> group_max_exponents;
+  std::vector<int> group_raw_anchors; // Precomputed in S3, delayed through S4.
   std::vector<Special> group_special;
   std::vector<std::vector<Big>> leaves;
   std::vector<Big> lanes;

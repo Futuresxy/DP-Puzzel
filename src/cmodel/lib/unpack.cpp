@@ -190,6 +190,11 @@ void stage_unpack(const Config &config, State &state) {
         unpack_scale(request.a_scale_type, slice(request.a_scale, group_index * 8, 8)));
     state.scale_b.push_back(
         unpack_scale(request.b_scale_type, slice(request.b_scale, group_index * 8, 8)));
+    if (config.baseline_v18()) {
+      for (auto *number : {&state.scale_a.back(), &state.scale_b.back()})
+        number->exponent = number->category == Class::NaN ? 0
+                            : number->exponent - static_cast<int>(scale_bias);
+    }
   }
   if (state.tracing) {
     Json operands_a_json = Json::array();

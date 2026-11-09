@@ -156,6 +156,7 @@ Json token_json(const Token &token) {
           {"width", token.width},
           {"f", token.fractional_bits},
           {"anchor_raw", token.anchor_raw},
+          {"compare_exp", token.compare_exp},
           {"z", token.leading_zero_count},
           {"e", token.anchor_raw - static_cast<int>(token.leading_zero_count)},
           {"zero", token.magnitude == 0},

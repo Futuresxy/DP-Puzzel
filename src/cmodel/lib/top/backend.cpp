@@ -11,14 +11,16 @@ void detect_token(Token &token) {
     token.leading_zero_count = 0;
     token.anchor_raw = 0;
   }
+  token.compare_exp = token.anchor_raw - static_cast<int>(token.leading_zero_count);
 }
 void finish_group_stage(State &state, bool do_detect, const Json &scale_trace) {
   if (do_detect && state.request.c_type == CType::FP32)
     for (auto &group : state.groups)
       detect_token(group);
   state.c_token = unpack_c(state.request.c_type, state.request.c);
-  if (do_detect && state.request.c_type == CType::FP32)
+  if (do_detect && state.request.c_type == CType::FP32 && !state.baseline_v18)
     detect_token(state.c_token);
+  if (state.baseline_v18) state.c_token.compare_exp = state.c_token.anchor_raw;
   if (state.tracing) {
     Json group = Json::array();
     for (const auto &token : state.groups)
@@ -31,7 +33,7 @@ void stage_detect(const Config &, State &state) {
   if (state.request.c_type == CType::FP32) {
     for (auto &token : state.groups)
       detect_token(token);
-    detect_token(state.c_token);
+    if (!state.baseline_v18) detect_token(state.c_token);
   }
   if (state.tracing) {
     Json group = Json::array();
@@ -60,7 +62,8 @@ void stage_global_align(const Config &config, State &state) {
     for (unsigned source_index = 0; source_index < sources.size(); ++source_index) {
       const auto &token = sources[source_index];
       if (participate[source_index] && token.active()) {
-        const int exponent_value = token.anchor_raw - static_cast<int>(token.leading_zero_count);
+        const int exponent_value = state.baseline_v18 ? token.compare_exp :
+            token.anchor_raw - static_cast<int>(token.leading_zero_count);
         state.common = any ? std::max(state.common, exponent_value) : exponent_value;
         any = true;
       }

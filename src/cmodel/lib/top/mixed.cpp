@@ -33,6 +33,7 @@ void stage_mixed_frontends(const Config &config, State &state, unsigned stage) {
     Config local = config;
     local.k_fp16 = 4;
     local.frontend = config.group_frontend(group_index);
+    local.legacy_multi = true; // Mixed RTL remains at the v1.7 contract.
     auto &frontend = state.frontends[group_index];
     if (state.participate[group_index]) {
       advance(local, frontend, stage);

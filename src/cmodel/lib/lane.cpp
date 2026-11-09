@@ -2,7 +2,8 @@
 #include <algorithm>
 
 // T1H2Q4E8: S2 product/group-MAX, S3 unsigned RTZ (E pairs exact),
-// S4 balanced lane sum. All shifts act on magnitude before restoring sign.
+// v1.8: E bypasses RTZ/abs, uses signed narrow pairs and fuses local e2 after S4 tree.
+// Other frontends keep the v1.7 magnitude-align contract.
 
 namespace dp {
 namespace {
@@ -50,7 +51,8 @@ void stage_products(const Config &config, State &state) {
         multiply(datatype, operand_a.magnitude, operand_b.magnitude, element_index % element_count);
     const unsigned group_index = element_index / (lanes_per_group * element_count);
     state.group_special[group_index].merge(product.special);
-    if (product.magnitude != 0 && !product.special.active()) {
+    if (product.magnitude != 0 && !product.special.active() &&
+        !(config.baseline_v18() && element_count == e_elements_per_lane)) {
       state.group_max_exponents[group_index] =
           active[group_index] ? std::max(state.group_max_exponents[group_index], product.exponent)
                               : product.exponent;
@@ -83,7 +85,8 @@ void stage_products(const Config &config, State &state) {
 // ---------------------------- | ------- | ------ | -- | ----
 // TF32 / FP16 / BF16 / MXFP8/6 | 0       | 1      | 2  | P
 // MXFP4 / NVFP4                | 0       | 1      | 7  | P-5
-// HiF4                         | 0       | 1      | 5  | P-3
+// HiF4 (legacy)                | 0       | 1      | 5  | P-3
+// v1.8 E pair slots: MX/NV S1I9F(P-7), HiF4 S1I7F(P-5); signed directly.
 // INT8                         | 0       | 1      | 15 | P-13
 // S3 E pair before guard/padding (TC, W10).
 // Precision / signal | S | I | F
@@ -93,6 +96,21 @@ void stage_products(const Config &config, State &state) {
 void stage_local_align(const Config &config, State &state) {
   const auto datatype = state.request.a_type;
   const unsigned element_count = format(datatype).lane_elements;
+  // S3 computes the physical MSB coordinate independently of the mantissa sum.
+  if (config.baseline_v18()) {
+    const int element_bias = element_count == q_elements_per_lane ? 15 :
+                            element_count == e_elements_per_lane ? 0 : format(datatype).bias;
+    unsigned group_fraction = config.lane_fraction(datatype);
+    if (datatype == DataType::NVFP4 || datatype == DataType::HIF4)
+      group_fraction -= 2; // compact14 * coefficient8 -> product22, pad to group slot.
+    for (unsigned group_index = 0; group_index < config.groups(); ++group_index) {
+      const int scale_exponent = format(datatype).scale == ScaleType::NONE ? 0 :
+          state.scale_a[group_index].exponent + state.scale_b[group_index].exponent;
+      state.group_raw_anchors.push_back(datatype == DataType::INT8 ? 0 :
+          state.group_max_exponents[group_index] + scale_exponent - 2 * element_bias -
+          static_cast<int>(group_fraction) + static_cast<int>(config.group_mag_bits()) - 1);
+    }
+  }
   Json deltas = Json::array();
   for (unsigned lane = 0; lane < config.lanes(); ++lane) {
     std::vector<Big> leaf;
@@ -107,6 +125,12 @@ void stage_local_align(const Config &config, State &state) {
         Big pair = signed_value(product.magnitude, product.negative) +
                    signed_value(next_product.magnitude, next_product.negative);
         check_signed(pair, e_pair_bits, "E pair");
+        if (config.baseline_v18()) {
+          // Signed pair goes directly to the shared tree; reserve two bits for S4 e2.
+          leaf.push_back(pair << pad);
+          lane_deltas.push_back(0);
+          continue;
+        }
         int delta = datatype == DataType::HIF4 && pair != 0
                         ? state.group_max_exponents[group_index] - product.exponent
                         : 0;
@@ -161,7 +185,8 @@ void stage_local_align(const Config &config, State &state) {
 // FP16 / BF16        | 1 | 3  | P+1
 // MXFP8 / MXFP6      | 1 | 4  | P
 // MXFP4 / NVFP4      | 1 | 9  | P-5
-// HiF4               | 1 | 7  | P-3
+// HiF4 (legacy)      | 1 | 7  | P-3
+// HiF4 (v1.8 fused)  | 1 | 9  | P-5
 // INT8               | 1 | 17 | P-13
 void stage_lane_sum(const Config &config, State &state) {
   const auto datatype = state.request.a_type;
@@ -170,6 +195,13 @@ void stage_lane_sum(const Config &config, State &state) {
     const unsigned pad =
         ceil_log2(q_elements_per_lane) - ceil_log2(static_cast<unsigned>(lane_leaves.size()));
     sum <<= pad;
+    if (config.baseline_v18() && format(datatype).lane_elements == e_elements_per_lane) {
+      const unsigned lane_index = state.lanes.size();
+      const unsigned shift = datatype == DataType::HIF4
+          ? state.products[lane_index * e_elements_per_lane].exponent : e_guard_bits;
+      // Exact left shift in the full lane slot; no RTZ and no cross-lane exponent.
+      sum <<= shift;
+    }
     check_signed(sum, config.lane_bits(), "lane SOP");
     state.lanes.push_back(sum);
   }

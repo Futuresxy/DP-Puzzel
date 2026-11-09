@@ -55,7 +55,7 @@ class MixedFrontend(unittest.TestCase):
         rng=random.Random(0x716)
         requests=[random_request(mode,rng,4,index) for index in range(20)
                   for mode, datatype in DTYPES.items() if 3 <= datatype <= 9]
-        multi=evaluate(requests,config={'k_fp16':4},trace=True)
+        multi=evaluate(requests,config={'k_fp16':4,'legacy_multi':True},trace=True)
         qe=evaluate(requests,config={'k_fp16':4,'frontend':'qe'},trace=True)
         self.assertEqual(multi,qe)
         rejected=evaluate([make('tf32'),make('fp16'),make('bf16'),make('int8')],
@@ -89,7 +89,7 @@ class MixedFrontend(unittest.TestCase):
                             sub[field]=format((int(request[field],16)>>(bits*group_index))&((1<<bits)-1),'x')
                         sub['c']='00000000'
                         frontend='multi' if group_index<4 else 'qe' if qe_extension(profile) else 'e'
-                        single=evaluate([sub],config=cfg|{'k_fp16':4,'frontend':frontend},trace=True)[0]
+                        single=evaluate([sub],config=cfg|{'k_fp16':4,'frontend':frontend,'legacy_multi':True},trace=True)[0]
                         self.assertEqual(token,single['trace'][4]['data']['groups'][0])
                     aligned=list(map(int,result['trace'][5]['data']['aligned_tc']))
                     self.assertEqual(sum(aligned),int(result['trace'][6]['data']['sop_tc']))
