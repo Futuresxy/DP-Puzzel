@@ -1,4 +1,4 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：现有文件链接见下文；dp_top v1.8 CModel/RTL 已实现并通过本批功能验证；其他顶层保留v1.7。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.9；修改时间：2026-11-09 22:29:13 +0800；对应代码：现有文件链接见下文；dp_top v1.8 CModel/RTL 已实现并通过本批功能验证；其他顶层保留v1.7。
 
 **适用范围更新：dp_top 当前批准合同为 [v1.8](../dptop/dp-top-v1.8.md)，包括新的 E 坐标、无偏 scale、A_raw/compare_exp、C 非正规策略和 CSA。下文旧数值/接口仅适用于尚未迁移的 v1.7 E/QE/混合实现，不作为 dp_top v1.8 合同。**
 # DP CModel 合同
@@ -43,7 +43,7 @@ S5 先分离符号和幅值。NVFP4/HiF4 共用 **14×8 无符号 scale 乘法**
 
 trace 的每个 cutpoint 有 stage、operation、data。覆盖 S1 每元素及 packed E/M/S、S2 magnitude/exponent/F/r、S3 signed leaves/移位差、S4 lane SOP/F、S5 raw group/C token 与共享 scale 乘法操作数、S6 E_max/z/d/net/对齐值、S7 总和/F、S8 输出。token 保留 sign、m、width、F、anchor_raw、z、派生 e 与 zero/special。整数和特殊值未使用的浮点控制是安全占位，不作为数值指数。
 
-E 的 S2/S3/S4 观察点分别为 `e_multiply_and_pairs`、`e_lane_sop_tree`、`e_group_sum_and_abs`；S5 起共用原 token/trace 接口。HiF4 在 S4 消耗 p=e2_a+e2_b，输出 F 与原多精度路径不同；按 [E group 坐标合同](../group/dp_group_E.md#4-与原多精度-group-对齐的输出-layout) 检查 m/A/z 映射，S6 对齐叶子、S7、S8 逐位一致。S3 可提前准备 anchor 是硬件时序安排，当前 CModel 在 S2 保存 scale 指数和、S5 计算 anchor，不额外增加寄存级。
+以下为旧E实现映射；v1.9的S3 e2及LZD22尚待迁移，不能用旧切点作新验收。旧E 的 S2/S3/S4 观察点分别为 `e_multiply_and_pairs`、`e_lane_sop_tree`、`e_group_sum_and_abs`；S5 起共用原 token/trace 接口。HiF4 在 S4 消耗 p=e2_a+e2_b，输出 F 与原多精度路径不同；按 [E group 坐标合同](../group/dp_group_E.md) 检查 m/A/z 映射，S6 对齐叶子、S7、S8 逐位一致。S3 可提前准备 anchor 是硬件时序安排，当前 CModel 在 S2 保存 scale 指数和、S5 计算 anchor，不额外增加寄存级。
 
 模型可检查范围/等式和周期边界；逻辑阶段不能证明实际组合延迟符合 1.41GHz。S2 MAX 回传、S5 scale→LZD、S6 MAX→双向移位、S8 norm/RNE 都仍须 RTL/工艺时序验证。
 

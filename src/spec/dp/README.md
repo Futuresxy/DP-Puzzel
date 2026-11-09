@@ -1,4 +1,4 @@
-> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
+> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.9；修改时间：2026-11-09 22:29:13 +0800；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
 
 # DP 规格导航
 
@@ -86,6 +86,6 @@ CModel 和 QE/混合 Verilog 已实现；三个顶层分别通过完整 Verilato
 
 ## 7. 面积优化方案与证据边界
 
-[混合顶层第 10 节](dptop/mixed-precision-expansion.md#10-独立面积优化版本与验收)记录 Q64E128 的 +80.64% 面积来源、+55%–65% 目标、拟建独立优化版本和验收条件；实现细节分别归属 QE/E lane 与 group。首轮优化实现修订为 v1.7.3；独立优化顶层及原顶层已通过 [功能验证](../../../test/results/qe-area-opt-v1.7.3.md)，[新快照 DC 验收](../../../hw/dc_syn/records/README.md#历史记录)已通过 1GHz，面积增幅由 80.64% 降至 66.53%，用户接受本轮结果；历史 PPA 仍对应原快照。
+[混合顶层v1.9](dptop/mixed-precision-expansion.md)定义新的E/QE专用前端、LZD22/U31、active MAX和扩展CSA合并，当前仅spec。旧QE面积优化约66.53%增幅及其功能/PPA属于历史版本，见[旧功能记录](../../../test/results/qe-area-opt-v1.7.3.md)与[综合索引](../../../hw/dc_syn/records/README.md#历史记录)，不得作为新方案收益。
 
 扩展 QE 保留四种 MXFP8/6 与 MXFP4/NVFP4/HiF4，扩展 E 保留三种 E；只有基础四组支持 T/H/INT8。优先优化固定字段解包、分类/符号寄存和扩展源整数选择，默认窗口 28/40、L8/II=1、单次 C 与数值行为保持。未测的面积节省和功耗收益不写入实测结论。

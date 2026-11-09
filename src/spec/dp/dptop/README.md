@@ -1,6 +1,6 @@
-> 功能：定义 DP 顶层规格目录与后端边界；范围：请求/分发、C、S6 全局对齐、S7 规约、S8 输出和 E64 接入；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_global_align.v](../../../verilog/top/common/dp_global_align.v)、[dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v)、[共用 CModel 后端](../../../cmodel/lib/top/backend.cpp)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)；Chisel 尚未实现。
+> 功能：定义 DP 顶层规格目录与后端边界；范围：请求/分发、C、S6 全局对齐、S7 规约、S8 输出和 E64 接入；版本：v1.9；修改时间：2026-11-09 22:28:25 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_global_align.v](../../../verilog/top/common/dp_global_align.v)、[dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v)、[共用 CModel 后端](../../../cmodel/lib/top/backend.cpp)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)；Chisel 尚未实现。
 
-当前基础 `dp_top` 的新数值/流水边界统一见 [v1.8 合同](dp-top-v1.8.md)；E/QE/混合顶层本轮维持旧实现，按各专用文档阅读。
+当前基础 `dp_top` 的新数值/流水边界统一见 [v1.8 合同](dp-top-v1.8.md)；E/QE/混合顶层现有实现仍为旧版；专用文档已更新为已确认、待实现的v1.9合同，不作为新验证证据。
 
 # dptop：接口、全局对齐与输出
 

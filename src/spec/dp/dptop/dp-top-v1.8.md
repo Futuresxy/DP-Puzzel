@@ -1,4 +1,4 @@
-> 功能：dp_top v1.8 实施合同；范围：基础 T8H16Q32E64，K4/8/16、LOCAL_W/GLOBAL_W 合法变体；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[CModel](../../../cmodel/lib/model.cpp)；状态：已批准合同，CModel/RTL 已实现并通过本批功能验证。
+> 功能：dp_top v1.8 实施合同；范围：基础 T8H16Q32E64，K4/8/16、LOCAL_W/GLOBAL_W 合法变体；版本：v1.8.1；修改时间：2026-11-09 22:28:25 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[CModel](../../../cmodel/lib/model.cpp)；状态：已批准合同，CModel/RTL 已实现并通过本批功能验证。
 
 # dp_top v1.8 实施合同
 
@@ -47,13 +47,9 @@ Emax=max(active compare_exp)。signed_shift_delta=Emax-A_raw；正值右移，�
 
 S7 四个group先4:2压成两行，再与C做3:2，最后CPA。4:2可用两个3:2实现，不含中间CPA。carry统一定义为已左移的数值。输入先符号扩展到足够宽度；默认五个signed40输出signed43。固定宽度压缩遵守模2^W恒等式，最终精确总和必须落在signedW范围；不能把未对齐carry当普通加数。K4/8仅启用1/2组，最终宽度仍按GLOBAL_W+ceil(log2(G+1))。
 
-## 6. 后续扩展分支（本批仅规格）
+## 6. 后续混合扩展
 
-E32扩展=新增2个E16 group，扩展两项用ADD；E64或Q32E64扩展=新增4组，用4:2+ADD得到扩展部分和。这里是新增容量，不是独立E64顶层的重定义。
-
-基础四组+C得到base_sum；扩展组得到extension_sum；selected_sum=extension_supported ? base_sum+extension_sum : base_sum。C只计入base_sum一次。base/extension必须在同一Emax和F下对齐后再求和，不允许各自Emax后直接相加。MAX、移位、特殊归约均在不支持精度时排除扩展支；对扩展寄存器及算术输入隔离。E扩展仅支持MX/NV/HiF；QE扩展支持MXFP8/6及三种E，不支持T/H/INT8。
-
-扩展4:2后的ADD及最终合并ADD可能增加S7关键路径；扩展顶层保持L8的可行性待单独实现/综合，本批不承诺。所有新增group沿用A_raw/compare_exp token；不支持的支路不能用占位0指数压过负指数。
+扩展合同已由[v1.9混合设计](mixed-precision-expansion.md)统一定义：2组直接与基础两行做4:2；4组先4:2再合并；两行MUX后唯一CPA。基础dp_top本页算法不变，三种混合RTL尚待迁移，不能继承基础验证。
 
 ## 7. 验收
 
@@ -63,4 +59,4 @@ E32扩展=新增2个E16 group，扩展两项用ADD；E64或Q32E64扩展=新增4�
 
 v1.7→v1.8：~~E共享对齐、biased scale、S6计算A_raw-z、普通最终树、C LZD~~ → E局部融合、无偏scale、S3 anchor/S5 compare_exp、CSA、C保留0.xxx参与比较。
 
-实施回执：[dp_top v1.8 验证报告](../../../../test/results/dp-top-v1.8.md)。当前已验证 L8/II=1 和数值/断点；未取得 v1.8 新 PPA。
+实施回执：[dp_top v1.8 验证报告](../../../../test/results/dp-top-v1.8.md)。当前已验证 L8/II=1 和数值/断点；N12 1GHz首次面积16163.057770 µm²，setup/hold通过但有最大电容违例；见[DC记录](../../../../hw/dc_syn/records/dp_top_v18_n12_1000mhz_20261109.md)。

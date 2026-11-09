@@ -1,4 +1,4 @@
-> 功能：六种 DP 架构相对基线的修改点和代码/spec导航；范围：六种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：src/verilog/top/下七个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
+> 功能：六种 DP 架构相对基线的修改点和代码/spec导航；范围：六种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.9；修改时间：2026-11-09 22:28:25 +0800；对应代码：src/verilog/top/下七个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
 
 # 六种架构、七个顶层入口
 
@@ -10,7 +10,7 @@
 
 **本批范围：基础 `dp_top` 已按 [v1.8 合同](dp-top-v1.8.md)实施，CModel/RTL 已通过本批功能验收；其余五种架构和 `dp_top_e` 保持 v1.7。下面的对比描述保留各旧变体的实现关系，不能理解为它们自动启用 v1.8。**
 
-后续迁移采用 group 双指数输出 `A_raw/compare_exp`。E32 扩展两组用 ADD；E64/Q32E64 扩展四组用 4:2+ADD。基础四组+C 用 4:2+3:2+ADD，扩展只在相应精度下参与最终合并/MUX；所有分支必须共享 Emax/F，C 只加入一次。当前扩展 RTL 尚未实施该合同。
+三种混合架构的确认修改见[v1.9合同](mixed-precision-expansion.md)：E在S3消费e2、LZD22/U31输出；QE裁剪高精度解包且E旁路Q对齐；S5双指数；2/4扩展组均carry-save合并，双行MUX后唯一CPA。1:2:6总和S43，1:2:8和1:4:8总和S44。此处为待实现合同，不改变上述旧实现状态。
 
 ## 1. 目录与入口
 

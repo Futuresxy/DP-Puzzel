@@ -4,6 +4,10 @@
 
 基础 `dp_top` 已按 `src/spec/dp/dptop/dp-top-v1.8.md` 实现：E 窄 pair/共享树/局部 e2 融合，无跨 lane MAX/宽移位依赖；无偏 scale、S3 A_raw、S5 compare_exp；C 不做 LZD；S7 4:2+3:2+CPA。CModel、冻结 Verilog 的 L8/II=1/完整数据和新定向断点已通过，回执见 `test/results/dp-top-v1.8.md`。其余 E/QE/混合顶层本轮不迁移，`BASELINE_V18` 静态参数默认0，仅 dp_top 显式开启；CModel 的 legacy_multi 保留旧回放。扩展 ADD/CSA/MUX 只更新规格。旧功耗/综合结果仍保留为历史；v1.8 首次 N12 TT/1GHz DC 面积为16163.057770 µm²，setup/hold通过但有1条最大电容违例，整体 flow_pass=false；未测新功耗。详见 hw/dc_syn/records/dp_top_v18_n12_1000mhz_20261109.md。
 
+## 三种混合DP v1.9规格（2026-11-09）
+
+本轮只更新spec，未迁移模型/RTL：E专用S3完成HiF4 e2融合，S4窄组和/abs，S5统一U22做LZD、补零输出U31；QE保留Q U5指数/宽对齐，E旁路并在S4 lane树后消耗e2。三种扩展均采用carry-save合并、双行MUX及唯一CPA，E96 S43、E128/Q64E128 S44，active屏蔽MAX及非参与特殊/负零贡献。详细入口src/spec/dp/dptop/mixed-precision-expansion.md；基础dp_top保持v1.8，独立E64/Q32E64不自动迁移，旧PPA不代表新合同验收。
+
 ## 当前优先约定：新版 DP / Cube（2026-11-04）
 
 用户已明确旧 DP 设计过时，由用户重新定义整体架构 spec。新设计统一放在根目录 `src/spec/`、`src/cmodel/`、`src/chisel/`、`src/verilog/`，共用测试放在根目录 `test/`。先逐项完善并确认整体 spec，再编写 CModel，之后开发 Chisel 和独立手写可综合 Verilog；用户已授权实现单 DP 手写 Verilog，SystemVerilog 已冻结为当前 T8H16Q32E64 的历史参考，不再同步维护；CModel 与单 DP RTL 已建立共用验证，Chisel、阵列尚未实施，单 DP 已完成 N12 DC 综合。首批要求已写入 [新 spec 索引](src/spec/README.md)：TensorCore → DP-Group → DP，16×4 阵列由四个竖直 4×4 广播组组成；组内无脉动。具体格式、精度、K、≤8级流水、1.41 GHz 和功耗优先约束以新版 spec 为准，未决口径不得从旧设计补齐。
