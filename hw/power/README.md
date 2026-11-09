@@ -46,6 +46,10 @@ python3.11 -m unittest discover -s hw/power/tests -v
 
 使用固定计划中的最终网表，不再按目录时间选择“最新”。各点使用计划中明确指定的已验证快照；`scripts/rtl_gate.verify_power_input`核验原完整回归、冻结源码和本次工作负载重放，不修改旧manifest，也不放宽当前源码综合门禁。该负载下的RTL/网表比对不是全空间形式等价证明。
 
+并行修改 CModel 时，可在运行计划的每个点显式指定 `reference_model: {"directory": "hw/power/runs/<reference-snapshot>", "manifest_sha256": "<sha256>"}`。快照包含 `dp_cmodel_cli`、`sources/` 下按仓库相对路径保存的完整模型源码，以及记录 `sources` 和 `binary_sha256` 的 `reference.json`。运行器校验快照 manifest、实际源码和实际可执行文件的 SHA-256，同时要求身份与数据集 manifest 一致；路径不能越出项目。未指定时仍检查当前 CModel 源码与构建。源码/构建冻结应在生成对应 expected 之前完成，不能给未知可执行文件补写一个 hash 便宣称已经验证。
+
+固定 reference 只决定初始化和 expected 的模型来源，不改变冻结 RTL、完整回归及本次 RTL/门级负载比对门禁。若架构语义发生变化，应在独立派生数据集中重算 CModel expected 并保留数学参考和原始负载身份；不要覆盖旧数据集。运行计划引用的模型快照与派生数据同样是受保护的分析依赖。
+
 每点1024笔一次性发射，初始化独立计数；第256笔驱动前开始，第768笔驱动前结束，1GHz下恰好512ns。全部结果、L8/II=1通过后，核验真实功耗引脚无X/Z、Nets/Ports/Pins显式注释100%、所有叶引脚概率/翻转率与SAIF一致。实际关闭的时钟保持实测零翻转。
 
 报告保留Internal、Switching、动态、静态Leakage、Total和pJ/MAC。测量为综合后零延迟、CTS/布线前活动功耗，不包含布线寄生和真实毛刺。TF32/INT8无相应真实负载时不产生实测结论。不支持的架构/格式显示“不支持”，不能填0。

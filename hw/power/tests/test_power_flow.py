@@ -104,5 +104,70 @@ class ActivityTest(unittest.TestCase):
                 audit_saif(path, {'dut': ['clock']}, 10, 'dut')
 
 
+class ArchivedReferenceTest(unittest.TestCase):
+    """Saved expectations, source snapshot and executable must name one model."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.archive = self.root / 'archive'
+        self.data = self.root / 'data'
+        self.data.mkdir()
+        source = self.archive / 'sources/src/cmodel/model.cpp'
+        source.parent.mkdir(parents=True)
+        source.write_text('validated source')
+        (self.archive / 'dp_cmodel_cli').write_bytes(b'validated executable')
+        self.reference = dict(sources={'src/cmodel/model.cpp': runner.digest(source)},
+                              binary_sha256=runner.digest(self.archive / 'dp_cmodel_cli'))
+        (self.archive / 'reference.json').write_text(json.dumps(self.reference))
+        self.manifest = dict(cmodel_sources=self.reference['sources'],
+                             cmodel_binary_sha256=self.reference['binary_sha256'])
+        (self.data / 'inputs.txt').write_text('mocked inputs')
+        (self.data / 'expected.jsonl').write_text('{}\n' * 1024)
+        self.point = dict(dataset_directory='data', reference_model=dict(
+            directory='archive', manifest_sha256=runner.digest(self.archive / 'reference.json')))
+        self.rehash_dataset()
+        for mocked in (patch.object(runner, 'ROOT', self.root),
+                       patch.object(runner, 'read_inputs', return_value=({}, [{}] * 1024))):
+            mocked.start()
+            self.addCleanup(mocked.stop)
+
+    def rehash_dataset(self):
+        (self.data / 'manifest.json').write_text(json.dumps(self.manifest))
+        self.point['dataset_manifest_sha256'] = runner.digest(self.data / 'manifest.json')
+        self.point['dataset_files_sha256'] = {
+            name: runner.digest(self.data / name) for name in ('inputs.txt', 'expected.jsonl')}
+
+    def test_archived_reference_accepts_its_own_evidence(self):
+        self.assertEqual(len(runner.check_data(self.point)[0]), 1024)
+
+    def test_changed_archived_source_rejected(self):
+        (self.archive / 'sources/src/cmodel/model.cpp').write_text('different source')
+        with self.assertRaisesRegex(ValueError, 'CModel source'):
+            runner.check_data(self.point)
+
+    def test_changed_archived_binary_rejected(self):
+        (self.archive / 'dp_cmodel_cli').write_bytes(b'different executable')
+        with self.assertRaisesRegex(ValueError, 'CModel binary'):
+            runner.check_data(self.point)
+
+    def test_changed_reference_manifest_rejected(self):
+        (self.archive / 'reference.json').write_text('{}')
+        with self.assertRaisesRegex(ValueError, 'reference manifest changed'):
+            runner.check_data(self.point)
+
+    def test_rehashed_dataset_cannot_select_another_model(self):
+        self.manifest['cmodel_binary_sha256'] = 'unknown executable hash'
+        self.rehash_dataset()
+        with self.assertRaisesRegex(ValueError, 'executable identities differ'):
+            runner.check_data(self.point)
+
+    def test_reference_cannot_escape_project(self):
+        self.point['reference_model']['directory'] = '../outside'
+        with self.assertRaisesRegex(ValueError, 'inside the project'):
+            runner.check_data(self.point)
+
+
 if __name__ == '__main__':
     unittest.main()

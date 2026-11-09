@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "campaign": "baseline_v18_repaired_1109",
+  "status": "plan_only",
+  "engine": "VCS native gate-level SAIF + Synopsys Power Compiler",
+  "condition": "original N12 TT 0.7V 85C / 1GHz / clock gating / L8 II1",
+  "measurement_window": {
+    "name": "dp-qwen8b-middle512-v1",
+    "first_source_index": 256,
+    "end_source_index_exclusive": 768,
+    "cycles": 512,
+    "frequency_hz": 1000000000,
+    "duration_ns": 512,
+    "issue_policy": "1024 independent transactions, once each, II=1",
+    "boundary": "same clock phase before driving transactions 256 and 768",
+    "pipeline": "includes steady-state in-flight transactions; not output-ID filtering"
+  },
+  "pilot_top": "dp_top",
+  "points": [
+    {
+      "top": "dp_top",
+      "cmodel_frontend": "multi",
+      "format": "bf16",
+      "logical_k": 16,
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_11092301",
+      "export_id": "DP_verilog_d7c8c865ebf856be",
+      "original_verification_id": "20261109T101330231426Z",
+      "artifacts": {
+        "mapped_verilog": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11092301/netlist/dp_top_mapped.v",
+          "sha256": "23af0ce8501685226dbf8f449fb2f92d978fc7ab9f9f640172ad76c82c372aa2",
+          "bytes": 7666211
+        },
+        "ddc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11092301/netlist/dp_top.ddc",
+          "sha256": "a1bc14abfcdddada608b4b298a4ff92d9241e98033cd2d21902019dbdc2621a1",
+          "bytes": 8470528
+        },
+        "sdc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11092301/netlist/dp_top.sdc",
+          "sha256": "ba2b6fd33307485be1102147275f890a73b84515ec159c0c98f5c530264a9cb1",
+          "bytes": 168363
+        }
+      },
+      "dataset_directory": "hw/power/runs/baseline_v18_reference_1109/data/bf16",
+      "dataset_manifest_sha256": "c69b1f1c4a77dc6ba026757be527353fa59965d272f0c17bbc3ab2e4cf7d3359",
+      "dataset_files_sha256": {
+        "inputs.txt": "e162fb09afa935cd2ab33879c5f77cb14523a5f5df95a26cc18d7e0ac1023616",
+        "expected.jsonl": "7d5ad702aec20d45adefe73cf20914fda511611078714782cd18cbfc5a585d08",
+        "source_reference.jsonl": "0bd2beef61a65aa20c38e90c3e5c314cc871de5b8e789667a7fe36f5c773a7c5"
+      },
+      "expected_field": "cmodel_results.multi",
+      "status": "planned_requires_rtl_gate_gls_saif_and_annotation_audits",
+      "power_mw": null,
+      "reference_model": {
+        "directory": "hw/power/runs/baseline_v18_reference_1109",
+        "manifest_sha256": "34581aa97271c729f4b3bf6b765d3b640a46d81c52093c029855d5dbdf8911a5"
+      }
+    },
+    {
+      "top": "dp_top",
+      "cmodel_frontend": "multi",
+      "format": "mxfp8_e4m3",
+      "logical_k": 32,
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_11092301",
+      "export_id": "DP_verilog_d7c8c865ebf856be",
+      "original_verification_id": "20261109T101330231426Z",
+      "artifacts": {
+        "mapped_verilog": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11092301/netlist/dp_top_mapped.v",
+          "sha256": "23af0ce8501685226dbf8f449fb2f92d978fc7ab9f9f640172ad76c82c372aa2",
+          "bytes": 7666211
+        },
+        "ddc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11092301/netlist/dp_top.ddc",
+          "sha256": "a1bc14abfcdddada608b4b298a4ff92d9241e98033cd2d21902019dbdc2621a1",
+          "bytes": 8470528
+        },
+        "sdc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11092301/netlist/dp_top.sdc",
+          "sha256": "ba2b6fd33307485be1102147275f890a73b84515ec159c0c98f5c530264a9cb1",
+          "bytes": 168363
+        }
+      },
+      "dataset_directory": "hw/power/runs/baseline_v18_reference_1109/data/mxfp8_e4m3",
+      "dataset_manifest_sha256": "35a9d93f847956a2c766e6e9a26b1813c3db046b1e1b7c44a8576d85b27e3f72",
+      "dataset_files_sha256": {
+        "inputs.jsonl": "e7b9f38495b725be0d2537816d225a1a41a84ea87ce4bd73b1e1d485b13337f3",
+        "expected.jsonl": "8cbe4d5b71f54becace269781151f99285749a2bc82e180d1bf7e129e86e14ef",
+        "source_reference.jsonl": "4b4cb20852c58029ac84ea1d2dd88c135c435805466e7d27cf8255a562eeba8d"
+      },
+      "expected_field": "cmodel_results.multi",
+      "status": "planned_requires_rtl_gate_gls_saif_and_annotation_audits",
+      "power_mw": null,
+      "reference_model": {
+        "directory": "hw/power/runs/baseline_v18_reference_1109",
+        "manifest_sha256": "34581aa97271c729f4b3bf6b765d3b640a46d81c52093c029855d5dbdf8911a5"
+      }
+    },
+    {
+      "top": "dp_top",
+      "cmodel_frontend": "multi",
+      "format": "mxfp4_e2m1",
+      "logical_k": 64,
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_11092301",
+      "export_id": "DP_verilog_d7c8c865ebf856be",
+      "original_verification_id": "20261109T101330231426Z",
+      "artifacts": {
+        "mapped_verilog": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11092301/netlist/dp_top_mapped.v",
+          "sha256": "23af0ce8501685226dbf8f449fb2f92d978fc7ab9f9f640172ad76c82c372aa2",
+          "bytes": 7666211
+        },
+        "ddc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11092301/netlist/dp_top.ddc",
+          "sha256": "a1bc14abfcdddada608b4b298a4ff92d9241e98033cd2d21902019dbdc2621a1",
+          "bytes": 8470528
+        },
+        "sdc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11092301/netlist/dp_top.sdc",
+          "sha256": "ba2b6fd33307485be1102147275f890a73b84515ec159c0c98f5c530264a9cb1",
+          "bytes": 168363
+        }
+      },
+      "dataset_directory": "hw/power/runs/baseline_v18_reference_1109/data/mxfp4_e2m1",
+      "dataset_manifest_sha256": "d27600b8d6274c37cc4488b21971dbd7be8031bafd27a9c19d2aa7ec645d53f8",
+      "dataset_files_sha256": {
+        "inputs.jsonl": "491f55e1de2d43aa58354ff9f7442cd5d74fe13e5b82245060a7a1b583bf6e9e",
+        "expected.jsonl": "896af99708b60aef492df15dbe4c010887fcf245b86fbe957319bb4489ba0df1",
+        "source_reference.jsonl": "3fe2d7873dc5ea56d732f8465844b3666d1dace41dc53d22d26bc4b35dcf4e96"
+      },
+      "expected_field": "cmodel_results.multi",
+      "status": "planned_requires_rtl_gate_gls_saif_and_annotation_audits",
+      "power_mw": null,
+      "reference_model": {
+        "directory": "hw/power/runs/baseline_v18_reference_1109",
+        "manifest_sha256": "34581aa97271c729f4b3bf6b765d3b640a46d81c52093c029855d5dbdf8911a5"
+      }
+    }
+  ],
+  "execution_order": "dp_top BF16, E4M3, MXFP4 using same data/window as original campaign",
+  "saif_generated": false,
+  "power_measured": false,
+  "baseline_plan": "hw/power/plans/precision_register_gating_1108.json",
+  "baseline_plan_sha256": "883d3735c40f6850cf06dc2466174b48462bfa1af8323e5b630a7be56dc31553"
+}

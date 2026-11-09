@@ -75,10 +75,31 @@ def check_data(point):
         if digest(directory / name) != expected:
             raise ValueError('Changed dataset input/golden')
     manifest = json.loads((directory / 'manifest.json').read_text())
+    reference = point.get('reference_model')
+    source_root = ROOT
+    binary = ROOT / 'src/cmodel/build/dp_cmodel_cli'
+    if reference:
+        # Explicit immutable reference input permits parallel source development.
+        # Frozen RTL and workload replay gates remain mandatory and unchanged.
+        archive = (ROOT / reference['directory']).resolve()
+        if not archive.is_relative_to(ROOT.resolve()):
+            raise ValueError('Archived reference must be inside the project')
+        if digest(archive / 'reference.json') != reference['manifest_sha256']:
+            raise ValueError('Archived reference manifest changed')
+        recorded = json.loads((archive / 'reference.json').read_text())
+        if recorded['sources'] != manifest['cmodel_sources']:
+            raise ValueError('Dataset/reference source identities differ')
+        if recorded['binary_sha256'] != manifest['cmodel_binary_sha256']:
+            raise ValueError('Dataset/reference executable identities differ')
+        source_root = archive / 'sources'
+        binary = archive / 'dp_cmodel_cli'
     for name, expected in manifest['cmodel_sources'].items():
-        if digest(ROOT / name) != expected:
+        source = (source_root / name).resolve()
+        if not source.is_relative_to(source_root.resolve()):
+            raise ValueError('Reference source path escapes its snapshot')
+        if digest(source) != expected:
             raise ValueError('CModel source no longer matches saved expected data')
-    if digest(ROOT / 'src/cmodel/build/dp_cmodel_cli') != manifest['cmodel_binary_sha256']:
+    if digest(binary) != manifest['cmodel_binary_sha256']:
         raise ValueError('CModel binary changed; regenerate validated goldens')
     requests = (read_inputs(directory / 'inputs.txt')[1] if (directory / 'inputs.txt').exists()
                 else read_logical_inputs(directory)[1])
@@ -108,7 +129,9 @@ def prepare_vectors(point, work, groups):
                                 b_scale_datatype=kind, last=False, a='0', b='0', c='00000000',
                                 a_scale=packed_scale, b_scale=packed_scale,
                                 a_e1='0', a_e2='0', b_e1='0', b_e2='0'))
-    initial_results = evaluate(initial, config={'frontend': frontend}, run_dir=work / 'reference')
+    reference = point.get('reference_model')
+    binary = ROOT / reference['directory'] / 'dp_cmodel_cli' if reference else None
+    initial_results = evaluate(initial, config={'frontend': frontend}, run_dir=work / 'reference', binary=binary)
     all_requests = initial + requests
     all_results = initial_results + [dict(d=row['cmodel_results'][frontend], d_datatype=0,
                                           last=row['last']) for row in expected]
