@@ -1,0 +1,332 @@
+{
+  "schema": "dp_mixed_cmodel_validation_v19",
+  "status": "passed",
+  "created_utc": "2026-11-09T15:46:27.382933+00:00",
+  "scope": "CModel only; RTL timing, gating and PPA require their own frozen-export evidence",
+  "model_source_sha256": "5e1adb9229a04e014135f9a74ec6f6ba351f01f81b4784a64a0adf7354f63337",
+  "binary_sha256": "2675249adcb969068abfad2aafd781830b7a2f1cbb57de762a211fb0bd838d5f",
+  "config": {
+    "architecture_v19": true,
+    "k_fp16": 16,
+    "local_shift_mag_width": 28,
+    "global_signed_align_width": 40,
+    "post_scale_norm_extra_stage": 0
+  },
+  "native_profiles": {
+    "t8h16q32e96": {
+      "tf32": {
+        "count": 1053,
+        "exact": 1040,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "fp16": {
+        "count": 961,
+        "exact": 949,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "bf16": {
+        "count": 961,
+        "exact": 958,
+        "max_ulp": 3,
+        "architecture_mismatches": 0
+      },
+      "mxfp8_e4m3": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "mxfp8_e5m2": {
+        "count": 961,
+        "exact": 958,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "mxfp6_e3m2": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "mxfp6_e2m3": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "mxfp4_e2m1": {
+        "count": 961,
+        "exact": 960,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "nvfp4": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "hif4": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "int8": {
+        "count": 1045,
+        "exact": 1045,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      }
+    },
+    "t8h16q32e128": {
+      "tf32": {
+        "count": 1053,
+        "exact": 1040,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "fp16": {
+        "count": 961,
+        "exact": 949,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "bf16": {
+        "count": 961,
+        "exact": 958,
+        "max_ulp": 3,
+        "architecture_mismatches": 0
+      },
+      "mxfp8_e4m3": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "mxfp8_e5m2": {
+        "count": 961,
+        "exact": 958,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "mxfp6_e3m2": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "mxfp6_e2m3": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "mxfp4_e2m1": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "nvfp4": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "hif4": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "int8": {
+        "count": 1045,
+        "exact": 1045,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      }
+    },
+    "t8h16q64e128_opt": {
+      "tf32": {
+        "count": 1053,
+        "exact": 1040,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "fp16": {
+        "count": 961,
+        "exact": 949,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "bf16": {
+        "count": 961,
+        "exact": 958,
+        "max_ulp": 3,
+        "architecture_mismatches": 0
+      },
+      "mxfp8_e4m3": {
+        "count": 961,
+        "exact": 959,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "mxfp8_e5m2": {
+        "count": 961,
+        "exact": 958,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "mxfp6_e3m2": {
+        "count": 961,
+        "exact": 958,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "mxfp6_e2m3": {
+        "count": 961,
+        "exact": 960,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "mxfp4_e2m1": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "nvfp4": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "hif4": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "int8": {
+        "count": 1045,
+        "exact": 1045,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      }
+    },
+    "q32e64": {
+      "mxfp8_e4m3": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "mxfp8_e5m2": {
+        "count": 961,
+        "exact": 958,
+        "max_ulp": 1,
+        "architecture_mismatches": 0
+      },
+      "mxfp6_e3m2": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "mxfp6_e2m3": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "mxfp4_e2m1": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "nvfp4": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      },
+      "hif4": {
+        "count": 961,
+        "exact": 961,
+        "max_ulp": 0,
+        "architecture_mismatches": 0
+      }
+    }
+  },
+  "native_totals": {
+    "t8h16q32e96": {
+      "count": 10747,
+      "exact": 10715,
+      "max_ulp": 3,
+      "architecture_mismatches": 0
+    },
+    "t8h16q32e128": {
+      "count": 10747,
+      "exact": 10716,
+      "max_ulp": 3,
+      "architecture_mismatches": 0
+    },
+    "t8h16q64e128_opt": {
+      "count": 10747,
+      "exact": 10710,
+      "max_ulp": 3,
+      "architecture_mismatches": 0
+    },
+    "q32e64": {
+      "count": 6727,
+      "exact": 6724,
+      "max_ulp": 1,
+      "architecture_mismatches": 0
+    }
+  },
+  "directed_counts": {
+    "t8h16q32e96": 267,
+    "t8h16q32e128": 267,
+    "t8h16q64e128_opt": 267,
+    "q32e64": 183
+  },
+  "unit_tests": {
+    "passed": 47,
+    "log": "test/runs/cmodel/v19_all_tests_final.log",
+    "sha256": "aa9bdbc8d0ba2b21f71be725ab9649e404266e9efeec1b44c4e61fa6c94365d0"
+  },
+  "baseline_compatibility": {
+    "status": "passed",
+    "count": 10747,
+    "summary": "test/runs/cmodel/v19_baseline_compat/summary.json",
+    "summary_sha256": "6625a7cc8499c09def537c14e0cdfb59d7bbc16a1b9650a89c7577ac13a149a3"
+  },
+  "commands": [
+    ".deps/cmake-3.28.4/bin/cmake --build src/cmodel/build -j 2",
+    "python3.11 -m unittest discover -s test/tests -v",
+    "python3.11 test/run_cmodel.py --phase all --run-dir test/runs/cmodel/v19_baseline_compat"
+  ],
+  "coverage": [
+    "independent Fraction finite-window oracle",
+    "unchanged exact mathematical golden",
+    "E 4608 nibble/e1/e2 cases",
+    "E S3 fused S14 and S4 U14",
+    "U22 LZD versus padded U31 including active=0/count=0 zero",
+    "QE K4/K8/K16 and local/global windows 27/40,28/48,32/64",
+    "mixed N7/N9 parameter windows",
+    "inactive poison/MAX/special/negative-zero masking",
+    "CSA modular row and signed-CPA equality",
+    "L8/II=1, bubbles, reset",
+    "baseline v1.8 and all legacy E/QE/mixed tests"
+  ],
+  "preservation": {
+    "baseline_default": "v1.8 unchanged",
+    "standalone_e64": "architecture_v19=false",
+    "legacy_mixed": "architecture_v19=false",
+    "exact_reference_and_golden": "unchanged"
+  }
+}

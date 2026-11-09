@@ -1,8 +1,8 @@
-> 功能：定义三种混合DP面积优化、参与屏蔽与carry-save扩展；范围：混合DP专用前端及扩展合同；版本：v1.9；修改时间：2026-11-09 22:28:25 +0800；对应代码：src/cmodel/lib/top/mixed.cpp、src/verilog/top/common/dp_top_mixed.v、dp_mixed_global_align.v及三个固定顶层；本版待实现，现有源码与旧PPA不代表本合同已验收。
+> 功能：定义三种混合DP面积优化、参与屏蔽与carry-save扩展；范围：混合DP专用前端及扩展合同；版本：v1.9.1；修改时间：2026-11-09 23:40:33 +0800；对应代码：src/cmodel/lib/top/mixed.cpp、src/verilog/top/common/dp_top_mixed.v、dp_mixed_global_align.v及三个固定顶层；本版实施中，验收以独立冻结回执为准，旧PPA不代表本合同已验收。
 
 # 三种混合 DP：v1.9 确认合同
 
-本轮仅更新spec，不修改CModel/RTL、不执行新EDA。基础dp_top继续采用[v1.8](dp-top-v1.8.md)，旧混合源码/回执/PPA保持原版本；后续按本合同逐阶段迁移，不自动宣称通过。独立E64/Q32E64及冻结SV不在本轮迁移范围。共用模块修改时必须隔离旧配置或重新验收受影响调用者。
+本轮已授权先CModel、再RTL、冻结验证、同工况DC和真实负载功耗。基础dp_top继续采用[v1.8](dp-top-v1.8.md)，单独修复综合电气违例。三个混合顶层及独立Q32E64迁移本版；Q32E64的装配合同见[四组低精度DP](low-precision-tops.md)。独立E64、dp_top_e兼容入口及冻结SV保留原设计，使用显式静态版本开关隔离。旧回执和PPA保留作对照，不代表新合同已验收。
 
 v1.8 → v1.9：~~扩展先CPA求和后再与基础结果相加~~ → 全部在carry-save状态合并、两行MUX、唯一最终CPA；E S3融合e2、LZD22，QE保留Q对齐且E旁路；共同输出A_raw/compare_exp。
 
@@ -140,6 +140,6 @@ INT仅基础四组+C，S6整数是S1I32F7；S7为S1I35F7或S1I36F7，最终固�
 
 优先实测解包/寄存、Q对齐、共享树、扩展S6/S7各自面积与Q/E活动功耗，再选热点。QE独立E树可能降功耗却增面积；额外隔离MUX也可能恶化时序。
 
-后续先CModel，再RTL/冻结Verilator，再同库N12 TT/0.7V/85°C、1GHz门控及电气检查；实际功耗另按授权测量。验证包括E96/E128三格式、Q64四格式全量数据；T/H/INT及不扩展Q对照基础v1.8；U22与M位LZD非零等价/零差异；scale/e1/e2边界、抵消、负零、Inf/NaN；失活扩展毒化；逐拍换型/气泡/复位；CSA有符号边界和carry位权；N7/N9及参数窗口；C只计一次。
+后续先CModel，再RTL/冻结Verilator，再同库N12 TT/0.7V/85°C、1GHz门控及电气检查；功耗使用各自经过验证的网表、新生成VCS原生SAIF和Power Compiler，在兼容模式下比较BF16、MXFP8 E4M3、MXFP4；E64复用未改设计的合法综合输入并重新采样。验证包括E96/E128三格式、Q64四格式全量数据；T/H/INT及不扩展Q对照基础v1.8；U22与M位LZD非零等价/零差异；scale/e1/e2边界、抵消、负零、Inf/NaN；失活扩展毒化；逐拍换型/气泡/复位；CSA有符号边界和carry位权；N7/N9及参数窗口；C只计一次。
 
 数据来源沿用test/data中既有E96/E128/Q64向量与exact参考，来源分别为fp48、fp416、low16，不重定义量化块。数学golden不随硬件改动；同时报告RTL/CModel一致性及数学ULP。任何共享源码修改都需明确旧E/QE/低精度顶层是否隔离或重验。当前三种新架构未形成新PPA；旧约66%面积增长是旧版本证据，不作为本版预测或硬性承诺。

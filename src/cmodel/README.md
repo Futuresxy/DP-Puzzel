@@ -1,6 +1,6 @@
 # DP CModel
 
-当前默认 `frontend=multi` 对应 [dp_top v1.8](../spec/dp/dptop/dp-top-v1.8.md)。`legacy_multi=true` 仅用于旧多精度前端回放；混合顶层自动保留旧前端语义。E/QE/混合版本尚未迁移。数学 golden 不变，有限窗口策略参考单独位于 `test/reference/architecture.py`。
+当前默认 `frontend=multi` 对应 [dp_top v1.8](../spec/dp/dptop/dp-top-v1.8.md)。三个混合顶层及 Q32E64 的配置显式开启 `architecture_v19=true`，对应 [v1.9 合同](../spec/dp/dptop/mixed-precision-expansion.md)。该开关默认 false，独立 E64 保留旧合同；`legacy_multi=true` 继续支持旧多精度回放。数学 golden 不变，有限窗口策略参考单独位于 `test/reference/architecture.py`。
 
 当前实现：同一个 C++17 整数位精确/逐级周期模型提供两种静态前端。默认 `multi` 支持 11 种 datatype、T8H16Q32E64；`e` 支持 MXFP4/NVFP4/HiF4、E64。两者在 S5 交付同宽 group token，共用 C 解包/LZD 和 S6–S8 后端，默认 L8/II=1。NVFP4/HiF4 使用 14×8 无符号 scale 乘法，符号独立传递。
 
@@ -72,6 +72,14 @@ E64 配置为 [e64.json](../configs/dp/e64.json)。原始 CLI 可执行 `src/cmo
 命名：内部数值变量区分 exponent_field/fraction_field/fractional_bits，状态采用 config/state/token 等职责名；C++ 每项声明独立，使用两空格缩进、100 列目标。JSON 字段兼容原协议，reset=true 表示软件复位事件，对应现用 RTL rst_n=0。
 
 ## v1.7 混合组
+
+### v1.9 显式迁移
+
+三个混合 JSON 配置和 `q32e64_top.json` 显式启用 v1.9。E 的 S3 保存融合 e2 后的 S14，S4 仅组和/abs；S5 用统一 U22 计算 LZD，再补零为参数化 group 幅值。QE 在共享树后消费 E 的 e2，Q 保留局部对齐。各组 S3 计算 `A_raw`，S5 输出 `compare_exp`；scale 指数已去 bias，C 不做 LZD。
+
+S7 保留 carry-save 两行到 MUX 后，唯一最终 CPA；E96 直接用 4:2 合并基础两行及两组扩展，E128/Q64E128 先压缩四组扩展再合并。模型校验模 2^W 的 carry 行位权和精确有符号总和。`trace[6].data.carry_save` 记录选中两行，carry 已左移，不得再次乘二。
+
+`python3.11 -m unittest test/tests/test_mixed_v19.py -v` 检查完整语料、独立有限窗参考、E 全编码/e1/e2、U22 LZD、参数窗口、失活毒化、L8/II=1、气泡和复位。精度摘要为 `test/runs/cmodel/v19_validation/native_summary.json`。原 `test_mixed_frontend.py` 继续校验未开启开关的历史回放；`test/cases/mixed_v19.py` 提供 RTL 共用的定向向量。
 
 新增 frontend `qe`（仅 Q/E，同原 Q/E 数值流水），以及 `t8h16q32e96`、`t8h16q32e128`、`t8h16q64e128`。三种混合配置位于 `src/configs/dp/` 同名 JSON；基础 k_fp16 固定16、L8，物理组数6/8，实际各格式容量由能力矩阵决定。窗口继续可调。
 

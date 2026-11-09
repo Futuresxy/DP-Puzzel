@@ -100,7 +100,8 @@ void stage_local_align(const Config &, State &);
 void stage_lane_sum(const Config &, State &);
 void stage_group(const Config &, State &, bool detect);
 void detect_token(Token &);
-void finish_group_stage(State &, bool detect, const Json &scale_trace);
+void finish_group_stage(State &, bool detect, const Json &scale_trace,
+                        bool groups_already_detected = false);
 void stage_detect(const Config &, State &);
 void stage_global_align(const Config &, State &);
 void stage_total(const Config &, State &);

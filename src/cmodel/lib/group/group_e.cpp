@@ -21,7 +21,8 @@ void stage_group_sum(const Config &config, State &state) {
     bool all_negative = true;
     for (unsigned lane_index = 0; lane_index < lanes_per_group; ++lane_index) {
       const unsigned lane = group_index * lanes_per_group + lane_index;
-      Big value = state.lanes[lane] << state.e_frontend.lane_shift[lane];
+      Big value = state.lanes[lane];
+      if (!config.architecture_v19) value <<= state.e_frontend.lane_shift[lane];
       check_signed(value, e_lane_fused_bits, "E S4 fused lane SOP");
       lanes.push_back(std::move(value));
       all_negative = all_negative && state.e_frontend.all_negative[lane];
@@ -81,11 +82,33 @@ void stage_scale(const Config &config, State &state, bool do_detect) {
     }
     check_unsigned(out.magnitude, out.width, "E S5 token magnitude");
     const int alpha =
-        state.e_frontend.scale_exponents[group_index] - 2 * static_cast<int>(scale_bias);
+        state.e_frontend.scale_exponents[group_index] -
+        (config.architecture_v19 ? 0 : 2 * static_cast<int>(scale_bias));
     out.anchor_raw =
         alpha - static_cast<int>(out.fractional_bits) + static_cast<int>(out.width) - 1;
+    if (config.architecture_v19) {
+      if (out.anchor_raw != state.group_raw_anchors.at(group_index))
+        throw std::logic_error("E S3/S5 raw anchor mismatch");
+      // The physical LZD consumes the U22 container, before structural low zeros.
+      // MX is U14 << 8; NV/HiF are U14 * U8. Nonzero clz is unchanged by padding.
+      constexpr unsigned scale_product_bits = e_compact_group_bits - 1 + 2 * scale_magnitude_bits;
+      const Big lzd_magnitude = out.magnitude >> (out.width - scale_product_bits);
+      const unsigned narrow_zero_count = clz(lzd_magnitude, scale_product_bits);
+      if (out.active() && narrow_zero_count != clz(out.magnitude, out.width))
+        throw std::logic_error("E U22/exported LZD mismatch");
+      if (do_detect) {
+        out.leading_zero_count = out.active() ? narrow_zero_count : 0;
+        if (!out.active()) out.anchor_raw = 0;
+        out.compare_exp = out.anchor_raw - static_cast<int>(out.leading_zero_count);
+      }
+      if (state.tracing)
+        scale_trace.push_back({{"lzd_magnitude", lzd_magnitude.str()},
+                               {"lzd_width", scale_product_bits},
+                               {"leading_zero_count", narrow_zero_count},
+                               {"raw_anchor_s3", state.group_raw_anchors.at(group_index)}});
+    }
     state.groups.push_back(std::move(out));
   }
-  finish_group_stage(state, do_detect, scale_trace);
+  finish_group_stage(state, do_detect, scale_trace, config.architecture_v19);
 }
 } // namespace dp::e_frontend

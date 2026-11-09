@@ -8,6 +8,17 @@ from .exact import F, unpack, multiply, sum_values, scale, power, quantize, floo
 
 
 def reference(request,config,limited=False):
+    if config.get('architecture_v19', False):
+        # v1.9 mixes frontend implementations, not numerical coordinates. Use
+        # the active mathematical length; poisoned inactive slots are excluded.
+        profile = config.get('frontend', 'multi')
+        datatype = request['a_datatype']
+        active_k = config['k_fp16']
+        if profile in ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128', 't8h16q64e128_opt'):
+            extension_active = 7 <= datatype <= 9 or (
+                profile in ('t8h16q64e128', 't8h16q64e128_opt') and 3 <= datatype <= 6)
+            active_k = (24 if profile == 't8h16q32e96' else 32) if extension_active else 16
+        config = config | dict(frontend='multi', k_fp16=active_k, legacy_multi=False)
     if not limited or config.get('frontend', 'multi') != 'multi' or config.get('legacy_multi', False):
         return exact.reference(request, config, limited)
     sides,cv,group_n=unpack(request,config['k_fp16']); dt=request['a_datatype']

@@ -9,7 +9,8 @@ namespace dp::qe_frontend {
 // Q         | 1 | 5  | P
 // MXFP4     | 1 | 10 | P-5
 // NVFP4     | 1 | 12 | P-7
-// HiF4      | 1 | 10 | P-5
+// HiF4 v1.9 | 1 | 12 | P-7
+// Legacy HiF4 remains S1I10F(P-5); v1.9 consumes e2 inside the lane.
 void stage_group(const Config &config, State &state, bool detect) {
   if (state.request.a_type < DataType::MXFP8_E4M3 || state.request.a_type > DataType::HIF4)
     throw std::invalid_argument("QE group only supports Q/E");

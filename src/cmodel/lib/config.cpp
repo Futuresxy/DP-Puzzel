@@ -80,7 +80,7 @@ unsigned Config::lane_fraction(DataType datatype) const {
   if (frontend == Frontend::E) {
     if (datatype != DataType::MXFP4 && datatype != DataType::NVFP4 && datatype != DataType::HIF4)
       throw std::invalid_argument("unsupported E frontend datatype");
-    return datatype == DataType::HIF4 ? 4 : 2;
+    return architecture_v19 || datatype == DataType::HIF4 ? 4 : 2;
   }
   const auto element_count = format(datatype).lane_elements;
   if (datatype == DataType::INT8)

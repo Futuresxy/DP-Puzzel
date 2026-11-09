@@ -67,7 +67,11 @@ struct Config {
   Frontend frontend = Frontend::Multi;
   // Compatibility for unconverted mixed tops; standalone Multi defaults to v1.8.
   bool legacy_multi = false;
-  bool baseline_v18() const { return frontend == Frontend::Multi && !legacy_multi; }
+  // Explicit migration switch: archived E64/QE/mixed traces remain reproducible.
+  bool architecture_v19 = false;
+  bool baseline_v18() const {
+    return architecture_v19 || (frontend == Frontend::Multi && !legacy_multi);
+  }
   void validate() const;
   bool mixed() const {
     return frontend == Frontend::MixedE96 || frontend == Frontend::MixedE128 ||
@@ -89,7 +93,8 @@ struct Config {
     return frontend == Frontend::E ? e_pair_bits : local_shift_mag_width + 1;
   }
   unsigned lane_bits() const {
-    return frontend == Frontend::E ? e_lane_raw_bits : leaf_bits() + ceil_log2(q_elements_per_lane);
+    return frontend == Frontend::E ? (architecture_v19 ? e_lane_fused_bits : e_lane_raw_bits)
+                                   : leaf_bits() + ceil_log2(q_elements_per_lane);
   }
   unsigned group_bits() const {
     return frontend == Frontend::E ? e_compact_group_bits : group_mag_bits() + 1;

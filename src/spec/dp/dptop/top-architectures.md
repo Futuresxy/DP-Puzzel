@@ -1,4 +1,4 @@
-> 功能：六种 DP 架构相对基线的修改点和代码/spec导航；范围：六种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.9；修改时间：2026-11-09 22:28:25 +0800；对应代码：src/verilog/top/下七个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
+> 功能：六种 DP 架构相对基线的修改点和代码/spec导航；范围：六种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.9.1；修改时间：2026-11-09 23:40:33 +0800；对应代码：src/verilog/top/下七个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
 
 # 六种架构、七个顶层入口
 
@@ -8,9 +8,9 @@
 
 六种架构的原生可编辑图见 [draw.io 图纸索引](../draw.io/README.md)：分别展示 DP → group → 两条 lane 的嵌套结构、S1–S8 计算分工及基础/扩展参与关系。每种架构独立一个 `.drawio` 文件，重复 group 用叠层与数量标识。
 
-**本批范围：基础 `dp_top` 已按 [v1.8 合同](dp-top-v1.8.md)实施，CModel/RTL 已通过本批功能验收；其余五种架构和 `dp_top_e` 保持 v1.7。下面的对比描述保留各旧变体的实现关系，不能理解为它们自动启用 v1.8。**
+**本批范围：基础dp_top保留v1.8并独立修复DC电气违例；三个混合顶层和Q32E64实施v1.9；E64与dp_top_e保留旧设计。实现、验证与PPA状态分别记录，版本名不等于验收通过。**
 
-三种混合架构的确认修改见[v1.9合同](mixed-precision-expansion.md)：E在S3消费e2、LZD22/U31输出；QE裁剪高精度解包且E旁路Q对齐；S5双指数；2/4扩展组均carry-save合并，双行MUX后唯一CPA。1:2:6总和S43，1:2:8和1:4:8总和S44。此处为待实现合同，不改变上述旧实现状态。
+三种混合架构的合同见[v1.9](mixed-precision-expansion.md)：E在S3消费e2、LZD22/U31输出；QE在S4消费e2且E旁路Q对齐；S5双指数；2/4扩展组均carry-save合并，双行MUX后唯一CPA。1:2:6为S43，1:2:8和1:4:8为S44。Q32E64复用新版QE，五源CSA后端为S43，见[低精度装配](low-precision-tops.md)。
 
 ## 1. 目录与入口
 
@@ -54,13 +54,13 @@ filelist依然在 `src/verilog/files*.f`。仿真、导出和综合选根目录�
 
 保留原四个dp_group，新增两个dp_group_e，每组贡献E16；新增的高128-bit A/B仅用于E。Q/T/H/INT8仍只使用基础四组。
 
-主要变化在顶层：S6从五源变七源，增加扩展支MAX和两路对齐；S7增加两项扩展树，再与基础五项之和合并，完整总宽仍为43。参与标志随请求逐级保存，非E请求旁路扩展MAX/加法并屏蔽扩展特殊值、负零摘要。基础group内部计算不改。
+主要变化在顶层：S6从五源变七源，增加扩展支MAX和两路对齐；S7将基础五项的carry-save两行与新增两项做4:2压缩，双行MUX后唯一CPA，完整总宽仍为43。参与标志随请求逐级保存，非E请求旁路扩展MAX/加法并屏蔽扩展特殊值、负零摘要。基础group明确启用已验收v1.8计算。
 
 入口：[混合扩展合同](mixed-precision-expansion.md)，重点看第3节输入分发、第4–6节参与/MAX/规约；新增前端看 [E lane](../lane/dp_lane_E.md)、[E group](../group/dp_group_E.md)。
 
 ### dp_top_t8h16q32e128：更多 E group，Q容量保持32
 
-保留原四组，新增四个dp_group_e，高256-bit A/B仅用于E。S6扩为九源，S7扩展树为四项，总宽增至44，S8相应处理44位总和。T/H/Q/INT8仍走基础支。与E96的主要差别是扩展组数、输入宽度、对齐源数和规约增长位；与优化Q64E128的差别是新增组不处理Q。
+保留原四组，新增四个dp_group_e，高256-bit A/B仅用于E。S6扩为九源，S7扩展四项先4:2，与基础两行再4:2、双行MUX后唯一CPA，总宽增至44，S8相应处理44位总和。T/H/Q/INT8仍走基础支。与E96的主要差别是扩展组数、输入宽度、对齐源数和规约增长位；与优化Q64E128的差别是新增组不处理Q。
 
 入口：[混合扩展合同](mixed-precision-expansion.md) 的E128配置、[E group](../group/dp_group_E.md)。复用核心配置为EXT_GROUPS=4、EXT_QE=0。
 
@@ -70,7 +70,7 @@ filelist依然在 `src/verilog/files*.f`。仿真、导出和综合选根目录�
 
 新增QE组有Q指数计算、公共MAX和局部对齐。优化版使用固定字段QE解包，提前形成配对符号/分类摘要以压缩S1寄存；扩展源使用浮点落位，裁掉扩展支的INT8选择。基础多精度四组保留INT8。参数为EXT_GROUPS=4、EXT_QE=1、OPTIMIZE_QE=1。
 
-入口：[QE lane](../lane/dp_lane_qe.md)、[QE group](../group/dp_group_qe.md)、[混合扩展及优化实现](mixed-precision-expansion.md) 第10节。对应解包模块为dp_lane_unpack_qe/dp_operand_unpack_qe。
+入口：[QE lane](../lane/dp_lane_qe.md)、[QE group](../group/dp_group_qe.md)、[混合扩展及优化实现](mixed-precision-expansion.md) 第2、4–7节。对应解包模块为dp_lane_unpack_qe/dp_operand_unpack_qe。
 
 ### dp_top_e64：四组全部使用 E 专用前端
 

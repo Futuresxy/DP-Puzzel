@@ -13,8 +13,9 @@ void detect_token(Token &token) {
   }
   token.compare_exp = token.anchor_raw - static_cast<int>(token.leading_zero_count);
 }
-void finish_group_stage(State &state, bool do_detect, const Json &scale_trace) {
-  if (do_detect && state.request.c_type == CType::FP32)
+void finish_group_stage(State &state, bool do_detect, const Json &scale_trace,
+                        bool groups_already_detected) {
+  if (do_detect && !groups_already_detected && state.request.c_type == CType::FP32)
     for (auto &group : state.groups)
       detect_token(group);
   state.c_token = unpack_c(state.request.c_type, state.request.c);
@@ -120,6 +121,7 @@ void stage_global_align(const Config &config, State &state) {
 // All floating modes | 1 | 1+L  | W-2
 // INT8 + INT32       | 1 | 32+L | W-33
 void stage_total(const Config &config, State &state) {
+  Json carry_save = Json::object();
   if (config.mixed()) {
     std::vector<Big> base(state.aligned.begin(), state.aligned.begin() + 4);
     base.push_back(state.aligned.back());
@@ -130,12 +132,58 @@ void stage_total(const Config &config, State &state) {
     if (config.extension_supports(state.request.a_type)) state.sum += extension_sum;
   } else state.sum = tree_sum(state.aligned, config.global_signed_align_width);
   check_signed(state.sum, config.sum_bits(), "final sum");
+  if (config.architecture_v19 && state.groups.size() >= 4) {
+    // Carry rows include their left shift. Each row is a W-bit residue, not an
+    // independently signed subtotal. Only the final CPA is interpreted as TC.
+    const unsigned width = config.sum_bits();
+    const Big word_mask = mask(width);
+    const Big modulus = Big(1) << width;
+    const auto word = [&word_mask](const Big &value) -> Big { return value & word_mask; };
+    using Rows = std::pair<Big, Big>;
+    const auto compress_three = [&word_mask](const Big &first, const Big &second,
+                                            const Big &third) -> Rows {
+      return {(first ^ second ^ third) & word_mask,
+              (((first & second) | (first & third) | (second & third)) << 1) & word_mask};
+    };
+    const auto compress_four = [&compress_three](const Big &first, const Big &second,
+                                                const Big &third, const Big &fourth) -> Rows {
+      const auto partial = compress_three(first, second, third);
+      return compress_three(partial.first, partial.second, fourth);
+    };
+    const auto base_groups = compress_four(word(state.aligned[0]), word(state.aligned[1]),
+                                          word(state.aligned[2]), word(state.aligned[3]));
+    const auto base_rows = compress_three(base_groups.first, base_groups.second,
+                                         word(state.aligned.back()));
+    Rows selected_rows = base_rows;
+    const bool extension_active = config.mixed() && config.extension_supports(state.request.a_type);
+    if (extension_active && config.groups() == 6)
+      selected_rows = compress_four(base_rows.first, base_rows.second,
+                                    word(state.aligned[4]), word(state.aligned[5]));
+    else if (extension_active && config.groups() == 8) {
+      const auto extension_rows = compress_four(word(state.aligned[4]), word(state.aligned[5]),
+                                               word(state.aligned[6]), word(state.aligned[7]));
+      selected_rows = compress_four(base_rows.first, base_rows.second,
+                                    extension_rows.first, extension_rows.second);
+    }
+    Big cpa_residue = (selected_rows.first + selected_rows.second) & word_mask;
+    const Big cpa_signed = cpa_residue >= (Big(1) << (width - 1)) ? cpa_residue - modulus
+                                                               : cpa_residue;
+    if (cpa_signed != state.sum)
+      throw std::logic_error("carry-save/final exact sum mismatch");
+    carry_save = {{"sum_row", selected_rows.first.str()},
+                  {"carry_row", selected_rows.second.str()},
+                  {"width", width}, {"extension_active", extension_active},
+                  {"carry_already_shifted", true}};
+  }
+  Json total_trace =
+      {{"sop_tc", state.sum.str()},
+       {"width", config.sum_bits()},
+       {"f", state.request.c_type == CType::INT32 ? config.global_mag_bits() - int32_bits
+                                                 : config.global_mag_bits() - 1},
+       {"E_max", state.common}};
+  if (!carry_save.empty()) total_trace["carry_save"] = std::move(carry_save);
   trace(state, "total_sop_tree",
-        {{"sop_tc", state.sum.str()},
-         {"width", config.sum_bits()},
-         {"f", state.request.c_type == CType::INT32 ? config.global_mag_bits() - int32_bits
-                                                    : config.global_mag_bits() - 1},
-         {"E_max", state.common}});
+        total_trace);
 }
 // S8 result formats.
 // Precision / signal | S | I  | F

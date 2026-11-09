@@ -2,6 +2,7 @@
 #include <stdexcept>
 
 // E8 frontend, S2 multiplier/pair registers and S3 lane tree.
+// v1.9 consumes the local HiF4 e2 sum in S3: fused lane is S1I9F4 (14 bits).
 // S1 reuses unpack_element/unpack_scale; e1 is already in the magnitude.
 // Raw multiplier sign is separate. TC widths include S; I excludes S.
 // Precision     | Product S | I | F | Pair S | I | F | Lane S | I | F
@@ -77,11 +78,24 @@ void stage_lane_sum(const Config &config, State &state) {
   for (unsigned lane = 0; lane < config.lanes(); ++lane) {
     Big value = tree_sum(state.e_frontend.pairs[lane], e_pair_bits);
     check_signed(value, e_lane_raw_bits, "E S3 lane SOP");
+    if (config.architecture_v19) {
+      // Consume e2 at the narrow lane boundary. No exponent MAX or right shift.
+      value <<= state.e_frontend.lane_shift[lane];
+      check_signed(value, e_lane_fused_bits, "E S3 fused lane SOP");
+    }
     state.lanes.push_back(std::move(value));
   }
-  trace(state, "e_lane_sop_tree",
-        {{"sop_tc", bigs_json(state.lanes)},
-         {"width", e_lane_raw_bits},
-         {"f", state.request.a_type == DataType::HIF4 ? 4 : 2}});
+  if (config.architecture_v19)
+    for (unsigned group_index = 0; group_index < config.groups(); ++group_index) {
+      // A_raw uses the final M-bit coordinate; structural padding cancels M.
+      const int coordinate_offset = state.request.a_type == DataType::MXFP4 ? 9 : 11;
+      state.group_raw_anchors.push_back(state.e_frontend.scale_exponents[group_index] +
+                                       coordinate_offset);
+    }
+  Json lane_trace = {{"sop_tc", bigs_json(state.lanes)},
+                     {"width", config.lane_bits()},
+                     {"f", config.lane_fraction(state.request.a_type)}};
+  if (config.architecture_v19) lane_trace["raw_anchors_s3"] = state.group_raw_anchors;
+  trace(state, "e_lane_sop_tree", lane_trace);
 }
 } // namespace dp::e_frontend

@@ -33,7 +33,8 @@ void stage_mixed_frontends(const Config &config, State &state, unsigned stage) {
     Config local = config;
     local.k_fp16 = 4;
     local.frontend = config.group_frontend(group_index);
-    local.legacy_multi = true; // Mixed RTL remains at the v1.7 contract.
+    // v1.9 groups inherit its explicit switch. False preserves v1.7 replay.
+    local.legacy_multi = !config.architecture_v19;
     auto &frontend = state.frontends[group_index];
     if (state.participate[group_index]) {
       advance(local, frontend, stage);
@@ -51,7 +52,7 @@ void stage_mixed_frontends(const Config &config, State &state, unsigned stage) {
       if (state.tracing) group_traces.push_back({{"participate", false}});
     }
   }
-  if (stage == 5) finish_group_stage(state, true, Json::array());
+  if (stage == 5) finish_group_stage(state, true, Json::array(), config.architecture_v19);
   else trace(state, "mixed_group_frontends",
              {{"participate", state.participate}, {"frontends", group_traces}});
 }
