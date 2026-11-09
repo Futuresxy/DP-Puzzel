@@ -42,18 +42,12 @@ def basic(name,sequential):
     return mapping.get(category,category),function,component
 
 
-def refine(run,output):
-    source=json.loads((output/'current_dp_top_sources.json').read_text())
-    original=ROOT/source['sources'][0]['supplemental_point']/'leaf_area.tsv'
-    assert digest(original)==source['sources'][0]['reports_sha256']['leaf_area.tsv']
-    netlist=ROOT/source['dc_run']/'netlist/dp_top_mapped.v'
-    # Independent frozen source + mapped artifact acceptance, no current-RTL substitution.
-    import sys
-    sys.path.insert(0,str(ROOT/'scripts'))
-    from dp_power_gate import frozen_dc_source
-    point=json.loads((ROOT/source['sources'][0]['original_point']/'point.json').read_text())
-    frozen_dc_source(ROOT,point)
-    library=load_library(run/'lib_functions.tsv')
+def discover_cones(netlist,library):
+    """Discover direct-parent arithmetic cones on a specified mapped netlist.
+
+    Reused for later accepted snapshots; never reuse U-number ownership across
+    netlists. Returned ownership is eight-category intermediate data.
+    """
     bodies=dict(re.findall(r'\bmodule\s+(\w+)\s*\((.*?)\bendmodule',netlist.read_text(),re.S))
     graphs={}
     def graph(ref):
@@ -173,6 +167,22 @@ def refine(run,output):
             sets=[(SIGN,'C INT32 absolute-value cone',g.cone(names))]
         record(prefix,g,sets)
         print(prefix or 'top','refined',len(assigned),flush=True)
+    return assigned,proofs,overlap
+
+
+def refine(run,output):
+    source=json.loads((output/'current_dp_top_sources.json').read_text())
+    original=ROOT/source['sources'][0]['supplemental_point']/'leaf_area.tsv'
+    assert digest(original)==source['sources'][0]['reports_sha256']['leaf_area.tsv']
+    netlist=ROOT/source['dc_run']/'netlist/dp_top_mapped.v'
+    # Independent frozen source + mapped artifact acceptance, no current-RTL substitution.
+    import sys
+    sys.path.insert(0,str(ROOT/'scripts'))
+    from dp_power_gate import frozen_dc_source
+    point=json.loads((ROOT/source['sources'][0]['original_point']/'point.json').read_text())
+    frozen_dc_source(ROOT,point)
+    library=load_library(run/'lib_functions.tsv')
+    assigned,proofs,overlap=discover_cones(netlist,library)
     leaves={r['cell']:r for r in csv.DictReader(original.open(),delimiter='\t')}
     if not assigned.keys()<=leaves.keys():raise ValueError('Unknown refined cells')
     totals=defaultdict(lambda:defaultdict(float)); counts=defaultdict(int);raw=[]
