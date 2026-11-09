@@ -1,5 +1,6 @@
-> 功能：列出每级数值出口的定点格式与指数范围；范围：S1–S8、同格式 A/B、C 的 S5 解包、anchor 与 SOP；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/detail.hpp](../../../cmodel/lib/detail.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：列出每级数值出口的定点格式与指数范围；范围：S1–S8、同格式 A/B、C 的 S5 解包、anchor 与 SOP；版本：v1.8；修改时间：2026-11-09 12:00:00 +08:00；对应代码：现有文件链接见下文；dp_top v1.8 待实现，其他顶层保留v1.7。
 
+**适用范围更新：dp_top 当前批准合同为 [v1.8](../dptop/dp-top-v1.8.md)，包括新的 E 坐标、无偏 scale、A_raw/compare_exp、C 非正规策略和 CSA。下文旧数值/接口仅适用于尚未迁移的 v1.7 E/QE/混合实现，不作为 dp_top v1.8 合同。**
 # 每级 anchor、SOP 与 SxIxFx
 
 状态：本表按 [位宽推导](numeric-layout.md) 展开各接口及默认数值例。CModel、RTL 与后续 Chisel 使用同一组公式。按事务 datatype 选择解释，同一物理端口可携带不同的小数点。

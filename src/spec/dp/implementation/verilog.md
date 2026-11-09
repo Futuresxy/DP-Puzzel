@@ -1,5 +1,6 @@
-> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.7.7；修改时间：2026-11-08 09:41:42 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)、[dp_tb.v](../../../../test/rtl_tb/dp_tb.v)。
+> 功能：定义手写 RTL 实现映射及验证合同；范围：多精度/E-only 单 DP、冻结的 SystemVerilog 历史参考、L8、源码快照；版本：v1.8；修改时间：2026-11-09 12:00:00 +08:00；对应代码：现有文件链接见下文；dp_top v1.8 待实现，其他顶层保留v1.7。
 
+**适用范围更新：dp_top 当前批准合同为 [v1.8](../dptop/dp-top-v1.8.md)，包括新的 E 坐标、无偏 scale、A_raw/compare_exp、C 非正规策略和 CSA。下文旧数值/接口仅适用于尚未迁移的 v1.7 E/QE/混合实现，不作为 dp_top v1.8 合同。**
 # 单 DP 手写 RTL 实现合同
 
 本页记录现用手写 RTL 与 v1.7.4 顶层装配，S5 采用 [scale 合同](../group/scale.md) 的 14×8 无符号乘法及符号旁带。主要交付采用 IEEE 1364-2005 Verilog；按用户最新要求将 SystemVerilog 冻结为 T8H16Q32E64 历史参考，来源见 [SV 冻结说明](../../../verilog/systemverilog/README.md)。后续新功能与 E 专用设计只维护现用 CModel/Verilog，不要求 SV 同步。仅实现一个 DP，未进入计算阵列。

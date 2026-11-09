@@ -1,5 +1,6 @@
-> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.7.4；修改时间：2026-11-08 09:03:06 +0800；对应代码：[模型 API](../../../cmodel/include/dp/model.hpp)、[参数](../../../cmodel/include/dp/config.hpp)、[执行器](../../../cmodel/lib/model.cpp)、[测试入口](../../../../test/run_cmodel.py)；Chisel 尚未实现；手写 RTL 映射见 [实现合同](verilog.md)。
+> 功能：定义 DP CModel、模块映射及共用测试接口；范围：分组共享 DP 的整数数值、逐周期执行、精度参考及证据边界；版本：v1.8；修改时间：2026-11-09 12:00:00 +08:00；对应代码：现有文件链接见下文；dp_top v1.8 待实现，其他顶层保留v1.7。
 
+**适用范围更新：dp_top 当前批准合同为 [v1.8](../dptop/dp-top-v1.8.md)，包括新的 E 坐标、无偏 scale、A_raw/compare_exp、C 非正规策略和 CSA。下文旧数值/接口仅适用于尚未迁移的 v1.7 E/QE/混合实现，不作为 dp_top v1.8 合同。**
 # DP CModel 合同
 
 模型实现多精度分组共享前端和 E 专用前端，共用 S5 token 完成/C 路径及 S6–S8。默认 `multi` 为 T8H16Q32E64，`e` 为 E64，均为 L8、II=1。E 前端仅支持 MXFP4/NVFP4/HiF4，C/D 为 FP32；数学参考和请求接口复用。QE 和 E96/E128/Q64E128 混合组组合已实现，见混合顶层合同与独立验证；阵列尚未实施。各 RTL 及 DC 均有对应快照证据。模型不以宿主 float/double 代替有限位宽运算。

@@ -1,5 +1,6 @@
-> 功能：定义浮点分类与特殊值传播；范围：NaN/Inf/零/非正规数、scale、规约和 C 合并；版本：v1.5.4；修改时间：2026-11-05 14:16:26 +08:00；对应代码：[CModel lib/arithmetic.cpp](../../../cmodel/lib/arithmetic.cpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义浮点分类与特殊值传播；范围：NaN/Inf/零/非正规数、scale、规约和 C 合并；版本：v1.8；修改时间：2026-11-09 12:00:00 +08:00；对应代码：现有文件链接见下文；dp_top v1.8 待实现，其他顶层保留v1.7。
 
+**适用范围更新：dp_top 当前批准合同为 [v1.8](../dptop/dp-top-v1.8.md)，包括新的 E 坐标、无偏 scale、A_raw/compare_exp、C 非正规策略和 CSA。下文旧数值/接口仅适用于尚未迁移的 v1.7 E/QE/混合实现，不作为 dp_top v1.8 合同。**
 # 浮点分类、特殊值传播与 FP32 输出
 
 首版特殊值策略已由用户确认，见 [CModel 合同](../implementation/cmodel.md)：canonical qNaN、RNE 零符号、渐进下溢及舍入后 tininess；异常只记录验证 trace。实现验证不等于完整 IEEE 环境合规或无限精度点积一次正确舍入。

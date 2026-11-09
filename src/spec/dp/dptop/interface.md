@@ -1,5 +1,6 @@
-> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token；版本：v1.6；修改时间：2026-11-06 12:06:08 +08:00；对应代码：[CModel include/dp/model.hpp](../../../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../../../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token；版本：v1.8；修改时间：2026-11-09 12:00:00 +08:00；对应代码：现有文件链接见下文；dp_top v1.8 待实现，其他顶层保留v1.7。
 
+**适用范围更新：dp_top 当前批准合同为 [v1.8](dp-top-v1.8.md)，包括新的 E 坐标、无偏 scale、A_raw/compare_exp、C 非正规策略和 CSA。下文旧数值/接口仅适用于尚未迁移的 v1.7 E/QE/混合实现，不作为 dp_top v1.8 合同。**
 # DP 顶层与模块接口定义
 
 状态：当前 H16Q32E64（T8）及 K4/K8 变体的接口合同。用户确认 A/B 各自携带 datatype、首版仅同格式；C 在 S5 按 FP32/INT32 解包；每笔控制随流水推进，取消 DP 内会话锁定。原子 ready 及逐请求协议已在 CModel 验证；手写 RTL 已采用同步低有效 `rst_n` 复位，见 [实现合同](../implementation/verilog.md)。
