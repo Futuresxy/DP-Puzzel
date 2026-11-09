@@ -1,6 +1,6 @@
-> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：现有文件链接见下文；dp_top v1.8 CModel/RTL 已实现并通过本批功能验证；其他顶层保留v1.7。
+> 功能：定义 DP 顶层和模块接口；范围：端口/编码、原子握手、逐笔 datatype、内部 token；版本：v1.9.1；修改时间：2026-11-10 00:40:07 +0800；对应代码：现有文件链接见下文；dp_top v1.8 CModel/RTL 已实现并通过本批功能验证；三个混合顶层与Q32E64已迁移v1.9，E64保留旧实现。
 
-**适用范围更新：dp_top 当前批准合同为 [v1.8](dp-top-v1.8.md)，包括新的 E 坐标、无偏 scale、A_raw/compare_exp、C 非正规策略和 CSA。下文旧数值/接口仅适用于尚未迁移的 v1.7 E/QE/混合实现，不作为 dp_top v1.8 合同。**
+**适用范围：外部协议由六种维护中的 top 共用；下表内部 token 以 dp_top v1.8 与混合/Q32E64 v1.9 为准。E64/dp_top_e 保留原 A_raw/z 与 C LZD 分支，独立验收。**
 # DP 顶层与模块接口定义
 
 状态：当前 H16Q32E64（T8）及 K4/K8 变体的接口合同。用户确认 A/B 各自携带 datatype、首版仅同格式；C 在 S5 按 FP32/INT32 解包；每笔控制随流水推进，取消 DP 内会话锁定。原子 ready 及逐请求协议已在 CModel 验证；手写 RTL 已采用同步低有效 `rst_n` 复位，见 [实现合同](../implementation/verilog.md)。
@@ -112,16 +112,16 @@ req_fire = accept_enable & all_valid
 | 顶层 → 基本组 | in_a/in_b 各 64 bit、每侧 scale8/e1×4/e2×2、ctrl、valid | 当前请求格式、scale 类型、last | 同一顶层 req_fire；不另加一级输入寄存 |
 | 基本组 → lane | 每侧 32 bit、该 lane e1×2/e2×1、ctrl、valid | 当前请求控制和分类 | S1 解包归 lane，两个 lane 同步 |
 | lane → 组 MAX → lane | exp_candidates/active、group_max | 指数和当前请求的有效掩码 | S2 组合侧接口；候选不依赖返回 MAX，无反馈环 |
-| lane → 基本组 | SOP 补码 W_lane、r、zero/special、ctrl、valid/last | 默认 W_lane=30，r=U9 | S4 同拍输出；本地 F 由本笔 ctrl 推导 |
-| 基本组 → 顶层 | negative、magnitude_raw[M_group]、anchor_raw、leading_zero_count、zero/special、ctrl、valid/last | 默认 M31、anchor_raw signed10、z unsigned5；浮点原幅值 F 按模式，未左移；INT z/anchor=0 | L8 S5 同拍注册；备用 L9 为新增 S6 出口 |
-| C 支路 → 顶层 | 固定 sign+M32、anchor_raw、leading_zero_count、class、ctrl、valid | FP32 M24 低补 8 零、F31，原有效无偏 anchor 及 z_c；不动态左移；INT32 M32/F0、z/anchor=0 | S5 解包，与组 token 同拍 |
+| lane → 基本组 | SOP 补码 W_lane、适用的r、zero/special、ctrl、valid/last | 默认多精度/QE W_lane=31；multi r=U9、QE r=U6；E v1.9为S14且无r/跨laneMAX | multi/QE S4输出；E v1.9 S3输出，group S4组和/abs；本地F按格式解释 |
+| 基本组 → 顶层 | negative、magnitude_raw[M_group]、anchor_raw、compare_exp、zero/special、ctrl、valid/last | 默认 M31、anchor_raw/compare_exp 均 signed10；未左移；INT anchor/compare_exp=0 | L8 S5 同拍注册；L9仅历史候选，当前维护RTL不提供该扩展 |
+| C 支路 → 顶层 | 固定 sign+M32、anchor_raw、compare_exp、class、ctrl、valid | FP32 M24 低补 8 零、F31，原有效无偏 anchor，compare_exp=anchor；不做LZD/动态左移；INT32 M32/F0、anchor=0 | S5 解包，与组 token 同拍 |
 | S6 → S7 | N 个 TC 对齐叶、A_common、ctrl、special、valid/last | 默认 N=5、叶 W40；INT 分支仅结构低零 | 一组叶对应同一请求，不逐源握手 |
 | S7 → S8 | TC 总 SOP、A_common、ctrl、special、valid/last | 默认 W43；完整自然增长 | S8 按本笔输出类型处理 |
 
 C 的 M32 取 FP32 significand 与 INT32 magnitude 所需宽度的最大值，补零数/小数位由格式参数推导；无效分类字段安全置零。
 
-组字段改称 anchor_raw，其值仍是原幅值容器最高位权重，value=sign×magnitude_raw×2^(anchor_raw-(M-1))；另外传 z，e=anchor_raw-z 供 MAX。默认 z 有 5 位，zero/special 另传；只给 e 而保留未左移幅值是错误接口。ctrl 必须同行。
+组字段改称 anchor_raw，其值仍是原幅值容器最高位权重，value=(-1)^sign×magnitude_raw×2^(anchor_raw-(M-1))；S5 另保存 compare_exp=anchor_raw-z 供 MAX，z 是本级内部计数（默认5位），不再作为必须跨级保存的数据。zero/special 另传；只给 compare_exp 而丢失原坐标会导致未左移幅值解释错误。ctrl 必须同行。
 
 ## 8. 计数 token 与固定延迟
 
-S5 输出原幅值/anchor_raw/z，S6 完成合并移位；最小字段不同时存三套 A_raw/e/z。外部端口不变，初版 L8；备用 post_scale_norm_extra_stage=1 时全部模式 L9，静态配置不可逐请求变化。所有源及控制同步。S6/S7 的公共 anchor 字段 A_common 是实际指数 E_max（数值同义，建议 trace 使用 E_max 区分 raw）。
+S5 输出原幅值/anchor_raw/compare_exp，S6 完成合并移位；不同时存三套 A_raw/e/z。外部端口不变，初版 L8；旧整体对齐的备用 post_scale_norm_extra_stage=1 不属于本批 v1.9 验收；本批固定 L8。所有源及控制同步。S6/S7 的公共 anchor 字段 A_common 是实际指数 E_max（数值同义，建议 trace 使用 E_max 区分 raw）。

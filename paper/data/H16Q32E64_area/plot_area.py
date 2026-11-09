@@ -153,6 +153,90 @@ def plot_current(data_dir, figure_dir, results_dir, dpi, refined=False, seven=Fa
         json.dumps(manifest, indent=2) + '\n')
     print(f'Current dp_top: {sum(areas.values()):.6f} um2; {area_output}; {power_output}')
 
+def plot_architectures(data_dir, figure_dir, results_dir, dpi):
+    """Plot one common seven-category policy across all accepted architectures."""
+    area_path = data_dir / 'seven_functions_area.csv'
+    power_path = data_dir / 'seven_functions_power.csv'
+    area_rows = list(csv.DictReader(area_path.open()))
+    power_rows = list(csv.DictReader(power_path.open()))
+    categories = list(dict.fromkeys(row['category'] for row in area_rows))
+    if len(categories) != 7:
+        raise ValueError('Expected seven exclusive categories')
+    tops = list(dict.fromkeys(row['top'] for row in area_rows))
+    labels = dict(dp_top='T8H16Q32E64', dp_top_t8h16q32e96='T8H16Q32E96',
+                  dp_top_t8h16q32e128='T8H16Q32E128',
+                  dp_top_t8h16q64e128_opt='T8H16Q64E128',
+                  dp_top_e64='E64', dp_top_q32e64='Q32E64')
+    colors = ['#8CB5D5', '#E7A39A', '#9BC69B', '#B79BCB', '#E6CA7C', '#80C3C0', '#B6B6B6']
+    area = {(r['top'], r['category']): float(r['total_um2']) for r in area_rows}
+    power = {(r['top'], r['format'], r['category']): r for r in power_rows}
+    if len(area) != len(area_rows) or len(power) != len(power_rows):
+        raise ValueError('Duplicate architecture/category rows')
+    figure_dir.mkdir(parents=True, exist_ok=True)
+    results_dir.mkdir(parents=True, exist_ok=True)
+    plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 10})
+    outputs = []
+    fig, axes = plt.subplots((len(tops) + 2) // 3, 3, figsize=(13, 4 * ((len(tops) + 2) // 3) + 1.3), squeeze=False)
+    for ax, top in zip(axes.flat, tops):
+        wedges = current_donut(ax, [area[top, c] for c in categories], labels.get(top, top), 'µm²', colors)
+    for ax in list(axes.flat)[len(tops):]:
+        ax.set_visible(False)
+    fig.suptitle('DP architecture area: seven major functions', fontsize=16)
+    fig.legend(wedges, categories, loc='lower center', ncol=3, frameon=False, bbox_to_anchor=(.5, .025))
+    fig.text(.5, .008, 'Exclusive cell sums; small report-rounding residuals are not redistributed.', ha='center', fontsize=8)
+    fig.tight_layout(rect=(0, .13, 1, .95))
+    path = figure_dir / 'v19_six_area_functions.png'
+    fig.savefig(path, dpi=dpi, bbox_inches='tight', facecolor='white')
+    plt.close(fig)
+    outputs.append(path.name)
+    metrics = [('dynamic_mw', 'Dynamic power'), ('leakage_mw', 'Static power'), ('total_mw', 'Total power')]
+    for top in tops:
+        modes = [(mode, label) for mode, label in CURRENT_MODES if (top, mode, categories[0]) in power]
+        fig, axes = plt.subplots(len(modes), 3, figsize=(12, 3.5 * len(modes) + 1.5), squeeze=False)
+        for row_index, (mode, label) in enumerate(modes):
+            for column, (metric, title) in enumerate(metrics):
+                values = [float(power[top, mode, c][metric]) for c in categories]
+                wedges = current_donut(axes[row_index, column], values, label, 'mW', colors)
+                if row_index == 0:
+                    axes[row_index, column].set_title(title, fontsize=13)
+        fig.suptitle(labels.get(top, top) + ': functional workload power', fontsize=16)
+        fig.legend(wedges, categories, loc='lower center', ncol=3, frameon=False, bbox_to_anchor=(.5, .035))
+        fig.text(.5, .01, 'N12 TT · 0.7 V · 85 °C · 1 GHz | Qwen3-8B MLP | native gate SAIF, pre-CTS\n'
+                 'Values are unadjusted cell sums; official totals and rounding residuals are in the reconciliation CSV.', ha='center', fontsize=8)
+        fig.tight_layout(rect=(0, .16 if len(modes) == 1 else .12, 1, .95))
+        path = figure_dir / ('v19_' + top + '_power_functions.png')
+        fig.savefig(path, dpi=dpi, bbox_inches='tight', facecolor='white')
+        plt.close(fig)
+        outputs.append(path.name)
+    # Absolute stacked bars expose the cost hidden by percentage-only plots.
+    fig, axes = plt.subplots(1, 3, figsize=(16, 5.5), squeeze=False)
+    for ax, (mode, title) in zip(axes.flat, CURRENT_MODES):
+        available = [t for t in tops if (t, mode, categories[0]) in power]
+        bottoms = [0.] * len(available)
+        for category, color in zip(categories, colors):
+            values = [float(power[t, mode, category]['total_mw']) for t in available]
+            ax.bar(range(len(available)), values, bottom=bottoms, color=color, label=category)
+            bottoms = [a + b for a, b in zip(bottoms, values)]
+        ax.set_xticks(range(len(available)), [labels.get(t, t) for t in available], rotation=40, ha='right', fontsize=9)
+        ax.set_title(title)
+        ax.set_ylabel('Total power (mW)')
+        ax.grid(axis='y', alpha=.2)
+        ax.set_axisbelow(True)
+    fig.legend(*axes[0, 0].get_legend_handles_labels(), loc='lower center', ncol=3, frameon=False)
+    fig.suptitle('Absolute power by function; native K differs between architectures', fontsize=15)
+    fig.tight_layout(rect=(0, .17, 1, .94))
+    path = figure_dir / 'v19_six_power_functions_comparison.png'
+    fig.savefig(path, dpi=dpi, bbox_inches='tight', facecolor='white')
+    plt.close(fig)
+    outputs.append(path.name)
+    (results_dir / 'v19_six_plot_manifest.json').write_text(json.dumps(dict(
+        inputs_sha256={p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in (area_path, power_path)},
+        script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        outputs=outputs, dpi=dpi, categories=categories, tops=tops,
+        note='Shares and centers use unadjusted exclusive leaf sums; categories below 2% have no pie label. Unsupported precision modes omitted.'), indent=2) + '\n')
+    print(f'{len(tops)} architectures, {len(outputs)} figures: {figure_dir}')
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--data',type=Path,default=HERE/'area_data.csv')
@@ -160,6 +244,7 @@ def main():
     parser.add_argument('--results-dir',type=Path,default=PAPER/'data/results/H16Q32E64_area')
     parser.add_argument('--dpi',type=int,default=600)
     policy = parser.add_mutually_exclusive_group()
+    policy.add_argument('--architectures', action='store_true', help='Plot seven-category area and power across the audited architecture collection')
     policy.add_argument('--fixed-seven', action='store_true', help='Plot latest fixed-unpack seven-category area only; no new power data')
     policy.add_argument('--seven', action='store_true', help='Use the agreed seven categories: signed preparation in SOP, absolute value and shift deltas in alignment')
     policy.add_argument('--refined', action='store_true', help='Use eight categories with separate sign conversion and combined logic control')
@@ -169,6 +254,9 @@ def main():
     args=parser.parse_args()
     if args.output.suffix.lower()!='.png':parser.error('--output must end in .png')
     if args.dpi<=0:parser.error('--dpi must be positive')
+    if args.architectures:
+        plot_architectures(args.current_data_dir, args.figure_dir, args.results_dir, args.dpi)
+        return
     if args.current or args.refined or args.seven or args.fixed_seven:
         plot_current(args.current_data_dir, args.figure_dir, args.results_dir, args.dpi, refined=args.refined, seven=args.seven, fixed=args.fixed_seven)
         return

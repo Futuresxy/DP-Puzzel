@@ -1,4 +1,4 @@
-> 功能：定义E16组、LZD22与公共S5双指数接口；范围：混合DP专用前端及扩展合同；版本：v1.9；修改时间：2026-11-09 22:25:29 +0800；对应代码：src/verilog/group/dp_group_e.v、src/cmodel/lib/group/group_e.cpp；本版待实现，现有源码与旧PPA不代表本合同已验收。
+> 功能：定义E16组、LZD22与公共S5双指数接口；范围：混合DP专用前端及扩展合同；版本：v1.9.1；修改时间：2026-11-10 00:16:17 +0800；对应代码：src/verilog/group/dp_group_e.v、src/cmodel/lib/group/group_e.cpp；本版CModel与冻结RTL已通过，见test/results/mixed-rtl-v1.9.md；PPA按独立回执验收。
 
 # E16 专用 group
 

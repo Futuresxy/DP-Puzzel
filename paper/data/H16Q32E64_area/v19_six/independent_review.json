@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "accepted_points": 15,
+  "physical_cell_rows": 1271408,
+  "power_unit_tests": {
+    "run": 68,
+    "passed": 67,
+    "skipped": 1,
+    "skip_reason": "optional z3 not installed"
+  },
+  "receipts": {
+    "independent_function_totals_review.json": {
+      "path": "hw/power/runs/v19_reference_1109/independent_function_totals_review.json",
+      "sha256": "0d52507f18b8c9a7288efb23c7baeffe830b404c5caa351db2137dab6fef9198"
+    },
+    "independent_dual_receipt_review.json": {
+      "path": "hw/power/runs/v19_reference_1109/independent_dual_receipt_review.json",
+      "sha256": "ed5f2e87566822a18ac2f1a0011ac2ccdb81cbe3ea385755dee3dd806ec82d60"
+    }
+  }
+}

@@ -1,6 +1,8 @@
-# H16Q32E64 面积占比图
+# DP 面积与功耗占比图
 
-最新固定解包版的 **[七类功能面积](fixed_unpack_area_seven.md)** 来自
+最新结果为 **[v1.9 六架构七类面积／功耗](v19_six/README.md)**（2026-11-10）：42 行面积与105 行功耗分类，包含每种兼容精度的动态、静态、总功耗占比，使用 `plot_area.py --architectures` 重绘。baseline 面积为16165.122154 µm²，六架构完整数值与来源见该入口。下方保留旧批次说明，不能作为新版本结果。
+
+历史固定解包版的 **[七类功能面积](fixed_unpack_area_seven.md)** 来自
 `dc_dp_top_11090056`，总面积16831.218 µm²。面积 CSV 为 `fixed_unpack_area_seven.csv`，
 重绘使用 `plot_area.py --fixed-seven`。另有 [实际 module 边界统计](fixed_unpack_module_area.md)，
 两种划分口径不同。优化前的七类面积/功耗保留原 `dc_dp_top_11081432` 来源，请勿混用。

@@ -1,8 +1,8 @@
 # 多精度 DP · 手写 RTL
 
-当前基础 `dp_top` 已实现 [v1.8 架构](../spec/dp/dptop/dp-top-v1.8.md)：E 窄 pair/本地 e2、S3 anchor、S5 compare_exp、C 无 LZD、S7 CSA。仅该顶层启用；其他顶层保持旧算术合同。[本批功能验证](../../test/results/dp-top-v1.8.md)不代表新的综合或功耗结果。
+当前基础 `dp_top` 已实现 [v1.8 架构](../spec/dp/dptop/dp-top-v1.8.md)：E 窄 pair/本地 e2、S3 anchor、S5 compare_exp、C 无 LZD、S7 CSA。三个混合顶层与Q32E64已迁移[v1.9](../spec/dp/dptop/mixed-precision-expansion.md)，[冻结功能验证](../../test/results/mixed-rtl-v1.9.md)通过；E64及dp_top_e保留原实现。DC/功耗依据各自新网表回执。
 
-实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **架构 v1.6 / 实现映射 v1.6.4**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
+实现单个 `scaled_dot(A,B)+C` 点积单元，分别遵循基础v1.8与混合/QE v1.9合同。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
 
 | 实现 | 编译清单 | 顶层 |
 | --- | --- | --- |

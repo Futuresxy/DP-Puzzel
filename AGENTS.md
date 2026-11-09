@@ -1,12 +1,14 @@
 # DAC 2027 工程开发约定
 
-## dp_top v1.8 本轮范围（2026-11-09）
+## dp_top v1.8 基础实现与独立修复（2026-11-10）
 
-基础 `dp_top` 已按 `src/spec/dp/dptop/dp-top-v1.8.md` 实现：E 窄 pair/共享树/局部 e2 融合，无跨 lane MAX/宽移位依赖；无偏 scale、S3 A_raw、S5 compare_exp；C 不做 LZD；S7 4:2+3:2+CPA。CModel、冻结 Verilog 的 L8/II=1/完整数据和新定向断点已通过，回执见 `test/results/dp-top-v1.8.md`。其余 E/QE/混合顶层本轮不迁移，`BASELINE_V18` 静态参数默认0，仅 dp_top 显式开启；CModel 的 legacy_multi 保留旧回放。扩展 ADD/CSA/MUX 只更新规格。旧功耗/综合结果仍保留为历史；v1.8 首次 N12 TT/1GHz DC 面积为16163.057770 µm²，setup/hold通过但有1条最大电容违例，整体 flow_pass=false；未测新功耗。详见 hw/dc_syn/records/dp_top_v18_n12_1000mhz_20261109.md。
+基础 `dp_top` 已按 `src/spec/dp/dptop/dp-top-v1.8.md` 实现：E 窄 pair/共享树/局部 e2 融合，无跨 lane MAX/宽移位依赖；无偏 scale、S3 A_raw、S5 compare_exp；C 不做 LZD；S7 4:2+3:2+CPA。CModel、冻结 Verilog 的 L8/II=1/完整数据和新定向断点已通过，回执见 `test/results/dp-top-v1.8.md`。原v1.8批次未迁移其余E/QE/混合顶层；后续v1.9范围见下一节。`BASELINE_V18` 静态参数默认0，dp_top及新版混合顶层的基础组显式开启；CModel 的 legacy_multi 保留旧回放。该批扩展ADD/CSA/MUX只更新规格，后续v1.9已实现。旧功耗/综合结果仍保留为历史；v1.8 首次 N12 TT/1GHz DC 面积为16163.057770 µm²，setup/hold通过但有1条最大电容违例，该首次结果flow_pass=false。后续独立修复已通过，并完成三种真实负载功耗，见下一节。详见 hw/dc_syn/records/dp_top_v18_n12_1000mhz_20261109.md。
 
-## 三种混合DP及Q32E64 v1.9实现（2026-11-09）
+## 三种混合DP及Q32E64 v1.9实现与验收（2026-11-10）
 
-用户已授权CModel→RTL冻结验证→同工况DC→六架构真实负载功耗与七类功能占比。三混合顶层及独立Q32E64的CModel、Verilator全量/断点/L8/II=1/门控验证已通过，见test/results/mixed-cmodel-v1.9.md与mixed-rtl-v1.9.md；baseline v1.8复核通过，E64保持旧设计并通过兼容回归。E专用S3完成HiF4 e2融合，S4窄组和/abs，S5 U22 LZD、补零输出U31；QE保留Q U5指数/宽对齐，E旁路并在S4 lane树后消耗e2。三种扩展采用carry-save合并、双行MUX及唯一CPA，E96 S43、E128/Q64E128 S44；Q32E64五源4:2+3:2+CPA为S43。active屏蔽MAX，非参与特殊/负零贡献分别处理。详细入口src/spec/dp/dptop/mixed-precision-expansion.md与low-precision-tops.md。新DC/功耗正在验收；旧PPA不能冒充新合同结果。独立E64及dp_top_e通过ARCHITECTURE_V19默认0保留旧合同。
+用户已授权CModel→RTL冻结验证→同工况DC→六架构真实负载功耗与七类功能占比。三混合顶层及独立Q32E64的CModel、Verilator全量/断点/L8/II=1/门控验证已通过，见test/results/mixed-cmodel-v1.9.md与mixed-rtl-v1.9.md；baseline v1.8复核通过，E64保持旧设计并通过兼容回归。E专用S3完成HiF4 e2融合，S4窄组和/abs，S5 U22 LZD、补零输出U31；QE保留Q U5指数/宽对齐，E旁路并在S4 lane树后消耗e2。三种扩展采用carry-save合并、双行MUX及唯一CPA，E96 S43、E128/Q64E128 S44；Q32E64五源4:2+3:2+CPA为S43。active屏蔽MAX，非参与特殊/负零贡献分别处理。详细入口src/spec/dp/dptop/mixed-precision-expansion.md与low-precision-tops.md。五份新DC已通过1GHz setup/hold、电气及VT门禁；六架构15个兼容精度点均重新采样SAIF并通过功耗审计。旧PPA保留对照。独立E64及dp_top_e通过ARCHITECTURE_V19默认0保留旧合同。
+
+当前交付入口：hw/power/records/v19_design_report_20261110.md；DC索引hw/dc_syn/records/v19_six_dp_20261110.{md,json}；完整动态/静态/总功耗及旧版对照hw/power/records/v19_six_architectures_20261110.{md,json,csv}；六架构七类功能统计及图paper/data/H16Q32E64_area/v19_six/README.md。N12 TT/0.7V/85°C、1GHz、ICG开启，setup正裕量极小，仅综合后/CTS布线前结论。E64沿用原通过网表，但本轮SAIF与功耗为新采样。所有旧功耗及引用依赖继续保留。
 
 baseline电气修复独立run dc_dp_top_11092301，面积16165.122154 µm²，setup/hold/电气/VT均通过；三种新负载功耗见hw/power/records/baseline_v18_repaired_1109.md，旧结果及依赖继续保留。原DC引用的完整验证回执按其verification_id定位，不因同一RTL快照再次验证而替换历史验收；当前源码综合仍使用严格最新门禁。
 
@@ -20,14 +22,14 @@ E 专用前端已按所选 E64 方案实现 CModel（S2 pair、S3 lane 树、S4 
 
 当前工作目录使用根 `src/` 开发、`test/` 验证、`hw/` 做综合与功耗。分析前将设计冻结到 `hw/rtl/<export-id>/`，在 manifest 记录顶层、时钟、复位和来源。DC 流程自身的测试位于 `hw/dc_syn/tests/`。
 
-新版 spec 文档维护遵从 [版本与修订规则](src/spec/document-control.md)：每份 `src/spec/**/*.md` 第一行必须写功能、范围、固定版本、修改时间及时区、对应代码文件（未建时明确标注并指向现有入口）。当前架构 v1.7、实现映射 v1.7.1；同架构修订追加 `.x`，架构合同修改升新 vM.N 并记录原因与影响。按用户最新要求，正文只展示当前有效合同，清除过时草案与重复历史；仅相邻两个主要版本的核心变更保留简短删除线对照，非核心小修直接更新。完整历史由 Git 保存，当前索引与两版摘要见 [版本记录](src/spec/CHANGELOG.md)。版本编号不代表待决规格已批准或实现已验证。
+新版 spec 文档维护遵从 [版本与修订规则](src/spec/document-control.md)：每份 `src/spec/**/*.md` 第一行必须写功能、范围、固定版本、修改时间及时区、对应代码文件（未建时明确标注并指向现有入口）。当前基础dp_top为v1.8、三个混合顶层及Q32E64为v1.9，E64保留原合同；同架构修订追加 `.x`，架构合同修改升新 vM.N 并记录原因与影响。按用户最新要求，正文只展示当前有效合同，清除过时草案与重复历史；仅相邻两个主要版本的核心变更保留简短删除线对照，非核心小修直接更新。完整历史由 Git 保存，当前索引与两版摘要见 [版本记录](src/spec/CHANGELOG.md)。版本编号不代表待决规格已批准或实现已验证。
 
 用户于 2026-11-05 另行授权在本机 EDA 环境执行单 DP 的 N12 DC 综合及 1.41GHz 时序分析。此授权覆盖验证门禁与综合基础设施接入，不扩展计算阵列；后续按用户授权和真实证据运行对应 EDA 流程。
 
 用户于 2026-11-05 明确：`src/verilog/systemverilog/` 仅保留 T8H16Q32E64、K16/28/40、L8/II=1 的历史版本，后续新特性、数值/流水优化和 E 类专用 DP 不再同步到 SV。当前维护 CModel 与纯 Verilog；默认 RTL 回归只运行 Verilog，显式 SV 重放为历史参考检查，不作为新版本门禁。Chisel 仍按原计划待实施；测试台使用 Verilog/SystemVerilog 语言不改变 DUT 的维护范围。冻结来源见 [SV 说明](src/verilog/systemverilog/README.md)。
 
 
-用户于2026-11-08最新要求：补齐精度寄存器门控后三种混合顶层的1GHz DC/真实负载功耗，汇总六种架构，E64保持原设计。用户随后明确要求全部旧功耗数据先不删除、保留作对照，因此其依赖的历史DC、RTL快照和验证回执也保留；该要求优先于此前仅留新结果的清理口径。现用综合索引为 hw/dc_syn/records/latest_six_dp.{md,json}，面积/动态/静态/总功耗统一报告为 hw/power/records/current_six_precision_gated.{md,json,csv}。15个兼容格式点经冻结RTL/门级1024笔及L8检查、512ns VCS原生SAIF、Power Compiler显式注释100%和真实引脚无X/Z审计。三种混合架构本轮新测；dp_top/Q32E64复用已测门控版，E64复用未变的原结果。工况N12 TT/0.7V/85°C、1GHz、L8/II=1、ICG开启，限于综合后零延迟、CTS/布线前。仅清理无引用旧测试大产物与被替代快照，失效快照元数据保留在hw/rtl/retired；回执为hw/dc_syn/maintenance/precision_gated_six_cleanup_20261108.json。旧精简测试摘要保留作历史索引，不代表其大产物仍存在。现用及历史功耗点的冻结RTL、完整回归、网表/SAIF与必要修复依赖均保留；功耗复用仍走scripts/rtl_gate.verify_power_input，不放宽当前源码综合门禁。
+用户于2026-11-08最新要求：补齐精度寄存器门控后三种混合顶层的1GHz DC/真实负载功耗，汇总六种架构，E64保持原设计。用户随后明确要求全部旧功耗数据先不删除、保留作对照，因此其依赖的历史DC、RTL快照和验证回执也保留；该要求优先于此前仅留新结果的清理口径。该历史批次综合索引为hw/dc_syn/records/latest_six_dp.{md,json}，功耗报告为hw/power/records/current_six_precision_gated.{md,json,csv}；最新v1.9批次入口见本文开头。15个兼容格式点经冻结RTL/门级1024笔及L8检查、512ns VCS原生SAIF、Power Compiler显式注释100%和真实引脚无X/Z审计。三种混合架构本轮新测；dp_top/Q32E64复用已测门控版，E64复用未变的原结果。工况N12 TT/0.7V/85°C、1GHz、L8/II=1、ICG开启，限于综合后零延迟、CTS/布线前。仅清理无引用旧测试大产物与被替代快照，失效快照元数据保留在hw/rtl/retired；回执为hw/dc_syn/maintenance/precision_gated_six_cleanup_20261108.json。旧精简测试摘要保留作历史索引，不代表其大产物仍存在。现用及历史功耗点的冻结RTL、完整回归、网表/SAIF与必要修复依赖均保留；功耗复用仍走scripts/rtl_gate.verify_power_input，不放宽当前源码综合门禁。
 
 ## 历史设计约定与通用工程规则
 

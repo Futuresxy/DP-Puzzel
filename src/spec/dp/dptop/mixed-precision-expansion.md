@@ -1,4 +1,4 @@
-> 功能：定义三种混合DP面积优化、参与屏蔽与carry-save扩展；范围：混合DP专用前端及扩展合同；版本：v1.9.1；修改时间：2026-11-09 23:57:09 +0800；对应代码：src/cmodel/lib/top/mixed.cpp、src/verilog/top/common/dp_top_mixed.v、dp_mixed_global_align.v及三个固定顶层；本版CModel/冻结RTL验证已通过，见test/results/mixed-{cmodel,rtl}-v1.9.md；新PPA独立验收。
+> 功能：定义三种混合DP面积优化、参与屏蔽与carry-save扩展；范围：混合DP专用前端及扩展合同；版本：v1.9.1；修改时间：2026-11-10 00:35:33 +0800；对应代码：src/cmodel/lib/top/mixed.cpp、src/verilog/top/common/dp_top_mixed.v、dp_mixed_global_align.v及三个固定顶层；本版CModel/冻结RTL验证已通过，见test/results/mixed-{cmodel,rtl}-v1.9.md；新PPA已独立验收，见hw/power/records/v19_design_report_20261110.md。
 
 # 三种混合 DP：v1.9 确认合同
 
@@ -140,6 +140,6 @@ INT仅基础四组+C，S6整数是S1I32F7；S7为S1I35F7或S1I36F7，最终固�
 
 优先实测解包/寄存、Q对齐、共享树、扩展S6/S7各自面积与Q/E活动功耗，再选热点。QE独立E树可能降功耗却增面积；额外隔离MUX也可能恶化时序。
 
-后续先CModel，再RTL/冻结Verilator，再同库N12 TT/0.7V/85°C、1GHz门控及电气检查；功耗使用各自经过验证的网表、新生成VCS原生SAIF和Power Compiler，在兼容模式下比较BF16、MXFP8 E4M3、MXFP4；E64复用未改设计的合法综合输入并重新采样。验证包括E96/E128三格式、Q64四格式全量数据；T/H/INT及不扩展Q对照基础v1.8；U22与M位LZD非零等价/零差异；scale/e1/e2边界、抵消、负零、Inf/NaN；失活扩展毒化；逐拍换型/气泡/复位；CSA有符号边界和carry位权；N7/N9及参数窗口；C只计一次。
+本轮按CModel、RTL/冻结Verilator、同库N12 TT/0.7V/85°C、1GHz门控及电气检查；功耗使用各自经过验证的网表、新生成VCS原生SAIF和Power Compiler，在兼容模式下比较BF16、MXFP8 E4M3、MXFP4；E64复用未改设计的合法综合输入并重新采样。三个混合顶层均覆盖11格式、各10747笔完整数据；扩展数据覆盖E96/E128三种E、Q64四种Q及三种E；T/H/INT及不扩展Q对照基础v1.8；U22与M位LZD非零等价/零差异；scale/e1/e2边界、抵消、负零、Inf/NaN；失活扩展毒化；逐拍换型/气泡/复位；CSA有符号边界和carry位权；N7/N9及参数窗口；C只计一次。完整验收见[设计报告](../../../../hw/power/records/v19_design_report_20261110.md)，五份新DC通过且六架构15个功耗点完成；不将极小正setup裕量视为布线签核。
 
-数据来源沿用test/data中既有E96/E128/Q64向量与exact参考，来源分别为fp48、fp416、low16，不重定义量化块。数学golden不随硬件改动；同时报告RTL/CModel一致性及数学ULP。任何共享源码修改都需明确旧E/QE/低精度顶层是否隔离或重验。当前三种新架构未形成新PPA；旧约66%面积增长是旧版本证据，不作为本版预测或硬性承诺。
+数据来源沿用test/data中既有E96/E128/Q64向量与exact参考，来源分别为fp48、fp416、low16，不重定义量化块。数学golden不随硬件改动；同时报告RTL/CModel一致性及数学ULP。任何共享源码修改都需明确旧E/QE/低精度顶层是否隔离或重验。当前三种新架构已有独立新PPA；旧约66%面积增长仍仅为旧版本证据，新结果使用同批baseline比较，不作为硬性面积承诺。

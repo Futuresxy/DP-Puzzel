@@ -1,4 +1,4 @@
-> 功能：定义Q4E8专用lane裁剪和E旁路；范围：混合DP专用前端及扩展合同；版本：v1.9；修改时间：2026-11-09 22:25:29 +0800；对应代码：src/verilog/lane/dp_lane_qe.v、src/verilog/lane/dp_lane_align.v、src/verilog/lane/dp_mantissa_bank.v；本版待实现，现有源码与旧PPA不代表本合同已验收。
+> 功能：定义Q4E8专用lane裁剪和E旁路；范围：混合DP专用前端及扩展合同；版本：v1.9.1；修改时间：2026-11-10 00:16:17 +0800；对应代码：src/verilog/lane/dp_lane_qe.v、src/verilog/lane/dp_lane_align.v、src/verilog/lane/dp_qe_product_bank.v、src/verilog/unpack/dp_lane_unpack_qe.v；本版CModel与冻结RTL已通过，见test/results/mixed-rtl-v1.9.md；PPA按独立回执验收。
 
 # Q4E8 专用 lane
 

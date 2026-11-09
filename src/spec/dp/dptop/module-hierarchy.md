@@ -1,116 +1,89 @@
-> 功能：定义 DP 模块层级与未来 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：现有文件链接见下文；dp_top v1.8 CModel/RTL 已实现并通过本批功能验证；其他顶层保留v1.7。
+> 功能：定义 DP 模块层级与 S6 接入合同；范围：T1H2Q4E8、T2H4Q8E16、H16Q32E64（T8）与后续专用源；版本：v1.9.1；修改时间：2026-11-10 00:40:07 +0800；对应代码：现有文件链接见下文；dp_top v1.8 CModel/RTL 已实现并通过本批功能验证；三个混合顶层与Q32E64已迁移v1.9，E64保留旧实现。
 
-**适用范围更新：dp_top 当前批准合同为 [v1.8](dp-top-v1.8.md)，包括新的 E 坐标、无偏 scale、A_raw/compare_exp、C 非正规策略和 CSA。下文旧数值/接口仅适用于尚未迁移的 v1.7 E/QE/混合实现，不作为 dp_top v1.8 合同。**
 # 模块层级、所有权与 S6 扩展点
 
-状态：当前用户指定模块化层级 `T1H2Q4E8 → T2H4Q8E16 → H16Q32E64`；顶层名称省略 T，但保留 TF32 T8。只描述当前主配置，未来 Q/E/QE 专用源的功能与数据布局待单独批准；现用 CModel 与手写 Verilog 已实现 v1.5 的无符号 scale；SystemVerilog 保留该版本作为冻结的历史参考。E 专用 CModel 已实现并复用公共 S5–S8，E 专用 RTL 已实现并通过验证；Chisel 和其他未来专用源待实现。
+基础 `dp_top` 使用[v1.8](dp-top-v1.8.md)，三个混合顶层和 Q32E64 使用[v1.9](mixed-precision-expansion.md)。
+E64/dp_top_e 保留原合同；静态参数隔离旧实现。六种入口见[top 架构索引](top-architectures.md)，
+完整验证及 PPA 见[交付报告](../../../../hw/power/records/v19_design_report_20261110.md)。
 
-## 1. 当前层级与周期所有权
+## 层级与时刻
 
 ```text
-H16Q32E64（TF32=T8；参数化 K4/K8/K16 的顶层 DP）
-├── 逐请求 ctrl/valid/last；C raw32 传递 S1–S4、S5 FP32/INT32 解包
-├── T2H4Q8E16 × group_count（主配置四组）
-│   ├── 本组 scale/metadata 解包（S1）、scale 预计算（S2）
-│   ├── 基本组共同指数 MAX（S2），返回两条 lane
-│   ├── T1H2Q4E8 lane[0]（A/B S1 解包；S2–S4 局部计算）
-│   ├── T1H2Q4E8 lane[1]（相同边界）
-│   └── 两 lane 合并、符号/幅值分离、无符号 scale、组输出（S5）
-├── S6：组 token + C 的有效 anchor MAX、幅值 RTZ 与符号恢复
-├── S7：group_count+1 项共享规约树
-└── S8：FP32 RNE / INT32 回绕，valid/last 输出
+DP top：同一事务只计算一次 dot(A,B)+C
+├── 请求控制、valid/last；C raw32 传递，S5 C 解包
+├── group：基础四组，混合 top 再增加二/四个 E 或四个 QE 组
+│   ├── scale 解包 S1、系数/指数加法 S2、A_raw S3
+│   ├── lane[0]：A/B 解包、乘积、局部对齐或窄 pair、规约
+│   ├── lane[1]：相同事务的另一组元素
+│   └── group 合并/abs/scale/LZD，S5 原幅值 + A_raw + compare_exp
+├── S6：active MAX、delta、一次双向移位、符号恢复
+├── S7：基础/扩展 carry-save 合并，双行选择，唯一 CPA
+└── S8：最终 LZD/FP32 RNE，或 INT32 固定切片；valid/last 输出
 ```
 
-三层是同一次 DP 计算的组合/寄存边界分工，不是每层各串联八周期。统一按时钟沿更新前观察握手：顶层在沿 n 接收，S1 在该沿更新，S8 在沿 n+7 更新；下游/TB 在沿 n+8 更新前采样该输出，故接收至输出观察为 L=8。局部 S4 对应沿 n+4 的更新前观察。最外部仅一次 A/B/C 原子握手，内部为固定推进的 valid 数据路径，无独立 ready 停顿；全局 `rst_n` 及逐请求 ctrl/last 遵循控制合同。
+三层是同一八级流水的功能归属，不是每层再串联八周期。输入在沿 n 接收，S1 在该沿更新，
+S8 在沿 n+7 更新；测试台在沿 n+8 更新前观察输出，因此 L=8、II=1。
+只有顶层 A/B/C 原子接收；内部 fixed-latency valid，无独立 ready 或反压。
+控制按拍推进，payload 由 valid/precision 使能保持，同步低有效 rst_n 取消在途事务。
 
-## 2. T1H2Q4E8
+## Lane 与 group 的职责
 
-拥有 A/B 局部解包与分类、两套乘法器组、S2 的本 lane 元素指数候选、S3 对齐/符号化/E pair，以及 S4 四路共享树。输入为一个 lane 的完整原始容器、模式、适用的 e1/e2、有效位与事务控制；各输入的槽数随模式解释，不复制接口数值含义。
+| 类型 | S1 | S2 | S3 | S4 | S5 |
+|---|---|---|---|---|---|
+| multi | 紧凑 A/B 解包 | 共享乘法、元素指数、T/H/Q 组 MAX | T/H/Q 对齐/符号化；E 窄 pair | 共享四项树，E 在末端融合局部 e2 | group 两 lane 和、abs、scale/LZD、token |
+| E v1.9 | E 专用解包 | U4×U4→U8，S10 窄 pair | 四 pair 树并消费 HiF4 e2 | 窄组和/abs | U22 scale/旁路与 LZD，低补零为 U31，token |
+| QE v1.9 | Q/E 专用解包 | U4 乘法，Q U5 指数 | Q 对齐；E 窄 pair 旁路宽移位 | 共享树，E 在末端消费局部 e2 | group 和/abs/scale/LZD、token |
 
-S4 输出局部补码 SOP、公共 r、zero/special 及本笔 ctrl/valid/last。F/位宽由参数与本笔格式解释，不需要把每个静态常量作为端口；所有动态选择必须读取同行控制，不能依赖会话固定或当前顶层 datatype。
+多精度 T/H/Q 与 QE 的 Q 需要跨 lane MAX：lane 从 S1 字段生成指数候选和 active，group
+组合选择并返回 MAX，S2 捕获；候选不依赖返回值，数据依赖无环。E 不依赖此 MAX，
+HiF4 e2 在 lane 内消费，不传到跨 lane 对齐。E64 旧 E 路径的 S3/S4 划分以其冻结版本为准。
 
-T/H/Q 的 S3 对齐参考取自基本组公共 MAX，不能各 lane 自行选择局部 MAX 后在 S5 直接相加。HiF4 每 lane 的 e2 仍按所属 8 元素共享。
+多精度/QE 默认 lane 和为 S31、group 和为 S32；专用 E v1.9 lane 和 S14、group 和 S15。
+缩放前先分离符号和幅值，NVFP4/HiF4 使用 U14×U8，符号旁传。新版 E 的统一 U22
+计数后低补零到 U31；非零值 LZD 与补零后的容器等价，零值另行屏蔽。
+细节与参数范围见[E lane](../lane/dp_lane_E.md)、[QE lane](../lane/dp_lane_qe.md)、
+[E group](../group/dp_group_E.md)、[QE group](../group/dp_group_qe.md)。
 
-## 3. T2H4Q8E16
+## S5 token 与 top 后端
 
-拥有两条 lane 的打包分发、组共同 MAX、块 scale 解包/预计算及 S5 合并与系数乘法。其 S5 对外 token 包含独立符号、无符号幅值、anchor/二进制坐标、zero/special、valid 与对应事务控制。幅值宽度与 F 按数值合同推导，顶层不能猜测固定小数点。
+group 输出 sign、原幅值、S10 A_raw、S10 compare_exp、zero/special。
+`value = (-1)^sign × magnitude × 2^(A_raw-(M-1))`；非零组 `compare_exp = A_raw-clz(magnitude)`。
+S5 不左移幅值。新版 C 不做 LZD，其 compare_exp=A_raw，非正规 C 保留 0.xxx。
+旧 E64 保留 A_raw/z 合同，由静态分支兼容，不能把旧计数寄存与新版双指数混接。
 
-跨 lane MAX 是 S2 内的标量侧接口：lane 从已注册的 S1 字段产生 `exp_candidates_comb/active_comb`，组模块组合选择 MAX，再经 `group_max_comb` 返回；S2 边界注册所需的指数/参考值。产生候选指数不依赖返回 MAX，故数据依赖无环。可拆为明确的算术子模块，但不能在 module 端口处暗加寄存器，导致 MAX 迟一拍。
+S6 用有限非零 active 的 compare_exp 求 MAX，用 A_raw 计算移位量。
+参与但为零的源与不支持本精度的源分别处理；special/负零归约不能只看非零 active。
+额外组关闭时 MAX 和数值/特殊贡献均屏蔽；扩展寄存保持时，读端还要掩码旧数据。
+默认对齐幅值 U39，恢复补码后为 S40；GLOBAL_W 参数改变时相关容器同步派生。
 
-scale 指数/系数可以提前准备；S5 的数据求和、实际零判定和 sign/magnitude 转换仍需同拍预算。未选中的乘法、移位及 scale 数据通路通过参数/模式使能隔离。
+S7 的基础四组与唯一 C 先用 4:2/3:2 保留两行；新增二源直接用 4:2 合并，新增四源先
+4:2 再与基础两行做 4:2。按模式选择两行后仅一个 CPA。E96 为 S43，E128/Q64E128 为 S44。
+独立 Q32E64 没有基础/扩展选择，五源 4:2/3:2/CPA 为 S43；基础 dp_top 也为 S43。
+INT8 只来自基础组，S6 固定 F7，INT32 输出取 [38:7]，不是总和最高32位。
 
-## 4. H16Q32E64 顶层
+## 源码阅读顺序
 
-当前四个基本组形成 T8H16Q32E64。顶层拥有逐级请求控制、C raw32 的 S1–S4 传递和 S5 解包、S6 组+C 对齐、S7 完整树以及 S8 输出；每笔独立完成 dot+C，无会话锁定。C 不复制进每个基本组。
+| 功能 | 维护中的主要模块 |
+|---|---|
+| 多精度解包 | dp_lane_unpack → dp_lane_operand_unpack → dp_unpack_atom |
+| E/QE 解包 | dp_lane_unpack_e / dp_lane_unpack_qe |
+| 元素乘法/指数 | dp_mantissa_bank、dp_exponent_bank / dp_qe_product_bank / E 的 dp_mul_unsigned |
+| 局部对齐与规约 | dp_lane_align、dp_rtz_shift、dp_sum_tree、dp_lane_e_shift |
+| group scale/计数 | dp_scale_unpack、dp_scale_multiply、dp_lzd，及各 group 内的组和/取幅值/anchor |
+| 全局对齐 | top/common/dp_global_align、dp_mixed_global_align |
+| 最终规约 | arithmetic/dp_final_csa_sum、dp_mixed_csa_sum；旧 E64 保留 dp_sum_tree |
+| 输出 | dp_fp32_round、INT32 固定截取及 S8 DFF |
 
-S6 是未来扩展的接入边界。新增源必须表示同一事务、同一输出位置的点积贡献，并与当前组 token 使用相同语义字段。若用于增加 K 容量，活动源容量相加后重新定义模式 K、A/B 打包及 scale 归属；若新增独立 M/N 输出，则不应接入同一个标量 SOP 规约，而需另定上层输出组织。
+DFF 紧随本级组合计算、位于下一级消费之前，控制和数据同行。算术模块功能边界与寄存级
+不要求一一对应。以具名 rN 与 ff_sN_sN 字段和 SIF 注释理解各级，不以 source 文件顺序推断周期。
 
-## 5. 专用源与未来组合边界
+## 复用与配置边界
 
-E-only 的 dp_top_e 已通过独立前端接入一套后端。后续可在同一顶层 S6 前混合增加仅 Q、仅 E 或 QE 专用源，混合组仍未实现。这里的“第六级增加”是接入额外的部分和输入，不将完整乘法计算塞进 S6；专用源先完成自身前端，按约定到达阶段提供 sign/magnitude token。
+共用算术库、分类型 lane/group、薄 top 静态装配已经用于六种架构；不是运行时选择完整架构。
+`datatype` 是每请求精度，`frontend/profile` 是构建配置。固定的三个混合比及两个低精度比已实现；
+任意源列表自动生成框架、仅 Q 组、Chisel 和阵列不属于本批实现。
 
-- 按源列表/能力集生成活动输入掩码。某模式不支持的源不贡献值、指数或特殊状态；QE 的 Q/E 是互斥模式能力，不能同时加总峰值。
-- 每个源声明容量、输出数值坐标、延迟与有效位。先匹配事务、mode、输出坐标和 last，必要时插入有明确延迟的同步寄存；不能拼接不同请求或不同 mode 的 token。
-- 物理规约扇入数为 `N=instantiated_source_count+1`（包括 C），生成树深 `ceil(log2(N))`；模式能力掩码可以屏蔽无效源，但不动态改变已生成的树/固定流水。宽度增长、MAX 拓扑和移位器数量由同一源配置推导。
-- 若源数增长导致关键路径过长，未来扩展 profile 可增加 1–2 级，例如拆开 MAX/delta/shift 或规约树。新增周期位置、各源补拍、输出 L、valid/last 排空及功耗比较必须另写合同。
-
-主配置仍优先 L8；必要时允许独立 L9 检测/指数准备 profile。专用源扩展仍待单独定义，不能混淆各 profile 验收。
-
-## 6. 参数与观察点
-
-顶层向基本组、基本组向 lane 传入已校验的参数对象；各层只从自身项数、格式宽度、保护位和父层有效配置派生局部结构。参数对象计划置于 src/chisel/parameter/，尚未创建。共有公式和格式常量集中定义，禁止三层各写一套 局部/全局窗口、紧凑 SOP 宽度 或树深常量。
-
-CModel 应按同一模块边界提供 S1 解包、S2 MAX/乘积、S3 移位、S4 lane 和、S5 组 token、S6 对齐、S7 总和、S8 输出的 trace。数学参考独立评价误差；CModel 已提供这些观察点；手写 RTL 的 S1–S7 观测与模型比较见 [实现合同](../implementation/verilog.md)。
-
-## 7. 功能模块边界与源码映射
-
-[DP 接口](interface.md) 统一列出顶层信号、datatype 编码与内部同拍 token；[功能统计](../implementation/resource-accounting.md) 定义乘法、指数/MAX、移位、树、scale、解包和 LZD/norm/RNE 等逻辑模块 ID。后续各功能模块单独映射 Chisel、手写 RTL 和网表实例，统计区域明确拥有的寄存/mux，保留八级边界；当前已有 CModel 与 [手写 RTL 源码映射](../implementation/verilog.md)。S3 按 [移位器共享](../lane/shifter-sharing.md) 由输入 mux 驱动四个固定 W-bit 实例。
-
-### 7.1 当前 RTL 的阅读顺序（v1.6.4）
-
-功能模块描述完整计算步骤；流水级由 DFF 捕获边界决定，两者不要求一一对应。当前按功能分区组织组合边界和寄存器，不改变数值合同、同步低有效复位、L8 或 II=1。
-
-| 层级 | 多精度主路 | E 专用主路 | 保存位置 |
-| --- | --- | --- | --- |
-| lane 解包 | dp_lane_unpack → dp_lane_operand_unpack → dp_unpack_atom | dp_lane_unpack_e | S1，分别由单侧解包模块/E lane 保存；主路输出紧凑 M/E/S |
-| lane 特殊分类 | dp_lane_unpack 内部 A/B 配对、lane 归约 | E lane/group 原分类路径 | 主路在 S2 lane 捕获；不改 S1/S2 边界 |
-| lane 乘积 | dp_mantissa_bank、dp_exponent_bank | dp_mul_unsigned + dp_sum_tree(N=2) pair | S2 lane |
-| lane 局部规约 | dp_lane_align：E pair/幅值落位/RTZ/符号恢复 → dp_sum_tree | dp_sum_tree 四项规约 → dp_lane_e_shift 精确左移 | 主路 S3 叶/S4 和；E S3 和，左移结果进入 group S4 |
-| group | 两 lane 的 dp_sum_tree → abs → dp_scale_multiply/旁路 → dp_lzd | 两 lane 的 dp_sum_tree → abs；下一拍 scale/旁路/LZD | 主路 S5 token；E S4 幅值/符号、S5 token |
-| top | dp_global_align → dp_sum_tree → dp_fp32_round | 同一组公共组合模块 | top 分别保存 S6/S7/S8 |
-
-DFF 紧随本级组合计算、位于下一级消费之前，控制/类型/符号旁带就地随级保存；固定端口紧凑同行。从 lane/group 源码中的“功能边界”和 `[Sx ...]` 注释开始阅读，再进入算术模块查看符号扩展、树增长、移位截断及 RNE。符号在幅值移位/scale 乘法旁路传递，进入补码树前恢复；LZD 只计数，不提前移动幅值。SIF 表区分静态补零增加的小数位容器和实际保留的有效精度。
-
-## 8. 基本组与全局边界更新
-
-基本组 S5 先分离组和的符号与幅值，再做 scale 或旁路并用 LZD 计数，输出原幅值/A_raw/z；顶层 C 解包与子正规计数并行。顶层 S6 生成 e、MAX 和 net 并一次双向移位，S7 树、S8 编码。未来专用源也须声明原坐标及 z 或可转换等价字段；不得接错已规格化/未规格化 token。必要时 L9 拆检测/指数准备，原 S6 接入边界顺延，详见[流水](pipeline.md)。
-
-## 9. DP 设计族的工程组织建议
-
-状态：CModel 已提供静态 frontend=multi/e 选择、独立 E lane/group 和共用后端；E64 配置位于 src/configs/dp/e64.json。下面的通用组合框架仍为建议，E RTL 提供独立 dp_top_e 与 files_e.f；groups 列表、混合组和通用后端寄存模块抽取尚未实施。已冻结 SV 的范围保持不变。
-
-建议统一为“共用基础库 + 分类型模块 + 组合配置”。multi/e 表示构建时选择的硬件实现类型；datatype 表示请求运行时的数值格式，二者分别管理。不同类型在同一仓库开发，共享基础模块与文档，顶层按静态 profile 组合；Git 分支继续用于经用户同意的并行任务。
-
-| 分类 | 统一维护的内容 | 类型差异放置位置 |
-| --- | --- | --- |
-| 基础库 | 固定功能算术、scale/C 解码、LZD、移位核、舍入、协议与参考 | 只有语义相同且参数可表达时才复用同一模块 |
-| lane | 一份层级入口和明确的接口/周期要求 | lane/multi 与 lane/e；E 保留自己的 S2 pair/S3 树实现 |
-| group | scale/组 token 的公共合同 | group/multi 与 group/e；各自完成前端数值坐标 |
-| dptop | 共用 C 路径、S6–S8 后端和请求组织 | 薄顶层按 profile 选择 group 类型、数量及路由 |
-| profiles | 单一来源的构建参数和模块组合 | 建议 src/configs/dp/，同时供 CModel、RTL 构建和测试读取 |
-
-以下为组合说明；multi/e64 均有 CModel 和纯 Verilog 顶层，混合组尚未实现：
-
-| 示例 profile | 组构成 | 模式容量 |
-| --- | --- | --- |
-| multi_t8h16q32e64 | 4×multi group | T8H16Q32E64 |
-| e64 | 4×E group | E64，支持 MXFP4/NVFP4/HiF4 |
-| mixed_t4h8q16e64 | 2×multi group + 2×E group | T4H8Q16E64；INT8 与 Q 同并行度 |
-
-profile 只填写独立参数，按类型能力及组数派生各模式 K、活动源、输入位切片、量化块 scale 广播、树扇入与增长位。不同时手填相互矛盾的组数/K/总位宽；兼容组幅值宽继续按现有 LOCAL_W 关系推导。当前仅用 K_FP16 固定推导所有模式容量的 Config 不能直接表达任意混合组合，需要在后续实施中扩展。
-
-优先的组合边界是 S5 group token：不同 group 交付相同字段宽度、数值语义及到达拍，后端按 magnitude/A_raw/z 处理，允许不同类型的 F 坐标。lane 只有在数值和寄存边界均兼容时才可互换；现有 multi lane 与 E 候选的切点不同，应分别由匹配的 group 使用。已完成 FP32 舍入的两个 DP 输出不作为保持原精度的 K 部分和直接相加；扩大同一标量点积应在最终舍入前合并各组，并且只加一次 C。不同 M/N 输出各保留自己的后端。
-
-混合 profile 仍按同一请求同 datatype 的原合同处理。上层须根据组的静态能力生成该请求的参与掩码，数据和指数 MAX、special、零符号规约统一排除不支持该模式的源；不能只拉低一个局部 valid。有限非零指数候选与“参与运算但数值为零”的项分开处理。该 mask 的接入尚未实现，不能直接把新组合塞进当前顶层宣称完成。
-
-代码共用与物理资源复用分别统计：多个实例可以引用同一个模块定义，每个实际实例仍各自占面积/活动成本。一个 DP 中的源列表共同使用一套后端；两个独立 DP 不因引用同一个后端文件就共享一份硬件。具体代码目录和迁移顺序见 [RTL 框架建议](../implementation/verilog.md#6-分类型模块与组合配置建议)，CModel 对应组织见 [模型框架建议](../implementation/cmodel.md#7-与-rtl-对应的设计族组织建议)。
+新增 K 容量应在最终舍入前合并 S5 token，并且只加一次 C。新增独立 M/N 输出需要独立后端，
+不能接入同一标量规约。资源复制与代码共用分别统计：多个实例引用同一定义仍各自占面积和活动成本。
+源数增长时，MAX、移位器数、增长位及旁带延迟必须一起适配。当前全部 L8 已独立验证；
+若未来增加流水、改变窗口或输入布局，须同步模型、spec、冻结回归与 PPA，不能继承现有验收。
