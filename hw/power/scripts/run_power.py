@@ -75,6 +75,8 @@ def check_data(point):
         if digest(directory / name) != expected:
             raise ValueError('Changed dataset input/golden')
     manifest = json.loads((directory / 'manifest.json').read_text())
+    if 'cmodel_config' in point and manifest.get('cmodel_config') != point['cmodel_config']:
+        raise ValueError('Dataset/reference model configurations differ')
     reference = point.get('reference_model')
     source_root = ROOT
     binary = ROOT / 'src/cmodel/build/dp_cmodel_cli'
@@ -109,6 +111,17 @@ def check_data(point):
     return requests, expected
 
 
+def reference_config(point):
+    """Use the same explicit architecture contract for initialization and data."""
+    config = dict(point.get('cmodel_config', {}))
+    if config.get('frontend', point['cmodel_frontend']) != point['cmodel_frontend']:
+        raise ValueError('Conflicting reference frontend')
+    if 'architecture_v19' in config and not isinstance(config['architecture_v19'], bool):
+        raise ValueError('architecture_v19 must be an explicit boolean')
+    config['frontend'] = point['cmodel_frontend']
+    return config
+
+
 def prepare_vectors(point, work, groups):
     requests, expected = check_data(point)
     frontend = point['cmodel_frontend']
@@ -131,7 +144,7 @@ def prepare_vectors(point, work, groups):
                                 a_e1='0', a_e2='0', b_e1='0', b_e2='0'))
     reference = point.get('reference_model')
     binary = ROOT / reference['directory'] / 'dp_cmodel_cli' if reference else None
-    initial_results = evaluate(initial, config={'frontend': frontend}, run_dir=work / 'reference', binary=binary)
+    initial_results = evaluate(initial, config=reference_config(point), run_dir=work / 'reference', binary=binary)
     all_requests = initial + requests
     all_results = initial_results + [dict(d=row['cmodel_results'][frontend], d_datatype=0,
                                           last=row['last']) for row in expected]

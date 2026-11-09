@@ -168,6 +168,24 @@ class ArchivedReferenceTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'inside the project'):
             runner.check_data(self.point)
 
+    def test_architecture_contract_mismatch_rejected(self):
+        self.point['cmodel_config'] = {'architecture_v19': True}
+        self.manifest['cmodel_config'] = {'architecture_v19': False}
+        self.rehash_dataset()
+        with self.assertRaisesRegex(ValueError, 'configurations differ'):
+            runner.check_data(self.point)
+
+    def test_architecture_contract_is_forwarded_to_reference(self):
+        point = dict(cmodel_frontend='qe', cmodel_config={'architecture_v19': True})
+        self.assertEqual(runner.reference_config(point), {'frontend': 'qe', 'architecture_v19': True})
+        point['cmodel_config']['frontend'] = 'e'
+        with self.assertRaisesRegex(ValueError, 'Conflicting reference frontend'):
+            runner.reference_config(point)
+
+    def test_string_architecture_selector_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'explicit boolean'):
+            runner.reference_config(dict(cmodel_frontend='qe', cmodel_config={'architecture_v19': 'false'}))
+
 
 if __name__ == '__main__':
     unittest.main()

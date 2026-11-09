@@ -18,15 +18,49 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def original_dc_receipt(root, point, resolved, fingerprint, frontend, verification_id=None):
+    """Use DC's pinned receipt even after a later regression of identical RTL.
+
+    The export manifest tracks latest validation. Historical DC acceptance is
+    bound to a specific complete receipt, and never grants current eligibility.
+    """
+    if verification_id is None:
+        verification_id = resolved['gate']['verification_id']
+    require(isinstance(verification_id, str) and
+            re.fullmatch(r'\d{8}T\d{12}Z', verification_id), 'Invalid original verification ID')
+    path = contained(root, 'test/runs/verilog/' + verification_id + '/verification.json')
+    receipt = read_json(path)
+    require(receipt['verification_id'] == verification_id and
+            receipt['export_id'] == point['export_id'] and receipt['rtl_fingerprint'] == fingerprint and
+            receipt['status'] == 'passed' and receipt['method'] == 'verilog_testbench' and
+            receipt['numerical_pass'] is True and receipt['protocol_pass'] is True and
+            receipt['parameters'] == PARAMETERS and receipt['phase'] == 'all' and
+            receipt['latency'] == 8 and receipt['ii'] == 1 and
+            receipt.get('frontend', 'multi') == frontend and receipt['seeds'] == [20271105],
+            'Original complete regression mismatch')
+    require(receipt['command'] and receipt['simulator']['name'] == 'verilator' and
+            receipt['simulator']['version'], 'Missing original simulator provenance')
+    require(all(row['export_id'] == point['export_id'] for row in receipt['scopes']),
+            'Original scope export mismatch')
+    started = datetime.fromisoformat(receipt['started_utc']).timestamp()
+    finished = datetime.fromisoformat(receipt['finished_utc']).timestamp()
+    require(started <= finished, 'Invalid original verification times')
+    validate_scopes(receipt['scopes'], root, started, finished, frontend)
+    return path
+
+
 def frozen_dc_source(root, point):
     root = Path(root).resolve()
+    require(isinstance(point.get('original_verification_id'), str) and
+            re.fullmatch(r'\d{8}T\d{12}Z', point['original_verification_id']),
+            'Invalid original verification ID')
     export = contained(root / 'hw/rtl', point['export_id'])
     manifest = read_json(export / 'manifest.json')
     frontend = manifest.get('frontend', 'multi')
     require(manifest['top'] == point['top'] and manifest['interface'] == DP_INTERFACE,
             'Frozen top/interface mismatch')
-    require(manifest['status'] == 'passed' and manifest['ppa_eligible'] is True,
-            'Original export never passed complete RTL regression')
+    # Original acceptance comes from DC's pinned complete receipt below; latest
+    # manifest status may legitimately change during an identical-RTL rerun.
     fingerprint = rtl_fingerprint(export)
     require(fingerprint == manifest['rtl_fingerprint'], 'Frozen RTL fingerprint changed')
     source_hashes = manifest['source_sha256']
@@ -48,20 +82,24 @@ def frozen_dc_source(root, point):
     for name in sources:
         require('/systemverilog/' not in name, 'Frozen SV cannot be substituted')
         contained(export, name)
-    receipt_path = contained(root, manifest['verification']['path'])
-    receipt = read_json(receipt_path)
-    require(receipt['verification_id'] == point['original_verification_id'] and
-            receipt['export_id'] == export.name and receipt['rtl_fingerprint'] == fingerprint and
-            receipt['status'] == 'passed' and receipt['numerical_pass'] and receipt['protocol_pass'] and
-            receipt['parameters'] == PARAMETERS and receipt['phase'] == 'all' and
-            receipt['latency'] == 8 and receipt['ii'] == 1, 'Original complete regression mismatch')
-    validate_scopes(receipt['scopes'], root, datetime.fromisoformat(receipt['started_utc']).timestamp(),
-                    datetime.fromisoformat(receipt['finished_utc']).timestamp(), frontend)
     run = contained(root, point['dc_run'])
     resolved = read_json(run / 'inputs/resolved.json')
     require(resolved['gate']['rtl_fingerprint'] == fingerprint and
             resolved['gate']['export_id'] == export.name and resolved['gate']['top'] == point['top'] and
             resolved['gate']['parameters'] == PARAMETERS, 'DC source binding mismatch')
+    receipt_path = original_dc_receipt(root, point, resolved, fingerprint, frontend)
+    additional = {}
+    if point['original_verification_id'] != resolved['gate']['verification_id']:
+        # Some historical power points recorded a later complete regression of
+        # exactly the same source. Validate both; never let the newer receipt
+        # substitute for the receipt DC actually accepted.
+        additional_path = original_dc_receipt(root, point, resolved, fingerprint, frontend,
+                                               point['original_verification_id'])
+        require(datetime.fromisoformat(read_json(additional_path)['finished_utc']) >=
+                datetime.fromisoformat(read_json(receipt_path)['finished_utc']),
+                'Additional verification predates original DC acceptance')
+        additional = dict(additional_verification_id=point['original_verification_id'],
+                          additional_receipt_sha256=digest(additional_path))
     # Re-analyze reports and verify the preserved repair chain; no tool launch.
     import sys
     sys.path.insert(0, str(root / 'hw/dc_syn/scripts'))
@@ -76,7 +114,7 @@ def frozen_dc_source(root, point):
                 sources=[str(export / name) for name in sources],
                 include_dirs=[str(export / 'src/src/verilog/parameter')],
                 original_receipt_sha256=digest(receipt_path), parameters=PARAMETERS,
-                scope='archived_dc_reuse_only', resolved=resolved)
+                scope='archived_dc_reuse_only', resolved=resolved, **additional)
 
 
 def verify_workload_replay(root, point, receipt_path):

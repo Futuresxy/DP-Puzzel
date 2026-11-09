@@ -1,5 +1,7 @@
 # 单 DP 真实负载功耗
 
+完整设计、验证、时序与优化分析见 [v1.9 设计交付](records/v19_design_report_20261110.md)；六架构七类面积及三类功耗图见 [功能统计](../../paper/data/H16Q32E64_area/v19_six/README.md)。
+
 使用 VCS native gate-level SAIF 和 Synopsys Power Compiler。首批六种架构的 BF16、MXFP8 E4M3、MXFP4 E2M1 共15个兼容点，使用固定 Qwen3-8B MLP 真实负载。方法见 [功耗 skill](../../.skill/power-analysis/SKILL.md)，测量合同见 [实施说明](implementation-plan.md)。
 
 | 位置 | 内容 |
@@ -13,9 +15,9 @@
 
 ## 当前结果
 
-统一入口：[六种DP精度门控后面积与功耗](records/current_six_precision_gated.md)，同时提供[JSON](records/current_six_precision_gated.json)和[CSV](records/current_six_precision_gated.csv)。15个兼容点：三种混合架构本轮新测，dp_top/Q32E64复用已完成门控版测量，E64保留原结果。每个点绑定对应的最新DC网表及自己的SAIF。
+统一入口：[v1.9比较批次六种DP面积与功耗](records/v19_six_architectures_20261110.md)，同时提供[JSON](records/v19_six_architectures_20261110.json)和[CSV](records/v19_six_architectures_20261110.csv)。dp_top为v1.8修复基线，三个混合顶层和Q32E64为v1.9；E64保持原设计及已验收网表。15个兼容点全部重新进行RTL/门级负载重放、VCS native SAIF和Power Compiler测量。
 
-固定选择：[current_six_precision_gated.json](plans/current_six_precision_gated.json)。复核：`python3.11 hw/power/scripts/report_current_six.py`。该文件只选择已完成的测量点，用于汇总，不是run_power.py的仿真输入计划。
+固定选择：[v19_six_architectures_20261110.json](plans/v19_six_architectures_20261110.json)。该文件只选择已完成的测量点，用于汇总，不是run_power.py的仿真输入计划。新报告逐点对照[旧精度门控六架构报告](records/current_six_precision_gated.md)，旧报告及[current_six_precision_gated选择文件](plans/current_six_precision_gated.json)保持原内容。
 
 按用户最新要求，全部旧功耗数据、报告和其依赖的DC/RTL/验证证据保留，作为新旧对照；仅清理无引用旧测试与综合候选。清单见[清理回执](../dc_syn/maintenance/precision_gated_six_cleanup_20261108.json)。原批次见[六架构基线](records/power_qwen8b_six_1108.md)，局部实验见[dp_top门控比较](records/precision_register_gating_1108.md)与[Q32E64门控比较](records/qe_precision_register_gating_1108.md)。
 
@@ -33,11 +35,13 @@ python3.11 hw/power/scripts/setup_dependency.py --source-repo /path/to/Quant_LLM
 # 例：使用本轮E96的固定输入计划重新测量；使用新的run ID
 # 依次执行：冻结RTL重放 → VCS门级重放/原生SAIF → Power Compiler/活动审计
 python3.11 hw/power/scripts/run_power.py \
-  --plan hw/power/plans/precision_gated_t8h16q32e96_1108.json \
+  --plan hw/power/plans/v19_t8h16q32e96_1110.json \
   --run-id power_<new_name>
 
 # 核验当前选定的六架构15点；新增测量经审查后显式更新选择文件
-python3.11 hw/power/scripts/report_current_six.py
+python3.11 hw/power/scripts/report_current_six.py \
+  --selection hw/power/plans/v19_six_architectures_20261110.json \
+  --output hw/power/records/v19_six_architectures_20261110
 
 python3.11 -m unittest discover -s hw/power/tests -v
 ```
@@ -49,6 +53,8 @@ python3.11 -m unittest discover -s hw/power/tests -v
 并行修改 CModel 时，可在运行计划的每个点显式指定 `reference_model: {"directory": "hw/power/runs/<reference-snapshot>", "manifest_sha256": "<sha256>"}`。快照包含 `dp_cmodel_cli`、`sources/` 下按仓库相对路径保存的完整模型源码，以及记录 `sources` 和 `binary_sha256` 的 `reference.json`。运行器校验快照 manifest、实际源码和实际可执行文件的 SHA-256，同时要求身份与数据集 manifest 一致；路径不能越出项目。未指定时仍检查当前 CModel 源码与构建。源码/构建冻结应在生成对应 expected 之前完成，不能给未知可执行文件补写一个 hash 便宣称已经验证。
 
 固定 reference 只决定初始化和 expected 的模型来源，不改变冻结 RTL、完整回归及本次 RTL/门级负载比对门禁。若架构语义发生变化，应在独立派生数据集中重算 CModel expected 并保留数学参考和原始负载身份；不要覆盖旧数据集。运行计划引用的模型快照与派生数据同样是受保护的分析依赖。
+
+新架构点通过 `cmodel_config` 显式绑定数值配置（例如 `architecture_v19: true`）；该对象必须与派生数据集 manifest 一致，并完整传给初始化参考计算。`frontend` 默认取点的 `cmodel_frontend`，重复声明时必须一致。v1.9混合/QE点使用 true，保留原E64合同的点使用 false；不能因二进制支持新版便自动迁移旧架构。
 
 每点1024笔一次性发射，初始化独立计数；第256笔驱动前开始，第768笔驱动前结束，1GHz下恰好512ns。全部结果、L8/II=1通过后，核验真实功耗引脚无X/Z、Nets/Ports/Pins显式注释100%、所有叶引脚概率/翻转率与SAIF一致。实际关闭的时钟保持实测零翻转。
 
