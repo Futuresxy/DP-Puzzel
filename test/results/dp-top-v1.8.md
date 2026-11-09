@@ -37,3 +37,9 @@ python3.11 scripts/rtl_gate.py DP_verilog_e84d765a8a29dc88
 断点验证修正：取消 C LZD 后，CModel 仍需对零/特殊 C 清除无效 anchor；现已按 RTL 合同清为0，并增加专门测试。有限非零 C 的原始指数和幅值保持。
 
 本批没有运行新 DC/功耗；v1.8 的 S4 树后 e2、S5 LZD 后减法和 S7 CSA/CPA 的1GHz可行性仍须综合验证。不能使用旧 PPA 宣称本次改动已取得时序或功耗收益。
+
+## DC 兼容修复后的重验（2026-11-09）
+
+仅将 `dp_lane.v` 的 `r1_is_e` 声明移至首次使用之前，消除 DC VER-956；计算逻辑不变。新快照 `DP_verilog_d7c8c865ebf856be`，目录指纹 `cd6e78584b076ad2c0dda83d4ec165f4278bb978540e6c7dd79a903651ffa273`；完整回归 `20261109T101330231426Z` 再次通过，命令同上，旧回执保留为历史。
+
+本次已完成 DC 面积综合：[结果](../../hw/dc_syn/records/dp_top_v18_n12_1000mhz_20261109.md)。面积16163.057770 µm²，1GHz setup/hold通过，但有1条最大电容违例，整体后端门禁未通过；没有新功耗结果。

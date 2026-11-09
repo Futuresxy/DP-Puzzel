@@ -231,6 +231,9 @@ module dp_lane #(
     end
   endgenerate
 
+  // S1 精度选择：供 E 指数隔离和后续乘积寄存门控共用。
+  wire r1_is_e;
+
   // E 不参与指数比较；HiF4 e2 和仍独立保存在窄旁带中。
   wire [`DP_E_LANES-1:0] exponent_max_active;
   assign exponent_max_active = ((BASELINE_V18 != 0) & r1_is_e) ? 0 : product_active_d;
@@ -264,7 +267,6 @@ module dp_lane #(
   localparam integer E_LEAF_W = `DP_E_PAIR_W + `DP_E_GUARD;
   localparam integer E_LEAF_PAD = LEAF_W - E_LEAF_W;
   // 与各级有效载荷同拍的 E/HiF4 选择，不使用当前 top 输入控制在途数据。
-  wire r1_is_e;
   wire r2_is_e;
   wire r3_is_e;
   wire r1_is_hif4;

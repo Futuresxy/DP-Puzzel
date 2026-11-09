@@ -2,7 +2,7 @@
 
 ## dp_top v1.8 本轮范围（2026-11-09）
 
-基础 `dp_top` 已按 `src/spec/dp/dptop/dp-top-v1.8.md` 实现：E 窄 pair/共享树/局部 e2 融合，无跨 lane MAX/宽移位依赖；无偏 scale、S3 A_raw、S5 compare_exp；C 不做 LZD；S7 4:2+3:2+CPA。CModel、冻结 Verilog 的 L8/II=1/完整数据和新定向断点已通过，回执见 `test/results/dp-top-v1.8.md`。其余 E/QE/混合顶层本轮不迁移，`BASELINE_V18` 静态参数默认0，仅 dp_top 显式开启；CModel 的 legacy_multi 保留旧回放。扩展 ADD/CSA/MUX 只更新规格。旧功耗/综合结果仍保留为历史；本轮未形成 v1.8 新 PPA。
+基础 `dp_top` 已按 `src/spec/dp/dptop/dp-top-v1.8.md` 实现：E 窄 pair/共享树/局部 e2 融合，无跨 lane MAX/宽移位依赖；无偏 scale、S3 A_raw、S5 compare_exp；C 不做 LZD；S7 4:2+3:2+CPA。CModel、冻结 Verilog 的 L8/II=1/完整数据和新定向断点已通过，回执见 `test/results/dp-top-v1.8.md`。其余 E/QE/混合顶层本轮不迁移，`BASELINE_V18` 静态参数默认0，仅 dp_top 显式开启；CModel 的 legacy_multi 保留旧回放。扩展 ADD/CSA/MUX 只更新规格。旧功耗/综合结果仍保留为历史；v1.8 首次 N12 TT/1GHz DC 面积为16163.057770 µm²，setup/hold通过但有1条最大电容违例，整体 flow_pass=false；未测新功耗。详见 hw/dc_syn/records/dp_top_v18_n12_1000mhz_20261109.md。
 
 ## 当前优先约定：新版 DP / Cube（2026-11-04）
 
