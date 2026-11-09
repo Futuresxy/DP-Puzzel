@@ -143,6 +143,7 @@ module dp_top_lowp #(
   // 低位补零将各来源幅值放入 GLOBAL_MAG_W；不是新增有效精度或动态移位。
   wire [SOURCE_COUNT*GLOBAL_MAG_W-1:0] source_magnitude;
   wire [SOURCE_COUNT*ANCHOR_W-1:0] source_anchor;
+  wire [SOURCE_COUNT*ANCHOR_W-1:0] source_compare_exp;
   wire [SOURCE_COUNT*Z_W-1:0] source_z;
   wire [SOURCE_COUNT-1:0] source_negative;
   wire [SOURCE_COUNT*`DP_SPECIAL_W-1:0] source_special;
@@ -150,12 +151,14 @@ module dp_top_lowp #(
     for (group_index = 0; group_index < GROUPS; group_index = group_index + 1) begin : g_group
       wire [GROUP_MAG_W-1:0] group_align_magnitude;
       wire signed [ANCHOR_W-1:0] group_align_anchor;
+      wire signed [ANCHOR_W-1:0] group_align_compare_exp;
       wire [$clog2(GROUP_MAG_W+1)-1:0] group_align_leading_zero_count;
       wire group_align_negative;
       wire group_top_valid;
       wire [`DP_SPECIAL_W-1:0] group_align_special;
       if (QE_FRONTEND != 0) begin : g_qe
         dp_group_qe #(
+          .ARCHITECTURE_V19     (1),
           .COMPACT_UNPACK       (1),
           .LOCAL_W              (LOCAL_W),
           .ANCHOR_W             (ANCHOR_W)
@@ -177,6 +180,7 @@ module dp_top_lowp #(
           .out_negative         (group_align_negative),
           .out_magnitude        (group_align_magnitude),
           .out_anchor           (group_align_anchor),
+          .out_compare_exp      (group_align_compare_exp),
           .out_z                (group_align_leading_zero_count),
           .out_special          (group_align_special)
         );
@@ -202,6 +206,7 @@ module dp_top_lowp #(
           .out_negative         (group_align_negative),
           .out_magnitude        (group_align_magnitude),
           .out_anchor           (group_align_anchor),
+          .out_compare_exp      (group_align_compare_exp),
           .out_z                (group_align_leading_zero_count),
           .out_special          (group_align_special)
         );
@@ -211,6 +216,7 @@ module dp_top_lowp #(
       };
       assign source_negative[group_index]                  = group_align_negative;
       assign source_anchor[group_index*ANCHOR_W+:ANCHOR_W] = group_align_anchor;
+      assign source_compare_exp[group_index*ANCHOR_W+:ANCHOR_W] = group_align_compare_exp;
       assign source_z[group_index*Z_W+:Z_W] = {
         {(Z_W - $clog2(GROUP_MAG_W + 1)) {1'b0}}, group_align_leading_zero_count
       };
@@ -281,6 +287,7 @@ module dp_top_lowp #(
   // [S5 C 解包] 使用 r4_c_raw，而非当前 in_c，保证与五级前端同请求对齐。
   // C 的符号/幅值/anchor/z/特殊值在 S5 独立保存，随后与所有 group 一起参加 S6。
   dp_c_unpack #(
+    .DETECT_LEADING_ZERO   ((QE_FRONTEND == 0) ? 1 : 0),
     .ANCHOR_W             (ANCHOR_W)
   ) u_c_unpack (
     .in_data              (r4_c_raw),
@@ -314,6 +321,7 @@ module dp_top_lowp #(
     r5_c_magnitude, {(GLOBAL_MAG_W - `DP_FP32_W) {1'b0}}
   };
   assign source_negative[GROUPS]                             = r5_c_negative;
+  assign source_compare_exp[GROUPS*ANCHOR_W+:ANCHOR_W] = r5_c_anchor;
   assign source_anchor[GROUPS*ANCHOR_W+:ANCHOR_W]            = r5_c_anchor;
   assign source_z[GROUPS*Z_W+:Z_W]                           = (r5_c_z);
   assign source_special[GROUPS*`DP_SPECIAL_W+:`DP_SPECIAL_W] = r5_c_special;
@@ -332,6 +340,7 @@ module dp_top_lowp #(
   // [S6 全局对齐] 完整模块内完成有效源 MAX、净移位、恢复补码与特殊值归约。
   // leaves_d/common_d 等在 S6 DFF 同时捕获；不能将新 anchor 配给上一拍叶子。
   dp_global_align #(
+    .PRECOMPUTED_EXPONENT (QE_FRONTEND),
     .N                    (SOURCE_COUNT),
     .MAG_W                (GLOBAL_MAG_W),
     .ANCHOR_W             (ANCHOR_W)
@@ -340,7 +349,7 @@ module dp_top_lowp #(
     .in_enable            (r5_valid),
     .in_magnitude         (source_magnitude),
     .in_anchor            (source_anchor),
-    .in_compare_exp       ({SOURCE_COUNT*ANCHOR_W{1'b0}}),
+    .in_compare_exp       (source_compare_exp),
     .in_z                 (source_z),
     .in_negative          (source_negative),
     .in_special           (source_special),
@@ -370,7 +379,17 @@ module dp_top_lowp #(
   wire signed [SUM_W-1:0] sum_d;
   wire signed [SUM_W-1:0] r7_sum;
   // [S7 最终累加树] 四个组结果加一份 C，共五项；没有基础/扩展分支旁路。
-  // 平衡树保留 ceil(log2(G+1)) 个增长位，小数位数及 common anchor 不改变。
+  // QE采用4:2+3:2+唯一CPA；E64 legacy保持原树。两者完整保留增长位。
+  generate
+    if (QE_FRONTEND != 0) begin : g_v19_sum
+      dp_final_csa_sum #(
+        .N(SOURCE_COUNT),
+        .W(GLOBAL_W)
+      ) u_final_sop_compress (
+        .in_values(r6_leaves),
+        .out_sum(sum_d)
+      );
+    end else begin : g_legacy_sum
   dp_sum_tree #(
     .N                    (SOURCE_COUNT),
     .W                    (GLOBAL_W)
@@ -378,6 +397,8 @@ module dp_top_lowp #(
     .in_values            (r6_leaves),
     .out_sum              (sum_d)
   );
+    end
+  endgenerate
 
   // [S7 寄存边界] 捕获最终累加和及旁带，供 S8 舍入/特殊值选择。
   // verilog_format: off

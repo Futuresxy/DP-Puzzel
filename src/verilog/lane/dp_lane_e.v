@@ -1,18 +1,21 @@
 `include "dp_defs.vh"
 // E8 lane: MXFP4/NVFP4/HiF4 only. S1 decode, S2 multiply/pair, S3 lane tree.
-// S4's exact e2 left shift is combinational; the group owns its capture register.
+// v1.9 consumes e2 in S3 before the lane register; legacy E64 retains its S4 shift.
 // Synchronous active-low reset clears valid; data holds through bubbles.
 // TC widths include S; I excludes S. Product sign travels separately.
 // Precision     | Input S | I | F | Product S | I | F | Pair S | I | F | Lane S | I | F
 // ------------- | ------- | - | - | --------- | - | - | ------ | - | - | ------ | - | -
 // MXFP4/NVFP4   | 0       | 3 | 1 | 0         | 6 | 2 | 1      | 7 | 2 | 1      | 9 | 2
 // HiF4 (e1 in)  | 0       | 2 | 2 | 0         | 4 | 4 | 1      | 5 | 4 | 1      | 7 | 4
-// All E after S4 lane shift: TC S1I9F4, 14 bits. No exponent MAX/right shifter.
+// All E after local lane shift: TC S1I9F4, 14 bits. No exponent MAX/right shifter.
 // 阅读顺序 / 功能边界：
 // S1 解包并保存幅值/符号；S2 八个 4x4 乘法 + 四个两项规约；S3 四项树。
-// S4 u_lane_coordinate_shift 在 lane 出口融合 e2，group 的 S4 寄存器捕获组和。
+// v1.9 在 S3 树后融合 e2，group 的 S4 寄存器捕获组和；legacy 保留原S4移位。
 // 本模块仅保存 S1-S3；出口无额外 DFF，故不能把 S4 组合移位误算为新增周期。
-module dp_lane_e (
+module dp_lane_e #(
+  // 静态迁移开关；0 保持独立 E64 的原流水，1 在 S3 消耗 e2。
+  parameter integer ARCHITECTURE_V19 = 0
+) (
   input wire clock,
   input wire rst_n,
   input wire in_valid,
@@ -137,7 +140,7 @@ module dp_lane_e (
   // verilog_format: on
 
   // [S3 lane 累加树] 四个 signed10 pair 经两层树得到 signed12。
-  // 此处不做右移和舍入；HiF4 的 e1 已在解包中融合，e2 留到出口精确左移。
+  // 此处不做右移和舍入；HiF4 的 e1 已在解包中融合，e2 在窄树后精确左移。
   dp_sum_tree #(
     .N(PAIRS),
     .W(PAIR_W)
@@ -146,29 +149,53 @@ module dp_lane_e (
     .out_sum  (lane_sum_d)
   );
 
-  // [S3 寄存边界] 保存 lane 和与同一请求的 shift，随后进行 S4 组合坐标融合。
+  // [S3 寄存边界] v1.9 先在窄 S14 容器内融合 e2，再寄存；不再传递 e2。
+  // MX/NV 固定左移 2，将 F2 转为 F4；HiF4 左移 e2_a+e2_b，保留完整精度。
+  // legacy 分支仅供独立 E64 回放，两种实现均保持输入至 group S5 的总延迟。
   // verilog_format: off
   dp_lib_DFFRU #(.WIDTH(1))
   ff_s2_s3_valid (.clock(clock), .rst_n(rst_n), .in_d(valid_q[1]), .out_q(valid_q[2]));
-  dp_lib_DFFE #(.WIDTH(LANE_W))
-  ff_s2_s3_sop_s3 (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(lane_sum_d), .out_q(sop_s3_q));
   dp_lib_DFFE #(.WIDTH(1))
   ff_s2_s3_all_negative_s3 (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(all_negative_s2_q), .out_q(all_negative_s3_q));
-  dp_lib_DFFE #(.WIDTH((1) - (0) + 1))
-  ff_s2_s3_shift_s3 (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(shift_s2_q), .out_q(shift_s3_q));
   // verilog_format: on
-
-  // [S4 坐标融合] 已寄存的 S3 和进入独立精确左移模块，group 在 S4 捕获。
-  // HiF4 移位量=e2_a+e2_b；MX/NV 固定补两个低零，将 F2 变成共同 F4。
-  dp_lane_e_shift #(
-    .IN_W (LANE_W),
-    .OUT_W(FUSED_W)
-  ) u_lane_coordinate_shift (
-    .in_sum  (sop_s3_q),
-    .in_shift(shift_s3_q),
-    .out_sum (out_sop)
-  );
+  generate
+    if (ARCHITECTURE_V19 != 0) begin : g_v19
+      // 两层树的 S12 和先符号扩位，最多左移 2，输出 S1I9F4。
+      wire signed [FUSED_W-1:0] lane_fused_d;
+      wire signed [FUSED_W-1:0] r3_fused_sum;
+      dp_lane_e_shift #(
+        .IN_W     (LANE_W),
+        .OUT_W    (FUSED_W)
+      ) u_lane_coordinate_shift (
+        .in_sum   (lane_sum_d),
+        .in_shift (shift_s2_q),
+        .out_sum  (lane_fused_d)
+      );
+      // verilog_format: off
+      dp_lib_DFFE #(.WIDTH(FUSED_W))
+      ff_s2_s3_fused_sum (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(lane_fused_d), .out_q(r3_fused_sum));
+      // verilog_format: on
+      assign out_sop = r3_fused_sum;
+      // 旧观察线不产生寄存器；新验证使用 r3_fused_sum。
+      assign sop_s3_q = {LANE_W{1'b0}};
+      assign shift_s3_q = {`DP_E_GUARD{1'b0}};
+    end else begin : g_legacy
+      // verilog_format: off
+      dp_lib_DFFE #(.WIDTH(LANE_W))
+      ff_s2_s3_sop (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(lane_sum_d), .out_q(sop_s3_q));
+      dp_lib_DFFE #(.WIDTH(`DP_E_GUARD))
+      ff_s2_s3_shift (.clock(clock), .in_en(rst_n & valid_q[1]), .in_d(shift_s2_q), .out_q(shift_s3_q));
+      // verilog_format: on
+      dp_lane_e_shift #(
+        .IN_W     (LANE_W),
+        .OUT_W    (FUSED_W)
+      ) u_lane_coordinate_shift (
+        .in_sum   (sop_s3_q),
+        .in_shift (shift_s3_q),
+        .out_sum  (out_sop)
+      );
+    end
+  endgenerate
   assign out_valid = valid_q[2];
   assign out_all_negative = all_negative_s3_q;
-
 endmodule

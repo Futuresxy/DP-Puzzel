@@ -31,6 +31,7 @@ VERILATOR='verilator'
 EXPORT=None
 SOURCE_LIST=None
 FRONTEND='multi'
+V19_PROFILES=('t8h16q32e96','t8h16q32e128','t8h16q64e128_opt','q32e64')
 E_MODES=('mxfp4_e2m1','nvfp4','hif4')
 
 def run(cmd,log):
@@ -70,7 +71,7 @@ def campaign(name,k,local,glob,requests,exe,source=None,expected=None,stress=Fal
     if not source: write_inputs(inp,requests,k)
     if expected is None:
         valid=[r for r in requests if legal_tuple(r)]
-        responses=iter(evaluate(valid,trace=True,config=dict(frontend=FRONTEND,k_fp16=k,local_shift_mag_width=local,global_signed_align_width=glob),run_dir=dest))
+        responses=iter(evaluate(valid,trace=True,config=dict(frontend=FRONTEND,architecture_v19=FRONTEND in V19_PROFILES,k_fp16=k,local_shift_mag_width=local,global_signed_align_width=glob),run_dir=dest))
         expected=[next(responses) if legal_tuple(r) else dict(d='00000000') for r in requests]
     gold=dest/'golden.txt'; gold.write_text(''.join(r['d']+'\n' for r in expected))
     schedule=[]
@@ -145,7 +146,29 @@ def check_cutpoints(path,results,requests):
         row,stage,kind,index,*values=line.split()
         row,stage,index=int(row),int(stage),int(index)
         trace=results[row]['trace'][stage-1]['data']
-        if kind in ('e_a','e_b'):
+        if kind.startswith('frontend_') and kind!='frontend_group_mag':
+            group_index=index//8 if kind in ('frontend_leaf','frontend_pair') else index//2
+            local_index=index%8 if kind in ('frontend_leaf','frontend_pair') else index%2
+            local_trace=trace['frontends'][group_index]['data'] if 'frontends' in trace else trace
+            if 'frontends' not in trace: local_index=index
+            if kind=='frontend_pair':
+                want=[int(local_trace['pairs_tc'][local_index//4][local_index%4])]
+            elif kind=='frontend_leaf':
+                leaves=local_trace['leaves_tc'][local_index//4]
+                want=[int(leaves[local_index%4]) if local_index%4<len(leaves) else 0]
+            else:
+                want=[int(local_trace['sop_tc'][local_index])]
+            got=[int(values[0])]
+        elif kind=='frontend_group_mag':
+            local_trace=trace['frontends'][index]['data']
+            want=[int(local_trace['magnitude'][0]),int(local_trace['sign'][0])]
+            got=[int(values[0],16),int(values[1])]
+        elif kind=='e_lzd22':
+            token=results[row]['trace'][4]['data']['groups'][index]
+            magnitude=int(token['m']) >> (token['width']-22)
+            want=[magnitude,22-magnitude.bit_length() if magnitude else 0]
+            got=[int(values[0],16),int(values[1])]
+        elif kind in ('e_a','e_b'):
             atom=trace['a' if kind=='e_a' else 'b'][index]
             want=[int(atom['m']),int(atom['sign'])]; got=[int(values[0],16),int(values[1])]
         elif kind=='e_pair':

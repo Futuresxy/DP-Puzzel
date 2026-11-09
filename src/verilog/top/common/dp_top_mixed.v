@@ -197,6 +197,8 @@ module dp_top_mixed #(
   // 低位补零将各来源幅值放入 GLOBAL_MAG_W；不是新增有效精度或动态移位。
   wire [N*GLOBAL_MAG_W-1:0] source_magnitude;
   wire [N*ANCHOR_W-1:0] source_anchor;
+  // S5预计算 e，仅用于MAX；移位差仍用A_raw。
+  wire [N*ANCHOR_W-1:0] source_compare_exp;
   wire [N*Z_W-1:0] source_z;
   wire [N-1:0] source_negative;
   wire [N*`DP_SPECIAL_W-1:0] source_special;
@@ -204,14 +206,14 @@ module dp_top_mixed #(
     for (group_index = 0; group_index < GROUPS; group_index = group_index + 1) begin : g_group
       wire [GROUP_MAG_W-1:0] group_align_magnitude;
       wire signed [ANCHOR_W-1:0] group_align_anchor;
+      wire signed [ANCHOR_W-1:0] group_align_compare_exp;
       wire [$clog2(GROUP_MAG_W+1)-1:0] group_align_leading_zero_count;
       wire group_align_negative;
       wire group_top_valid;
       wire [`DP_SPECIAL_W-1:0] group_align_special;
       if (group_index < BASE_GROUPS) begin : g_base
-        // 新接口在旧混合架构中不用；静态参数仍为0。
-        wire signed [ANCHOR_W-1:0] unused_group_compare_exp;
         dp_group #(
+            .BASELINE_V18(1),
             .LOCAL_W (LOCAL_W),
             .ANCHOR_W(ANCHOR_W)
         ) u_group_unit (
@@ -232,12 +234,13 @@ module dp_top_mixed #(
             .out_negative     (group_align_negative),
             .out_magnitude    (group_align_magnitude),
             .out_anchor       (group_align_anchor),
-            .out_compare_exp  (unused_group_compare_exp),
+            .out_compare_exp  (group_align_compare_exp),
             .out_z            (group_align_leading_zero_count),
             .out_special      (group_align_special)
         );
       end else if (EXT_QE != 0) begin : g_qe
         dp_group_qe #(
+            .ARCHITECTURE_V19(1),
             .COMPACT_UNPACK(OPTIMIZE_QE),
             .LOCAL_W (LOCAL_W),
             .ANCHOR_W(ANCHOR_W)
@@ -259,11 +262,13 @@ module dp_top_mixed #(
             .out_negative     (group_align_negative),
             .out_magnitude    (group_align_magnitude),
             .out_anchor       (group_align_anchor),
+            .out_compare_exp  (group_align_compare_exp),
             .out_z            (group_align_leading_zero_count),
             .out_special      (group_align_special)
         );
       end else begin : g_e
         dp_group_e #(
+            .ARCHITECTURE_V19(1),
             .LOCAL_W (LOCAL_W),
             .ANCHOR_W(ANCHOR_W)
         ) u_group_unit (
@@ -284,11 +289,12 @@ module dp_top_mixed #(
             .out_negative     (group_align_negative),
             .out_magnitude    (group_align_magnitude),
             .out_anchor       (group_align_anchor),
+            .out_compare_exp  (group_align_compare_exp),
             .out_z            (group_align_leading_zero_count),
             .out_special      (group_align_special)
         );
       end
-      if ((OPTIMIZE_QE != 0) & (group_index >= BASE_GROUPS)) begin : g_float_extension_layout
+      if (group_index >= BASE_GROUPS) begin : g_float_extension_layout
         // 扩展组从不参与整数请求；只补浮点低零，参与掩码仍在后端生效。
         assign source_magnitude[group_index*GLOBAL_MAG_W+:GLOBAL_MAG_W] =
             {group_align_magnitude, {(GLOBAL_MAG_W-GROUP_MAG_W){1'b0}}};
@@ -299,6 +305,7 @@ module dp_top_mixed #(
       end
       assign source_negative[group_index] = group_align_negative;
       assign source_anchor[group_index*ANCHOR_W+:ANCHOR_W] = group_align_anchor;
+      assign source_compare_exp[group_index*ANCHOR_W+:ANCHOR_W] = group_align_compare_exp;
       assign source_z[group_index*Z_W+:Z_W] = {
         {(Z_W - $clog2(GROUP_MAG_W + 1)) {1'b0}}, group_align_leading_zero_count
       };
@@ -384,6 +391,7 @@ module dp_top_mixed #(
   // [S5 C 解包] 使用 r4_c_raw，而非当前 in_c，保证与五级前端同请求对齐。
   // C 的符号/幅值/anchor/z/特殊值在 S5 独立保存，随后与所有 group 一起参加 S6。
   dp_c_unpack #(
+      .DETECT_LEADING_ZERO(0),
       .ANCHOR_W(ANCHOR_W)
   ) u_c_unpack (
       .in_data      (r4_c_raw),
@@ -421,6 +429,7 @@ module dp_top_mixed #(
 
   assign source_magnitude[GROUPS*GLOBAL_MAG_W+:GLOBAL_MAG_W] = {r5_c_magnitude, {(GLOBAL_MAG_W - `DP_FP32_W) {1'b0}}};
   assign source_negative[GROUPS]                             = r5_c_negative;
+  assign source_compare_exp[GROUPS*ANCHOR_W+:ANCHOR_W] = r5_c_anchor;
   assign source_anchor[GROUPS*ANCHOR_W+:ANCHOR_W]            = r5_c_anchor;
   assign source_z[GROUPS*Z_W+:Z_W]                           = (r5_c_z);
   assign source_special[GROUPS*`DP_SPECIAL_W+:`DP_SPECIAL_W] = r5_c_special;
@@ -438,7 +447,8 @@ module dp_top_mixed #(
   // [S6 全局对齐] 完整模块内完成有效源 MAX、净移位、恢复补码与特殊值归约。
   // leaves_d/common_d 等在 S6 DFF 同时捕获；不能将新 anchor 配给上一拍叶子。
   dp_mixed_global_align #(
-      .FLOAT_ONLY_EXTENSION(OPTIMIZE_QE),
+      .PRECOMPUTED_COMPARE(1),
+      .FLOAT_ONLY_EXTENSION(1),
       .BASE_GROUPS(BASE_GROUPS),
       .EXT_GROUPS (EXT_GROUPS),
       .N          (N),
@@ -450,6 +460,7 @@ module dp_top_mixed #(
       .in_enable        (r5_valid),
       .in_magnitude     (source_magnitude),
       .in_anchor        (source_anchor),
+      .in_compare_exp   (source_compare_exp),
       .in_z             (source_z),
       .in_negative      (source_negative),
       .in_special       (source_special),
@@ -471,8 +482,15 @@ module dp_top_mixed #(
   ff_s5_s6_last (.clock(clock), .rst_n(rst_n), .in_d(r5_last), .out_q(r6_last));
   dp_lib_DFFRE #(.WIDTH(1))
   ff_s5_s6_c_datatype (.clock(clock), .rst_n(rst_n), .in_en(r5_valid), .in_d(r5_c_datatype), .out_q(r6_c_datatype));
-  dp_lib_DFFE #(.WIDTH(N * GLOBAL_W))
-  ff_s5_s6_leaves (.clock(clock), .in_en(rst_n & r5_valid), .in_d(leaves_d), .out_q(r6_leaves));
+  dp_lib_DFFE #(.WIDTH(BASE_GROUPS * GLOBAL_W))
+  ff_s5_s6_base_leaves (.clock(clock), .in_en(rst_n & r5_valid), .in_d(leaves_d[0+:BASE_GROUPS*GLOBAL_W]), .out_q(r6_leaves[0+:BASE_GROUPS*GLOBAL_W]));
+  dp_lib_DFFE #(.WIDTH(GLOBAL_W))
+  ff_s5_s6_c_leaf (.clock(clock), .in_en(rst_n & r5_valid), .in_d(leaves_d[GROUPS*GLOBAL_W+:GLOBAL_W]), .out_q(r6_leaves[GROUPS*GLOBAL_W+:GLOBAL_W]));
+  // 扩展寄存器在高精度请求保持；消费端按同拍membership显式恢复零。
+  wire [EXT_GROUPS*GLOBAL_W-1:0] r6_extension_leaves;
+  dp_lib_DFFE #(.WIDTH(EXT_GROUPS * GLOBAL_W))
+  ff_s5_s6_extension_leaves (.clock(clock), .in_en(rst_n & r5_valid & r5_extension), .in_d(leaves_d[BASE_GROUPS*GLOBAL_W+:EXT_GROUPS*GLOBAL_W]), .out_q(r6_extension_leaves));
+  assign r6_leaves[BASE_GROUPS*GLOBAL_W+:EXT_GROUPS*GLOBAL_W] = r6_extension ? r6_extension_leaves : 0;
   dp_lib_DFFE #(.WIDTH(ANCHOR_W))
   ff_s5_s6_common_s6 (.clock(clock), .in_en(rst_n & r5_valid), .in_d(common_d), .out_q(r6_common));
   dp_lib_DFFE #(.WIDTH(1))
@@ -483,35 +501,17 @@ module dp_top_mixed #(
 
   wire signed [SUM_W-1:0] sum_d;
   wire signed [SUM_W-1:0] r7_sum;
-  // [S7 最终累加树] G 个组结果加 C，共 G+1 项；K4/K8/K16 对应 2/3/5 项。
-  // 平衡树保留 ceil(log2(G+1)) 个增长位，小数位数及 common anchor 不改变。
-  // S7 separate balanced branches; preserve all growth bits before the final add.
-  localparam integer BASE_SUM_W = GLOBAL_W + $clog2(BASE_GROUPS + 1);
-  // 新增组子树的完整规约宽度。
-  localparam integer EXT_SUM_W  = GLOBAL_W + $clog2(EXT_GROUPS);
-  wire signed [BASE_SUM_W-1:0] base_sum_d;
-  wire signed [EXT_SUM_W-1:0] extension_sum_d;
-  wire signed [SUM_W-1:0] base_extended;
-  wire signed [SUM_W-1:0] extension_extended;
-  wire [EXT_GROUPS*GLOBAL_W-1:0] extension_leaves;
-  assign extension_leaves = r6_extension ? r6_leaves[BASE_GROUPS*GLOBAL_W+:EXT_GROUPS*GLOBAL_W] : 0;
-  dp_sum_tree #(
-      .N(BASE_GROUPS + 1),
-      .W(GLOBAL_W)
-  ) u_base_sop_tree (
-      .in_values({r6_leaves[GROUPS*GLOBAL_W+:GLOBAL_W], r6_leaves[0+:BASE_GROUPS*GLOBAL_W]}),
-      .out_sum  (base_sum_d)
+  // [S7 carry-save规约] 基础4组+C与扩展2/4组保持两行，经双行MUX后唯一CPA。
+  // E96为S43，E128/Q64E128为S44；含符号增长位完整保留。
+  dp_mixed_csa_sum #(
+      .EXT_GROUPS(EXT_GROUPS),
+      .W         (GLOBAL_W),
+      .SUM_W     (SUM_W)
+  ) u_final_sop_compress (
+      .in_extension_active(r6_extension),
+      .in_values          (r6_leaves),
+      .out_sum            (sum_d)
   );
-  dp_sum_tree #(
-      .N(EXT_GROUPS),
-      .W(GLOBAL_W)
-  ) u_extension_sop_tree (
-      .in_values(extension_leaves),
-      .out_sum  (extension_sum_d)
-  );
-  assign base_extended      = {{(SUM_W - BASE_SUM_W) {base_sum_d[BASE_SUM_W-1]}}, base_sum_d};
-  assign extension_extended = {{(SUM_W - EXT_SUM_W) {extension_sum_d[EXT_SUM_W-1]}}, extension_sum_d};
-  assign sum_d              = r6_extension ? base_extended + extension_extended : base_extended;
 
   // [S7 寄存边界] 捕获最终累加和及旁带，供 S8 舍入/特殊值选择。
   // verilog_format: off

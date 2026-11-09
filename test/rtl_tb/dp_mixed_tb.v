@@ -168,6 +168,9 @@ module dp_tb;
           dut.u_core.g_group[group_index].group_align_special);
     end
   end endgenerate
+`ifdef DP_ARCH_V19
+  `include "dp_mixed_v19_trace.vh"
+`endif
   integer source_index;
   always @(negedge clock) if(trace_fd) begin
     if(dut.u_core.r5_valid) $fdisplay(trace_fd,"%0d 5 c 0 %h %0d %0d %0d %h",pending[4],dut.u_core.r5_c_magnitude,

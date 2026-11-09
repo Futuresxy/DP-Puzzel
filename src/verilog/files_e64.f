@@ -10,6 +10,10 @@ src/verilog/common/dp_lib_DFFU.v
 src/verilog/common/dp_lib_bin2onehot.v
 src/verilog/common/dp_lib_onehot2bin.v
 src/verilog/common/dp_lib_onehot_mux.v
+src/verilog/arithmetic/dp_mixed_csa_sum.v
+src/verilog/arithmetic/dp_final_csa_sum.v
+src/verilog/arithmetic/dp_csa_4to2.v
+src/verilog/arithmetic/dp_csa_3to2.v
 src/verilog/arithmetic/dp_bidir_shift.v
 src/verilog/arithmetic/dp_fp32_round.v
 src/verilog/arithmetic/dp_lzd.v

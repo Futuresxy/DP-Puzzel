@@ -93,6 +93,7 @@ module dp_top_e #(
     for (group_index = 0; group_index < GROUPS; group_index = group_index + 1) begin : g_group
       wire [GROUP_MAG_W-1:0] group_align_magnitude;
       wire signed [ANCHOR_W-1:0] group_align_anchor;
+      wire signed [ANCHOR_W-1:0] unused_compare_exp;
       wire [$clog2(GROUP_MAG_W+1)-1:0] group_align_leading_zero_count;
       wire group_align_negative;
       wire group_top_valid;
@@ -118,6 +119,7 @@ module dp_top_e #(
         .out_negative(group_align_negative),
         .out_magnitude(group_align_magnitude),
         .out_anchor(group_align_anchor),
+        .out_compare_exp(unused_compare_exp),
         .out_z(group_align_leading_zero_count),
         .out_special(group_align_special)
       );

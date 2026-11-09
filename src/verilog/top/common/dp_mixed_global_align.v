@@ -9,6 +9,8 @@
 // INT8 + INT32       | 0     | 1      | 32 | MAG_W-32
 // Floating coordinates use E_max; INT8+INT32 bypasses the shift.
 module dp_mixed_global_align #(
+  // S5 已寄存真实最高位指数；0 仅供 legacy 接口回放。
+  parameter integer PRECOMPUTED_COMPARE = 0,
   // 静态能力裁剪；仅扩展组可裁掉整数直通，基础组和 C 仍支持整数。
   parameter integer FLOAT_ONLY_EXTENSION = 0,
   // Four base groups and one C, plus the enabled low-precision branch.
@@ -33,6 +35,7 @@ module dp_mixed_global_align #(
   input wire [N*MAG_W-1:0] in_magnitude,
   // 每源有符号 A_raw 指数坐标。
   input wire [N*ANCHOR_W-1:0] in_anchor,
+  input wire [N*ANCHOR_W-1:0] in_compare_exp,
   // 每源原幅值前导零数；低位补零不改变非零源 z。
   input wire [N*Z_W-1:0] in_z,
   // 每源独立符号位。
@@ -138,7 +141,7 @@ module dp_mixed_global_align #(
         assign active[source_index] = in_enable & in_participate[source_index] & ~in_integer &
             (magnitude != 0) & (in_special[source_index*`DP_SPECIAL_W+:`DP_SPECIAL_W] == 0);
       end
-      assign exponents[source_index*ANCHOR_W+:ANCHOR_W] = raw_anchor - $signed({{(ANCHOR_W - Z_W) {1'b0}}, leading});
+      assign exponents[source_index*ANCHOR_W+:ANCHOR_W] = (PRECOMPUTED_COMPARE != 0) ? in_compare_exp[source_index*ANCHOR_W+:ANCHOR_W] : raw_anchor - $signed({{(ANCHOR_W - Z_W) {1'b0}}, leading});
       dp_bidir_shift #(
           .W    (MAG_W),
           .NET_W(NET_W)

@@ -4,9 +4,11 @@
 
 基础 `dp_top` 已按 `src/spec/dp/dptop/dp-top-v1.8.md` 实现：E 窄 pair/共享树/局部 e2 融合，无跨 lane MAX/宽移位依赖；无偏 scale、S3 A_raw、S5 compare_exp；C 不做 LZD；S7 4:2+3:2+CPA。CModel、冻结 Verilog 的 L8/II=1/完整数据和新定向断点已通过，回执见 `test/results/dp-top-v1.8.md`。其余 E/QE/混合顶层本轮不迁移，`BASELINE_V18` 静态参数默认0，仅 dp_top 显式开启；CModel 的 legacy_multi 保留旧回放。扩展 ADD/CSA/MUX 只更新规格。旧功耗/综合结果仍保留为历史；v1.8 首次 N12 TT/1GHz DC 面积为16163.057770 µm²，setup/hold通过但有1条最大电容违例，整体 flow_pass=false；未测新功耗。详见 hw/dc_syn/records/dp_top_v18_n12_1000mhz_20261109.md。
 
-## 三种混合DP v1.9规格（2026-11-09）
+## 三种混合DP及Q32E64 v1.9实现（2026-11-09）
 
-本轮只更新spec，未迁移模型/RTL：E专用S3完成HiF4 e2融合，S4窄组和/abs，S5统一U22做LZD、补零输出U31；QE保留Q U5指数/宽对齐，E旁路并在S4 lane树后消耗e2。三种扩展均采用carry-save合并、双行MUX及唯一CPA，E96 S43、E128/Q64E128 S44，active屏蔽MAX及非参与特殊/负零贡献。详细入口src/spec/dp/dptop/mixed-precision-expansion.md；基础dp_top保持v1.8，独立E64/Q32E64不自动迁移，旧PPA不代表新合同验收。
+用户已授权CModel→RTL冻结验证→同工况DC→六架构真实负载功耗与七类功能占比。三混合顶层及独立Q32E64的CModel、Verilator全量/断点/L8/II=1/门控验证已通过，见test/results/mixed-cmodel-v1.9.md与mixed-rtl-v1.9.md；baseline v1.8复核通过，E64保持旧设计并通过兼容回归。E专用S3完成HiF4 e2融合，S4窄组和/abs，S5 U22 LZD、补零输出U31；QE保留Q U5指数/宽对齐，E旁路并在S4 lane树后消耗e2。三种扩展采用carry-save合并、双行MUX及唯一CPA，E96 S43、E128/Q64E128 S44；Q32E64五源4:2+3:2+CPA为S43。active屏蔽MAX，非参与特殊/负零贡献分别处理。详细入口src/spec/dp/dptop/mixed-precision-expansion.md与low-precision-tops.md。新DC/功耗正在验收；旧PPA不能冒充新合同结果。独立E64及dp_top_e通过ARCHITECTURE_V19默认0保留旧合同。
+
+baseline电气修复独立run dc_dp_top_11092301，面积16165.122154 µm²，setup/hold/电气/VT均通过；三种新负载功耗见hw/power/records/baseline_v18_repaired_1109.md，旧结果及依赖继续保留。原DC引用的完整验证回执按其verification_id定位，不因同一RTL快照再次验证而替换历史验收；当前源码综合仍使用严格最新门禁。
 
 ## 当前优先约定：新版 DP / Cube（2026-11-04）
 

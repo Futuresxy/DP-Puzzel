@@ -15,6 +15,7 @@ from adapters.rtl import snapshot, record_validation
 from cases.common import make, random_request
 from dp_rtl_gate import MIXED_CONFIGS, LOWP_PROFILES
 from reference.exact import DTYPES
+from cases.mixed_v19 import directed as v19_directed
 
 
 def compile_tb(profile, local, glob):
@@ -22,11 +23,12 @@ def compile_tb(profile, local, glob):
     build.mkdir(parents=True,exist_ok=True)
     top='dp_top_'+profile
     flags=['--language','1364-2005']
+    defines=['-DDP_ARCH_V19'] if profile=='q32e64' else []
     shared.run([shared.VERILATOR,'--lint-only','-Wall','-Wno-UNUSEDSIGNAL','-Wno-UNUSEDPARAM',
                 '-Wno-VARHIDDEN',*flags,'--top-module',top,'-f',str(shared.SOURCE_LIST),
                 f'-GLOCAL_W={local}',f'-GGLOBAL_W={glob}'],build/'lint.log')
     shared.run([shared.VERILATOR,'--binary','--timing','-j','4',*flags,
-                '-Wno-WIDTH','-Wno-TIMESCALEMOD','-Wno-INITIALDLY',
+                '-Wno-WIDTH','-Wno-TIMESCALEMOD','-Wno-INITIALDLY',*defines,
                 f'-DDP_MIXED_TOP={top}','-DDP_MIXED_GROUPS=4','-DDP_LOWP_FRONTEND',
                 '-DDP_E_FRONTEND' if profile=='e64' else '-DDP_QE_FRONTEND',
                 '--top-module','dp_tb','--Mdir',str(build),
@@ -58,7 +60,7 @@ def main():
         k,requests=read_inputs(inp)
         if k!=16 or len(requests)!=961: raise AssertionError('wrong native corpus')
         golden=[json.loads(line) for line in inp.with_name('expected.jsonl').read_text().splitlines()]
-        expected=evaluate(requests,config={'frontend':args.frontend},run_dir=shared.RUN/'model')
+        expected=evaluate(requests,config={'frontend':args.frontend,'architecture_v19':args.frontend in shared.V19_PROFILES},run_dir=shared.RUN/'model')
         for result,reference in zip(expected,golden):
             result['exact_fp32_or_int32']=reference['exact_fp32_or_int32']
         records.append(shared.campaign(mode,16,28,40,requests,exe,expected=expected))
@@ -74,6 +76,7 @@ def main():
     for update in [dict(b_datatype=2),dict(a_datatype=15,b_datatype=15),dict(c_datatype=1),
                    dict(a_scale_datatype=3),dict(b_scale_datatype=1)]:
         bad=make('nvfp4');bad.update(update);requests.extend([make('hif4'),bad,make('nvfp4')])
+    if args.frontend in shared.V19_PROFILES: requests += v19_directed(args.frontend)
     for index,request in enumerate(requests):request.update(id=index,last=index%7==0)
     for k,local,glob in MIXED_CONFIGS:
         records.append(shared.campaign(f'mixed-k{k}-l{local}-g{glob}',k,local,glob,requests,

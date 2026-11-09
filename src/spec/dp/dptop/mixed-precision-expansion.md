@@ -1,4 +1,4 @@
-> 功能：定义三种混合DP面积优化、参与屏蔽与carry-save扩展；范围：混合DP专用前端及扩展合同；版本：v1.9.1；修改时间：2026-11-09 23:40:33 +0800；对应代码：src/cmodel/lib/top/mixed.cpp、src/verilog/top/common/dp_top_mixed.v、dp_mixed_global_align.v及三个固定顶层；本版实施中，验收以独立冻结回执为准，旧PPA不代表本合同已验收。
+> 功能：定义三种混合DP面积优化、参与屏蔽与carry-save扩展；范围：混合DP专用前端及扩展合同；版本：v1.9.1；修改时间：2026-11-09 23:57:09 +0800；对应代码：src/cmodel/lib/top/mixed.cpp、src/verilog/top/common/dp_top_mixed.v、dp_mixed_global_align.v及三个固定顶层；本版CModel/冻结RTL验证已通过，见test/results/mixed-{cmodel,rtl}-v1.9.md；新PPA独立验收。
 
 # 三种混合 DP：v1.9 确认合同
 

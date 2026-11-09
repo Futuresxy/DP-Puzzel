@@ -16,13 +16,16 @@
 // MXFP8 / MXFP6      | 1 | 5  | P
 // MXFP4              | 1 | 10 | P-5
 // NVFP4              | 1 | 12 | P-7
-// HiF4               | 1 | 10 | P-5
+// HiF4 v1.9          | 1 | 12 | P-7
+// HiF4 legacy        | 1 | 10 | P-5
 // LZD reads the listed I/F as unsigned magnitude (S=0).
 // 阅读顺序 / 功能边界：
 // 数据主路：两个 QE lane -> S5 两项树/abs -> scale 或旁路/LZD -> token。
 // 旁带：S1 scale 解包，S2 系数积/指数和，再延迟到 S5；S2 公共 MAX 回送两 lane。
 // 两个 lane 共享 valid 和时钟，没有独立握手；MAX 只产生共同坐标，不等待 lane 结果。
 module dp_group_qe #(
+  // v1.9 固定坐标 E 路径、S3 A_raw 和 S5 compare_exp；0 保留旧回放。
+  parameter integer ARCHITECTURE_V19 = 0,
   // 仅影响 QE lane 的 S1 内部表示，组 S5 token 与数值坐标不变。
   parameter integer COMPACT_UNPACK = 0,
   // S3 局部幅值对齐窗口，改变时下游 lane/group 位宽同步推导。
@@ -71,6 +74,7 @@ module dp_group_qe #(
   // S5 token 原始指数坐标 A_raw，真实最高位指数为 A_raw-z。
   output wire signed [ANCHOR_W-1:0] out_anchor,
   // 幅值前导零数，供 S6 合并规格化与对齐。
+  output wire signed [ANCHOR_W-1:0] out_compare_exp,
   output wire [$clog2(MAG_W+1)-1:0] out_z,
   // NaN/invalid/正 Inf/负 Inf 的独立分类摘要。
   output wire [`DP_SPECIAL_W-1:0] out_special
@@ -120,6 +124,7 @@ module dp_group_qe #(
       wire [(`DP_Q_EXP_W+1)-1:0] candidate;
       wire [  `DP_SPECIAL_W-1:0] special_value;
       dp_lane_qe #(
+          .ARCHITECTURE_V19(ARCHITECTURE_V19),
           .COMPACT_UNPACK(COMPACT_UNPACK),
           .LOCAL_W(LOCAL_W)
       ) u_lane (
@@ -187,16 +192,16 @@ module dp_group_qe #(
   wire r3_scale_nan;
   // S4 保存本请求的 scale_nan。
   wire r4_scale_nan;
-  // [scale 旁路准备：S1 -> S2] 解包为统一无符号 I1F3 尾数与 biased 指数。
+  // [scale 旁路准备：S1 -> S2] I1F3尾数；v1.9 signed8无偏指数，legacy公共bias。
   // S2 尾数相乘形成 I2F6 系数，同时指数相加；NaN 分类独立传递，不靠零幅值推断。
-  dp_scale_unpack u_scale_unpack_a (
+  dp_scale_unpack #(.UNBIASED_EXPONENT(ARCHITECTURE_V19)) u_scale_unpack_a (
       .in_data      (in_scale_a),
       .in_datatype  (in_scale_datatype),
       .out_magnitude(scale_a_magnitude_d),
       .out_exponent (scale_a_exponent_d),
       .out_nan      (scale_a_nan_d)
   );
-  dp_scale_unpack u_scale_unpack_b (
+  dp_scale_unpack #(.UNBIASED_EXPONENT(ARCHITECTURE_V19)) u_scale_unpack_b (
       .in_data      (in_scale_b),
       .in_datatype  (in_scale_datatype),
       .out_magnitude(scale_b_magnitude_d),
@@ -231,6 +236,18 @@ module dp_group_qe #(
       .out_product(scale_coefficient_d)
   );
 
+  // scale 无偏指数：signed8 + signed8 -> signed9，符号扩展不可用零扩展替代。
+  wire [`DP_PRODUCT_EXP_W-1:0] scale_exponent_sum_d;
+  wire [`DP_Q_EXP_W:0] r2_group_max;
+  assign scale_exponent_sum_d = (ARCHITECTURE_V19 != 0) ?
+      {r1_scale_a_exponent[`DP_EXP_W-1], r1_scale_a_exponent} +
+      {r1_scale_b_exponent[`DP_EXP_W-1], r1_scale_b_exponent} :
+      {1'b0, r1_scale_a_exponent} + {1'b0, r1_scale_b_exponent};
+  // verilog_format: off
+  dp_lib_DFFE #(.WIDTH(`DP_Q_EXP_W+1))
+  ff_s1_s2_group_max (.clock(clock), .in_en(rst_n & r1_valid & (ARCHITECTURE_V19 != 0)), .in_d(exponent_max_lane_anchor[`DP_Q_EXP_W:0]), .out_q(r2_group_max));
+  // verilog_format: on
+
   // [S2 寄存边界] 保存 scale 系数积/指数和；两 lane 在内部捕获共同 MAX。
   // verilog_format: off
   dp_lib_DFFRU #(.WIDTH(1))
@@ -240,9 +257,30 @@ module dp_group_qe #(
   dp_lib_DFFE #(.WIDTH(COEFF_W))
   ff_s1_s2_scale_coefficient (.clock(clock), .in_en(rst_n & r1_valid), .in_d(scale_coefficient_d), .out_q(r2_scale_coefficient));
   dp_lib_DFFE #(.WIDTH(`DP_PRODUCT_EXP_W))
-  ff_s1_s2_scale_exponent (.clock(clock), .in_en(rst_n & r1_valid), .in_d({1'b0, r1_scale_a_exponent} + {1'b0, r1_scale_b_exponent}), .out_q(r2_scale_exponent));
+  ff_s1_s2_scale_exponent (.clock(clock), .in_en(rst_n & r1_valid), .in_d(scale_exponent_sum_d), .out_q(r2_scale_exponent));
   dp_lib_DFFE #(.WIDTH(1))
   ff_s1_s2_scale_nan (.clock(clock), .in_en(rst_n & r1_valid), .in_d(r1_scale_nan), .out_q(r2_scale_nan));
+  // verilog_format: on
+
+  // S3 提前计算 A_raw；Q 的公共偏置为15，E 已将 e2 融入幅值。
+  // 常量 M-1-F 吸收所有结构补零，scale 指数已经去偏，不再扣254。
+  localparam integer Q_ANCHOR_OFFSET = MAG_W-1-(LOCAL_W-2)-2*`DP_Q_BIAS;
+  localparam signed [ANCHOR_W-1:0] MX_ANCHOR_OFFSET = 9;
+  localparam signed [ANCHOR_W-1:0] SCALED_E_ANCHOR_OFFSET = 11;
+  wire signed [ANCHOR_W-1:0] raw_anchor_d;
+  wire signed [ANCHOR_W-1:0] r3_raw_anchor;
+  wire signed [ANCHOR_W-1:0] r4_raw_anchor;
+  wire signed [ANCHOR_W-1:0] element_anchor_d;
+  wire signed [ANCHOR_W-1:0] scale_anchor_d;
+  wire signed [ANCHOR_W-1:0] coordinate_offset_d;
+  assign element_anchor_d = $signed({{(ANCHOR_W-`DP_Q_EXP_W-1){1'b0}}, r2_group_max});
+  assign scale_anchor_d = $signed({{(ANCHOR_W-`DP_PRODUCT_EXP_W){r2_scale_exponent[`DP_PRODUCT_EXP_W-1]}}, r2_scale_exponent});
+  assign coordinate_offset_d = (r2_datatype < `DP_DT_MXFP4) ? $signed(Q_ANCHOR_OFFSET[ANCHOR_W-1:0]) :
+      (r2_datatype == `DP_DT_MXFP4) ? MX_ANCHOR_OFFSET : SCALED_E_ANCHOR_OFFSET;
+  assign raw_anchor_d = element_anchor_d + scale_anchor_d + coordinate_offset_d;
+  // verilog_format: off
+  dp_lib_DFFE #(.WIDTH(ANCHOR_W))
+  ff_s2_s3_raw_anchor (.clock(clock), .in_en(rst_n & r2_valid & (ARCHITECTURE_V19 != 0)), .in_d(raw_anchor_d), .out_q(r3_raw_anchor));
   // verilog_format: on
 
   // [S3 寄存边界] scale 旁带保持数值并延迟一拍，与 lane 的 S3 对齐同行。
@@ -257,6 +295,12 @@ module dp_group_qe #(
   ff_s2_s3_scale_exponent (.clock(clock), .in_en(rst_n & r2_valid), .in_d(r2_scale_exponent), .out_q(r3_scale_exponent));
   dp_lib_DFFE #(.WIDTH(1))
   ff_s2_s3_scale_nan (.clock(clock), .in_en(rst_n & r2_valid), .in_d(r2_scale_nan), .out_q(r3_scale_nan));
+  // verilog_format: on
+
+  // S4 仅延迟已算好的 A_raw，与 lane 输出及 scale 系数保持同拍。
+  // verilog_format: off
+  dp_lib_DFFE #(.WIDTH(ANCHOR_W))
+  ff_s3_s4_raw_anchor (.clock(clock), .in_en(rst_n & r3_valid & (ARCHITECTURE_V19 != 0)), .in_d(r3_raw_anchor), .out_q(r4_raw_anchor));
   // verilog_format: on
 
   // [S4 寄存边界] scale 旁带继续延迟，与两个 lane 的 S4 和同拍到达 S5。
@@ -310,7 +354,7 @@ module dp_group_qe #(
   wire [$clog2(MAG_W+1)-1:0] z_d;
   wire magnitude_active;
   // [S5 LZD] 只检测补零后幅值的 leading-zero count，不移动 magnitude。
-  // S6 使用 A_raw-z 选全局 MAX，再做一次合并移位，避免这里先移一次再右移一次。
+  // v1.9 S5寄存e=A_raw-z；S6直接MAX，仍只做一次合并移位。
   dp_lzd #(
       .W(MAG_W)
   ) u_group_leading_detect (
@@ -345,7 +389,8 @@ module dp_group_qe #(
                        ((r4_datatype < `DP_DT_MXFP4) ? LOCAL_W-2 :
                         (r4_datatype == `DP_DT_NVFP4) ? LOCAL_W-9 : LOCAL_W-7) +
                        MAG_W-1 + {{(32-`DP_PRODUCT_EXP_W){1'b0}}, r4_scale_exponent} - 2*`DP_SCALE_BIAS;
-  assign anchor_d = (~magnitude_active | (special_d != 0)) ? 0 : anchor_work[ANCHOR_W-1:0];
+  assign anchor_d = (~magnitude_active | (special_d != 0)) ? 0 :
+      (ARCHITECTURE_V19 != 0) ? r4_raw_anchor : anchor_work[ANCHOR_W-1:0];
 
   // [S5 寄存边界] 保存 scale/LZD 后的 group token；valid 与符号、幅值、anchor 同拍。
   // verilog_format: off
@@ -359,8 +404,27 @@ module dp_group_qe #(
   ff_s4_s5_out_anchor (.clock(clock), .in_en(rst_n & r4_valid), .in_d(anchor_d), .out_q(out_anchor));
   dp_lib_DFFE #(.WIDTH(`DP_SPECIAL_W))
   ff_s4_s5_special (.clock(clock), .in_en(rst_n & r4_valid), .in_d(special_d), .out_q(r5_special));
-  dp_lib_DFFE #(.WIDTH($clog2(MAG_W + 1)))
-  ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & r4_valid), .in_d(((special_d == 0)) ? z_d : {$clog2(MAG_W+1){1'b0}}), .out_q(out_z));
   // verilog_format: on
 
+  // S5 保存 compare_exp，供 S6 MAX 直接使用；out_z 仅为兼容观察。
+  wire signed [ANCHOR_W-1:0] compare_exp_d;
+  wire [ANCHOR_W-1:0] observed_zero_count;
+  assign compare_exp_d = (magnitude_active & (special_d == 0)) ?
+      anchor_d - $signed({{(ANCHOR_W-$clog2(MAG_W+1)){1'b0}}, z_d}) : 0;
+  assign observed_zero_count = out_anchor - out_compare_exp;
+  generate
+    if (ARCHITECTURE_V19 != 0) begin : g_compare_register
+      // verilog_format: off
+      dp_lib_DFFE #(.WIDTH(ANCHOR_W))
+      ff_s4_s5_compare_exp (.clock(clock), .in_en(rst_n & r4_valid), .in_d(compare_exp_d), .out_q(out_compare_exp));
+      // verilog_format: on
+      assign out_z = observed_zero_count[$clog2(MAG_W+1)-1:0];
+    end else begin : g_legacy_z_register
+      // verilog_format: off
+      dp_lib_DFFE #(.WIDTH($clog2(MAG_W + 1)))
+      ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & r4_valid), .in_d((special_d == 0) ? z_d : {$clog2(MAG_W+1){1'b0}}), .out_q(out_z));
+      // verilog_format: on
+      assign out_compare_exp = out_anchor - $signed({{(ANCHOR_W-$clog2(MAG_W+1)){1'b0}}, out_z});
+    end
+  endgenerate
 endmodule

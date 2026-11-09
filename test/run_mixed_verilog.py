@@ -21,6 +21,7 @@ from cases.common import make, random_request
 from cases.mixed import PROFILES, corpus, extended, poison_inactive
 from dp_rtl_gate import MIXED_CONFIGS
 from reference.exact import DTYPES
+from cases.mixed_v19 import directed as v19_directed
 
 
 def expand(request, profile):
@@ -43,11 +44,12 @@ def compile_tb(profile, local, glob):
     build.mkdir(parents=True,exist_ok=True)
     top='dp_top_'+profile
     flags=['--language','1364-2005']
+    defines=['-DDP_ARCH_V19'] + (['-DDP_QE_EXTENSION'] if 'q64' in profile else [])
     shared.run([shared.VERILATOR,'--lint-only','-Wall','-Wno-UNUSEDSIGNAL','-Wno-UNUSEDPARAM',
                 '-Wno-VARHIDDEN',*flags,'--top-module',top,'-f',str(shared.SOURCE_LIST),
                 f'-GLOCAL_W={local}',f'-GGLOBAL_W={glob}'],build/'lint.log')
     shared.run([shared.VERILATOR,'--binary','--timing','-j','4',*flags,
-                '-Wno-WIDTH','-Wno-TIMESCALEMOD','-Wno-INITIALDLY',
+                '-Wno-WIDTH','-Wno-TIMESCALEMOD','-Wno-INITIALDLY',*defines,
                 f'-DDP_MIXED_TOP={top}',f"-DDP_MIXED_GROUPS={6 if profile=='t8h16q32e96' else 8}",
                 '--top-module','dp_tb','--Mdir',str(build),
                 f'-GLOCAL_W={local}',f'-GGLOBAL_W={glob}',
@@ -72,7 +74,7 @@ def main():
     print(f'{args.frontend}: L8 / II=1, base K16, windows 28/40',flush=True)
     exe=compile_tb(args.frontend,28,40)
     for mode,requests,golden in corpus(args.frontend):
-        expected=evaluate(requests,config={'frontend':args.frontend},run_dir=shared.RUN/'model')
+        expected=evaluate(requests,config={'frontend':args.frontend,'architecture_v19':args.frontend in shared.V19_PROFILES},run_dir=shared.RUN/'model')
         for result,reference in zip(expected,golden):
             result['exact_fp32_or_int32']=reference['exact_fp32_or_int32']
         records.append(shared.campaign(mode,16,28,40,requests,exe,expected=expected))
@@ -93,6 +95,7 @@ def main():
             low=expand(make(low_mode,a=[code]*(64 if DTYPES[low_mode]>=7 else 32)),args.frontend)
             low['a']='%x'%(int(low['a'],16)&~((1<<256)-1))
             requests.extend([low,poison_inactive(make('fp16'),args.frontend)])
+    if args.frontend in shared.V19_PROFILES: requests += v19_directed(args.frontend)
     for index,request in enumerate(requests): request.update(id=index,last=index%7==0)
     for k,local,glob in MIXED_CONFIGS:
         records.append(shared.campaign(f'mixed-k{k}-l{local}-g{glob}',k,local,glob,requests,

@@ -29,6 +29,8 @@
 // 层内没有独立 ready；两 lane 的公共 MAX 在同拍组合完成，随乘积一起进入 S2。
 // verilog_format: off
 module dp_lane_qe #(
+  // v1.9：E 不参与跨 lane MAX，并旁路 Q 宽移位；默认保留旧回放。
+  parameter integer ARCHITECTURE_V19 = 0,
   // 静态选择紧凑 QE 解包；默认保留原实现供独立对照。
   parameter integer COMPACT_UNPACK = 0,
   // S3 局部幅值对齐窗口宽度；默认 28 位，Q 的小数位数为 LOCAL_W-2。
@@ -243,12 +245,17 @@ module dp_lane_qe #(
     end
   endgenerate
 
+  // MAX 仅消费 Q 有限非零乘积；HiF4 的 e2 和独立保留为局部窄旁带。
+  wire [`DP_E_LANES-1:0] exponent_candidates_active;
+  assign exponent_candidates_active = ((ARCHITECTURE_V19 != 0) &
+      (r1_datatype >= `DP_DT_MXFP4)) ? {`DP_E_LANES{1'b0}} : product_active_d;
+
   dp_max_tree #(
     .N (`DP_E_LANES),
     .W ((`DP_Q_EXP_W+1) + 1)
   ) u_lane_exponent_max (
     .in_values  (product_exponent_candidates),
-    .in_active  (product_active_d),
+    .in_active  (exponent_candidates_active),
     .out_max    (lane_max_exponent),
     .out_active (out_candidate_active)
   );
@@ -269,7 +276,7 @@ module dp_lane_qe #(
     .out_exponents  (product_exponents_d)
   );
 
-  // E pair 为 10 位补码，HiF4 最多右移 2 位；其余低位始终为补零。
+  // E pair 为10位补码；v1.9预留2位增长后直接入树，legacy用于右移guard。
   localparam integer E_LEAF_W = `DP_E_PAIR_W + `DP_E_GUARD;
   // 随 LOCAL_W 自动变化的 E 结构零位数，Q 模式仍完整保存。
   localparam integer E_LEAF_PAD = LEAF_W - E_LEAF_W;
@@ -332,6 +339,7 @@ module dp_lane_qe #(
     .LOCAL_W    (LOCAL_W),
     .LEAF_W     (LEAF_W),
     .QE_ONLY    (1),
+    .E_FIXED_COORD(ARCHITECTURE_V19),
     .PRODUCT_W  (2*`DP_EIGHTH_W),
     .EXPONENT_W (`DP_Q_EXP_W+1)
   ) u_local_alignment (
@@ -344,6 +352,13 @@ module dp_lane_qe #(
     .in_exponents (r2_product_exponents),
     .out_leaves   (aligned_leaves_d)
   );
+
+  // HiF4 e2 在 S4 共享树后消耗；无需经过跨 lane MAX/delta。
+  wire [`DP_E_GUARD-1:0] r3_hif4_exponent;
+  // verilog_format: off
+  dp_lib_DFFE #(.WIDTH(`DP_E_GUARD))
+  ff_s2_s3_hif4_exponent (.clock(clock), .in_en(rst_n & r2_valid & r2_is_hif4 & (ARCHITECTURE_V19 != 0)), .in_d(r2_hif4_exponent), .out_q(r3_hif4_exponent));
+  // verilog_format: on
 
   // [S3 寄存边界] 捕获对齐叶子及同请求旁带，下一段只使用本级寄存值。
   // verilog_format: off
@@ -386,7 +401,11 @@ module dp_lane_qe #(
   // [S4 输出选择] 组合数值选择在 DFF 外明确表达，寄存器只保存选定结果。
   wire [LANE_SOP_W-1:0] lane_sop_d;
   // verilog_format: off
-  assign lane_sop_d = lane_sum_d;
+  // E pair 在树输入已预留两位增长，树后左移不会丢失有效位。
+  wire [`DP_E_GUARD-1:0] lane_e_shift;
+  assign lane_e_shift = (r3_datatype == `DP_DT_HIF4) ? r3_hif4_exponent : `DP_E_GUARD;
+  assign lane_sop_d = ((ARCHITECTURE_V19 != 0) & r3_is_e) ?
+      lane_sum_d << lane_e_shift : lane_sum_d;
   // verilog_format: on
 
   // [S4 寄存边界] 捕获 lane 和及输出旁带；只在 out_valid 有效时解释输出。

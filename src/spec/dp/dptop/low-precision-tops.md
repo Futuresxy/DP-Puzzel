@@ -1,4 +1,4 @@
-> 功能：四组低精度独立 DP 装配；范围：E64、Q32E64 顶层与共用五源后端；版本：v1.9；修改时间：2026-11-09 23:40:33 +0800；对应代码：src/verilog/top/common/dp_top_lowp.v、dp_top_e64.v、dp_top_q32e64.v（Q32E64 v1.9迁移中、E64保留旧实现），src/cmodel/lib/json_io.cpp、现有 E/QE group 与 top/backend.cpp；Chisel 未实现。
+> 功能：四组低精度独立 DP 装配；范围：E64、Q32E64 顶层与共用五源后端；版本：v1.9；修改时间：2026-11-09 23:57:09 +0800；对应代码：src/verilog/top/common/dp_top_lowp.v、dp_top_e64.v、dp_top_q32e64.v（Q32E64 v1.9已通过冻结RTL、E64保留旧实现），src/cmodel/lib/json_io.cpp、现有 E/QE group 与 top/backend.cpp；Chisel 未实现。
 
 # 四组低精度 DP
 
@@ -62,7 +62,7 @@ Q32E64的S5格式采用[QE group](../group/dp_group_qe.md) v1.9：sign、U31幅�
 
 CModel配置e64→E且architecture_v19=false、q32e64→QE且architecture_v19=true，复用逐级数值路径及共同后端；固定容量配置拒绝非K16或L9。配置文件为 src/configs/dp/{e64,q32e64}_top.json。不复制第二套数值算法；S1紧凑字段由既有QE解包等价测试覆盖，顶层验证比较S5/S6/S7及最终结果。
 
-独立 files_e64.f/files_q32e64.f、独立快照与完整回执。各支持格式961笔数学golden和CModel比对；E定向覆盖、随机/非法类型、连续请求/气泡/复位、三个窗口参数。通过门禁后以 N12 TT 0.7V 85°C、1GHz、ICG开启、时序优先的同工况综合；检查setup/hold/电气/VT，报告完整面积和前端/后端分解。不得用四个group面积代替完整DP面积。v1.9当前状态：实施与验收进行中；不得用下方旧回执替代新版本结果。
+独立 files_e64.f/files_q32e64.f、独立快照与完整回执。各支持格式961笔数学golden和CModel比对；E定向覆盖、随机/非法类型、连续请求/气泡/复位、三个窗口参数。通过门禁后以 N12 TT 0.7V 85°C、1GHz、ICG开启、时序优先的同工况综合；检查setup/hold/电气/VT，报告完整面积和前端/后端分解。不得用四个group面积代替完整DP面积。v1.9当前状态：CModel与冻结Verilator通过，见[test回执](../../../../test/results/mixed-rtl-v1.9.md)；DC及功耗独立验收。不得用下方旧回执替代新版本结果。
 
 
 ## 旧版本对照（保留证据，不代表v1.9验收）

@@ -17,6 +17,8 @@
 // 旁带：S1 scale 解包，S2 系数积/指数和，S3 anchor 预计算，按级延迟到 S5。
 // E lane 已将 e2 融入 F4 coefficient；这里不需要 lane 间指数 MAX 或右对齐。
 module dp_group_e #(
+  // v1.9 混合扩展启用窄 LZD/双指数；独立 E64 默认为旧合同。
+  parameter integer ARCHITECTURE_V19 = 0,
   parameter integer LOCAL_W = `DP_DEFAULT_LOCAL_W,
   parameter integer MAG_W = LOCAL_W + 3,
   parameter integer ANCHOR_W = anchor_width(MAG_W)
@@ -38,6 +40,8 @@ module dp_group_e #(
   output wire out_negative,
   output wire [MAG_W-1:0] out_magnitude,
   output wire signed [ANCHOR_W-1:0] out_anchor,
+  // S5 实际最高非零位指数；零/特殊值不参与 MAX。
+  output wire signed [ANCHOR_W-1:0] out_compare_exp,
   output wire [$clog2(MAG_W+1)-1:0] out_z,
   output wire [`DP_SPECIAL_W-1:0] out_special
 );
@@ -62,7 +66,9 @@ module dp_group_e #(
   // 同一 group 的 scale 在父层只解包一份 A 和一份 B，由两个 lane 的合并结果共用。
   generate
     for (lane_index = 0; lane_index < `DP_LANES; lane_index = lane_index + 1) begin : g_lane
-      dp_lane_e u_lane (
+      dp_lane_e #(
+        .ARCHITECTURE_V19(ARCHITECTURE_V19)
+      ) u_lane (
         .clock(clock),
         .rst_n(rst_n),
         .in_valid(in_valid),
@@ -100,16 +106,16 @@ module dp_group_e #(
   wire [`DP_PRODUCT_EXP_W-1:0] scale_exp_s2_q;
   wire signed [ANCHOR_W-1:0] anchor_s3_q;
   wire signed [ANCHOR_W-1:0] anchor_s4_q;
-  // [scale 旁路准备：S1 -> S2] 解包为统一无符号 I1F3 尾数与 biased 指数。
+  // [scale 旁路准备：S1 -> S2] I1F3尾数；v1.9 signed8无偏指数，legacy公共bias。
   // S2 尾数相乘形成 I2F6 系数，同时指数相加；NaN 分类独立传递，不靠零幅值推断。
-  dp_scale_unpack u_scale_unpack_a (
+  dp_scale_unpack #(.UNBIASED_EXPONENT(ARCHITECTURE_V19)) u_scale_unpack_a (
     .in_data(in_scale_a),
     .in_datatype(in_scale_datatype),
     .out_magnitude(scale_a_magnitude_d),
     .out_exponent(scale_a_exponent_d),
     .out_nan(scale_a_nan_d)
   );
-  dp_scale_unpack u_scale_unpack_b (
+  dp_scale_unpack #(.UNBIASED_EXPONENT(ARCHITECTURE_V19)) u_scale_unpack_b (
     .in_data(in_scale_b),
     .in_datatype(in_scale_datatype),
     .out_magnitude(scale_b_magnitude_d),
@@ -144,6 +150,13 @@ module dp_group_e #(
     .out_product(coefficient_d)
   );
 
+  // 无偏 signed8 指数先扩展到 signed9；旧模式保持公共 bias 编码。
+  wire [`DP_PRODUCT_EXP_W-1:0] scale_exponent_sum_d;
+  assign scale_exponent_sum_d = (ARCHITECTURE_V19 != 0) ?
+      {scale_a_exponent_s1_q[`DP_EXP_W-1], scale_a_exponent_s1_q} +
+      {scale_b_exponent_s1_q[`DP_EXP_W-1], scale_b_exponent_s1_q} :
+      {1'b0, scale_a_exponent_s1_q} + {1'b0, scale_b_exponent_s1_q};
+
   // [S2 寄存边界] 捕获 scale 系数积/指数和及旁带，下一段据此计算 anchor。
   // verilog_format: off
   dp_lib_DFFRU #(.WIDTH(1))
@@ -153,7 +166,7 @@ module dp_group_e #(
   dp_lib_DFFE #(.WIDTH(COEFF_W))
   ff_s1_s2_coeff_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d(coefficient_d), .out_q(coeff_s2_q));
   dp_lib_DFFE #(.WIDTH(`DP_PRODUCT_EXP_W))
-  ff_s1_s2_scale_exp_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d({1'b0, scale_a_exponent_s1_q} + {1'b0, scale_b_exponent_s1_q}), .out_q(scale_exp_s2_q));
+  ff_s1_s2_scale_exp_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d(scale_exponent_sum_d), .out_q(scale_exp_s2_q));
   dp_lib_DFFE #(.WIDTH(1))
   ff_s1_s2_nan_s2 (.clock(clock), .in_en(rst_n & valid_q[0]), .in_d(nan_s1_q), .out_q(nan_s2_q));
   // verilog_format: on
@@ -163,8 +176,10 @@ module dp_group_e #(
   // alpha=scale_exp_sum-2*bias；F=M-10(MX) 或 M-12(NV/HiF)，所以偏移为 9 或 11。
   // 此坐标提前算出并延迟到 S5，与 magnitude/符号属于同一笔数据。
   // alpha - F + M-1; F=M-10 (MX), M-12 (NV/HiF).
-  assign anchor_work = {{(32 - `DP_PRODUCT_EXP_W) {1'b0}}, scale_exp_s2_q} - 2 * `DP_SCALE_BIAS +
-    (type_s2_q == `DP_DT_MXFP4 ? 9 : 11);
+  assign anchor_work = ((ARCHITECTURE_V19 != 0) ?
+      $signed({{(32-`DP_PRODUCT_EXP_W){scale_exp_s2_q[`DP_PRODUCT_EXP_W-1]}}, scale_exp_s2_q}) :
+      $signed({{(32-`DP_PRODUCT_EXP_W){1'b0}}, scale_exp_s2_q}) - 2*`DP_SCALE_BIAS) +
+      ((type_s2_q == `DP_DT_MXFP4) ? 9 : 11);
 
   // [S3 寄存边界] 捕获预计算 anchor，同时延迟系数、类型和分类。
   // verilog_format: off
@@ -235,13 +250,27 @@ module dp_group_e #(
   wire magnitude_active;
   // [S5 LZD] 只检测补零后幅值的 leading-zero count，不移动 magnitude。
   // S6 使用 A_raw-z 选全局 MAX，再做一次合并移位，避免这里先移一次再右移一次。
-  dp_lzd #(
-    .W(MAG_W)
-  ) u_group_leading_detect (
-    .in_magnitude(magnitude_d),
-    .out_count(leading_d),
-    .out_active(magnitude_active)
-  );
+  generate
+    if (ARCHITECTURE_V19 != 0) begin : g_narrow_lzd
+      // NV/HiF 的 U22 乘积，或 MX 的 U14<<8，共用同一最高物理位坐标。
+      // 只在非零时 z22=z(MAG_W)；零由 active 屏蔽，不能当成合法指数。
+      wire [PRODUCT_W-1:0] lzd_magnitude;
+      wire [$clog2(PRODUCT_W+1)-1:0] leading_zero_count;
+      assign lzd_magnitude = inject_scale ? scale_product : {magnitude_s4_q, {COEFF_W{1'b0}}};
+      dp_lzd #(.W(PRODUCT_W)) u_group_leading_detect (
+        .in_magnitude(lzd_magnitude),
+        .out_count   (leading_zero_count),
+        .out_active  (magnitude_active)
+      );
+      assign leading_d = {{($clog2(MAG_W+1)-$clog2(PRODUCT_W+1)){1'b0}}, leading_zero_count};
+    end else begin : g_legacy_lzd
+      dp_lzd #(.W(MAG_W)) u_group_leading_detect (
+        .in_magnitude(magnitude_d),
+        .out_count   (leading_d),
+        .out_active  (magnitude_active)
+      );
+    end
+  endgenerate
 
   // [S5 寄存边界] 保存 scale/LZD 后的 group token；valid 与符号、幅值、anchor 同拍。
   // verilog_format: off
@@ -255,8 +284,27 @@ module dp_group_e #(
   ff_s4_s5_out_special (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d({nan_s4_q, 3'b000}), .out_q(out_special));
   dp_lib_DFFE #(.WIDTH(ANCHOR_W))
   ff_s4_s5_out_anchor (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d((magnitude_active & ~nan_s4_q) ? anchor_s4_q : {ANCHOR_W{1'b0}}), .out_q(out_anchor));
-  dp_lib_DFFE #(.WIDTH($clog2(MAG_W + 1)))
-  ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(~nan_s4_q ? leading_d : {$clog2(MAG_W+1){1'b0}}), .out_q(out_z));
   // verilog_format: on
 
+  // 保存 e=A_raw-z；z 作为观察值由两份指数重建，不重复增加寄存器。
+  wire signed [ANCHOR_W-1:0] compare_exp_d;
+  wire [ANCHOR_W-1:0] observed_zero_count;
+  assign compare_exp_d = (magnitude_active & ~nan_s4_q) ?
+      anchor_s4_q - $signed({{(ANCHOR_W-$clog2(MAG_W+1)){1'b0}}, leading_d}) : 0;
+  assign observed_zero_count = out_anchor - out_compare_exp;
+  generate
+    if (ARCHITECTURE_V19 != 0) begin : g_compare_register
+      // verilog_format: off
+      dp_lib_DFFE #(.WIDTH(ANCHOR_W))
+      ff_s4_s5_compare_exp (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(compare_exp_d), .out_q(out_compare_exp));
+      // verilog_format: on
+      assign out_z = observed_zero_count[$clog2(MAG_W+1)-1:0];
+    end else begin : g_legacy_z_register
+      // verilog_format: off
+      dp_lib_DFFE #(.WIDTH($clog2(MAG_W + 1)))
+      ff_s4_s5_out_z (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(nan_s4_q ? {$clog2(MAG_W+1){1'b0}} : leading_d), .out_q(out_z));
+      // verilog_format: on
+      assign out_compare_exp = out_anchor - $signed({{(ANCHOR_W-$clog2(MAG_W+1)){1'b0}}, out_z});
+    end
+  endgenerate
 endmodule
