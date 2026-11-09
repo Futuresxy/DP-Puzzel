@@ -1,15 +1,18 @@
 `include "dp_defs.vh"
 // T1H2Q4E8. Owns S1 unpack, S2 products, S3 shared magnitude alignment,
-// S4 lane tree. Common group MAX is a combinational S2 side interface.
+// S4 lane tree and optional HiF4 local e2 fusion. Common group MAX is an S2 side interface;
+// BASELINE_V18 excludes E from MAX and routes E signed pairs around the wide shifter.
 // Synchronous low reset clears valid only; invalid data registers hold.
 // P=LOCAL_W-2 (default 26). I excludes S; SM carries S separately.
-// S3 shift magnitude -> TC tree leaf. Both use the listed I/F.
+// S3 legacy shift magnitude -> TC tree leaf; v1.8 E signed bypass rows follow.
 // Precision                    | Shift S | Leaf S | I  | F
 // ---------------------------- | ------- | ------ | -- | ----
 // TF32 / FP16 / BF16 / MXFP8/6 | 0       | 1      | 2  | P
 // MXFP4 / NVFP4                | 0       | 1      | 7  | P-5
 // HiF4                         | 0       | 1      | 5  | P-3
 // INT8                         | 0       | 1      | 15 | P-13
+// v1.8 MX/NV pair (no shift)   | N/A     | 1      | 9  | P-7
+// v1.8 HiF4 pair (no shift)    | N/A     | 1      | 7  | P-5
 // S3 E pair before guard/padding (TC, W10).
 // Precision / signal | S | I | F
 // ------------------ | - | - | -
@@ -22,7 +25,8 @@
 // FP16 / BF16        | 1 | 3  | P+1
 // MXFP8 / MXFP6      | 1 | 4  | P
 // MXFP4 / NVFP4      | 1 | 9  | P-5
-// HiF4               | 1 | 7  | P-3
+// HiF4 legacy        | 1 | 7  | P-3
+// HiF4 v1.8          | 1 | 9  | P-5
 // INT8               | 1 | 17 | P-13
 // TF32/FP16/BF16 append 2/1/1 low zeros after the tree.
 // 阅读顺序 / 功能边界：
@@ -36,6 +40,8 @@
 module dp_lane #(
   // S3 局部幅值对齐窗口宽度；默认 28 位，T/H/Q 的小数位数为 LOCAL_W-2。
   parameter integer LOCAL_W    = `DP_DEFAULT_LOCAL_W,
+  // dp_top v1.8: E 固定坐标旁路；默认保留其他顶层的旧接口数值语义。
+  parameter integer BASELINE_V18 = 0,
   // S3 补码叶子宽度：在 LOCAL_W 位无符号幅值之外增加一个符号位。
   parameter integer LEAF_W     = LOCAL_W + 1,
   // S4 lane 和的补码宽度：四项树在 LEAF_W 基础上增加 clog2(Q_LANES) 位。
@@ -225,12 +231,15 @@ module dp_lane #(
     end
   endgenerate
 
+  // E 不参与指数比较；HiF4 e2 和仍独立保存在窄旁带中。
+  wire [`DP_E_LANES-1:0] exponent_max_active;
+  assign exponent_max_active = ((BASELINE_V18 != 0) & r1_is_e) ? 0 : product_active_d;
   dp_max_tree #(
     .N(`DP_E_LANES),
     .W(`DP_PRODUCT_EXP_W + 1)
   ) u_lane_exponent_max (
     .in_values (product_exponent_candidates),
-    .in_active (product_active_d),
+    .in_active (exponent_max_active),
     .out_max   (lane_max_exponent),
     .out_active(out_candidate_active)
   );
@@ -314,7 +323,8 @@ module dp_lane #(
   // 输入是 S2 寄存器；输出在 ff_s2_s3_leaves 捕获，随后进入 S4 累加树。
   dp_lane_align #(
     .LOCAL_W(LOCAL_W),
-    .LEAF_W (LEAF_W)
+    .LEAF_W (LEAF_W),
+    .E_FIXED_COORD(BASELINE_V18)
   ) u_local_alignment (
     .in_valid    (r2_valid),
     .in_datatype (r2_datatype),
@@ -326,11 +336,18 @@ module dp_lane #(
     .out_leaves  (aligned_leaves_d)
   );
 
+  // HiF4 的局部 e2_a+e2_b 只用于 S4 树后小移位，不经过跨 lane MAX。
+  wire [`DP_E_GUARD-1:0] r3_hif4_exponent;
+  // verilog_format: off
+  dp_lib_DFFE #(.WIDTH(`DP_E_GUARD))
+  ff_s2_s3_hif4_exponent (.clock(clock), .in_en(rst_n & r2_valid & r2_is_hif4 & (BASELINE_V18 != 0)), .in_d(r2_hif4_exponent), .out_q(r3_hif4_exponent));
+  // verilog_format: on
+
   // [S3 寄存边界] 捕获对齐叶子及同请求旁带，下一段只使用本级寄存值。
   // verilog_format: off
   dp_lib_DFFRU #(.WIDTH(1))
   ff_s2_s3_valid (.clock(clock), .rst_n(rst_n), .in_d(r2_valid), .out_q(r3_valid));
-  // E 的 pair/原 RTZ 运算不变，仅关闭结果中已证明恒零的低位寄存器。
+  // E pair 的低 E_LEAF_PAD 位为结构零，按精度关闭这些位的寄存器。
   // HiF4 delta<=2，故低 LEAF_W-(PAIR_W+GUARD) 位恒零；高位包含补码符号。
   genvar leaf_index;
   generate
@@ -368,9 +385,14 @@ module dp_lane #(
   // S4 格式选择后的 lane 和：TF32 低补 2 零，FP16/BF16 低补 1 零，其余直通。
   wire [LANE_SOP_W-1:0] lane_sop_d;
   // verilog_format: off
+  // E 已是带符号 pair；树结果保留 14 位容器，先扩位再融合 e2。
+  // MX/NV: S1I9F2 <<2；HiF4: S1I7F4 <<p；统一 S1I9F4 后低补 LANE_SOP_W-14 零。
+  wire [`DP_E_GUARD-1:0] e_lane_shift;
+  assign e_lane_shift = (r3_datatype == `DP_DT_HIF4) ? r3_hif4_exponent : `DP_E_GUARD;
   assign lane_sop_d = (r3_datatype == `DP_DT_TF32)                                 ? lane_sum_d << $clog2(`DP_Q_LANES) :
                      ((r3_datatype == `DP_DT_FP16) | (r3_datatype == `DP_DT_BF16)) ? lane_sum_d << ($clog2(`DP_Q_LANES) - 1) :
-                                                                                     lane_sum_d;
+                     ((BASELINE_V18 != 0) & r3_is_e)                           ? lane_sum_d << e_lane_shift :
+                     lane_sum_d;
   // verilog_format: on
 
   // [S4 寄存边界] 捕获 lane 和及输出旁带；只在 out_valid 有效时解释输出。

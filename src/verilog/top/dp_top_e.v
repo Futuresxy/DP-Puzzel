@@ -245,6 +245,7 @@ module dp_top_e #(
     .in_enable(valid_q[4]),
     .in_magnitude(source_magnitude),
     .in_anchor(source_anchor),
+    .in_compare_exp({N*ANCHOR_W{1'b0}}),
     .in_z(source_z),
     .in_negative(source_negative),
     .in_special(source_special),

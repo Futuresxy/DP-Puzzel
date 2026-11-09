@@ -78,7 +78,16 @@ def validate_scopes(scopes, root, started, finished, frontend='multi'):
     extended = frontend in MIXED_PROFILES
     lowp = frontend in LOWP_PROFILES
     e=frontend in ('e','e64')
-    required=(6 if e else 10) if lowp else 14 if extended else 10 if e else 17
+    # v1.8 adds mandatory E-bypass/HiF4-e2/C-subnormal probes. Historical
+    # snapshots retain their original evidence contract for power comparisons.
+    v18 = frontend == 'multi' and any(r['name']=='directed-v18' for r in scopes)
+    if frontend == 'multi' and scopes:
+        export_id = scopes[0].get('export_id', '')
+        if re.fullmatch(r'DP_verilog_[0-9a-f]{16}', export_id):
+            top = root/'hw/rtl'/export_id/'src/src/verilog/top/dp_top.v'
+            if top.is_file() and re.search(r'\.BASELINE_V18\s*\(\s*1\s*\)', top.read_text()):
+                v18 = True
+    required=(6 if e else 10) if lowp else 14 if extended else 10 if e else (18 if v18 else 17)
     require(len(scopes) == required, 'Full DP campaign requires all formats, parameter runs and E directed coverage')
     require(len({r['name'] for r in scopes}) == required, 'Duplicate DP campaign')
     if e:
@@ -109,6 +118,10 @@ def validate_scopes(scopes, root, started, finished, frontend='multi'):
             if r['name']=='directed-e':
                 require(checked==5288 and accepted==checked and cancelled==0 and r['cutpoints_checked']==1010008,
                         'Incomplete E element/metadata/boundary coverage')
+            elif r['name']=='directed-v18':
+                require(v18 and checked==5314 and accepted==checked and cancelled==0 and
+                        r['cutpoints_checked']==850814,
+                        'Incomplete v1.8 E bypass/e2/C-subnormal/anchor coverage')
             else:
                 if e or lowp: require(checked==961, 'Incomplete E per-format vectors')
                 total += checked
@@ -131,7 +144,9 @@ def validate_scopes(scopes, root, started, finished, frontend='multi'):
                 {'tf32','fp16','bf16','mxfp8_e4m3','mxfp8_e5m2','mxfp6_e2m3','mxfp6_e3m2',
                  'mxfp4_e2m1','nvfp4','hif4','int8'}, 'Missing native precision data')
         return
-    require(sum(r['cutpoints_checked'] for r in mixed) == (96916 if e else 231654),
+    if v18:
+        require('directed-v18' in {r['name'] for r in scopes}, 'Missing v1.8 directed campaign')
+    require(sum(r['cutpoints_checked'] for r in mixed) == (96916 if e else 244785 if v18 else 231654),
             'Incomplete numerical cutpoint coverage')
 
 

@@ -1,5 +1,7 @@
 # DP CModel
 
+当前默认 `frontend=multi` 对应 [dp_top v1.8](../spec/dp/dptop/dp-top-v1.8.md)。`legacy_multi=true` 仅用于旧多精度前端回放；混合顶层自动保留旧前端语义。E/QE/混合版本尚未迁移。数学 golden 不变，有限窗口策略参考单独位于 `test/reference/architecture.py`。
+
 当前实现：同一个 C++17 整数位精确/逐级周期模型提供两种静态前端。默认 `multi` 支持 11 种 datatype、T8H16Q32E64；`e` 支持 MXFP4/NVFP4/HiF4、E64。两者在 S5 交付同宽 group token，共用 C 解包/LZD 和 S6–S8 后端，默认 L8/II=1。NVFP4/HiF4 使用 14×8 无符号 scale 乘法，符号独立传递。
 
 规格入口：[CModel 合同](../spec/dp/implementation/cmodel.md)、[DP 接口](../spec/dp/dptop/interface.md)、[逐级位宽](../spec/dp/common/stage-formats.md)。测试数据共用根 [test/](../../test/README.md)。综合结果见 [DC 记录](../../hw/dc_syn/records/README.md)。

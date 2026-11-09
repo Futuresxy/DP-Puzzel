@@ -66,6 +66,13 @@ class DPGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Full DP campaign'):
             validate_scopes([],self.root,0,1)
 
+    def test_v18_cannot_reuse_seventeen_campaign_legacy_contract(self):
+        # The frozen top enables v1.8; removing the new directed row must fail
+        # even when callers omit any explicit architecture-version metadata.
+        scopes=[dict(name=f'legacy-{index}',export_id=self.export.name) for index in range(17)]
+        with self.assertRaisesRegex(ValueError,'Full DP campaign'):
+            validate_scopes(scopes,self.root,0,1)
+
     def test_e_identity_and_unverified_evidence_are_checked(self):
         with patch.object(adapter,'ROOT',self.root):
             export,_=adapter.snapshot('verilog','e')

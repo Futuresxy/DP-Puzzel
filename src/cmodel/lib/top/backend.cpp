@@ -20,7 +20,11 @@ void finish_group_stage(State &state, bool do_detect, const Json &scale_trace) {
   state.c_token = unpack_c(state.request.c_type, state.request.c);
   if (do_detect && state.request.c_type == CType::FP32 && !state.baseline_v18)
     detect_token(state.c_token);
-  if (state.baseline_v18) state.c_token.compare_exp = state.c_token.anchor_raw;
+  if (state.baseline_v18) {
+    // No C LZD, but inactive tokens still carry the same zero placeholder as RTL.
+    if (!state.c_token.active()) state.c_token.anchor_raw = 0;
+    state.c_token.compare_exp = state.c_token.anchor_raw;
+  }
   if (state.tracing) {
     Json group = Json::array();
     for (const auto &token : state.groups)

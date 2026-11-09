@@ -161,6 +161,13 @@ def check_cutpoints(path,results,requests):
             want=[atom['M'],atom['E'],atom['S']]; got=[int(v,16) for v in values]
         elif kind=='product': want=[int(trace['products'][index]['m'])]; got=[int(values[0],16)]
         elif kind=='anchor': want=[trace['r'][index]]; got=[int(values[0],16)]
+        elif kind=='raw_anchor':
+            token=results[row]['trace'][4]['data']['groups'][index]
+            # S3 candidate is unmasked; S5 clears inactive/INT anchors. Compare finite active groups.
+            if requests[row]['c_datatype'] or token['zero'] or any(token['special'].values()): continue
+            want=[token['anchor_raw']]; got=[int(values[0])]
+        elif kind=='compare_exp':
+            want=[trace['groups'][index]['compare_exp']]; got=[int(values[0])]
         elif kind=='leaf':
             leaves=trace['leaves_tc'][index//4]; j=index%4
             want=[int(leaves[j]) if j<len(leaves) else 0]; got=[int(values[0])]
@@ -263,6 +270,23 @@ def main():
             for r,result in zip(req,expected):
                 result['exact_fp32_or_int32']=f'{reference(r,cfg,True)["bits"]:08x}'
             report.append(campaign('directed-e',*selected,req,compile_tb(*selected),expected=expected,observe=True))
+        if FRONTEND=='multi' and IMPLEMENTATION=='verilog' and args.phase=='all':
+            req=e_directed(k_default)
+            for left in range(3):
+                for right in range(3):
+                    for negative in (False,True):
+                        meta=([1]*16,[1]*16,[int(left>0),int(right>0)]*4,[int(left==2),int(right==2)]*4)
+                        req.append(make('hif4',k_default,a=([7]*8+[15 if negative else 7]*8)*4,
+                                        b=[7]*64,metadata=meta))
+            for c in (1,0x007fffff,0x80000001,0x00800000):
+                req.append(make('bf16',k_default,a=[0]*k_default,c=c))
+                req.append(make('bf16',k_default,a=[1]+[0]*(k_default-1),b=[1]*k_default,c=c))
+            for index,request in enumerate(req): request['id']=index
+            expected=evaluate(req,trace=True,config=config,run_dir=RUN/'v18-directed-model')
+            for request,result in zip(req,expected):
+                # Exact golden remains independent of the finite-window architecture policy.
+                result['exact_fp32_or_int32']=f'{reference(request,config)["bits"]:08x}'
+            report.append(campaign('directed-v18',*selected,req,compile_tb(*selected),expected=expected,observe=True))
     test_sources=[Path(__file__),TESTBENCH,ROOT/'test/adapters/rtl.py']
     test_fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in test_sources)).hexdigest()
     if len(implementations)==2:

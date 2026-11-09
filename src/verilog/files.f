@@ -19,6 +19,9 @@ src/verilog/arithmetic/dp_mul_unsigned.v
 src/verilog/arithmetic/dp_rtz_shift.v
 src/verilog/arithmetic/dp_scale_multiply.v
 src/verilog/arithmetic/dp_sum_tree.v
+src/verilog/arithmetic/dp_csa_3to2.v
+src/verilog/arithmetic/dp_csa_4to2.v
+src/verilog/arithmetic/dp_final_csa_sum.v
 src/verilog/group/dp_group.v
 src/verilog/lane/dp_exponent_bank.v
 src/verilog/lane/dp_lane_align.v

@@ -1,4 +1,4 @@
-> 功能：六种 DP 架构相对基线的修改点和代码/spec导航；范围：六种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.7.8；修改时间：2026-11-08 18:45:29 +08:00；对应代码：src/verilog/top/下七个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
+> 功能：六种 DP 架构相对基线的修改点和代码/spec导航；范围：六种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：src/verilog/top/下七个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
 
 # 六种架构、七个顶层入口
 
@@ -7,6 +7,10 @@
 下文采用默认 LOCAL_W=28、GLOBAL_W=40。T=TF32；H=FP16/BF16；Q=MXFP8 E4M3/E5M2、MXFP6 E3M2/E2M3；E=MXFP4/NVFP4/HiF4。各模式容量是单笔请求的原生点积项数，不能同时相加。全部保持 L8/II=1，C在DP内部只累加一次。
 
 六种架构的原生可编辑图见 [draw.io 图纸索引](../draw.io/README.md)：分别展示 DP → group → 两条 lane 的嵌套结构、S1–S8 计算分工及基础/扩展参与关系。每种架构独立一个 `.drawio` 文件，重复 group 用叠层与数量标识。
+
+**本批范围：基础 `dp_top` 已按 [v1.8 合同](dp-top-v1.8.md)实施，CModel/RTL 已通过本批功能验收；其余五种架构和 `dp_top_e` 保持 v1.7。下面的对比描述保留各旧变体的实现关系，不能理解为它们自动启用 v1.8。**
+
+后续迁移采用 group 双指数输出 `A_raw/compare_exp`。E32 扩展两组用 ADD；E64/Q32E64 扩展四组用 4:2+ADD。基础四组+C 用 4:2+3:2+ADD，扩展只在相应精度下参与最终合并/MUX；所有分支必须共享 Emax/F，C 只加入一次。当前扩展 RTL 尚未实施该合同。
 
 ## 1. 目录与入口
 

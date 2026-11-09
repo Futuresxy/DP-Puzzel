@@ -1,5 +1,7 @@
 # 多精度 DP · 手写 RTL
 
+当前基础 `dp_top` 已实现 [v1.8 架构](../spec/dp/dptop/dp-top-v1.8.md)：E 窄 pair/本地 e2、S3 anchor、S5 compare_exp、C 无 LZD、S7 CSA。仅该顶层启用；其他顶层保持旧算术合同。[本批功能验证](../../test/results/dp-top-v1.8.md)不代表新的综合或功耗结果。
+
 实现单个 `scaled_dot(A,B)+C` 点积单元，遵循 **架构 v1.6 / 实现映射 v1.6.4**。默认 T8H16Q32E64、八级流水、II=1，逐请求切换格式；没有跨请求累加状态或计算阵列。
 
 | 实现 | 编译清单 | 顶层 |

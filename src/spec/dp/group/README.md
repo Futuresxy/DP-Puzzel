@@ -1,4 +1,6 @@
-> 功能：定义 group 规格目录与计算边界；范围：两个 lane、S2 公共指数、S5 组和/scale/LZD 及 E16 优化候选；版本：v1.7.1；修改时间：2026-11-07 23:51:07 +0800；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)、[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；Chisel 尚未实现。
+> 功能：定义 group 规格目录与计算边界；范围：两个 lane、S2 公共指数、S5 组和/scale/LZD 及 E16 优化候选；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)、[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；Chisel 尚未实现。
+
+当前基础 `dp_top` 的新数值/流水边界统一见 [v1.8 合同](../dptop/dp-top-v1.8.md)；E/QE/混合顶层本轮维持旧实现，按各专用文档阅读。
 
 # group：两 lane 协作、组和与 scale
 

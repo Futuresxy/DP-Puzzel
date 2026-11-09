@@ -1,4 +1,4 @@
-> 功能：dp_top v1.8 实施合同；范围：基础 T8H16Q32E64，K4/8/16、LOCAL_W/GLOBAL_W 合法变体；版本：v1.8；修改时间：2026-11-09 12:00:00 +08:00；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[CModel](../../../cmodel/lib/model.cpp)；状态：已批准合同，CModel/RTL 待本批实施和验证。
+> 功能：dp_top v1.8 实施合同；范围：基础 T8H16Q32E64，K4/8/16、LOCAL_W/GLOBAL_W 合法变体；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[CModel](../../../cmodel/lib/model.cpp)；状态：已批准合同，CModel/RTL 已实现并通过本批功能验证。
 
 # dp_top v1.8 实施合同
 
@@ -62,3 +62,5 @@ E32扩展=新增2个E16 group，扩展两项用ADD；E64或Q32E64扩展=新增4�
 原PPA只代表旧快照；新RTL必须重新导出、验证。重点时序风险S4树后小移位、S5 LZD后减法、S7压缩与最终CPA。此批先功能验证，不凭功能PASS宣称1GHz或功耗收益。
 
 v1.7→v1.8：~~E共享对齐、biased scale、S6计算A_raw-z、普通最终树、C LZD~~ → E局部融合、无偏scale、S3 anchor/S5 compare_exp、CSA、C保留0.xxx参与比较。
+
+实施回执：[dp_top v1.8 验证报告](../../../../test/results/dp-top-v1.8.md)。当前已验证 L8/II=1 和数值/断点；未取得 v1.8 新 PPA。

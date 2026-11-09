@@ -7,12 +7,12 @@
 module dp_tb;
   `include "dp_functions.vh"
   parameter integer K_FP16=`DP_DEFAULT_K, LOCAL_W=`DP_DEFAULT_LOCAL_W, GLOBAL_W=`DP_DEFAULT_GLOBAL_W;
-  // Largest current campaign has 1053 requests; retain a checked 2048-row buffer.
+  // v1.8 exhaustive FP4/e2 campaign exceeds 5k requests; checked 8192-row storage.
   // This is testbench storage only; no DUT capacity/parameters are changed.
 `ifdef DP_E_FRONTEND
   localparam integer G=K_FP16/`DP_GROUP_H, CAPACITY=8192;
 `else
-  localparam integer G=K_FP16/`DP_GROUP_H, CAPACITY=2048;
+  localparam integer G=K_FP16/`DP_GROUP_H, CAPACITY=8192;
 `endif
   reg clock=0;
   always #5 clock=~clock;
@@ -189,6 +189,14 @@ module dp_tb;
               $signed(dut.g_group[group_index].`DP_TRACE_GROUP_UNIT.g_lane[lane_index].`DP_TRACE_LANE.out_sop));
       end
     end
+`ifndef DP_LEGACY_SV
+    always @(negedge clock) if(trace_fd) begin
+      if(dut.valid_q[2]) $fdisplay(trace_fd,"%0d 3 raw_anchor %0d %0d",pending[2],group_index,
+        $signed(dut.g_group[group_index].u_group_unit.r3_raw_anchor));
+      if(dut.valid_q[4]) $fdisplay(trace_fd,"%0d 5 compare_exp %0d %0d",pending[4],group_index,
+        $signed(dut.g_group[group_index].group_align_compare_exp));
+    end
+`endif
     always @(negedge clock) if(trace_fd && dut.valid_q[4])
       $fdisplay(trace_fd,"%0d 5 group %0d %h %0d %0d %0d %h",pending[4],group_index,
         dut.g_group[group_index].`DP_TRACE_GROUP_MAGNITUDE,$signed(dut.g_group[group_index].`DP_TRACE_GROUP_ANCHOR),dut.g_group[group_index].`DP_TRACE_GROUP_LEADING,

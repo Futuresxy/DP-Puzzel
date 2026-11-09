@@ -9,6 +9,8 @@
 // INT8 + INT32       | 0     | 1      | 32 | MAG_W-32
 // Floating coordinates use E_max; INT8+INT32 bypasses the shift.
 module dp_global_align #(
+  // v1.8 MAX 使用 S5 已寄存的 compare_exp，移位仍按原 anchor 计算。
+  parameter integer PRECOMPUTED_EXPONENT = 0,
   parameter integer N = 5,
   parameter integer MAG_W = 39,
   parameter integer ANCHOR_W = 10,
@@ -18,6 +20,7 @@ module dp_global_align #(
   input wire in_enable,
   input wire [N*MAG_W-1:0] in_magnitude,
   input wire [N*ANCHOR_W-1:0] in_anchor,
+  input wire [N*ANCHOR_W-1:0] in_compare_exp,
   input wire [N*Z_W-1:0] in_z,
   input wire [N-1:0] in_negative,
   input wire [N*`DP_SPECIAL_W-1:0] in_special,
@@ -60,7 +63,8 @@ module dp_global_align #(
   assign special_comb[`DP_SP_NEG_INF] = |negative_inf_sources;
   assign special_comb[`DP_SP_INVALID] = (|invalid_sources) |
     ((|positive_inf_sources) & (|negative_inf_sources));
-  // [S6 共同坐标] 对有限非零源计算 e=A_raw-z，并取 signed E_max。
+  // [S6 共同坐标] v1.8 直接比较 S5 compare_exp；legacy 在这里计算 A_raw-z。
+  // C 的 compare_exp 可以是非正规数真实指数的上界，不要求 MAX 源最高位为1。
   // 输入幅值已由 top 静态补零到共同 MAG_W；符号独立，C 与 group 同等参与。
   dp_max_tree #(
     .N(N),
@@ -94,7 +98,8 @@ module dp_global_align #(
       assign result_magnitude = in_integer ? magnitude : shifted;
       assign active[source_index] = in_enable & ~in_integer & magnitude != 0 &
         in_special[source_index*`DP_SPECIAL_W+:`DP_SPECIAL_W] == 0;
-      assign exponents[source_index*ANCHOR_W+:ANCHOR_W] = raw_anchor - $signed(
+      assign exponents[source_index*ANCHOR_W+:ANCHOR_W] = (PRECOMPUTED_EXPONENT != 0) ?
+        in_compare_exp[source_index*ANCHOR_W+:ANCHOR_W] : raw_anchor - $signed(
         {{(ANCHOR_W - Z_W) {1'b0}}, leading}
       );
       dp_bidir_shift #(

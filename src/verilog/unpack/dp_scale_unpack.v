@@ -1,5 +1,6 @@
 `include "dp_defs.vh"
-// Nonnegative scale -> common E8M3. Special encodings remain explicit.
+// Nonnegative scale -> I1F3 magnitude and exponent. Special encodings remain explicit.
+// UNBIASED_EXPONENT=1: signed8 raw-bias exponent; otherwise legacy common bias=127.
 // Unsigned scale output. The biased exponent is separate.
 // Precision / signal | S | I | F
 // ------------------ | - | - | -
@@ -7,7 +8,10 @@
 // E4M3               | 0 | 1 | 3
 // E6M2               | 0 | 1 | 3
 // Unit scale         | 0 | 1 | 3
-module dp_scale_unpack (
+module dp_scale_unpack #(
+  // 输出8位二补码无偏指数；默认兼容其他前端的公共 bias=127 编码。
+  parameter integer UNBIASED_EXPONENT = 0
+) (
   input wire [`DP_SCALE_W-1:0] in_data,
   input wire [`DP_SCALE_TYPE_W-1:0] in_datatype,
   output wire [`DP_SCALE_M-1:0] out_magnitude,
@@ -38,5 +42,7 @@ module dp_scale_unpack (
     is_e4m3 ? {|in_data[`DP_NV_SCALE_F+:`DP_NV_SCALE_E], in_data[`DP_NV_SCALE_F-1:0]} :
     {1'b1, {`DP_SCALE_F{1'b0}}};
   assign out_magnitude = out_nan ? 0 : decoded_magnitude;
-  assign out_exponent = exponent_work[`DP_EXP_W-1:0];
+  wire [31:0] unbiased_exponent_work;
+  assign unbiased_exponent_work = out_nan ? 0 : exponent_work - `DP_SCALE_BIAS;
+  assign out_exponent = (UNBIASED_EXPONENT != 0) ? unbiased_exponent_work[`DP_EXP_W-1:0] : exponent_work[`DP_EXP_W-1:0];
 endmodule

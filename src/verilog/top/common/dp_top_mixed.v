@@ -209,6 +209,8 @@ module dp_top_mixed #(
       wire group_top_valid;
       wire [`DP_SPECIAL_W-1:0] group_align_special;
       if (group_index < BASE_GROUPS) begin : g_base
+        // 新接口在旧混合架构中不用；静态参数仍为0。
+        wire signed [ANCHOR_W-1:0] unused_group_compare_exp;
         dp_group #(
             .LOCAL_W (LOCAL_W),
             .ANCHOR_W(ANCHOR_W)
@@ -230,6 +232,7 @@ module dp_top_mixed #(
             .out_negative     (group_align_negative),
             .out_magnitude    (group_align_magnitude),
             .out_anchor       (group_align_anchor),
+            .out_compare_exp  (unused_group_compare_exp),
             .out_z            (group_align_leading_zero_count),
             .out_special      (group_align_special)
         );

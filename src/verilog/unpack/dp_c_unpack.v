@@ -8,7 +8,9 @@
 // FP32 padded M32    | 0 | 1  | 31
 // INT32 absolute M32 | 0 | 32 | 0
 module dp_c_unpack #(
-  parameter integer ANCHOR_W = 10
+  parameter integer ANCHOR_W = 10,
+  // dp_top v1.8 接受非正规 0.xxx；不检测 C 的前导零。
+  parameter integer DETECT_LEADING_ZERO = 1
 ) (
   input wire [`DP_FP32_W-1:0] in_data,
   input wire in_datatype,
@@ -46,12 +48,21 @@ module dp_c_unpack #(
   assign out_special[`DP_SP_INVALID] = is_special & has_fraction & ~fraction_field[`DP_FP32_F-1];
   assign out_special[`DP_SP_POS_INF] = is_special & ~has_fraction & ~out_negative;
   assign out_special[`DP_SP_NEG_INF] = is_special & ~has_fraction & out_negative;
-  dp_lzd #(
-    .W(`DP_FP32_W)
-  ) u_subnormal_detect (
-    .in_magnitude(out_magnitude),
-    .out_count(leading_zero_count),
-    .out_active(magnitude_active)
-  );
-  assign out_z = (~is_integer & (out_special == 0)) ? leading_zero_count : 0;
+  generate
+    if (DETECT_LEADING_ZERO != 0) begin : g_legacy_lzd
+      dp_lzd #(
+        .W(`DP_FP32_W)
+      ) u_subnormal_detect (
+        .in_magnitude(out_magnitude),
+        .out_count(leading_zero_count),
+        .out_active(magnitude_active)
+      );
+      assign out_z = (~is_integer & (out_special == 0)) ? leading_zero_count : 0;
+    end else begin : g_raw_c_exponent
+      assign leading_zero_count = 0;
+      assign magnitude_active = out_magnitude != 0;
+      assign out_z = 0;
+    end
+  endgenerate
+
 endmodule

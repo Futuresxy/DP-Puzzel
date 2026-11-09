@@ -48,6 +48,13 @@ class BaselineV18(unittest.TestCase):
         for request, result in zip(requests, evaluate(requests, config=cfg)):
             self.assertEqual(int(result['d'], 16), reference(request, cfg, True)['bits'])
 
+    def test_inactive_c_anchor_placeholder(self):
+        requests = [make('bf16', 4, c=bits, ident=index)
+                    for index,bits in enumerate((0,0x80000000,0x7fc00000,0x7f800000,0xff800000))]
+        for result in evaluate(requests,config=dict(k_fp16=4),trace=True):
+            token=result['trace'][4]['data']['c']
+            self.assertEqual((token['anchor_raw'],token['compare_exp'],token['z']),(0,0,0))
+
     def test_scale_signed_exponents_and_legacy_final_equivalence(self):
         rng = random.Random(1809)
         for width in (27, 28, 32):

@@ -340,6 +340,7 @@ module dp_top_lowp #(
     .in_enable            (r5_valid),
     .in_magnitude         (source_magnitude),
     .in_anchor            (source_anchor),
+    .in_compare_exp       ({SOURCE_COUNT*ANCHOR_W{1'b0}}),
     .in_z                 (source_z),
     .in_negative          (source_negative),
     .in_special           (source_special),

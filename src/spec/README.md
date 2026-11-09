@@ -1,8 +1,8 @@
-> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.7.6；修改时间：2026-11-08 09:27:17 +0800；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 多精度 DP / Cube 设计规范
 
-本规范定义一套由 CModel、Chisel 与独立手写 Verilog 共同遵循的硬件合同。**当前架构为 v1.7，实现映射为 v1.7.6；当前维护 DP CModel 与手写 Verilog；SystemVerilog 冻结为 T8H16Q32E64 历史参考，Chisel 与阵列尚未实现。**
+本规范定义一套由 CModel、Chisel 与独立手写 Verilog 共同遵循的硬件合同。**基础 dp_top 当前合同为 [v1.8](dp/dptop/dp-top-v1.8.md)，其他 E/QE/混合顶层保留 v1.7；当前维护 DP CModel 与手写 Verilog；SystemVerilog 冻结为 T8H16Q32E64 历史参考，Chisel 与阵列尚未实现。**
 
 ## 1. 阅读路径
 

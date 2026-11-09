@@ -1,5 +1,5 @@
 `include "dp_defs.vh"
-// DP v1.4 independent hand-written RTL: T8H16Q32E64 at K_FP16=`DP_DEFAULT_K.
+// DP v1.8 independent hand-written RTL: T8H16Q32E64 at K_FP16=`DP_DEFAULT_K.
 // Atomic A/B/C input, per-request type, II=1, L=8, no output backpressure.
 // At edge n input is accepted into S1; S8 updates at n+7, observed before n+8.
 // Synchronous active-low reset cancels all valid tokens. Datapath holds in bubbles.
@@ -93,6 +93,8 @@ module dp_top #(
   // 低位补零将各来源幅值放入 GLOBAL_MAG_W；不是新增有效精度或动态移位。
   wire [N*GLOBAL_MAG_W-1:0] source_magnitude;
   wire [N*ANCHOR_W-1:0] source_anchor;
+  // S5 直接提供 MAX 比较键；与 physical-MSB anchor 分开保存。
+  wire [N*ANCHOR_W-1:0] source_compare_exp;
   wire [N*Z_W-1:0] source_z;
   wire [N-1:0] source_negative;
   wire [N*`DP_SPECIAL_W-1:0] source_special;
@@ -100,12 +102,14 @@ module dp_top #(
     for (group_index = 0; group_index < GROUPS; group_index = group_index + 1) begin : g_group
       wire [GROUP_MAG_W-1:0] group_align_magnitude;
       wire signed [ANCHOR_W-1:0] group_align_anchor;
+      wire signed [ANCHOR_W-1:0] group_align_compare_exp;
       wire [$clog2(GROUP_MAG_W+1)-1:0] group_align_leading_zero_count;
       wire group_align_negative;
       wire group_top_valid;
       wire [`DP_SPECIAL_W-1:0] group_align_special;
       dp_group #(
         .LOCAL_W (LOCAL_W),
+        .BASELINE_V18(1),
         .ANCHOR_W(ANCHOR_W)
       ) u_group_unit (
         .clock(clock),
@@ -125,6 +129,7 @@ module dp_top #(
         .out_negative(group_align_negative),
         .out_magnitude(group_align_magnitude),
         .out_anchor(group_align_anchor),
+        .out_compare_exp(group_align_compare_exp),
         .out_z(group_align_leading_zero_count),
         .out_special(group_align_special)
       );
@@ -133,6 +138,7 @@ module dp_top #(
          INT_GLOBAL_F) : {group_align_magnitude, {(GLOBAL_MAG_W - GROUP_MAG_W) {1'b0}}};
       assign source_negative[group_index] = group_align_negative;
       assign source_anchor[group_index*ANCHOR_W+:ANCHOR_W] = group_align_anchor;
+      assign source_compare_exp[group_index*ANCHOR_W+:ANCHOR_W] = group_align_compare_exp;
       assign source_z[group_index*Z_W+:Z_W] = {
         {(Z_W - $clog2(GROUP_MAG_W + 1)) {1'b0}}, group_align_leading_zero_count
       };
@@ -200,8 +206,9 @@ module dp_top #(
   wire signed [ANCHOR_W-1:0] c_anchor_q;
   wire [$clog2(`DP_FP32_W+1)-1:0] c_z_q;
   // [S5 C 解包] 使用 c_raw_q[3]，而非当前 in_c，保证与五级前端同请求对齐。
-  // C 的符号/幅值/anchor/z/特殊值在 S5 独立保存，随后与所有 group 一起参加 S6。
+  // C 的符号/幅值/anchor/特殊值在 S5 保存；不做 LZD，非正规数以 -126 为 MAX 键。
   dp_c_unpack #(
+    .DETECT_LEADING_ZERO(0),
     .ANCHOR_W(ANCHOR_W)
   ) u_c_unpack (
     .in_data(c_raw_q[3]),
@@ -227,8 +234,8 @@ module dp_top #(
   ff_s4_s5_c_magnitude (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(c_magnitude_d), .out_q(c_magnitude_q));
   dp_lib_DFFE #(.WIDTH(ANCHOR_W))
   ff_s4_s5_c_anchor (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(c_anchor_d), .out_q(c_anchor_q));
-  dp_lib_DFFE #(.WIDTH($clog2(`DP_FP32_W + 1)))
-  ff_s4_s5_c_z (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(c_z_d), .out_q(c_z_q));
+  // C 接受 0.xxx，不做 LZD 或 z 寄存；保留观察名字供逐级验证。
+  assign c_z_q = 0;
   dp_lib_DFFE #(.WIDTH(`DP_SPECIAL_W))
   ff_s4_s5_c_special (.clock(clock), .in_en(rst_n & valid_q[3]), .in_d(c_special_d), .out_q(c_special_q));
   // verilog_format: on
@@ -238,6 +245,7 @@ module dp_top #(
   };
   assign source_negative[GROUPS] = c_negative_q;
   assign source_anchor[GROUPS*ANCHOR_W+:ANCHOR_W] = c_anchor_q;
+  assign source_compare_exp[GROUPS*ANCHOR_W+:ANCHOR_W] = c_anchor_q;
   assign source_z[GROUPS*Z_W+:Z_W] = (c_z_q);
   assign source_special[GROUPS*`DP_SPECIAL_W+:`DP_SPECIAL_W] = c_special_q;
   wire [N*GLOBAL_W-1:0] leaves_d;
@@ -254,6 +262,7 @@ module dp_top #(
   // [S6 全局对齐] 完整模块内完成有效源 MAX、净移位、恢复补码与特殊值归约。
   // leaves_d/common_d 等在 S6 DFF 同时捕获；不能将新 anchor 配给上一拍叶子。
   dp_global_align #(
+    .PRECOMPUTED_EXPONENT(1),
     .N(N),
     .MAG_W(GLOBAL_MAG_W),
     .ANCHOR_W(ANCHOR_W)
@@ -262,6 +271,7 @@ module dp_top #(
     .in_enable(valid_q[4]),
     .in_magnitude(source_magnitude),
     .in_anchor(source_anchor),
+    .in_compare_exp(source_compare_exp),
     .in_z(source_z),
     .in_negative(source_negative),
     .in_special(source_special),
@@ -292,8 +302,8 @@ module dp_top #(
   wire signed [SUM_W-1:0] sum_d;
   wire signed [SUM_W-1:0] sum_q;
   // [S7 最终累加树] G 个组结果加 C，共 G+1 项；K4/K8/K16 对应 2/3/5 项。
-  // 平衡树保留 ceil(log2(G+1)) 个增长位，小数位数及 common anchor 不改变。
-  dp_sum_tree #(
+  // 四组4:2 + C的3:2 + 最终CPA；保留 ceil(log2(G+1)) 个增长位，F/anchor不变。
+  dp_final_csa_sum #(
     .N(N),
     .W(GLOBAL_W)
   ) u_final_sop_tree (

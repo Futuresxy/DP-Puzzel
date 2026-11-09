@@ -1,4 +1,4 @@
-> 功能：scale 无偏解包与提前 anchor；范围：dp_top v1.8；版本：v1.8；修改时间：2026-11-09 12:00:00 +08:00；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_unpack.v](../../../verilog/unpack/dp_scale_unpack.v)；状态：已批准合同，CModel/RTL 待本批实施和验证。
+> 功能：scale 无偏解包与提前 anchor；范围：dp_top v1.8；版本：v1.8；修改时间：2026-11-09 17:59:28 +0800；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_unpack.v](../../../verilog/unpack/dp_scale_unpack.v)；状态：已批准合同，CModel/RTL 已实现并通过本批功能验证。
 
 # scale 无偏解包与提前 anchor
 
