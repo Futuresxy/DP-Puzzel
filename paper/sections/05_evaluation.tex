@@ -42,24 +42,12 @@ Q 模式的对齐功耗占比达到 20.74\%，而 E 模式降至 13.31\%，与 E
 \subsection{与已有点积及浮点单元的比较}
 \label{sec:related_dp_evaluation}
 
-表~\ref{tab:related_dp} 比较格式覆盖、计算边界和原文报告的效率。FPnew 侧重标量与 SIMD 浮点运算，Ten-Four 将多格式点积与整数累加结合；MPICC 支持低精度异构操作数组合，MXDOTP 聚焦原生 MXFP8 缩放点积，TransDot 则共享多精度 SIMD 与点积资源。DP-Puzzle 同时覆盖 H/Q/E 与块尺度处理，并通过专用前端改变低精度容量。
+表~\ref{tab:related_features} 将原生输入精度与通路功能分开比较。FPnew 侧重标量与 SIMD 浮点运算，Ten-Four 将多格式点积与整数累加结合；MPICC 支持低精度异构操作数组合与随机舍入，MXDOTP 聚焦原生 MXFP8 缩放点积，TransDot 则共享多精度 SIMD 与点积资源。DP-Puzzle 同时覆盖 H/Q/E 与块尺度处理，并通过专用前端改变低精度容量。
 
-\begin{table*}[t]
-\centering
-\caption{Functionality and reported hardware costs. Results use different technologies, arithmetic boundaries and evaluation stages; they are not an iso-technology ranking. A dash denotes a metric not tabulated here.}
-\label{tab:related_dp}
-\begingroup\footnotesize\setlength{\tabcolsep}{4pt}
-\begin{tabular}{p{0.11\textwidth}p{0.25\textwidth}p{0.18\textwidth}p{0.31\textwidth}}\toprule
-Design & Formats and operation & Area / implementation & Reported efficiency \\\midrule
-Ten-Four~\cite{rout2026tenfourv2} & TF32, FP16/BF16, FP8/BF8, INT8/4; MX; FP32/INT32 output & 0.001960 mm$^2$; predictive 7 nm synthesis & 6.28 mW for the reported eight-element configuration; $F_{\max}=1.571$ GHz \\
-MPICC~\cite{huangMPICCMultiplePrecisionInterCombined2025} & FP8/6/4, INT4, LOG4 combinations; stochastic rounding; FP12 emulation & ---; 28 nm, 0.9 V, TT & FP8 area/energy efficiency: $1.17\times/1.19\times$ its selected references; FP4: $4.69\times/3.64\times$ \\
-MXDOTP~\cite{islamoglu2025mxdotp} & MXFP8 E4M3/E5M2; eight-term dot product into FP32 & 0.00315 mm$^2$; 12 nm, 0.8 V & 17.4 GFLOP/s and 2035 GFLOP/s/W for the standalone unit at 1.09 GHz \\
-FPnew~\cite{mach2020fpnew} & FP64/32/16, BF16, FP8; scalar/SIMD and mixed-format FMA & ---; 22FDX silicon & 178 GFLOP/s/W (FP64) to 2.95 TFLOP/s/W (FP8), across measured operating points \\
-TransDot~\cite{transdot2026} & FP32 FMA; FP16/8/4 dot products of length 2/4/8 into FP32 & ---; 12 nm post-layout, 0.8 V, 1 GHz & FP16/FP8/FP4 dot products: 1.80/0.84/0.41 pJ/FLOP; FP16/FP8 area efficiency $1.46\times/2.92\times$ FPnew \\
-DP-Puzzle baseline & TF32, FP16/BF16, MXFP8/6/4, NVFP4, HiF4, INT8 & 0.016165 mm$^2$; 12 nm synthesis, 0.7 V, 1 GHz & BF16/MXFP8/MXFP4: 1.980/3.959/7.918 TFLOP/s/mm$^2$; 0.479/0.250/0.0875 pJ/FLOP \\
-\bottomrule
-\end{tabular}\endgroup
-\end{table*}
+\input{tables/related_features.tex}
+\input{tables/related_ppa.tex}
+
+表~\ref{tab:related_dp} 按工作分列，分别列出实现条件、能效和面效，并按计算精度展开指标。FPnew 使用原文标称电压下的完整 FPU SIMD 结果，TransDot 使用 FP32 累加的点积结果；本文以 BF16、MXFP8 和 MXFP4 的实测活动功耗计算效率。Ten-Four 的汇总功耗未细分到各格式，因此不据此填入逐精度能效。未获得独立面积值的设计也不由版图外框尺寸反推单元面效。
 
 比较需要保留运算语义。INT4 支持不能替代浮点 FP4，FP4 元素乘法也不自动包含 MX/NV 尺度处理；多步高精度仿真与原生高精度并行度不同。DP-Puzzle 的 A/B 同格式计算不覆盖 MPICC 的全部异构组合。由于工艺、电压、点积长度及功耗活动条件不同，表中绝对能效不用于宣称同条件优胜；本文的受控比较集中在相同工况下的六种 DP 及其组合。
 

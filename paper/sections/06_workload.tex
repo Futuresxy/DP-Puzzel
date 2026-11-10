@@ -57,25 +57,16 @@ $T_j$ 和 $\mathcal E_j$ 均为负载组成 $\boldsymbol x$ 的线性函数，�
 
 H 的功耗以 BF16 为代表，E 采用 MXFP4 测量值；NVFP4 与 MXFP4 使用相同峰值，本文暂以 MXFP4 功耗估计 NVFP4。若 $\rho$ 为 E 工作中 NVFP4 的比例，后续可用 $\varepsilon_{j,E}=(1-\rho)\varepsilon_{j,\mathrm{MX}}+\rho\varepsilon_{j,\mathrm{NV}}$ 替换 E 能耗系数。当前两者系数相同，因此能耗图不区分编码混合比例；这是一项功耗近似，不表示两种格式实际能耗相同。在本节不含功耗上限的模型内，该系数修正只影响能耗边界。
 
-\begin{figure*}[!t]
+\begin{figure}[!t]
 \centering
-\begin{minipage}[t]{0.47\textwidth}
-\centering
-\includegraphics[width=\linewidth]{k4_n12_prefill_time.png}
-{\footnotesize (a) Effective throughput\par}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.47\textwidth}
-\centering
-\includegraphics[width=\linewidth]{k4_n12_prefill_energy.png}
-{\footnotesize (b) DP compute energy\par}
-\end{minipage}
-\par\smallskip
-{\scriptsize $\circ$ V4-Flash\quad $\square$ V4-Pro\quad $\triangle$ V4.1-Flash\par}
-{\scriptsize Dashed: W4A8 experts\quad Solid: NVFP4 W4A4 experts\par}
-\caption{Area-constrained ratio selection and prefill trajectories. H/Q/E denote BF16/FP8/FP4 FLOP shares. Arrows follow 1K, 4K, 16K, 64K, 256K, 512K and 1M contexts; filled markers denote 1M. Energy uses MXFP4 power for both FP4 encodings; trajectories are model-derived compute estimates.}
+\subfloat[Compute latency\label{fig:k4_time_panel}]{%
+  \includegraphics[width=0.80\columnwidth]{k4_n12_prefill_time.png}}\par\smallskip
+\subfloat[DP compute energy\label{fig:k4_energy_panel}]{%
+  \includegraphics[width=0.80\columnwidth]{k4_n12_prefill_energy.png}}
+\caption{Area-constrained ratio selection and prefill trajectories. Colors identify the ratio with (a) minimum compute latency and (b) minimum DP energy. H/Q/E are BF16/FP8/FP4 FLOP shares. Circles, squares and triangles denote V4-Flash, V4-Pro and V4.1-Flash. Dashed lines use W4A8 experts; solid lines use NVFP4 W4A4 experts. Arrows follow 1K, 4K, 16K, 64K, 256K, 512K and 1M contexts; filled markers denote 1M. Energy uses MXFP4 power for both FP4 encodings. Results are model-derived compute estimates.}
 \label{fig:k4_time_prefill}
 \label{fig:k4_energy_prefill}
-\end{figure*}
+\end{figure}
 
 \begin{table}[!t]
 \centering
