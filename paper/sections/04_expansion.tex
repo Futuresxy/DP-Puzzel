@@ -2,20 +2,20 @@
 \section{低精度专用化与算力配比扩展}
 \label{sec:expansion}
 
-矩阵块乘加 $D=AB+C$ 的计算量为 $2mnk$，其中一次 MAC 计为两次运算。若每拍计算 $m\times n$ 个输出、每个输出包含 $k$ 个乘积，则可通过增大 DP 内的原生归约长度 $k$，或增加阵列输出维度 $m/n$ 来提高峰值算力。本文从 H/Q/E 为 $1:2:4$ 的基线出发，在这两个维度加入低精度专用单元，构建 $1:2:6$、$1:2:8$ 和 $1:4:8$。以下以 N 扩展代表输出维组合（图~\ref{fig:kn_datapaths}）。
+矩阵块乘加 $D=AB+C$ 的计算量为 $2mnk$，其中一次 MAC 计为两次运算。若每拍计算 $m\times n$ 个输出、每个输出包含 $k$ 个乘积，则增加 DP 内的归约长度 $k$ 或阵列的输出并行度 $m$、$n$，均可提高峰值算力。图~\ref{fig:kn_datapaths} 以 $1:2:4$ 扩展至 $1:2:8$ 为例，展示 K 维内部扩展与 N 维输出组合。为支持这两种方式，本文从基线裁剪出 E 专用和 Q/E 共享两类 Lane、Group，保持与基线一致的流水深度和 Group 输出接口。
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{kn_composition.png}
-\caption{K 维内部扩展与 N 维输出组合。K 扩展增加每个 DP 对同一输出计算的乘积数；N 组合增加计算独立输出的 DP 列。两者均仅增配低精度资源。}
+\includegraphics[width=0.85\columnwidth]{kn_composition.png}
+\caption{从 $1:2:4$ 到 $1:2:8$ 的两种扩展方式。左：在 DP 内增加 E 计算资源，保持输出数不变；右：增加 E 专用 DP 列，计算独立输出。}
 \label{fig:kn_datapaths}
 \end{figure}
-\subsection{E 与 QE 专用 Lane 和 Group}
+\subsection{低精度 Lane 与 Group 的资源裁剪}
 \label{sec:specialized_midgroups}
 
-\textbf{E 专用结构。} E Lane 保留八个 $4\times4$ 乘法器和窄规约树，删除 T/H/Q/INT8 解码、高精度部分积重构及元素指数对齐。HiF4 的二级缩放指数在 Lane 内融合。两个 Lane 构成 E16 Group，组和幅值与尺度尾数通过 $\mathrm{U14}\times\mathrm{U8}$ 乘法得到 22 位结果；前导零检测在该窄结果上完成，再低位补零接入公共 31 位幅值接口。由此缩窄内部计算与寄存，同时保持第三章定义的 Anchor 坐标与 Group 输出语义。
+\textbf{E 专用设计。} E Lane 保留八个 $4\times4$ 乘法器和窄规约树，删除 T/H/Q/INT8 解码、高精度部分积重构及元素指数对齐，并在 Lane 内融合 HiF4 二级缩放指数。两个 Lane 构成 E16 Group，通过 $\mathrm{U14}\times\mathrm{U8}$ 乘法将组和幅值与尺度尾数相乘。22 位结果完成前导零检测后，低位补零至公共 31 位幅值接口，在缩窄计算与寄存通路的同时保持原有 Anchor 坐标。
 
-\textbf{QE 专用结构。} QE Lane 删除 T/H/INT8 通路，同样使用八个 $4\times4$ 乘法器，Q 模式启用其中四个。它保留 Q 所需的元素指数比较、28 位局部对齐和较宽规约树；E 绕过局部对齐，在树后处理 HiF4 二级缩放。两个 Lane 构成 Q8E16 Group，保留宽组和与前导零检测，并复用 E 的尺度尾数乘法。两类 Group 均提供统一的幅值、指数和状态接口，可接入共享或独立的 DP 后端。
+\textbf{Q/E 共享设计。} QE Lane 删除 T/H/INT8 通路，保留八个 $4\times4$ 乘法器，Q 模式启用其中四个。Q 保留元素指数比较、28 位局部对齐和宽规约树；E 绕过局部对齐，在树后融合 HiF4 二级缩放指数。两个 Lane 构成 Q8E16 Group，保留 Q 所需的宽组和与前导零检测，并复用 E 的尺度尾数乘法。两类 Group 均输出统一的幅值、指数和状态，可接入共享或独立的 DP 层。
 
 \subsection{K 维内部扩展}
 \label{sec:k_expansion}
@@ -28,29 +28,29 @@ E 扩展仅在 E 模式激活，QE 扩展仅在 Q/E 模式激活；掩码同步�
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.9\columnwidth]{DP_CSAmodule.png}
-\caption{K 扩展的 carry-save 规约结构。左侧基线生成两行部分和；右上方以虚线边框标出的 4:2 压缩器仅在 $1:2:8$、$1:4:8$ 中实例化，将四个新增源压缩为两行。$1:2:6$ 省略该级，两个新增源直接接入右下方的 4:2 压缩器，与基线两行合并。底部选择基础或扩展两行，共享最终 CPA。}
+\includegraphics[width=0.70\columnwidth]{DP_CSAmodule.png}
+\caption{K 扩展的 carry-save 规约结构。右上虚线 4:2 压缩器仅用于 $1:2:8$、$1:4:8$，将四个新增源压缩为两行；$1:2:6$ 的两个新增源直接进入右下合并级。底部选择基础或扩展两行，共享最终 CPA。}
 \label{fig:dp_csa_expansion}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{目标配比及 K/N 构建方式}
+\caption{目标配比及新增资源。$N_{\mathrm{dp}}=mn$ 为基线阵列的 DP 总数}
 \label{tab:brick_compositions}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}cll@{}}\toprule
-H:Q:E & K：单个基线新增 Group & N：完整 DP 组合 \\\midrule
-$1:2:6$ & $2\times$ E16 & $2\times$ Baseline + E64 \\
-$1:2:8$ & $4\times$ E16 & Baseline + E64 \\
-$1:4:8$ & $4\times$ Q8E16 & Baseline + Q32E64 \\
+H:Q:E & K：每个 DP 新增 Group & N：整个阵列新增 DP \\\midrule
+$1:2:6$ & $2\times$ E16 & $(N_{\mathrm{dp}}/2)\times$ E64 \\
+$1:2:8$ & $4\times$ E16 & $N_{\mathrm{dp}}\times$ E64 \\
+$1:4:8$ & $4\times$ Q8E16 & $N_{\mathrm{dp}}\times$ Q32E64 \\
 \bottomrule
 \end{tabular*}\endgroup
 \end{table}
 
-\subsection{N 维完整 DP 组合}
+\subsection{M/N 维阵列组合}
 \label{sec:n_expansion}
 \label{sec:brick_composition}
 
-N 组合为四个 E16 或 Q8E16 Group 配置独立后端，形成 E64 或 Q32E64 DP，相对基线 H 峰值分别记为 $0:0:4$、$0:2:4$。专用 DP 沿用基线的分层组织与浮点处理流程，删除不支持格式的控制及 INT8/INT32 累加旁路。它们与基线并列计算不同输出，同行共享 A，各列具有独立的 B、$C$ 和 D。
+二维 DP 阵列可沿 M 或 N 维增加独立输出。本文将较短输出维记为 N，并沿该维增配低精度 DP。四个 E16 或 Q8E16 Group 配置独立后端，分别形成 E64、Q32E64，其 H/Q/E 峰值相对基线 H 归一化为 $0:0:4$、$0:2:4$。专用 DP 沿用基线的分层组织与浮点处理流程，删除不支持格式的控制及 INT8/INT32 累加旁路。新增列与基线同行共享 A，各列使用独立的 B、$C$ 并生成 D。
 
-表~\ref{tab:brick_compositions} 给出整数实例组合。$1:2:6$ 的 N 方案采用两个基线加一个 E64，应与两个 K 扩展 DP 比较，才能匹配各精度的绝对峰值。K 扩展共享输出后端，N 组合复制后端及累加状态；相应面积、功耗和带宽取舍在第五章评估。
+表~\ref{tab:brick_compositions} 按相同基线阵列给出新增资源。$1:2:6$ 增加原基线 DP 数量一半的 E64，按完整列扩展时要求基线列数为偶数；$1:2:8$、$1:4:8$ 分别增加与基线等量的 E64、Q32E64。比较时，K 方案将同一基线阵列中的各 DP 替换为对应扩展设计，使两方案的各精度峰值一致。K 扩展共享输出处理通路，N 组合增加独立的累加与输出状态；其面积、功耗和带宽取舍在第五章评估。
