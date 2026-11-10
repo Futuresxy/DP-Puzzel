@@ -69,3 +69,12 @@ MPICC 原表截图来源指纹：用户附件 `codex-clipboard-91872e90-c763-4d8
 附件核验指纹（未复制图片进仓库）：
 - `codex-clipboard-3dc8d042-338f-4a6c-9e2d-f04de78744a8.png`: SHA-256 `bdfd321de96ab7914fcbffe3fa4692373062c9b3934b2ac228962342a853730e`
 - `codex-clipboard-08711aa9-7291-4bfb-bd3a-9e439b623ce5.png`: SHA-256 `6dd84f0af6f357d31fa5dc1bb560d189d6a0d62c1d4085a478ae5862c176eb3d`
+
+## 全表原值与 12 nm 代理值并列（2026-11-11）
+
+- 效率统一排为 `native | 12 nm proxy`，保留原始实现条件。非12 nm设计以14 nm作为12 nm代理；原生12 nm设计保持原值。仍不把归一化视为同工艺库、同活动、同累加合同复现。
+- 本轮下载并只读解析 [官方 DeepScaleTool](https://sourceforge.net/projects/deepscaletool/files/DeepScaleTool/) 2021-03-03电子表格，没有执行宏。版本、GPLv3许可声明、下载URL和SHA-256见 `dependencies/deepscaletool.json`，原表仅放 `.deps/`。`VBA/Module1` 的 `area`、`delay`、`Energy` 最终输出采用查表值比率，而非代码前段未用于最终输出的多项式。
+- 读取的 area/delay/energy：7 nm = 0.011/0.53/0.11，14 nm = 0.08/0.60/0.19，22 nm = 0.22/0.62/0.30，28 nm = 0.35/0.67/0.37。原表current/target两组分支均已核对。22→14系数2.750/1.033/1.579，28→14系数4.375/1.117/1.947，按原工具显示精度保留三位。7→14继续使用此前14→7显示值的倒数，避免正反向分别舍入造成不一致。
+- 目标面效=源面效×面积系数×延迟系数；目标能效=源能效×能量系数。由此22 nm面效/能效乘数2.84075/1.579，28 nm为4.886875/1.947。没有额外叠加电压缩放。
+- `table_inputs.json` 保存原始效率与引用，`normalize_table.py` 生成 `table_efficiencies.{csv,json}` 及 `tables/related_ppa.tex` 的标记区。本项目效率仍直接读取真实功耗CSV并记录hash；FPnew使用原表较完整数值后再舍入，避免对已显示的三位小数二次计算。缺失项仍显示破折号。
+- Ten-Four的每种精度按Q8、Q16两行排列，每行各自为原值与归一化值，避免将两配置的斜杠与工艺分隔竖线混淆。其逐精度DP能效缺失仍未填充。英文主稿的内联表暂未同步，等待中文第五章定稿。

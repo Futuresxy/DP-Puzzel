@@ -1,0 +1,299 @@
+{
+  "status": "analytical_uncalibrated",
+  "target": "12 nm proxy (14 nm model for non-12-nm sources)",
+  "scaling_rule": "eta_A_target=eta_A_source*S_A*S_D; eta_E_target=eta_E_source*S_E; metric_target=metric_source/S_metric",
+  "factors_to_proxy": {
+    "7": {
+      "area": 0.13749484394335212,
+      "delay": 0.88339222614841,
+      "energy": 0.5790387955993052
+    },
+    "28": {
+      "area": 4.375,
+      "delay": 1.117,
+      "energy": 1.947
+    },
+    "12": {
+      "area": 1.0,
+      "delay": 1.0,
+      "energy": 1.0
+    },
+    "22": {
+      "area": 2.75,
+      "delay": 1.033,
+      "energy": 1.579
+    }
+  },
+  "assumptions": [
+    "Native 12 nm efficiencies unchanged",
+    "Delay-scaled frequency, no extra voltage scaling",
+    "Missing source efficiency remains unavailable, not zero",
+    "Process normalization does not equalize libraries, temperature, activity or implementation stage"
+  ],
+  "inputs": [
+    {
+      "path": "paper/data/process_normalization/table_inputs.json",
+      "sha256": "68ea160f92d646181fb2150a8abf1bb9ead5428fe688e2559f130c069dc674c8"
+    },
+    {
+      "path": "paper/data/DP_area_power/latest6_power.csv",
+      "sha256": "2540506d11426ec8c2d2f9fb2a121c4f81133635a3cf6beabccf2d7e31ee2abe"
+    },
+    {
+      "path": "dependencies/deepscaletool.json",
+      "sha256": "6b24e86449a7154b0918f43df25e1c0c648a5db78f7fa9204d718627fec3f299"
+    }
+  ],
+  "rows": [
+    {
+      "work": "tenfour",
+      "node_nm": 7,
+      "metric": "area",
+      "format": "FP16/BF16",
+      "config": "Q8",
+      "native": 5.25,
+      "proxy12": 0.6376748504439917,
+      "efficiency_multiplier": 0.12146187627504605
+    },
+    {
+      "work": "tenfour",
+      "node_nm": 7,
+      "metric": "area",
+      "format": "FP16/BF16",
+      "config": "Q16",
+      "native": 5.419354838709678,
+      "proxy12": 0.658245006909927,
+      "efficiency_multiplier": 0.12146187627504605
+    },
+    {
+      "work": "tenfour",
+      "node_nm": 7,
+      "metric": "area",
+      "format": "MXFP8",
+      "config": "Q8",
+      "native": 10.5,
+      "proxy12": 1.2753497008879835,
+      "efficiency_multiplier": 0.12146187627504605
+    },
+    {
+      "work": "tenfour",
+      "node_nm": 7,
+      "metric": "area",
+      "format": "MXFP8",
+      "config": "Q16",
+      "native": 10.838709677419356,
+      "proxy12": 1.316490013819854,
+      "efficiency_multiplier": 0.12146187627504605
+    },
+    {
+      "work": "mpicc",
+      "node_nm": 28,
+      "metric": "area",
+      "format": "FP8",
+      "config": "",
+      "native": 1.246,
+      "proxy12": 6.08904625,
+      "efficiency_multiplier": 4.886875
+    },
+    {
+      "work": "mpicc",
+      "node_nm": 28,
+      "metric": "area",
+      "format": "FP4",
+      "config": "",
+      "native": 4.985,
+      "proxy12": 24.361071875,
+      "efficiency_multiplier": 4.886875
+    },
+    {
+      "work": "mpicc",
+      "node_nm": 28,
+      "metric": "energy",
+      "format": "FP8",
+      "config": "",
+      "native": 1.948,
+      "proxy12": 3.7927560000000002,
+      "efficiency_multiplier": 1.947
+    },
+    {
+      "work": "mpicc",
+      "node_nm": 28,
+      "metric": "energy",
+      "format": "FP4",
+      "config": "",
+      "native": 5.931,
+      "proxy12": 11.547657000000001,
+      "efficiency_multiplier": 1.947
+    },
+    {
+      "work": "mxdotp",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP8",
+      "config": "",
+      "native": 5.523809523809523,
+      "proxy12": 5.523809523809523,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "mxdotp",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP8",
+      "config": "",
+      "native": 2.035,
+      "proxy12": 2.035,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "fpnew",
+      "node_nm": 22,
+      "metric": "area",
+      "format": "FP16",
+      "config": "",
+      "native": 0.15143,
+      "proxy12": 0.4301747725,
+      "efficiency_multiplier": 2.84075
+    },
+    {
+      "work": "fpnew",
+      "node_nm": 22,
+      "metric": "area",
+      "format": "BF16",
+      "config": "",
+      "native": 0.15143,
+      "proxy12": 0.4301747725,
+      "efficiency_multiplier": 2.84075
+    },
+    {
+      "work": "fpnew",
+      "node_nm": 22,
+      "metric": "area",
+      "format": "FP8",
+      "config": "",
+      "native": 0.30265,
+      "proxy12": 0.8597529874999998,
+      "efficiency_multiplier": 2.84075
+    },
+    {
+      "work": "fpnew",
+      "node_nm": 22,
+      "metric": "energy",
+      "format": "FP16",
+      "config": "",
+      "native": 0.49767,
+      "proxy12": 0.78582093,
+      "efficiency_multiplier": 1.579
+    },
+    {
+      "work": "fpnew",
+      "node_nm": 22,
+      "metric": "energy",
+      "format": "BF16",
+      "config": "",
+      "native": 0.58196,
+      "proxy12": 0.91891484,
+      "efficiency_multiplier": 1.579
+    },
+    {
+      "work": "fpnew",
+      "node_nm": 22,
+      "metric": "energy",
+      "format": "FP8",
+      "config": "",
+      "native": 1.24478,
+      "proxy12": 1.96550762,
+      "efficiency_multiplier": 1.579
+    },
+    {
+      "work": "transdot",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "FP16",
+      "config": "",
+      "native": 0.5555555555555556,
+      "proxy12": 0.5555555555555556,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "transdot",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "FP8",
+      "config": "",
+      "native": 1.1904761904761905,
+      "proxy12": 1.1904761904761905,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "transdot",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "FP4",
+      "config": "",
+      "native": 2.4390243902439024,
+      "proxy12": 2.4390243902439024,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "BF16",
+      "config": "",
+      "native": 1.9795705652667595,
+      "proxy12": 1.9795705652667595,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP8",
+      "config": "",
+      "native": 3.959141130533519,
+      "proxy12": 3.959141130533519,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP4",
+      "config": "",
+      "native": 7.918282261067038,
+      "proxy12": 7.918282261067038,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "BF16",
+      "config": "",
+      "native": 2.087646683693308,
+      "proxy12": 2.087646683693308,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP8",
+      "config": "",
+      "native": 3.9995003370817552,
+      "proxy12": 3.9995003370817552,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP4",
+      "config": "",
+      "native": 11.432109097998834,
+      "proxy12": 11.432109097998834,
+      "efficiency_multiplier": 1.0
+    }
+  ]
+}

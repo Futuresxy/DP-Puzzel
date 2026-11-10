@@ -1,0 +1,164 @@
+{
+  "tool_manifest": "dependencies/deepscaletool.json",
+  "coefficient_source": "DeepScaleTool.xlsm, VBA/Module1: Sub area, Sub delay, Sub Energy; lookup values read without macro execution",
+  "coefficient_nodes": {
+    "7": {
+      "area": 0.011,
+      "delay": 0.53,
+      "energy": 0.11
+    },
+    "14": {
+      "area": 0.08,
+      "delay": 0.6,
+      "energy": 0.19
+    },
+    "22": {
+      "area": 0.22,
+      "delay": 0.62,
+      "energy": 0.3
+    },
+    "28": {
+      "area": 0.35,
+      "delay": 0.67,
+      "energy": 0.37
+    }
+  },
+  "normalization": "12 nm proxy using node 14 for non-12-nm designs; native 12 nm entries unchanged",
+  "factor_rounding": "3 decimal places as in upstream FormatNumber; retain reciprocal of previously used rounded 14-to-7 factors for 7-to-14",
+  "units": {
+    "area": "TFLOP/s/mm^2",
+    "energy": "TFLOP/s/W"
+  },
+  "works": [
+    {
+      "id": "tenfour",
+      "node": 7,
+      "source": "https://arxiv.org/html/2512.00053v3#S4.T2",
+      "energy": [],
+      "area": [
+        {
+          "format": "FP16/BF16",
+          "config": "Q8",
+          "value": 5.25
+        },
+        {
+          "format": "FP16/BF16",
+          "config": "Q16",
+          "value": 5.419354838709678
+        },
+        {
+          "format": "MXFP8",
+          "config": "Q8",
+          "value": 10.5
+        },
+        {
+          "format": "MXFP8",
+          "config": "Q16",
+          "value": 10.838709677419356
+        }
+      ]
+    },
+    {
+      "id": "mpicc",
+      "node": 28,
+      "source": "User-supplied original comparison table; provenance in references/notes/dp_comparison.md",
+      "energy": [
+        {
+          "format": "FP8",
+          "value": 1.948
+        },
+        {
+          "format": "FP4",
+          "value": 5.931
+        }
+      ],
+      "area": [
+        {
+          "format": "FP8",
+          "value": 1.246
+        },
+        {
+          "format": "FP4",
+          "value": 4.985
+        }
+      ]
+    },
+    {
+      "id": "mxdotp",
+      "node": 12,
+      "source": "https://arxiv.org/html/2505.13159v1",
+      "energy": [
+        {
+          "format": "MXFP8",
+          "value": 2.035
+        }
+      ],
+      "area": [
+        {
+          "format": "MXFP8",
+          "value": 5.523809523809523
+        }
+      ]
+    },
+    {
+      "id": "fpnew",
+      "node": 22,
+      "source": "https://arxiv.org/html/2007.01530v1#S4.T4",
+      "energy": [
+        {
+          "format": "FP16",
+          "value": 0.49767
+        },
+        {
+          "format": "BF16",
+          "value": 0.58196
+        },
+        {
+          "format": "FP8",
+          "value": 1.24478
+        }
+      ],
+      "area": [
+        {
+          "format": "FP16",
+          "value": 0.15143
+        },
+        {
+          "format": "BF16",
+          "value": 0.15143
+        },
+        {
+          "format": "FP8",
+          "value": 0.30265
+        }
+      ]
+    },
+    {
+      "id": "transdot",
+      "node": 12,
+      "source": "https://arxiv.org/html/2605.07245v1",
+      "energy": [
+        {
+          "format": "FP16",
+          "value": 0.5555555555555556
+        },
+        {
+          "format": "FP8",
+          "value": 1.1904761904761905
+        },
+        {
+          "format": "FP4",
+          "value": 2.4390243902439024
+        }
+      ],
+      "area": []
+    },
+    {
+      "id": "ours",
+      "node": 12,
+      "source": "paper/data/DP_area_power/latest6_power.csv",
+      "energy": [],
+      "area": []
+    }
+  ]
+}
