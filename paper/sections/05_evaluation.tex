@@ -12,9 +12,9 @@
 \label{sec:area_breakdown}
 \label{sec:related_dp_evaluation}
 
-图~\ref{fig:baseline_breakdown} 显示，基线乘法占面积的 24.15\%，累加与对齐合计占 38.91\%，解包另占 16.02\%，说明专用化需同时裁剪算术和格式处理。H/Q 的对齐功耗占比分别为 20.51\%/20.74\%，E 绕过局部对齐后降至 13.31\%，但解包占比升至 21.31\%。
+图~\ref{fig:baseline_breakdown} 显示，基线乘法占面积的 24.15\%，累加与对齐合计占 38.91\%，解包另占 16.02\%，说明专用化需同时裁剪算术和格式处理。
 
-表~\ref{tab:related_dp} 列出原始实现条件，效率单元格按“原始值 $\mid$ 12\,nm 代理值”并列显示，能效和面效分别为 $2K_pf/P_p$ 和 $2K_pf/A$。本文 MXFP8 能效为 4.000\,TFLOP/s/W、面效为 3.959\,TFLOP/s/mm$^2$；同为 12\,nm 的 MXDOTP 分别为 2.035 和 5.524。本文支持更广精度范围，但电压、活动及实现阶段的差异仍影响比较。Ten-Four 采用 All fmts 的 Q8/Q16 配置，其 $1{:}2{:}4$ 指 TF32:H:Q，并非本文的 H:Q:E。
+表~\ref{tab:related_dp} 列出原始实现条件，能效与面效仅报告归一化后的 12\,nm 代理值，能效和面效分别为 $2K_pf/P_p$ 和 $2K_pf/A$。本文 MXFP8 能效为 4.000\,TFLOP/s/W、面效为 3.959\,TFLOP/s/mm$^2$；同为 12\,nm 的 MXDOTP 分别为 2.035 和 5.524。本文支持更广精度范围，但电压、活动及实现阶段的差异仍影响比较。Ten-Four 采用 All fmts 的 Q8/Q16 配置，其 $1{:}2{:}4$ 指 TF32:H:Q，并非本文的 H:Q:E。
 
 采用 DeepScaleTool~\cite{sarangi2021deepscaletool} 将 7、22 和 28\,nm 结果近似折算到 12\,nm。工具不含 12\,nm 节点，故以 14\,nm 代理；原生 12\,nm 结果保持不变。定义源节点到目标节点的面积、延迟和能量系数为 $S_A,S_D,S_E$，工具按“目标值$=$原值$/S$”换算，因而
 \begin{equation}
@@ -26,9 +26,8 @@ All fmts 的 MXFP8 面效由 10.500/10.839 折算为 1.275/1.316\,TFLOP/s/mm$^2$
 
 \begin{figure}[t]
 \centering
-\subfloat[Area\label{fig:baseline_area}]{\includegraphics[width=0.60\columnwidth]{v19_six/v19_dp_top_area_functions.png}}\par
-\subfloat[Power\label{fig:baseline_power}]{\includegraphics[width=\columnwidth]{v19_six/v19_dp_top_power_functions.png}}
-\caption{基线按功能归集的面积及总功耗。各类别包含相关寄存；H/Q/E 分别采用 BF16/MXFP8/MXFP4，功耗包含动态与泄漏分量。}
+\includegraphics[width=0.60\columnwidth]{v19_six/v19_dp_top_area_functions.png}
+\caption{基线按功能归集的面积分布，各类别包含相关流水寄存器。}
 \label{fig:baseline_breakdown}
 \end{figure}
 
