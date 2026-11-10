@@ -1,5 +1,11 @@
 # DAC 2027 论文
 
+## 当前写作批次（2026-11-10）
+
+[微架构正文](sections/03_architecture.tex) 已按基础 v1.8、混合/QE v1.9 和保留原设计的 E64 重写；[研究路线](research_plan.md) 连接 DP、K/N 成本、带宽及面积/功耗约束下的负载分析，[相关工作核验](references/notes/dp_comparison.md) 记录五项工作的格式和 PPA 比较边界。
+
+本轮优先完成微架构。其余章节、`data/inputs/hardware_n12.json` 与配比图仍是下述历史稿，尚未迁移到当前 N12、1 GHz、Qwen3-8B 活动批次；不能将第 4 节或摘要的旧数字作为新版结果。DeepSeek 的固定版本、工作量、`data/expected` 和 `data/evidence` 继续保留。后续只更新硬件成本并重算；按用户确认，NVFP4 可暂用 MXFP4 功耗代理，需显式标注，补入实测后更新能耗分区。
+
 后续写作入口为 `main.tex`，正文按章节放在 `sections/`。当前全文以 DP-puzzle-SW/paper 的指定中文版本恢复；删除原图 7、十三种扩展配比的构造与分析，以及摘要和贡献中的“16 种新增配比”表述。其余文字、图表和引用沿用源稿，保留已有 PNG 重绘及 XeLaTeX 预览配置。继续使用 10 pt 中文工作稿，不为当前篇幅调整字体或压缩正文。
 
 ## 保存后预览 PDF
