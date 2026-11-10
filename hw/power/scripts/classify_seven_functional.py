@@ -219,13 +219,13 @@ def run_analysis(run, output):
         scripts_sha256={p.name:digest(p) for p in (Path(__file__),Path(__file__).with_name('functional_cones.py'))})
     (output/'current_dp_top_area_seven_sources.json').write_text(json.dumps(manifest,indent=2)+'\n')
     (run/'manifest.json').write_text(json.dumps(dict(status='complete',no_compile=True,
-        referenced_by='paper/data/H16Q32E64_area/current_dp_top_area_seven_sources.json'),indent=2)+'\n')
+        referenced_by='paper/data/results/legacy_dp_functional/current_dp_top_area_seven_sources.json'),indent=2)+'\n')
     print(json.dumps(rows, indent=2))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run', type=Path, required=True, help='A new local output directory')
-    parser.add_argument('--output', type=Path, default=ROOT/'paper/data/H16Q32E64_area')
+    parser.add_argument('--output', type=Path, default=ROOT/'paper/data/results/legacy_dp_functional')
     args = parser.parse_args()
     run_analysis(args.run.resolve(), args.output.resolve())

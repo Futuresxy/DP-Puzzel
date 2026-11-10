@@ -155,12 +155,12 @@ def classify(report, output):
         evidence_sha256={n:digest(report/n) for n in ('cell_assignment.csv','boundary_proofs.json','decoder_coverage.csv','hierarchy_crosscheck.csv')},
         scripts_sha256={p.name:digest(p) for p in (Path(__file__),Path(__file__).with_name('reclassify_functional_area.py'),Path(__file__).with_name('functional_cones.py'),Path(__file__).with_name('classify_seven_functional.py'),Path(__file__).with_name('functional_mode_cones.py'))})
     (output/'fixed_unpack_area_seven_sources.json').write_text(json.dumps(metadata,indent=2)+'\n')
-    (report/'manifest.json').write_text(json.dumps(dict(status='complete',no_compile=True,no_power=True,referenced_by='paper/data/H16Q32E64_area/fixed_unpack_area_seven_sources.json'),indent=2)+'\n')
+    (report/'manifest.json').write_text(json.dumps(dict(status='complete',no_compile=True,no_power=True,referenced_by='paper/data/results/legacy_dp_functional/fixed_unpack_area_seven_sources.json'),indent=2)+'\n')
     print(json.dumps(rows,indent=2))
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report',type=Path,required=True)
-    parser.add_argument('--output',type=Path,default=ROOT/'paper/data/H16Q32E64_area')
+    parser.add_argument('--output',type=Path,default=ROOT/'paper/data/results/legacy_dp_functional')
     args=parser.parse_args();classify(args.report.resolve(),args.output.resolve())

@@ -81,8 +81,8 @@ CModel expected 按相应版本生成。NVFP4/HiF4 有功能验证，本轮未�
   QE 的 SOP 与对齐相对更突出，保留窄 E 数据到共享树入口是可研究的方向。
 
 这些是实测结果导出的优化方向，不是已验证的下一轮收益。没有因面积或功耗结果擅自增加流水级。
-[七类报告、CSV 与图](../../../paper/data/H16Q32E64_area/v19_six/README.md) 覆盖六架构、
-各兼容精度的动态/静态/总功耗，并解释寄存器归属和跨架构比较的限制。
+六架构的功能分布见 [七类面积](../../../paper/data/H16Q32E64_area/README.md) 和 [总功耗](../../../paper/data/H16Q32E64_power/README.md)。
+各兼容精度的动态、静态明细及归类说明见 [原始分类报告](https://github.com/Futuresxy/DP-Puzzel/blob/0582ed58e556e33e13c59bfec8fed787c1f77343/paper/data/H16Q32E64_area/v19_six/README.md)。
 
 ## 证据保存与局限
 

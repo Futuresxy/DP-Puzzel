@@ -156,6 +156,6 @@ def summarize(run_id, output):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-id', required=True)
-    parser.add_argument('--output', type=Path, default=ROOT/'paper/data/H16Q32E64_area')
+    parser.add_argument('--output', type=Path, default=ROOT/'paper/data/results/legacy_dp_functional')
     args = parser.parse_args()
     summarize(args.run_id, args.output)

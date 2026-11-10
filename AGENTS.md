@@ -8,7 +8,7 @@
 
 用户已授权CModel→RTL冻结验证→同工况DC→六架构真实负载功耗与七类功能占比。三混合顶层及独立Q32E64的CModel、Verilator全量/断点/L8/II=1/门控验证已通过，见test/results/mixed-cmodel-v1.9.md与mixed-rtl-v1.9.md；baseline v1.8复核通过，E64保持旧设计并通过兼容回归。E专用S3完成HiF4 e2融合，S4窄组和/abs，S5 U22 LZD、补零输出U31；QE保留Q U5指数/宽对齐，E旁路并在S4 lane树后消耗e2。三种扩展采用carry-save合并、双行MUX及唯一CPA，E96 S43、E128/Q64E128 S44；Q32E64五源4:2+3:2+CPA为S43。active屏蔽MAX，非参与特殊/负零贡献分别处理。详细入口src/spec/dp/dptop/mixed-precision-expansion.md与low-precision-tops.md。五份新DC已通过1GHz setup/hold、电气及VT门禁；六架构15个兼容精度点均重新采样SAIF并通过功耗审计。旧PPA保留对照。独立E64及dp_top_e通过ARCHITECTURE_V19默认0保留旧合同。
 
-当前交付入口：hw/power/records/v19_design_report_20261110.md；DC索引hw/dc_syn/records/v19_six_dp_20261110.{md,json}；完整动态/静态/总功耗及旧版对照hw/power/records/v19_six_architectures_20261110.{md,json,csv}；六架构七类功能统计及图paper/data/H16Q32E64_area/v19_six/README.md。N12 TT/0.7V/85°C、1GHz、ICG开启，setup正裕量极小，仅综合后/CTS布线前结论。E64沿用原通过网表，但本轮SAIF与功耗为新采样。所有旧功耗及引用依赖继续保留。
+当前交付入口：hw/power/records/v19_design_report_20261110.md；DC索引hw/dc_syn/records/v19_six_dp_20261110.{md,json}；完整动态/静态/总功耗及旧版对照hw/power/records/v19_six_architectures_20261110.{md,json,csv}；六架构七类面积及图paper/data/H16Q32E64_area/README.md，总功耗及图paper/data/H16Q32E64_power/README.md。N12 TT/0.7V/85°C、1GHz、ICG开启，setup正裕量极小，仅综合后/CTS布线前结论。E64沿用原通过网表，但本轮SAIF与功耗为新采样。所有旧功耗及引用依赖继续保留。
 
 baseline电气修复独立run dc_dp_top_11092301，面积16165.122154 µm²，setup/hold/电气/VT均通过；三种新负载功耗见hw/power/records/baseline_v18_repaired_1109.md，旧结果及依赖继续保留。原DC引用的完整验证回执按其verification_id定位，不因同一RTL快照再次验证而替换历史验收；当前源码综合仍使用严格最新门禁。
 

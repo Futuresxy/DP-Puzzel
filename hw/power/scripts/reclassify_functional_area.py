@@ -244,5 +244,5 @@ def refine(run,output):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run',type=Path,required=True)
-    parser.add_argument('--output',type=Path,default=ROOT/'paper/data/H16Q32E64_area')
+    parser.add_argument('--output',type=Path,default=ROOT/'paper/data/results/legacy_dp_functional')
     args=parser.parse_args();refine(args.run.resolve(),args.output.resolve())

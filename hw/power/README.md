@@ -1,6 +1,6 @@
 # 单 DP 真实负载功耗
 
-完整设计、验证、时序与优化分析见 [v1.9 设计交付](records/v19_design_report_20261110.md)；六架构七类面积及三类功耗图见 [功能统计](../../paper/data/H16Q32E64_area/v19_six/README.md)。
+六架构的设计验证、时序和优化分析见 [v1.9 设计交付](records/v19_design_report_20261110.md)。功能分布见 [七类面积](../../paper/data/H16Q32E64_area/README.md) 和 [三种精度的总功耗](../../paper/data/H16Q32E64_power/README.md)。
 
 使用 VCS native gate-level SAIF 和 Synopsys Power Compiler。首批六种架构的 BF16、MXFP8 E4M3、MXFP4 E2M1 共15个兼容点，使用固定 Qwen3-8B MLP 真实负载。方法见 [功耗 skill](../../.skill/power-analysis/SKILL.md)，测量合同见 [实施说明](implementation-plan.md)。
 

@@ -103,4 +103,6 @@ E_j = sum_f(F_f*P_j,f/C_j,f)
 
 ## Select8 成本与 DP 面积占比图
 
-在 [data/DP_area_power/](data/DP_area_power/README.md) 修改 `selected8_area.csv` 的面积、`selected8_power.csv` 的动态/静态功耗；在 [data/H16Q32E64_area/](data/H16Q32E64_area/README.md) 修改 `area_data.csv` 的 `category` / `total_um2`。运行 `make cost-figures` 后，三个 PNG 更新到 `figures/`，总功耗、基线倍率、分类面积占比自动重算。该入口不含 selected14 或 21 配置合并；恢复后的评估章节已引用这三张 PNG。
+运行 `make cost-figures` 生成 Select8 的面积与功耗图。评估章节直接引用仓库中的 PETile 参考图。[Select8 数据说明](data/DP_area_power/README.md) · [PETile 参考图](figures/H16Q32E64_area_pie.png)
+
+新版六种 DP 的七类面积与总功耗分别保存在两张 CSV。运行 `make dp-share-figures` 重绘六张面积图和六张总功耗图。[面积](data/H16Q32E64_area/README.md) · [总功耗](data/H16Q32E64_power/README.md)
