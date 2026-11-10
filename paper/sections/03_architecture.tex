@@ -6,11 +6,11 @@
 
 DP-Puzzle 采用 Lane、Group 和 DP三层组合式架构（图~\ref{fig:dp_architecture}）。在Lane内复用元素乘法与局部对齐和规约累加，消除多精度计算的并行度差异，Group 融合缩放因子尺度并统一部分和表示，DP 共享全局对齐与累加后端。同时我们设计统一的 Group 接口使低精度专用优化单元能够独立裁剪和增配，是后续配比扩展的组合边界。
 
-表~\ref{tab:precision_families} 统一定义精度简称、定点格式和并行度记号。一个 Lane 支持 T1H2Q4E8；两个 Lane 构成 Group，四个 Group 构成 T8H16Q32E64 基线。该层级覆盖 HiF4 的局部微指数与 NVFP4 的组尺度粒度，更大尺度块通过广播共享尺度。此外，每个 Lane 支持四路 INT8 乘法，DP 支持 INT32 累加。各模式采用八级流水，每拍接收一笔独立请求。
+表~\ref{tab:precision_families} 统一定义精度简称、定点格式和并行度记号。一个 Lane 支持 T1H2Q4E8；两个 Lane 构成 Group，四个 Group 构成 T8H16Q32E64 基线。此外，每个 Lane 支持四路 INT8 乘法，DP 支持 INT32 累加。各模式采用八级流水，每拍接收一笔独立请求。
 
 \begin{table}[t]
 \centering
-\caption{精度简称、定点格式与计算并行度记号。}
+\caption{精度简称、定点格式与计算并行度记号。Q 格式采用整数位不含符号位的约定~\cite{ti2003qformat}。}
 \label{tab:precision_families}
 \begingroup
 \footnotesize
@@ -25,8 +25,8 @@ H & FP16、BF16 \\
 Q & MXFP8（E4M3/E5M2）、MXFP6（E2M3/E3M2） \\
 E & MXFP4、NVFP4、HiF4 \\
 \midrule
-$\mathrm{Q}I.F$ & 有符号补码定点数：一位符号、$I$ 位整数和 $F$ 位小数；$I$ 不含符号位。 \\
-$\mathrm{UQ}I.F$ & 无符号定点数：$I$ 位整数和 $F$ 位小数。 \\
+$\mathrm{Q}I.F$ & 有符号补码：$I$ 位整数（不含符号位）、$F$ 位小数，总宽度 $1+I+F$。 \\
+$\mathrm{UQ}I.F$ & 无符号定点数：$I$ 位整数、$F$ 位小数，总宽度 $I+F$；如 UQ2.26 为 28 位。 \\
 T1H2Q4E8 & T/H/Q/E 浮点模式每拍分别计算 1/2/4/8 对元素的乘积；每对含一个 A 和一个 B，模式互斥。 \\
 \bottomrule
 \end{tabular}
@@ -36,7 +36,7 @@ T1H2Q4E8 & T/H/Q/E 浮点模式每拍分别计算 1/2/4/8 对元素的乘积；�
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{baseline_arch.png}
-\caption{Lane--Group--DP 分层架构。Lane 共享乘法与局部移位，Group 完成尺度融合与指数重计算，DP 共享全局对齐及累加；整数模式旁路浮点对齐与输出处理。}
+\caption{缩放粒度驱动的 Lane--Group--DP 划分。HiF4 每 8 个元素共享一个二级微指数，对应一个 Lane 的 8 路 E 类乘积；NVFP4 每 16 个元素共享一个尺度，因此由两个 Lane 构成一个 Group。更大的量化块向多个 Group 广播同一尺度，保持原格式的缩放粒度。}
 \label{fig:dp_architecture}
 \end{figure}
 
