@@ -2,19 +2,19 @@
   "scope": "Existing verified N12 measurements; no new synthesis or power run",
   "sources": [
     {
-      "path": "hw/dc_syn/records/latest_six_dp.json",
-      "sha256": "c301f471892894518af6c48116f6a9de583200048b351508ad732474078cf7d2"
+      "path": "hw/dc_syn/records/v19_six_dp_20261110.json",
+      "sha256": "ef79fe0c64d8ca6803fa6d21f67c28fd1b73b02f0ad6870366854a88214c957a"
     },
     {
-      "path": "hw/power/records/current_six_precision_gated.json",
-      "sha256": "22b8cb932199a4465fca3c8eee42b6bc81cb665642ff5f2729dc81d0166d9cb0"
+      "path": "hw/power/records/v19_six_architectures_20261110.json",
+      "sha256": "a894ac00cee47a361ce4ee7c046ef9125f6c15e90dc6240c97ef5eab7e449f35"
     },
     {
-      "path": "hw/power/records/current_six_precision_gated.csv",
-      "sha256": "6d7c48f5e4961bfbdbbe2808361db0e8275e9b6683b821adf0fb52a615033e4a"
+      "path": "hw/power/records/v19_six_architectures_20261110.csv",
+      "sha256": "7affcb37099b37245873fa7e14f09fe572c7131eac2713dc2de12fae418aec4f"
     }
   ],
-  "source_created_utc": "2026-11-08T09:53:39.518917+00:00",
+  "source_created_utc": "2026-11-09T16:31:01.926410+00:00",
   "condition": {
     "technology": {
       "schema_version": 1,
@@ -63,7 +63,8 @@
   },
   "workload": "Qwen3-8B layer 0 MLP down_proj; 1024 independent transactions",
   "boundary": "Post-synthesis zero-delay, pre-CTS/pre-route; no SDF/SPEF",
-  "implementation": "Five precision-register-gated shared designs; original unchanged E64",
+  "implementation": "Repaired v1.8 dp_top baseline; v1.9 mixed and Q32E64 designs; original E64 netlist",
+  "measurement_batch": "All 15 points replayed with fresh native SAIF and Power Compiler in the v1.9 comparison batch",
   "power_components": "Dynamic = internal + switching; static = leakage",
   "total_policy": "Keep tool-reported total_mw; component sums differ by report rounding",
   "area_reference": "dp_top",

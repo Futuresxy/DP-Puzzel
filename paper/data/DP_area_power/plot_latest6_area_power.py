@@ -9,14 +9,14 @@ import platform
 from pathlib import Path
 
 from plot_area_power import (
-    PAPER, MultipleLocator, matplotlib, np, plt,
+    PAPER, Patch, MultipleLocator, matplotlib, np, plt,
     read_csv, save_figure,
 )
 
 HERE = Path(__file__).resolve().parent
 ROOT = PAPER.parent
-DC_SOURCE = ROOT / "hw/dc_syn/records/latest_six_dp.json"
-POWER_SOURCE = ROOT / "hw/power/records/current_six_precision_gated.json"
+DC_SOURCE = ROOT / "hw/dc_syn/records/v19_six_dp_20261110.json"
+POWER_SOURCE = ROOT / "hw/power/records/v19_six_architectures_20261110.json"
 POWER_CSV = POWER_SOURCE.with_suffix(".csv")
 # H:Q:E MAC/cycle ratios, divided by the common H16 capacity.
 CONFIGS = (
@@ -70,7 +70,7 @@ def refresh_data():
         require(technology["technology_id"] == power["condition"]["technology"]["technology_id"],
                 f"Technology mismatch: {top}")
         area_rows.append(dict(
-            top=top, architecture=r["capacity"], ratio=ratio,
+            top=top, architecture=r["capacity"].removesuffix(" opt"), ratio=ratio,
             H=capacities[0], Q=capacities[1], E=capacities[2],
             area_um2=r["result"]["total_area_um2"],
             combinational_area_um2=r["result"]["combinational_area_um2"],
@@ -106,7 +106,8 @@ def refresh_data():
         source_created_utc=power["created_utc"], condition=power["condition"],
         workload="Qwen3-8B layer 0 MLP down_proj; 1024 independent transactions",
         boundary="Post-synthesis zero-delay, pre-CTS/pre-route; no SDF/SPEF",
-        implementation="Five precision-register-gated shared designs; original unchanged E64",
+        implementation="Repaired v1.8 dp_top baseline; v1.9 mixed and Q32E64 designs; original E64 netlist",
+        measurement_batch="All 15 points replayed with fresh native SAIF and Power Compiler in the v1.9 comparison batch",
         power_components="Dynamic = internal + switching; static = leakage",
         total_policy="Keep tool-reported total_mw; component sums differ by report rounding",
         area_reference="dp_top", power_reference="dp_top/bf16",
@@ -200,29 +201,34 @@ def draw(areas, groups, output, dpi):
     ax.set_xlim(-.5, 5.85)
     save_figure(fig, output, "latest6_area", dpi)
 
-    fig, axes = plt.subplots(1, 3, figsize=(10.2, 2.8), sharey=True)
-    fig.subplots_adjust(left=.065, right=.99, bottom=.24, top=.86, wspace=.13)
+    widths = np.array([len(group) + .9 for group in groups])
+    edges = np.r_[0, np.cumsum(widths)]
+    centers = (edges[:-1] + edges[1:])/2
+    fig, ax = plt.subplots(figsize=(9.2, 2.8))
+    fig.subplots_adjust(left=.09, right=.99, bottom=.24, top=.86)
     maximum = max(float(r["total_mw"]) for g in groups for r in g)
-    ratios = {top: ratio for top, ratio, _ in CONFIGS}
-    for index, (ax, fmt, label) in enumerate(zip(axes, FORMATS, LABELS)):
-        rows = [r for group in groups for r in group if r["format"] == fmt]
-        centers = np.arange(len(rows))
-        totals = [float(r["total_mw"]) for r in rows]
-        baseline = [r["top"] == "dp_top" and fmt == "bf16" for r in rows]
-        bars = ax.bar(centers, totals, width=.42, color=COLORS[fmt],
-                      edgecolor=["#F39A24" if b else "#7A7A7A" for b in baseline],
-                      linewidth=[1.8 if b else .45 for b in baseline], zorder=2)
-        ax.bar_label(bars, labels=[f"{v:.2f}" for v in totals], padding=3, fontsize=7.5)
-        for x, total in zip(centers, totals):
+    for center, group in zip(centers, groups):
+        for index, row in enumerate(group):
+            x = center + index - (len(group)-1)/2
+            total = float(row["total_mw"])
+            baseline = row["top"] == "dp_top" and row["format"] == "bf16"
+            bars = ax.bar(x, total, width=.42, color=COLORS[row["format"]],
+                          edgecolor="#F39A24" if baseline else "#7A7A7A",
+                          linewidth=1.8 if baseline else .45, zorder=2)
+            ax.bar_label(bars, labels=[f"{total:.3f}"], padding=3, fontsize=7.5)
             bracket(ax, x, total, total/power_ref)
-        style_axes(ax, centers, maximum, "Total Power (mW)" if index == 0 else "",
-                   np.arange(.5, len(rows)-1, 1), [ratios[r["top"]] for r in rows])
-        ax.set_xlim(-.5, len(rows)-.15)
-        ax.set_title(f"({chr(ord('a')+index)}) {label}", fontsize=10, pad=8)
+    style_axes(ax, centers, maximum, "Total Power (mW)", edges[1:-1])
+    ax.set_xlim(edges[0], edges[-1])
+    handles = [Patch(facecolor=COLORS[fmt], edgecolor="#7A7A7A", linewidth=.45, label=label)
+               for fmt, label in zip(FORMATS, LABELS)]
+    ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(.5, 1.01), ncols=3,
+              frameon=False, fontsize=8, columnspacing=1.5, handletextpad=.4, handlelength=1.4)
     save_figure(fig, output, "latest6_power", dpi)
     return dict(area_bars=6, power_bars=15, formats=list(FORMATS),
-                power_layout="1 row, 3 panels", power_panels=["(a) BF16", "(b) MXFP8 E4M3", "(c) MXFP4 E2M1"],
-                power_panel_bars=[4, 5, 6], power_quantity="tool-reported total_mw", power_stacked=False,
+                power_layout="six ratio groups, widths proportional to supported precision count plus gap",
+                power_group_bars=[len(g) for g in groups], power_group_widths=widths.tolist(),
+                x_tick_labels=[c[1] for c in CONFIGS],
+                power_quantity="tool-reported total_mw", power_stacked=False,
                 area_reference_top="dp_top", area_reference_um2=area_ref,
                 power_reference_top="dp_top", power_reference_format="bf16",
                 power_reference_total_mw=power_ref, dpi=dpi,

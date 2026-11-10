@@ -6,24 +6,38 @@
     "mxfp8_e4m3",
     "mxfp4_e2m1"
   ],
-  "power_layout": "1 row, 3 panels",
-  "power_panels": [
-    "(a) BF16",
-    "(b) MXFP8 E4M3",
-    "(c) MXFP4 E2M1"
+  "power_layout": "six ratio groups, widths proportional to supported precision count plus gap",
+  "power_group_bars": [
+    1,
+    2,
+    3,
+    3,
+    3,
+    3
   ],
-  "power_panel_bars": [
-    4,
-    5,
-    6
+  "power_group_widths": [
+    1.9,
+    2.9,
+    3.9,
+    3.9,
+    3.9,
+    3.9
+  ],
+  "x_tick_labels": [
+    "0:0:4",
+    "0:2:4",
+    "1:2:4",
+    "1:2:6",
+    "1:2:8",
+    "1:4:8"
   ],
   "power_quantity": "tool-reported total_mw",
   "power_stacked": false,
   "area_reference_top": "dp_top",
-  "area_reference_um2": 17782.087803,
+  "area_reference_um2": 16165.122154,
   "power_reference_top": "dp_top",
   "power_reference_format": "bf16",
-  "power_reference_total_mw": 15.672550201416,
+  "power_reference_total_mw": 15.3282642364502,
   "dpi": 400,
   "figures": [
     "latest6_area.png",
@@ -37,21 +51,21 @@
   "inputs": [
     {
       "file": "latest6_area.csv",
-      "sha256": "4ff916780d3c1f30e6722df98baf75da08a68eddcb85982e45398ebb9c2aed7e"
+      "sha256": "283d096731f8fe35e0c4fe80b565e4c303547db8cb32ad30f28169adf4768d00"
     },
     {
       "file": "latest6_power.csv",
-      "sha256": "f6033d98fdd3f0638f1364b8cbd0c4049943ffd207c4d6b54f35c96584f4eca6"
+      "sha256": "2540506d11426ec8c2d2f9fb2a121c4f81133635a3cf6beabccf2d7e31ee2abe"
     },
     {
       "file": "latest6_sources.json",
-      "sha256": "4586cf0c1fcca8215cd1fe9c2ba61ea00727ac480d37d12ef7544eb63b965f06"
+      "sha256": "bf28d9f690084e82b8da26f04075f472ef415f20b5c60f117df0484553dead86"
     }
   ],
   "scripts": [
     {
       "file": "plot_latest6_area_power.py",
-      "sha256": "643b20e2a915ac3ae88298dd2c86c5809864a01107567c1febaf73467edbe344"
+      "sha256": "a1be9772bb9d43efb4abf7385c676f1129976f5e816505de431c81d63cf37a4c"
     },
     {
       "file": "plot_area_power.py",
@@ -61,11 +75,11 @@
   "outputs": [
     {
       "file": "latest6_area.png",
-      "sha256": "b07d71ab99c08227ea46a9b5c0bb09771d06cde7ddf0439c2b36c63596b8e2a1"
+      "sha256": "b823ab5cff81fabadd5b3cb5da96eb3359683f58f441d155d4b56ae66388146d"
     },
     {
       "file": "latest6_power.png",
-      "sha256": "475ea080a7ed94683cd659106d65e7da0e9757402c4011fe75dba6900f3ede13"
+      "sha256": "dd5242bac618a61a88f84d1aa2bb74364744899ca9149deebe901ea040db4f80"
     }
   ]
 }

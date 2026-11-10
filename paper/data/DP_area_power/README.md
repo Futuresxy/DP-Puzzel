@@ -1,11 +1,11 @@
 # DP 面积与功耗数据及绘图
 
-## 最新六种 DP：N12 / 1GHz
+## 最新六种 DP：2026-11-10 v1.9 比较批次，N12 / 1GHz
 
 `latest6_area.csv` 保存六种架构的综合面积、组合/时序面积、工况、DC run 和冻结 RTL export ID。
 `latest6_power.csv` 保存 15 个实测格式点的 Internal、Switching、动态、静态、总功耗、K、pJ/MAC，以及功耗审计和负载验证回执路径/hash。
-来源为 [`latest_six_dp.json`](../../../hw/dc_syn/records/latest_six_dp.json) 和
-[`current_six_precision_gated.json`](../../../hw/power/records/current_six_precision_gated.json)；
+来源为 [`v19_six_dp_20261110.json`](../../../hw/dc_syn/records/v19_six_dp_20261110.json) 和
+[`v19_six_architectures_20261110.json`](../../../hw/power/records/v19_six_architectures_20261110.json)；
 `latest6_sources.json` 固定来源文件 SHA-256、负载窗口和工况。
 
 | 图中 H:Q:E 配比 | 架构 | 顶层 |
@@ -15,13 +15,15 @@
 | 1:2:4 | T8H16Q32E64 | dp_top |
 | 1:2:6 | T8H16Q32E96 | dp_top_t8h16q32e96 |
 | 1:2:8 | T8H16Q32E128 | dp_top_t8h16q32e128 |
-| 1:4:8 | T8H16Q64E128 opt | dp_top_t8h16q64e128_opt |
+| 1:4:8 | T8H16Q64E128 | dp_top_t8h16q64e128_opt |
 
 配比为 H/Q/E 原生 MAC/cycle 除以 16；共享单元的不同模式不能同时相加。
-功耗图横向排列三个子图：**(a) BF16、(b) MXFP8 E4M3、(c) MXFP4 E2M1**，分别为 4、5、6 根柱。
-每根柱只展示工具报告的 **total power**，三个子图共用纵轴范围；未测或不支持的组合不填零。
+功耗图横轴为六种 **H:Q:E 配比**，每组按 BF16、MXFP8 E4M3、MXFP4 E2M1 顺序画支持的精度。
+各组分别为 1、2、3、3、3、3 根柱，组宽为柱数加 0.9 单位间隔，支持精度较少的组更窄。
+每根柱只展示工具报告的 **total power**，无静态/动态堆叠；未测或不支持的组合不填零。
 面积倍率以 `dp_top` 为基准；所有功耗倍率统一以 `dp_top / BF16` 为基准。
-总功耗保留工具原值，动态=Internal+Switching，静态=Leakage；当前分项和与总值最大差约 0.00030 mW，校验容差为 0.0005 mW，绘图不改写测量值。
+CSV 保留原始报告精度，面积与总功耗四舍五入到三位小数后与用户提供的最新表格一致；功耗柱顶显示三位小数。
+总功耗保留工具原值，动态=Internal+Switching，静态=Leakage；分项和与总值的校验容差为 0.0005 mW。
 
 在仓库根目录运行（Python 环境需安装 `paper/requirements.txt`）：
 
@@ -36,9 +38,9 @@ python3.11 paper/data/DP_area_power/plot_latest6_area_power.py
 同目录 `latest6_plot_manifest.json` 记录数据/脚本/图片 hash、基准和柱数。
 支持 `--output-dir` 与 `--dpi`；脚本沿用 `plot_area_power.py` 的浅色柱、橙色基准框、数值标签及竖直倍率括号，功耗使用总值单柱。
 
-测量条件：N12 TT / 0.7V / 85°C、1GHz、L8/II=1、ICG 开启；五种共享架构采用精度寄存器门控，E64 保持原设计。
+测量条件：N12 TT / 0.7V / 85°C、1GHz、L8/II=1、ICG 开启；dp_top 为 v1.8 修复基线，三个混合顶层和 Q32E64 为 v1.9，E64 保持原设计。
 Qwen3-8B 第 0 层 MLP down_proj 同源 1024 笔输入，发射索引 256..767 的 512ns 窗口；VCS 原生门级 SAIF + Power Compiler。
-三个混合架构使用本轮测量，dp_top/Q32E64/E64 复用索引中已验证的对应测量。
+本次索引中的 15 点均已重新进行冻结 RTL/门级重放、原生 SAIF 和 Power Compiler；E64 仅复用原网表，活动和功耗重新采集。
 这是已有测量的汇总，范围为综合后零延迟、CTS/布线前，无 SDF/SPEF；不同 K 的整 DP 功耗比较需结合容量与 pJ/MAC。
 
 ## 原 Select8 数据与图片
