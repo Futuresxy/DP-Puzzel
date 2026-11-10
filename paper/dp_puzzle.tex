@@ -145,9 +145,9 @@ Two questions follow. First, how can shared arithmetic, specialized low-precisio
 \label{sec:architecture}
 \label{sec:brick_definition}
 
-DP-Puzzle organizes shared arithmetic into lanes, groups, and a DP backend (Fig.~\ref{fig:dp_architecture}). Lanes reduce format-dependent product counts to partial sums; groups apply scales and unify their representation; the DP shares global alignment and accumulation. The common group interface allows specialized low-precision units to be pruned and added for ratio expansion.
+DP-Puzzle adopts a three-level compositional architecture consisting of Lanes, Groups, and a DP unit (Fig.~\ref{fig:dp_architecture}). Each Lane reuses multiplication, local alignment, and reduction hardware to produce one partial sum from different numbers of parallel products. Groups apply shared scales and unify partial-sum representation; the DP shares global alignment and accumulation hardware. A uniform Group interface provides the composition boundary for independently specializing and adding low-precision units.
 
-Table~\ref{tab:precision_families} defines our notation. Each lane supports T1H2Q4E8; two lanes form a group, and four groups form the T8H16Q32E64 baseline. Each lane also supports four INT8 products, with INT32 accumulation at the DP. All modes use eight pipeline stages and accept one independent request per cycle.
+Table~\ref{tab:precision_families} defines the notation. One Lane supports T1H2Q4E8; two Lanes form a Group, and four Groups form the T8H16Q32E64 baseline. Each Lane also supports four INT8 multiplications, with INT32 accumulation in the DP. All modes use an eight-stage pipeline accepting one request per cycle.
 
 \begin{table}[t]
 \centering
@@ -174,10 +174,10 @@ T1H2Q4E8 & 1/2/4/8 A--B element products per cycle in mutually exclusive T/H/Q/E
 \endgroup
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[!t]
 \centering
 \includegraphics[width=\columnwidth]{baseline_arch.png}
-\caption{Hierarchy matched to scaling granularity. HiF4 shares a second-level micro-exponent across eight elements, matching a lane's eight E products. An NVFP4 scale block spans 16 elements, matching two lanes per group. Larger quantization blocks broadcast scales across groups.}
+\caption{Lane--Group--DP organization follows scaling granularity. A HiF4 second-level micro-exponent covers eight elements, matching eight E products per Lane. An NVFP4 scale covers 16 elements, matching two Lanes per Group. Larger blocks broadcast scales across Groups without changing quantization granularity.}
 \label{fig:dp_architecture}
 \end{figure}
 
@@ -185,28 +185,28 @@ T1H2Q4E8 & 1/2/4/8 A--B element products per cycle in mutually exclusive T/H/Q/E
 \label{sec:unpack_recode}
 \label{sec:full_brick}
 
-Figure~\ref{fig:data_unpack} shows decoding for shared arithmetic. T/H retain exponents and significands, Q uses internal E5M3, and INT8 separates sign and magnitude. MXFP4/NVFP4 absorb element exponents into UQ3.1 magnitudes. HiF4 incorporates its first-level micro-exponent into UQ2.2, retaining the lane-shared second-level micro-exponent. E thus bypasses per-element floating-point alignment.
+Figure~\ref{fig:data_unpack} shows input unpacking. T/H retain exponent and significand fields; Q inputs are converted to common E5M3; INT8 inputs are separated into sign and magnitude. MXFP4/NVFP4 element exponents are folded into UQ3.1 magnitudes. HiF4 folds its first-level micro-exponent into UQ2.2 magnitudes and retains the second-level micro-exponent shared by a Lane. E formats therefore require no per-element floating-point alignment.
 
-\begin{figure}[t]
+\begin{figure}[!t]
 \centering
 % Author figure update: whole-lane counts should read 2x FP16 and 8x E.
 % The 10/16/4-bit fields describe one field group; each lane contains two.
 \includegraphics[width=\columnwidth]{unpack_layout.png}
-\caption{Mapping inputs to shared exponent, significand, and sign fields. Q uses a common encoding; E absorbs element exponents into fixed-point magnitudes. Unused fields are zero-filled; special-value flags propagate separately.}
+\caption{Mapping input formats to shared exponent, significand, and sign fields. Q inputs use a common internal encoding; E element exponents are folded into fixed-point magnitudes. Unused fields are zero-filled, and special-value flags propagate separately.}
 \label{fig:data_unpack}
 \end{figure}
 
 % Park multiplier composition follows the author's supplied reading;
 % verification against the original circuit figure remains pending.
-\textbf{Multiplier reuse.} BitFusion combines four $2\times2$ products into one $4\times4$ product or parallel narrower products~\cite{bitfusion2018}. Park et al. use four $4\times8$ multipliers and one $4\times4$ multiplier for one FP16, two INT8, or four INT4 products~\cite{parkMultimode8KMACHWutilizationaware2022}. Following this decomposition principle, each lane uses two banks of $8\times8$, $8\times4$, $4\times8$, and $4\times4$ multipliers. Partial-product composition or independent routing supports different widths and parallelism without complete per-format multiplier arrays.
+\textbf{Multiplier reuse.} BitFusion combines four $2\times2$ multipliers for one $4\times4$ multiplication or operates them independently for low-precision parallelism~\cite{bitfusion2018}. Park et al. reuse four $4\times8$ multipliers and one $4\times4$ multiplier for one FP16, two INT8, or four INT4 multiplications~\cite{parkMultimode8KMACHWutilizationaware2022}. Following this partial-product decomposition principle, each Lane contains two sets of $8\times8$, $8\times4$, $4\times8$, and $4\times4$ multipliers. Partial products are combined for wider multiplication or routed independently for parallel low-precision multiplication, avoiding per-format multiplier arrays.
 
-\textbf{Shifter reuse.} T/H/Q products receive static binary-point padding before four shared right shifters. MMA-Sim reports 25 fractional bits for Blackwell MXFP8 fused summation~\cite{xie2025mmasim}; we use this as a reference and retain 26 fractional bits in a 28-bit UQ2.26 alignment window. Both lanes align to their common maximum product exponent. E/INT8 bypass alignment and reuse the reduction tree; HiF4 applies a small left shift to the lane sum for its second-level micro-exponent.
+\textbf{Shifter reuse.} T/H/Q products are statically zero-padded according to their binary-point positions and fed to four shared right shifters. MMA-Sim reports 25 fractional bits for Blackwell MXFP8 fused summation~\cite{xie2025mmasim}. Using this as a reference, we choose a 28-bit UQ2.26 window with 26 fractional bits. Both Lanes align products to their common maximum product exponent. E/INT8 bypass these shifters and reuse the reduction tree. HiF4 applies its second-level micro-exponent as a small left shift of the Lane sum.
 
 \subsection{Group: Scale Fusion and Anchor Recompute}
 
-\textbf{Scaling after reduction.} The group sums two lanes sharing a scale, extracts the magnitude, and multiplies it by $\mathrm{Scale}_{\mathrm{mant}}$, the product of both scale significands. NVFP4/HiF4 share one unsigned $14\times8$ multiplier for the compact group magnitude and scale product, avoiding per-element scale multipliers. MX power-of-two scales affect only exponents and bypass this multiplier.
+\textbf{Scale fusion after reduction.} The two Lanes share scales, so the Group sums their outputs and extracts the magnitude before multiplying by $\mathrm{Scale}_{\mathrm{mant}}$, the product of both input scale significands. NVFP4/HiF4 use a 14-bit compact Group magnitude and an 8-bit scale product, sharing one unsigned $14\times8$ multiplier instead of per-element scale multipliers. MX power-of-two scales are included in the exponent and bypass significand multiplication.
 
-\textbf{Common partial-sum representation.} The group outputs a sum-of-products magnitude, $\mathrm{SoP}$, with width $\mathrm{Group}_{\mathrm{mag}}$ (31 bits here) and $\mathrm{Group}_{\mathrm{frac}}$ fractional bits. $\mathrm{Anchor}$ denotes the exponent of its most significant physical bit. Given the local alignment exponent $\mathrm{Anchor}_{\mathrm{lane}}$, the sum of unbiased scale exponents $\mathrm{Scale}_{\mathrm{exp}}$, and element bias $\mathrm{Bias}$,
+\textbf{Unified partial-sum representation.} The Group output magnitude, $\mathrm{SoP}$ (sum of products), has $\mathrm{Group}_{\mathrm{mag}}$ bits (31 here) and $\mathrm{Group}_{\mathrm{frac}}$ fractional bits. $\mathrm{Anchor}$ denotes the exponent of its most significant physical bit. It combines the local alignment exponent $\mathrm{Anchor}_{\mathrm{lane}}$, the sum of the two unbiased scale exponents $\mathrm{Scale}_{\mathrm{exp}}$, and the element exponent bias $\mathrm{Bias}$:
 \begin{equation}
 \begin{aligned}
 \mathrm{Anchor}={}&\mathrm{Anchor}_{\mathrm{lane}}+\mathrm{Scale}_{\mathrm{exp}}\\
@@ -214,9 +214,9 @@ Figure~\ref{fig:data_unpack} shows decoding for shared arithmetic. T/H retain ex
 \end{aligned}
 \label{eq:anchor_recompute}
 \end{equation}
-Format-dependent corrections are precomputed, allowing Anchor Recompute to run alongside significand reduction. E uses zero local alignment exponent and element bias; unscaled formats use zero scale exponent.
+Precomputed format corrections let Anchor Recompute run in parallel with significand reduction. E element exponents are already folded into magnitudes, so the local alignment exponent and element bias are zero. Unscaled formats use a zero scale-exponent sum.
 
-\textbf{Leading zeros and bidirectional alignment.} Subtracting the leading-zero count of the scaled SoP from its raw Anchor gives its comparison exponent. Participation masks exclude zero finite products and group magnitudes from the corresponding exponent MAX without invalidating the request. Let $\mathrm{Exp}_{\mathrm{max}}$ be the maximum comparison exponent among participating group and $C$ inputs, and $\Delta=\mathrm{Anchor}-\mathrm{Exp}_{\mathrm{max}}$. Appending low-order zeros to SoP gives $\mathrm{SoP}_{\mathrm{pad}}$ in the $W$-bit unsigned global window:
+\textbf{Leading zeros and bidirectional shifting.} The Group subtracts the leading-zero count of the scaled SoP from its original Anchor to obtain the leading-bit exponent for comparison. Masks exclude zero finite products and zero Group magnitudes from the respective exponent MAX, preventing zeros from raising the alignment reference. The request remains valid. Let $\mathrm{Exp}_{\mathrm{max}}$ be the maximum comparison exponent among participating Group and $C$ inputs, and $\Delta=\mathrm{Anchor}-\mathrm{Exp}_{\mathrm{max}}$. Padding SoP with low-order zeros to the unsigned global window width $W$ gives $\mathrm{SoP}_{\mathrm{pad}}$. Alignment produces
 \begin{equation}
 \mathrm{SoP}_{\mathrm{align}}=
 \begin{cases}
@@ -226,13 +226,13 @@ Format-dependent corrections are precomputed, allowing Anchor Recompute to run a
 \end{cases}
 \label{eq:bidirectional_alignment}
 \end{equation}
-The operators denote $W$-bit logical shifts. For a valid nonzero group, left shift cannot exceed its leading-zero count and loses no significant high bits. Using the raw Anchor combines normalization and global alignment into one shift.
+The $W$-bit logical shifts produce zero when $|\Delta|\ge W$. A nonzero participating Group result shifts left by at most its leading-zero count, preserving significant high bits. A single shift computed from the original Anchor performs both normalization and global alignment.
 
 \subsection{DP: Shared Accumulation and Integer Bypass}
 
-Ten-Four includes $C$ in frontend exponent comparison~\cite{rout2026tenfourv2}; Lutz et al.'s early-accumulation design aligns $C$ alongside product computation~\cite{lutzFusedFP84Way2024}. We defer $C$ alignment and accumulation to the DP. E elements have narrow exponent ranges, with actual magnitudes determined by group scales. Reducing and scaling groups first prevents a large $C$ exponent from prematurely truncating local products. This ordering matches MMA-Sim's Blackwell NVFP4 model: group dot products are scaled before alignment and summation with $C$~\cite{xie2025mmasim}.
+Ten-Four includes $C$ in the frontend maximum-exponent comparison~\cite{rout2026tenfourv2}. Lutz et al.'s early-accumulation design aligns $C$ in parallel with product computation~\cite{lutzFusedFP84Way2024}. We defer $C$ alignment and accumulation to the DP level. E elements have narrow exponent ranges, and their actual magnitudes also depend on Group scales. Group reduction and scaling precede alignment with $C$, avoiding premature truncation of local products by a large $C$ exponent. This ordering is consistent with MMA-Sim's Blackwell NVFP4 model: compute and scale each group dot product, then align and sum the results with $C$~\cite{xie2025mmasim}.
 
-$C$ retains its original encoding until the backend. It aligns with group results in a 39-bit unsigned window before sign restoration. A 4:2 compressor, a 3:2 compressor, and one carry-propagate adder perform fused accumulation without intermediate FP32 conversion. INT8/INT32 reuse this path in fixed integer coordinates, bypassing floating-point alignment, normalization, and rounding. Magnitude right shifts truncate toward zero; final FP32 output uses round-to-nearest, ties-to-even.
+$C$ retains its original encoding until the backend, where it aligns with Group results in a 39-bit unsigned window. Signs are restored before shared accumulation. The baseline uses 4:2 and 3:2 compression followed by one carry-propagate addition. Partial sums undergo no FP32 conversion; the final output is normalized and rounded. INT8 products and the INT32 addend share the accumulator in fixed integer coordinates, bypassing floating-point alignment, normalization, and rounding. Magnitude right shifts truncate toward zero; the final FP32 result uses round-to-nearest, ties-to-even.
 % END REVIEW PAIR: 03_architecture.tex
 
 % BEGIN REVIEW PAIR: 04_expansion.tex
