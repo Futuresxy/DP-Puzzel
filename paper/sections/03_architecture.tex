@@ -2,11 +2,11 @@
 \section{共享多精度点积微架构}
 \label{sec:architecture}
 
-DP-Puzzle 采用 lane、group 和 DP 三层结构（图~\ref{fig:dp_architecture}）：lane 复用乘法与局部规约通路，group 融合缩放因子并统一数值表示，DP 完成跨组对齐、累加与舍入。不同格式在共享的八级流水中完成式~\eqref{eq:blockdot} 的计算，输出 FP32 或 INT32 结果。
+DP-Puzzle 通过 lane、group 和 DP 三层组织实现跨精度复用（图~\ref{fig:dp_architecture}）：lane 将不同格式映射至共享乘法与局部对齐通路，group 融合块尺度并统一部分和表示，DP 共享全局对齐与融合累加后端。该边界使 NVFP4/HiF4 的尺度处理集中在 group 内，也为后续低精度专用前端的组合提供统一接口。各模式采用相同的八级流水，每拍可接收一笔独立请求。
 
-\subsection{数值精度分类与组织边界}
+\subsection{组织边界与参数定义}
 \label{sec:brick_definition}
-表~\ref{tab:precision_families} 定义五类精度简称。简称后的数字表示对应模式每拍处理的元素对数；例如，T1H2I4Q4E8 表示一个 lane 分别支持 1、2、4、4 或 8 对元素的点积计算，各模式互斥使用共享资源。
+表~\ref{tab:precision_families} 定义精度简称，简称后的数字表示每拍处理的元素对数。一个 lane 支持 T1H2I4Q4E8，覆盖 HiF4 共享二级微指数的 8 个元素；两个 lane 组成 group，覆盖 NVFP4 的 16 元素尺度块。更大尺度块向多个 group 广播同一尺度，保持原有量化粒度。基线由四个 group 构成 T8H16I32Q32E64，各模式互斥使用共享资源。
 \begin{table}[t]
 \centering
 \caption{Precision families and supported numerical formats.}
@@ -26,87 +26,106 @@ I & INT8 \\
 \end{tabular}
 \end{table}
 
-组织边界由缩放粒度确定：一个 lane 覆盖 HiF4 共享二级微指数的 8 个元素，两个 lane 组成一个 group，覆盖 NVFP4 共享尺度的 16 个元素。MX 格式的 32 元素尺度则广播至相应子组。基线 DP 包含四个 group，形成 T8H16I32Q32E64 的计算配置。
+表~\ref{tab:datapath_parameters} 定义后文使用的位宽参数，单位均为 bit；$\mathrm{sop}$、$\mathrm{scale\_mant}$ 和 $\mathrm{anchor}$ 分别表示部分和幅值、两侧尺度尾数乘积和指数坐标。令 $\ell(n)=\lceil\log_2 n\rceil$，$n_{\mathrm{tree}}$、$n_{\mathrm{lane}}$、$n_{\mathrm{group}}$ 分别为 lane 规约树叶数、每组 lane 数和每 DP 的 group 数，基线取 4、2、4。公式表达位宽关系，表中数值给出本章配置。
+\begin{table}[t]
+\centering
+\caption{Datapath width parameters and their derivation. Signed sums include the sign bit; magnitude widths exclude it.}
+\label{tab:datapath_parameters}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lll}
+\toprule
+Parameter & Meaning & Definition / setting \\
+\midrule
+$\mathrm{Lane}_{\mathrm{align}}$ & Local magnitude window & $28$ \\
+$\mathrm{Lane}_{\mathrm{sop}}$ & Signed lane sum & $\mathrm{Lane}_{\mathrm{align}}+1+\ell(n_{\mathrm{tree}})$ \\
+$\mathrm{Group}_{\mathrm{mag}}$ & Group magnitude & $\mathrm{Lane}_{\mathrm{sop}}+\ell(n_{\mathrm{lane}})-1$ \\
+$\mathrm{Group}_{\mathrm{frac}}$ & Group fractional bits & Format dependent \\
+$\mathrm{Scale}_{\mathrm{in}}$ & One scale significand & $4$ \\
+$\mathrm{Scale}_{\mathrm{sop}}$ & Compact group magnitude & $14$ \\
+$\mathrm{Scale}_{\mathrm{mant}}$ & Scale product & $2\,\mathrm{Scale}_{\mathrm{in}}$ \\
+$\mathrm{DP}_{\mathrm{align}}$ & Signed global leaf & $40$ \\
+$\mathrm{DP}_{\mathrm{sop}}$ & Signed accumulated sum & $\mathrm{DP}_{\mathrm{align}}+\ell(n_{\mathrm{group}}+1)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{baseline_arch.png}
-\caption{Hierarchical lane--group--DP architecture. Lanes share arithmetic resources; groups apply scaling and recompute anchors; the DP shares global alignment, accumulation with C, and output normalization and rounding.}
+\caption{Hierarchical lane--group--DP architecture. Lanes share multipliers and local shifters; groups apply scale significands and recompute anchors; the DP shares global alignment and accumulation, with an integer bypass around floating-point alignment and output processing.}
 \label{fig:dp_architecture}
 \end{figure}
 
-\subsection{Lane：统一解码与计算资源复用}
+\subsection{Lane：解码驱动的乘法与移位复用}
 \label{sec:unpack_recode}
 \label{sec:full_brick}
+
+\textbf{统一解码。}图~\ref{fig:data_unpack} 展示输入打包格式到指数、尾数和符号字段的映射。每个 lane 的每侧操作数包含两个 H1/Q2/E4 解包字段组，TF32 独占完整 lane；两组字段合计容纳 20 位指数、32 位尾数和 8 位符号。T/H 恢复有效数及隐藏位，Q 重编码为内部 E5M3 表示，INT8 分离符号与幅值。MXFP4/NVFP4 将 E2M1 元素指数吸收到四位 I3F1 幅值中，HiF4 将一级微指数并入 I2F2 幅值，保留 lane 共享的二级微指数。由此，E 类进入定点乘积通路，无需逐元素浮点对齐；特殊值标志独立传播。
 \begin{figure}[t]
 \centering
+% 图稿待作者统一数量标签：若左侧按完整 lane 标注，FP16 应为 2x，
+% MXFP4/NVFP4 与 HiF4 应为 8x；右侧 10/16/4 位为单个字段组，lane 含两组。
 \includegraphics[width=\columnwidth]{unpack_layout.png}
-\caption{Format-dependent operand unpacking into shared exponent, significand, and sign fields. Special-value flags propagate alongside the arithmetic path.}
+\caption{Operand unpacking for shared arithmetic. T/H retain exponent and significand fields; Q uses a common internal E5M3 representation; INT8 uses sign and magnitude. E formats absorb element exponents into fixed-point magnitudes, while HiF4 retains its lane-shared micro-exponent. Unused field bits are zero-filled.}
 \label{fig:data_unpack}
 \end{figure}
 
-\textbf{统一解码。}如图~\ref{fig:data_unpack}，每侧操作数解包为 20 位指数、32 位尾数和 8 位符号字段。Q 类统一重编码为内部 E5M3 表示，INT8 转为符号与幅值。MXFP4/NVFP4 的 E2M1 幅值转为 I3F1 定点数，其整数编码为 $\{0,1,2,3,4,6,8,12\}$，消除逐元素指数对齐。HiF4 在解码时将一级微指数并入幅值，二级微指数留至 lane 规约后处理。
+\textbf{分段乘法复用。}Ten-Four 按尾数位宽类别共享乘法器~\cite{rout2026tenfourv2}。本文进一步以分段乘积组合高精度乘法、以独立路由承载低精度并行乘法。每个 lane 配置两套 $8\times8$、$8\times4$、$4\times8$ 和 $4\times4$ 单元：TF32/FP16 组合部分积，BF16 直接使用宽乘法单元，Q/E 将独立元素映射至窄输入，INT8 复用宽乘积与交叉项重构通路。格式差异由输入选择和部分积组合处理，无需为每种格式配置完整乘法阵列。
 
-\textbf{共享乘法与规约。}两套 $8\times8$、$8\times4$、$4\times8$ 和 $4\times4$ 乘法器支持各模式的尾数乘积。对于 11 位乘法，将操作数拆为高 7 位和低 4 位，按下式重构：
-\begin{equation}
-\mathrm{mul}_{11}=2^8\mathrm{mul}_{HH}
- +2^4(\mathrm{mul}_{HL}+\mathrm{mul}_{LH})+\mathrm{mul}_{LL}.
-\end{equation}
-INT8 模式下，每套乘法器由 $HH$ 生成一路乘积，另将一个操作数拆为高、低 4 位，通过 $\mathrm{mul}_{HL}+2^4\mathrm{mul}_{LH}$ 生成第二路乘积；Q/E 的窄乘积直接映射至这些乘法器。
-
-T/H/Q 对两侧有效元素指数求和，并在两个 lane 间选取共同的最大值 $\mathrm{anchor}_{\mathrm{lane}}$，此时尚未扣除指数偏置。三类模式分别启用 1、2、4 路 28 位局部对齐通路，保留 26 位小数。I/E 旁路指数比较与对齐；E 先进行两两求和，再复用规约树。HiF4 在树后按两侧二级微指数之和左移，最多两位。各模式最终形成 31 位有符号 lane 部分和，其定点位置见表~\ref{tab:group_formats}。
+\textbf{统一宽度的移位复用。}T/H/Q 的乘积先按小数点位置静态补零，进入同宽的 $\mathrm{Lane}_{\mathrm{align}}$ 位幅值窗口，再相对两个 lane 共同选出的 $\mathrm{anchor}_{\mathrm{lane}}$ 对齐；该 anchor 为尚未扣除偏置的有效元素指数和的最大值。因此，四路 28 位右移器即可覆盖全部 T/H/Q 局部对齐，三类模式分别启用其中 1、2、4 路。E/INT8 旁路该移位网络；E 先两两求和再接入共享规约树，HiF4 在 lane 和处施加二级微指数的小范围左移。各模式汇合为 $\mathrm{Lane}_{\mathrm{sop}}$ 位部分和。
 
 \subsection{Group：尺度融合与 Anchor Recompute}
 
-\textbf{尺度尾数融合。}Group 先对两个 lane 的部分和求和，再分离符号与幅值。NVFP4/HiF4 的两侧尺度尾数统一为 4 位 I1F3，乘积 $\mathrm{scale\_mant}$ 为 8 位 I2F6。去除结构性低位零后，组幅值仅需 14 位 I10F4，因而尺度融合采用一次 $14\times8$ 乘法，完整保留 22 位 I12F10 结果，再补 9 个低位零形成 31 位幅值 $\mathrm{sop}$。其余模式旁路该乘法；MX 格式的幂次尺度直接计入 anchor。
+\textbf{紧凑尺度乘法。}NVFP4/HiF4 的尺度包含尾数，不能仅通过指数相加实现缩放。由于两个 lane 共享尺度，group 先规约部分和并取幅值，再施加 $\mathrm{scale\_mant}$。去除结构性低位零后，两种格式共用 $\mathrm{Scale}_{\mathrm{sop}}\times\mathrm{Scale}_{\mathrm{mant}}$ 的无符号乘法器，避免逐元素复制尺度乘法。基线中，组幅值为 U14，两侧 U4 尺度尾数的乘积为 U8，因而采用 U14$\times$U8 乘法，完整保留输出后低补零至 $\mathrm{Group}_{\mathrm{mag}}$ 位 $\mathrm{sop}$。MX 的幂次尺度仅修改指数，旁路尾数乘法。表~\ref{tab:group_formats} 给出各模式的输出定点位置。
 
 \begin{table}[t]
 \centering
-\caption{Fixed-point formats at lane and group outputs. S, I, and F denote sign, integer, and fractional bit counts. Group outputs use a separate sign and a 31-bit magnitude; fractional fields may contain structural zeros.}
+\caption{Lane and group fixed-point formats for the baseline configuration. S, I, and F denote sign, integer, and fractional bit counts. Group outputs have a separate sign and an unsigned magnitude; F gives $\mathrm{Group}_{\mathrm{frac}}$.}
 \label{tab:group_formats}
 \small
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lccc}
 \toprule
-Format & Lane & Group & $\mathrm{offset}$ \\
+Format & Lane & Group & $\mathrm{bias}$ \\
 \midrule
-TF32       & S1I2F28  & S1I3F28  & $-252$ \\
-FP16       & S1I3F27  & S1I4F27  & $-27$  \\
-BF16       & S1I3F27  & S1I4F27  & $-251$ \\
-Q          & S1I4F26  & S1I5F26  & $-26$  \\
-MXFP4      & S1I9F21  & S1I10F21 & $9$    \\
-NVFP4/HiF4 & S1I9F21  & S1I12F19 & $11$   \\
-INT8       & S1I17F13 & S1I18F13 & ---    \\
+TF32       & S1I2F28  & S1I3F28  & 127 \\
+FP16       & S1I3F27  & S1I4F27  & 15  \\
+BF16       & S1I3F27  & S1I4F27  & 127 \\
+Q          & S1I4F26  & S1I5F26  & 15  \\
+MXFP4      & S1I9F21  & S1I10F21 & 0   \\
+NVFP4/HiF4 & S1I9F21  & S1I12F19 & 0   \\
+INT8       & S1I17F13 & S1I18F13 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Anchor Recompute。}各模式的 $\mathrm{sop}$ 等宽，但小数点位置不同。为统一后端对齐，将其解释为相对于 $\mathrm{anchor}$ 的 I1F30 幅值，而不实际移动数据：
+\textbf{Anchor Recompute。}为使不同小数点位置的组结果共享后端，group 用 $\mathrm{anchor}$ 表示幅值最高物理位对应的指数，有限浮点结果满足
 \begin{equation}
-\mathrm{value}=(-1)^{\mathrm{sign}}\,\mathrm{sop}\,2^{\mathrm{anchor}-30}.
+\mathrm{value}=(-1)^{\mathrm{sign}}\mathrm{sop}\,
+2^{\mathrm{anchor}-(\mathrm{Group}_{\mathrm{mag}}-1)}.
 \label{eq:group_value}
 \end{equation}
-所需指数修正由格式常量与尺度指数共同确定：
+设 $\mathrm{scale\_exp}$ 为两侧尺度的无偏指数之和，$\mathrm{bias}$ 为元素指数偏置，则
 \begin{equation}
 \begin{aligned}
-\mathrm{anchor}&=\mathrm{anchor}_{\mathrm{lane}}+\mathrm{scale\_exp}+\mathrm{offset},\\
-\mathrm{offset}&=30-F-2\,\mathrm{bias}.
+\mathrm{offset}&=\mathrm{Group}_{\mathrm{mag}}-1-\mathrm{Group}_{\mathrm{frac}}
+                 -2\,\mathrm{bias},\\
+\mathrm{anchor}&=\mathrm{anchor}_{\mathrm{lane}}+\mathrm{scale\_exp}+\mathrm{offset}.
 \end{aligned}
 \label{eq:anchor_recompute}
 \end{equation}
-其中 $F$ 为表~\ref{tab:group_formats} 中 group 的小数位数，$\mathrm{bias}$ 为元素指数偏置：TF32/BF16 取 127，FP16 及重编码后的 Q 取 15。E 类已将元素指数融入定点幅值，因此 $\mathrm{anchor}_{\mathrm{lane}}$ 与 $\mathrm{bias}$ 均取零。$\mathrm{scale\_exp}$ 为两侧尺度的无偏指数之和，无尺度时取零；E8M0、E4M3 和 E6M2 的尺度指数域 $e$ 分别解码为 $e-127$、$\max(e,1)-7$ 和 $e-48$，避免在重计算时重复扣除偏置。该计算可与尾数规约并行。INT8 保持整数坐标，不参与浮点 anchor 比较。
+$\mathrm{offset}$ 合并定点位置与元素偏置修正，可按格式预先确定，使 anchor 与尾数规约并行计算。E 类的元素指数已融入幅值，故 $\mathrm{anchor}_{\mathrm{lane}}$ 与 $\mathrm{bias}$ 均为零；无尺度格式的 $\mathrm{scale\_exp}$ 为零。该表示统一 NVFP4/HiF4 尺度乘法后的结果与其余模式的旁路结果。
 
-\textbf{前导零与比较指数。}前导零检测作用于尺度融合后的 31 位无符号 $\mathrm{sop}$，同时反映组内相消和尺度变化。对非零有限结果，
+\textbf{比较指数与双向移位。}组内相消可能产生前导零，直接比较原始 anchor 会浪费全局对齐窗口。Group 对最终幅值计算
 \begin{equation}
 \begin{aligned}
-\mathrm{lzc}&=\operatorname{clz}_{31}(\mathrm{sop})
-             =30-\lfloor\log_2\mathrm{sop}\rfloor,\\
+\mathrm{lzc}&=\operatorname{clz}_{\mathrm{Group}_{\mathrm{mag}}}(\mathrm{sop}),\\
 \mathrm{anchor}_{\mathrm{nz}}&=\mathrm{anchor}-\mathrm{lzc}.
 \end{aligned}
 \label{eq:anchor_nonzero}
 \end{equation}
-$\mathrm{lzc}$ 的范围为 0--30，$\mathrm{anchor}_{\mathrm{nz}}$ 即最高有效位的真实指数。零幅值的计数为 31，但不参与全局指数最大值比较；特殊值由旁带标志处理。
-
-Group 同时保留 $\mathrm{anchor}$ 与 $\mathrm{anchor}_{\mathrm{nz}}$：后者用于确定全局对齐指数 $\mathrm{anchor}_{\max}$，前者直接给出净移位量
+非零幅值的前导零数不超过 $\mathrm{Group}_{\mathrm{mag}}-1$；零幅值计数为 $\mathrm{Group}_{\mathrm{mag}}$，并从指数比较中排除。以最高有效位指数 $\mathrm{anchor}_{\mathrm{nz}}$ 选择全局 $\mathrm{anchor}_{\max}$，保留原始 anchor 计算净移位量：
 \begin{equation}
 \begin{aligned}
 \mathrm{shift}&=\mathrm{lzc}-(\mathrm{anchor}_{\max}-\mathrm{anchor}_{\mathrm{nz}})\\
@@ -114,12 +133,12 @@ Group 同时保留 $\mathrm{anchor}$ 与 $\mathrm{anchor}_{\mathrm{nz}}$：后�
 \end{aligned}
 \label{eq:group_shift}
 \end{equation}
-因此无需先左移规格化再右移对齐，只需一次双向移位：$\mathrm{shift}>0$ 时左移，否则右移。该表示将前导零检测与实际移位解耦，并避免零组占用有限的对齐窗口。
+正值左移、负值右移、零值直通，从而将规格化与对齐合并为一次双向移位。Group 仅生成幅值与两种 anchor，实际移位在 DP 的全局窗口内完成。
 
-\subsection{DP：全局对齐与融合累加}
+\subsection{DP：融合累加与整数旁路}
 
-DP 比较各非零有限 group 的 $\mathrm{anchor}_{\mathrm{nz}}$ 与 $C$ 的比较指数，得到 $\mathrm{anchor}_{\max}$。FP32 非正规 $C$ 保留 $0.xxx$ 尾数，以 $-126$ 作为比较上界，省去独立的前导零检测。组幅值补充 8 个低位零后，按式~\eqref{eq:group_shift} 对齐至 39 位幅值窗口，再转为 40 位有符号数。四个 group 经 4:2 压缩，再与 $C$ 经 3:2 压缩，最终由唯一的进位传播加法器形成 43 位总和。
+DP 将各组结果与 $C$ 接入共同的全局对齐和累加通路。浮点模式以非零有限组的比较指数和 $C$ 的有效指数确定 $\mathrm{anchor}_{\max}$，将组幅值补零至 $\mathrm{DP}_{\mathrm{align}}-1$ 位，再按式~\eqref{eq:group_shift} 双向对齐并恢复符号。$C$ 的非正规尾数保持非规格化形式，其有效指数作为比较上界，省去独立的前导零检测。
 
-输出端统一规格化并舍入至 FP32，或生成 INT32 结果。浮点对齐采用向零截断，最终采用最近偶数舍入；T/H/Q 的误差同时受局部与全局对齐窗口影响，E 的局部定点规约无截断，其首次截断发生在全局对齐阶段。
+基线的四个 group 先经 4:2 压缩，再与 $C$ 经 3:2 压缩，最后仅通过一次进位传播加法得到 $\mathrm{DP}_{\mathrm{sop}}$ 位总和。INT8 模式将组结果与 INT32 加数静态放入同一整数坐标，旁路浮点指数比较和双向移位，复用这套累加器；输出端再旁路浮点规格化与舍入，提取 INT32 结果，溢出按整数位宽回绕。
 
-八级流水保持各模式相同的延迟与每拍一笔的接收能力。精度使能随请求传播，仅更新当前有效且参与计算的数据寄存器，以限制未使用通路的切换活动。
+浮点输出统一采用最近偶数舍入；局部与全局幅值右移采用向零截断，E 类局部定点规约无截断。精度使能随请求传播，关闭未参与计算的寄存器更新与输入活动，使共享通路支持不同格式的逐拍切换。
