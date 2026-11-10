@@ -10,10 +10,6 @@
 \caption{K 维内部扩展与 N 维输出组合。K 扩展增加每个 DP 对同一输出计算的乘积数；N 组合增加计算独立输出的 DP 列。两者均仅增配低精度资源。}
 \label{fig:kn_datapaths}
 \end{figure}
-% 后续合图建议：保留上述阵列概念图，另以局部图对比 E/QE Lane、Group，
-% 并画出 K 扩展的新增移位器、CSA 和双行选择。避免重复五份完整基线。
-% 子图编号和说明由 LaTeX 生成，不写入图内。
-
 \subsection{E 与 QE 专用 Lane 和 Group}
 \label{sec:specialized_midgroups}
 
@@ -26,7 +22,16 @@
 
 基线包含四个多精度 Group，峰值为 H16Q32E64。加入两个 E16、四个 E16 或四个 Q8E16 Group，即可得到表~\ref{tab:brick_compositions} 中的三种配比，同时保留基线的 T 和 INT8 能力。新增 Group 接收同一输出对应的额外 A/B 片段及尺度，共享一份 $C$ 和最终规格化、舍入通路。
 
-DP 层为每个新增 Group 配置全局双向移位器，并将其指数纳入全局 MAX；移位器沿用原有 39 位无符号对齐窗口。扩展结果与基线压缩树的两行 carry-save 输出合并：两个新增源直接进入一级 4:2 压缩，四个新增源先压缩为两行，再与基线两行合并。模式选择器选择基础或扩展两行，最后共用一个 CPA。包含 $C$ 的规约源数由五个增至七个或九个，总和分别保留 43 或 44 位；流水级数与发射间隔不变。E 扩展仅在 E 模式激活，QE 扩展仅在 Q/E 模式激活；掩码同步控制前端更新、MAX、移位、规约及特殊值传播。
+DP 层为 $1:2:6$ 增加两个全局双向移位器，为 $1:2:8$ 和 $1:4:8$ 增加四个，均沿用 39 位无符号对齐窗口，并将新增 Group 的指数纳入全局 MAX。图~\ref{fig:dp_csa_expansion} 给出扩展规约结构：新增源与基线的两行 carry-save 输出合并，经双行选择后共用一个 CPA。包含 $C$ 的规约源数由五个增至七个或九个，总和分别保留 43 或 44 位；流水级数与发射间隔不变。
+
+E 扩展仅在 E 模式激活，QE 扩展仅在 Q/E 模式激活；掩码同步控制前端更新、MAX、移位、规约及特殊值传播。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\columnwidth]{DP_CSAmodule.png}
+\caption{K 扩展的 carry-save 规约结构。左侧基线生成两行部分和；右上方以虚线边框标出的 4:2 压缩器仅在 $1:2:8$、$1:4:8$ 中实例化，将四个新增源压缩为两行。$1:2:6$ 省略该级，两个新增源直接接入右下方的 4:2 压缩器，与基线两行合并。底部选择基础或扩展两行，共享最终 CPA。}
+\label{fig:dp_csa_expansion}
+\end{figure}
 
 \begin{table}[t]
 \centering
