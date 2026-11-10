@@ -1,5 +1,26 @@
 # DAC 2027 论文
 
+## 英文主稿与中文逐章审核（2026-11-10）
+
+[dp_puzzle.tex](dp_puzzle.tex) 是面向最终投稿的英文主稿，摘要、七章正文、图注、全部表格和 AI 使用说明均在这一个 TeX 文件中；不再通过 `input` 引入章节或表格。图片仍来自 `figures/`，文献仍使用 `references/references.bib`，因此单 TeX 正文不等于无需资源文件的投稿包。当前完整初稿尚需逐章审核与篇幅收敛，不能将成功编译视为已经满足最终投稿要求。
+
+[main.tex](main.tex) 与 `sections/*.tex` 保留为对应的中文讨论稿。后续先用中文确认内容取舍，再写好英文主稿中的对应部分，并将确定的英文表述同步翻译到中文章节。两边保留相同的章节顺序、标签、公式、表格数值、引用和图源；英文中的 `BEGIN REVIEW PAIR` 注释标明对应中文文件。不要用中文重新机械生成或覆盖已润色的英文主稿。
+
+```bash
+make -C paper -f Makefile.en          # 英文：paper/build/dp_puzzle.pdf
+make -C paper -f Makefile.en watch    # 英文保存后持续编译
+make -C paper -f Makefile.en check    # 中英文结构、公式、表格及引用一致性
+make -C paper pdf                    # 中文：paper/build/main.pdf
+```
+
+在现有 LaTeX Workshop 工作区打开 `dp_puzzle.tex`，按 `Ctrl+Alt+B` 编译、`Ctrl+Alt+V` 打开英文 PDF；保存后自动刷新。打开 `main.tex` 则预览中文 PDF，两个输出互不覆盖。英文使用既有 XeLaTeX 配置，不依赖中文字体。
+
+一致性检查只报告差异，不自动翻译或覆盖文件，也不代替语义与行文审核。更新 `tables/` 的生成数据后，需要同步英文主稿中标有 `BEGIN INLINE TABLE` 的表体，再重新检查。当前英文稿以现有中文内容为初始依据；后续以英文为主逐章定稿。
+
+当前完整英文初译已经保留，后续章节仍属待审工作稿。逐章推进顺序为：第三章微架构 → 第四章 K/N 扩展实现 → 第五章实验评估 → 第六章负载分析 → 第七章结论。每轮只处理当前讨论章节并同步中英文，不因初译已完成而将后续表述视为定稿。
+
+定点记号统一为 `SxPy` / `UxPy`：`x` 不含符号位，`y` 为小数位数，位宽分别为 `1+x+y` 与 `x+y`。`Lane_align` 和 `DP_align` 均表示无符号幅值移位窗口，基线分别为 28 和 39 位；恢复符号后的全局累加输入为 40 位。
+
 ## 当前中文初稿（2026-11-10）
 
 正文按七章组织：引言、背景、共享 DP 微架构、低精度专用化与 K/N 扩展、硬件评估、负载配比建模、结论。[main.tex](main.tex) 是入口；第三章只描述基线，第五章报告电路证据，第六章讨论解析预测。正文不使用代码版本、模块路径或实验 run ID，来源映射放在 [研究路线](research_plan.md)、[相关工作核验](references/notes/dp_comparison.md) 和 [硬件更新说明](data/evidence/n12_current/README.md)。

@@ -37,15 +37,15 @@ I & INT8 \\
 \toprule
 Parameter & Meaning & Definition / setting \\
 \midrule
-$\mathrm{Lane}_{\mathrm{align}}$ & Local magnitude window & $28$ \\
+$\mathrm{Lane}_{\mathrm{align}}$ & Unsigned local window & $28$ \\
 $\mathrm{Lane}_{\mathrm{sop}}$ & Signed lane sum & $\mathrm{Lane}_{\mathrm{align}}+1+\ell(n_{\mathrm{tree}})$ \\
 $\mathrm{Group}_{\mathrm{mag}}$ & Group magnitude & $\mathrm{Lane}_{\mathrm{sop}}+\ell(n_{\mathrm{lane}})-1$ \\
 $\mathrm{Group}_{\mathrm{frac}}$ & Group fractional bits & Format dependent \\
 $\mathrm{Scale}_{\mathrm{in}}$ & One scale significand & $4$ \\
 $\mathrm{Scale}_{\mathrm{sop}}$ & Compact group magnitude & $14$ \\
 $\mathrm{Scale}_{\mathrm{mant}}$ & Scale product & $2\,\mathrm{Scale}_{\mathrm{in}}$ \\
-$\mathrm{DP}_{\mathrm{align}}$ & Signed global leaf & $40$ \\
-$\mathrm{DP}_{\mathrm{sop}}$ & Signed accumulated sum & $\mathrm{DP}_{\mathrm{align}}+\ell(n_{\mathrm{group}}+1)$ \\
+$\mathrm{DP}_{\mathrm{align}}$ & Unsigned global window & $39$ \\
+$\mathrm{DP}_{\mathrm{sop}}$ & Signed accumulated sum & $\mathrm{DP}_{\mathrm{align}}+1+\ell(n_{\mathrm{group}}+1)$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -61,7 +61,7 @@ $\mathrm{DP}_{\mathrm{sop}}$ & Signed accumulated sum & $\mathrm{DP}_{\mathrm{al
 \label{sec:unpack_recode}
 \label{sec:full_brick}
 
-\textbf{统一解码。}图~\ref{fig:data_unpack} 展示输入打包格式到指数、尾数和符号字段的映射。每个 lane 的每侧操作数包含两个 H1/Q2/E4 解包字段组，TF32 独占完整 lane；两组字段合计容纳 20 位指数、32 位尾数和 8 位符号。T/H 恢复有效数及隐藏位，Q 重编码为内部 E5M3 表示，INT8 分离符号与幅值。MXFP4/NVFP4 将 E2M1 元素指数吸收到四位 I3F1 幅值中，HiF4 将一级微指数并入 I2F2 幅值，保留 lane 共享的二级微指数。由此，E 类进入定点乘积通路，无需逐元素浮点对齐；特殊值标志独立传播。
+\textbf{统一解码。}图~\ref{fig:data_unpack} 展示输入打包格式到指数、尾数和符号字段的映射。每个 lane 的每侧操作数包含两个 H1/Q2/E4 解包字段组，TF32 独占完整 lane；两组字段合计容纳 20 位指数、32 位尾数和 8 位符号。T/H 恢复有效数及隐藏位，Q 重编码为内部 E5M3 表示，INT8 分离符号与幅值。MXFP4/NVFP4 将 E2M1 元素指数吸收到四位 U3P1 幅值中，HiF4 将一级微指数并入 U2P2 幅值，保留 lane 共享的二级微指数。由此，E 类进入定点乘积通路，无需逐元素浮点对齐；特殊值标志独立传播。
 \begin{figure}[t]
 \centering
 % 图稿待作者统一数量标签：若左侧按完整 lane 标注，FP16 应为 2x，
@@ -81,7 +81,7 @@ $\mathrm{DP}_{\mathrm{sop}}$ & Signed accumulated sum & $\mathrm{DP}_{\mathrm{al
 
 \begin{table}[t]
 \centering
-\caption{Lane and group fixed-point formats for the baseline configuration. S, I, and F denote sign, integer, and fractional bit counts. Group outputs have a separate sign and an unsigned magnitude; F gives $\mathrm{Group}_{\mathrm{frac}}$.}
+\caption{Lane and group fixed-point formats for the baseline configuration. SxPy specifies one sign bit, x integer bits, and y fractional bits. Group outputs keep sign and magnitude separate; y gives $\mathrm{Group}_{\mathrm{frac}}$.}
 \label{tab:group_formats}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -89,13 +89,13 @@ $\mathrm{DP}_{\mathrm{sop}}$ & Signed accumulated sum & $\mathrm{DP}_{\mathrm{al
 \toprule
 Format & Lane & Group & $\mathrm{bias}$ \\
 \midrule
-TF32       & S1I2F28  & S1I3F28  & 127 \\
-FP16       & S1I3F27  & S1I4F27  & 15  \\
-BF16       & S1I3F27  & S1I4F27  & 127 \\
-Q          & S1I4F26  & S1I5F26  & 15  \\
-MXFP4      & S1I9F21  & S1I10F21 & 0   \\
-NVFP4/HiF4 & S1I9F21  & S1I12F19 & 0   \\
-INT8       & S1I17F13 & S1I18F13 & --- \\
+TF32       & S2P28  & S3P28  & 127 \\
+FP16       & S3P27  & S4P27  & 15  \\
+BF16       & S3P27  & S4P27  & 127 \\
+Q          & S4P26  & S5P26  & 15  \\
+MXFP4      & S9P21  & S10P21 & 0   \\
+NVFP4/HiF4 & S9P21  & S12P19 & 0   \\
+INT8       & S17P13 & S18P13 & --- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -137,7 +137,7 @@ $\mathrm{offset}$ 合并定点位置与元素偏置修正，可按格式预先�
 
 \subsection{DP：融合累加与整数旁路}
 
-DP 将各组结果与 $C$ 接入共同的全局对齐和累加通路。浮点模式以非零有限组的比较指数和 $C$ 的有效指数确定 $\mathrm{anchor}_{\max}$，将组幅值补零至 $\mathrm{DP}_{\mathrm{align}}-1$ 位，再按式~\eqref{eq:group_shift} 双向对齐并恢复符号。$C$ 的非正规尾数保持非规格化形式，其有效指数作为比较上界，省去独立的前导零检测。
+DP 将各组结果与 $C$ 接入共同的全局对齐和累加通路。浮点模式以非零有限组的比较指数和 $C$ 的有效指数确定 $\mathrm{anchor}_{\max}$，将组幅值补零至 $\mathrm{DP}_{\mathrm{align}}$ 位，再按式~\eqref{eq:group_shift} 双向对齐，再恢复为 $\mathrm{DP}_{\mathrm{align}}+1$ 位有符号数。$C$ 的非正规尾数保持非规格化形式，其有效指数作为比较上界，省去独立的前导零检测。
 
 基线的四个 group 先经 4:2 压缩，再与 $C$ 经 3:2 压缩，最后仅通过一次进位传播加法得到 $\mathrm{DP}_{\mathrm{sop}}$ 位总和。INT8 模式将组结果与 INT32 加数静态放入同一整数坐标，旁路浮点指数比较和双向移位，复用这套累加器；输出端再旁路浮点规格化与舍入，提取 INT32 结果，溢出按整数位宽回绕。
 

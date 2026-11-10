@@ -1,0 +1,12 @@
+# English master: independent from the Chinese Makefile and its data targets.
+PYTHON ?= python3
+.PHONY: all pdf watch check clean
+all: pdf
+pdf:
+	latexmk -xelatex -synctex=1 -interaction=nonstopmode -halt-on-error -file-line-error dp_puzzle.tex
+watch:
+	latexmk -pvc -view=none -xelatex -synctex=1 -interaction=nonstopmode -halt-on-error -file-line-error dp_puzzle.tex
+check:
+	$(PYTHON) scripts/check_bilingual.py
+clean:
+	latexmk -c dp_puzzle.tex
