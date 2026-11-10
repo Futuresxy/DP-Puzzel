@@ -4,9 +4,35 @@
 \label{sec:architecture}
 \label{sec:brick_definition}
 
-DP-Puzzle 采用 Lane、Group 和 DP（dot-product unit）三层结构（图~\ref{fig:dp_architecture}）。Lane 复用元素乘法与局部对齐，Group 融合尺度并统一部分和表示，DP 共享全局对齐与累加后端。统一的 Group 接口使低精度前端能够独立裁剪和增配，是后续配比扩展的组合边界。
+DP-Puzzle 采用 Lane、Group 和 DP三层组合式架构（图~\ref{fig:dp_architecture}）。在Lane内复用元素乘法与局部对齐和规约累加，消除多精度计算的并行度差异，Group 融合缩放因子尺度并统一部分和表示，DP 共享全局对齐与累加后端。同时我们设计统一的 Group 接口使低精度专用优化单元能够独立裁剪和增配，是后续配比扩展的组合边界。
 
-H、Q、E 分别覆盖 FP16/BF16、MXFP8/6 和 MXFP4/NVFP4/HiF4，T、I 分别表示 TF32 和 INT8。一个 Lane 支持 T1H2I4Q4E8，数字表示每拍处理的元素对数。两个 Lane 构成 Group，四个 Group 构成 T8H16I32Q32E64 基线。该层级覆盖 HiF4 的局部微指数与 NVFP4 的组尺度粒度，更大尺度块通过广播共享尺度。各模式采用八级流水，每拍接收一笔独立请求。
+表~\ref{tab:precision_families} 统一定义精度简称、定点格式和并行度记号。一个 Lane 支持 T1H2I4Q4E8；两个 Lane 构成 Group，四个 Group 构成 T8H16I32Q32E64 基线。该层级覆盖 HiF4 的局部微指数与 NVFP4 的组尺度粒度，更大尺度块通过广播共享尺度。各模式采用八级流水，每拍接收一笔独立请求。
+
+\begin{table}[t]
+\centering
+\caption{精度简称、定点格式与计算并行度记号。}
+\label{tab:precision_families}
+\begingroup
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{@{}p{0.29\columnwidth}p{0.68\columnwidth}@{}}
+\toprule
+记号 & 含义 \\
+\midrule
+T & TF32 \\
+H & FP16、BF16 \\
+Q & MXFP8（E4M3/E5M2）、MXFP6（E2M3/E3M2） \\
+E & MXFP4、NVFP4、HiF4 \\
+I & INT8 \\
+\midrule
+$\mathrm{S}x\mathrm{P}y$ & 有符号定点数：一位符号、$x$ 位整数和 $y$ 位小数；$x$ 不含符号位。 \\
+$\mathrm{U}x\mathrm{P}y$ & 无符号定点数：$x$ 位整数和 $y$ 位小数。 \\
+T1H2I4Q4E8 & T/H/I/Q/E 模式每拍分别计算 1/2/4/4/8 对元素的乘积；每对含一个 A 和一个 B，模式互斥。 \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{table}
 
 \begin{figure}[t]
 \centering
@@ -48,7 +74,7 @@ H、Q、E 分别覆盖 FP16/BF16、MXFP8/6 和 MXFP4/NVFP4/HiF4，T、I 分别�
 \end{equation}
 格式相关修正可预先确定，使 Anchor Recompute 与尾数规约并行。E 的元素指数已融入幅值，局部对齐指数与元素偏置均取零；无尺度格式的尺度指数和取零。
 
-\textbf{前导零与双向移位。}Group 在尺度融合后的 SoP 上检测前导零，以原始 Anchor 减去前导零数得到最高有效位的比较指数，零组不参与比较。原始 Anchor 同时保留，以其与全局最大比较指数之差控制双向移位，将规格化与全局对齐合并为一次操作。
+\textbf{前导零与双向移位。}Group 在尺度融合后的 SoP 上检测前导零，以原始 Anchor 减去前导零数得到最高有效位的比较指数。有限乘积或组幅值为零时，参与掩码将其排除于相应的指数 MAX，避免零项的较大指数抬高对齐基准、增加非零项的右移截断；流水请求仍保持有效。原始 Anchor 同时保留，以其与全局最大比较指数之差控制双向移位，将规格化与全局对齐合并为一次操作。
 
 \subsection{DP：共享累加与整数旁路}
 
