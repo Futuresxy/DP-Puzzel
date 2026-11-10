@@ -41,6 +41,10 @@ d=c+\sum_{j=0}^{G-1}X_j^{(A)}X_j^{(B)}
 \subsection{通路复用与设计空间探索}
 \label{sec:datapath_sharing}
 
+表~\ref{tab:related_features} 汇总格式与组合能力。MX 列区分完整微缩放支持与仅元素运算支持；本文进一步以共享 DP 和低精度专用单元的组合改变算力配比。
+
+\input{tables/related_features.tex}
+
 已有多精度算术设计主要通过复用乘法、移位对齐及归约累加电路，减少独立通路带来的面积与功耗开销。TransDot 将乘法器和移位器按精度重组，使较宽运算与多路低精度点积共享硬件~\cite{transdot2026}；MPICC 将不同格式解码为统一内部表示，复用点积计算通路~\cite{huangMPICCMultiplePrecisionInterCombined2025}；融合 FP8 点积设计则比较专用后端与复用 FP32 FMA 加法器的实现，说明累加、规格化与舍入电路也是重要的共享对象~\cite{lutzFusedFP84Way2024}。这些工作为降低多精度点积单元的内部开销提供了基础。
 
 另一类工作通过设计空间探索分析数值表示、计算组织与硬件成本之间的关系。Crafton 等联合探索低精度格式与 MAC 微架构，比较数值误差、面积和功耗的帕累托权衡~\cite{paretomac2025}；MX-like Tensor Core 将共享尺度、权重与激活格式纳入联合评估~\cite{zhao2026mxlike}。在阵列层面，Timeloop 等框架通过循环分块、空间展开与存储层次建模，探索包括归约维 $K$ 分块在内的计算映射及阵列组织~\cite{timeloop2019}。上述优化主要围绕单元内部结构、格式及阵列参数展开，对将 16 位、8 位、4 位峰值算力配比作为独立设计变量，以及同配比下不同组合方式的成本差异，仍缺少系统对比。

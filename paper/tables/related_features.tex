@@ -1,26 +1,23 @@
-% Entries refer to reported configurations, not hypothetical reconfiguration.
-\begin{table*}[t]
+% Scope: reported formats; MX element-only support is explicitly distinguished.
+\begin{table}[t]
 \centering
-\caption{Supported input formats and datapath features of related arithmetic units.}
+\caption{Format coverage and compositional throughput-ratio support}
 \label{tab:related_features}
-\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
-\def\Y{$\checkmark$}\def\N{$\times$}
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l*{14}{c}@{}}\toprule
-& \multicolumn{9}{c}{Native input formats} & \multicolumn{5}{c}{Datapath features} \\
-\cmidrule(lr){2-10}\cmidrule(lr){11-15}
-Design & TF32 & FP16 & BF16 & FP8 & FP6 & FP4 & INT8 & INT4 & LOG4 & DP & MX & NVFP4 & HiF4 & SR \\\midrule
-Ten-Four~\cite{rout2026tenfourv2} & \Y & \Y & \Y & \Y & \N & \N & \Y & \Y & \N & \Y & \Y & \N & \N & \N \\
-MPICC~\cite{huangMPICCMultiplePrecisionInterCombined2025} & \N & \N & \N & \Y & \Y & \Y & \N & \Y & \Y & \Y & --- & \N & \N & \Y \\
-MXDOTP~\cite{islamoglu2025mxdotp} & \N & \N & \N & \Y & \N & \N & \N & \N & \N & \Y & \Y & \N & \N & --- \\
-FPnew~\cite{mach2020fpnew} & \N & \Y & \Y & \Y & \N & \N & \N & \N & \N & \N & \N & \N & \N & \N \\
-TransDot~\cite{transdot2026} & \N & \Y & \N & \Y & \N & \Y & \N & \N & \N & \Y & \N & \N & \N & --- \\
+\begingroup\footnotesize\setlength{\tabcolsep}{1pt}
+\def\Y{$\checkmark$}\def\N{$\times$}\def\E{$\triangle$}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}l*{10}{c}@{}}\toprule
+Design & TF32 & FP16 & BF16 & \shortstack{MX\\FP8} & \shortstack{MX\\FP6} & \shortstack{MX\\FP4} & INT8 & \shortstack{NV\\FP4} & HiF4 & \shortstack{Ratio\\comp.} \\\midrule
+Ten-Four~\cite{rout2026tenfourv2} & \Y & \Y & \Y & \Y & \N & \N & \Y & \N & \N & --- \\
+MPICC~\cite{huangMPICCMultiplePrecisionInterCombined2025} & \N & \N & \N & \E & \E & \E & \N & \N & \N & --- \\
+MXDOTP~\cite{islamoglu2025mxdotp} & \N & \N & \N & \Y & \N & \N & \N & \N & \N & --- \\
+FPnew~\cite{mach2020fpnew} & \N & \Y & \Y & \E & \N & \N & \N & \N & \N & --- \\
+TransDot~\cite{transdot2026} & \N & \Y & \N & \E & \N & \E & \N & \N & \N & --- \\
 \midrule
-DP-Puzzle & \Y & \Y & \Y & \Y & \Y & \Y & \Y & \N & \N & \Y & \Y & \Y & \Y & \N \\
+DP-Puzzle & \Y & \Y & \Y & \Y & \Y & \Y & \Y & \Y & \Y & \Y \\
 \bottomrule\end{tabular*}
 \par\smallskip
-\parbox{\textwidth}{\raggedright
-$\checkmark$: supported; $\times$: absent from the reported configuration; ---: not established by the cited evidence.
-DP: native multi-term dot product; MX/NVFP4/HiF4: integrated block-scale handling (MX indicates at least one MX format); SR: stochastic rounding.
-FP8/FP4 denote element arithmetic and do not imply scale support. FPnew additionally supports FP32/64; TransDot supports FP32 FMA. MPICC supports heterogeneous operand combinations and FP12 emulation, which is not marked as native FP16.}
+\parbox{\columnwidth}{\raggedright
+$\checkmark$: supported; $\times$: absent in the reported configuration; $\triangle$: element arithmetic supported, integrated MX scaling not established; ---: not reported.
+Ratio comp.: varying throughput ratios by composing shared DPs with dedicated low-precision units. FPnew uses SIMD FMA.}
 \endgroup
-\end{table*}
+\end{table}

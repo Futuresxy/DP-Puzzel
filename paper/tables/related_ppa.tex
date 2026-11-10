@@ -1,39 +1,25 @@
-% Sources and arithmetic conversions: references/notes/dp_comparison.md.
+% Sources and conversions: references/notes/dp_comparison.md.
 \begin{table*}[t]
 \centering
-\caption{Implementation conditions and precision-specific efficiency. Columns retain each work's reported technology and arithmetic boundary.}
+\caption{Implementation conditions and efficiency for overlapping precisions}
 \label{tab:related_dp}
-\begingroup\footnotesize\setlength{\tabcolsep}{4pt}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\def\Eff#1{\begin{tabular}{@{}lr@{}}#1\end{tabular}}
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l*{6}{c}@{}}\toprule
 Metric & Ten-Four~\cite{rout2026tenfourv2} & MPICC~\cite{huangMPICCMultiplePrecisionInterCombined2025} & MXDOTP~\cite{islamoglu2025mxdotp} & FPnew~\cite{mach2020fpnew} & TransDot~\cite{transdot2026} & This work \\\midrule
-Structure & Fused DP & $n$-term MAC & Scaled DP & Vector FMA & FMA / DP & Scaled DP \\
+Structure & Fused DP & $n$-term MAC & MX DP & SIMD FMA & FMA / DP & MX DP \\
 Evaluation & Synthesis & Synthesis & Post-layout & Silicon & Post-layout & Synthesis \\
 Technology (nm) & 7 (predictive) & 28 & 12 & 22FDX & 12 & 12 \\
 Voltage (V) & 0.7 & 0.9 & 0.8 & 0.8 & 0.8 & 0.7 \\
-Frequency (GHz) & 1.5$^a$ & 1.43 & 1.09 & 0.923 & 1.0 & 1.0 \\
-Area ($\mu$m$^2$) & 1959.86 & 2295 & 3150 & 49\,000$^b$ & --- & 16\,165.12 \\
-Accumulation & FP32/INT32 & FP12/INT8 & FP32 & Mode-specific & FP32$^c$ & FP32/INT32 \\
+Frequency (GHz) & 1.50 (target) & 1.43 & 1.09 & 0.923 & 1.0 & 1.0 \\
+Area ($\mu$m$^2$) & 1959.86 & 2295 & 3150 & 49\,000 & --- & 16\,165.12 \\
+Accumulation & FP32/INT32 & FP12/INT8 & FP32 & Per format & FP32 & FP32/INT32 \\
 \midrule
-\multicolumn{7}{l}{Energy efficiency (GFLOP/s/W)} \\
-\quad FP16 & --- & --- & --- & 497.67 & 555.56 & --- \\
-\quad BF16 & --- & --- & --- & 581.96 & --- & 2087.65 \\
-\quad FP8 / MXFP8 & --- & 1948 & 2035 & 1244.78 & 1190.48 & 3999.50 \\
-\quad FP4 / MXFP4 & --- & 5931 & --- & --- & 2439.02 & 11\,432.11 \\
-\quad FP12 (emulated) & --- & 865.1 & --- & --- & --- & --- \\
+\shortstack[l]{Energy efficiency\\(TFLOP/s/W)} & --- & \Eff{FP8 & 1.948\\FP4 & 5.931} & \Eff{MXFP8 & 2.035} & \Eff{FP16 & 0.498\\BF16 & 0.582\\FP8 & 1.245} & \Eff{FP16 & 0.556\\FP8 & 1.190\\FP4 & 2.439} & \Eff{BF16 & 2.088\\MXFP8 & 4.000\\MXFP4 & 11.432} \\
 \midrule
-\multicolumn{7}{l}{Area efficiency (GFLOP/s/mm$^2$)} \\
-\quad FP16 & --- & --- & --- & 151.43 & --- & --- \\
-\quad BF16 & --- & --- & --- & 151.43 & --- & 1979.57 \\
-\quad FP8 / MXFP8 & --- & 1246 & 5523.81 & 302.65 & --- & 3959.14 \\
-\quad FP4 / MXFP4 & --- & 4985 & --- & --- & --- & 7918.28 \\
-\quad FP12 (emulated) & --- & 415.4 & --- & --- & --- & --- \\
+\shortstack[l]{Area efficiency\\(TFLOP/s/mm$^2$)} & --- & \Eff{FP8 & 1.246\\FP4 & 4.985} & \Eff{MXFP8 & 5.524} & \Eff{FP16 & 0.151\\BF16 & 0.151\\FP8 & 0.303} & --- & \Eff{BF16 & 1.980\\MXFP8 & 3.959\\MXFP4 & 7.918} \\
 \bottomrule\end{tabular*}
 \par\smallskip
-\parbox{\textwidth}{\raggedright
----: unavailable here or inapplicable; it does not mean zero. One MAC/FMA is counted as two FLOPs; an $n$-term MAC is counted as $2n$ FLOPs.
-$^a$Ten-Four targets 1.5 GHz and reports $F_{\max}=1.571$ GHz and total power 6.28 mW; no format-specific efficiency is inferred from that aggregate power.
-$^b$FPnew area and nominal SIMD energy include the entire FPU; its FP8 encoding differs from MXFP8.
-$^c$TransDot entries use dot products accumulated into FP32; energy efficiency is converted from reported pJ/FLOP.
-MXDOTP and this work use MXFP8; this work's FP4 entries use MXFP4. FPnew/MXDOTP area efficiency is calculated from reported throughput and area. Different process nodes, accumulation formats and activity conditions preclude a direct iso-technology ranking.}
+\parbox{\textwidth}{\raggedright ---: unavailable; 2 FLOP/MAC. FPnew: full-FPU SIMD; TransDot: FP32-accumulating DP. Process, accumulation, and activity conditions differ; these are not iso-technology comparisons.}
 \endgroup
 \end{table*}

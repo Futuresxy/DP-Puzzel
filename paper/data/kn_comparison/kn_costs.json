@@ -1,0 +1,90 @@
+{
+  "model": "DP-only area and mode-power sum, normalized per baseline DP",
+  "normalization": "N_base K-expanded DPs versus N_base baseline DPs plus alpha*N_base dedicated DPs; alpha=0.5 requires integer deployment (even columns for whole-column expansion)",
+  "conditions": "N12 TT, 0.7 V, 85 C, 1 GHz; measured BF16/MXFP8 E4M3/MXFP4 E2M1 total DP power",
+  "inactive_n_dp": "Ideal power gating: zero dynamic and leakage power; wake-up, retention, isolation and power-switch costs excluded",
+  "area_boundary": "Sum of DP standard-cell areas only; power gating does not remove physical DP area",
+  "excluded": [
+    "array storage",
+    "interconnect",
+    "non-DP logic",
+    "routing parasitics",
+    "power-gating overhead"
+  ],
+  "comparison_limit": "Standalone E64 and internal E components differ in pipeline partition and reduction implementation; not a composition-only ablation",
+  "inputs": [
+    {
+      "path": "paper/data/DP_area_power/latest6_area.csv",
+      "sha256": "283d096731f8fe35e0c4fe80b565e4c303547db8cb32ad30f28169adf4768d00"
+    },
+    {
+      "path": "paper/data/DP_area_power/latest6_power.csv",
+      "sha256": "2540506d11426ec8c2d2f9fb2a121c4f81133635a3cf6beabccf2d7e31ee2abe"
+    }
+  ],
+  "rows": [
+    {
+      "ratio": "1:2:6",
+      "k_top": "dp_top_t8h16q32e96",
+      "n_added_top": "dp_top_e64",
+      "n_added_per_baseline_dp": 0.5,
+      "area_k_um2": 18863.272067,
+      "area_n_um2": 18987.1904,
+      "area_k_saving_pct": 0.6526417568341158,
+      "power_k_H_mw": 15.6371002197266,
+      "power_n_H_mw": 15.3282642364502,
+      "n_added_H_active": false,
+      "power_k_H_saving_pct": -2.014813800912929,
+      "power_k_Q_mw": 16.3544483184814,
+      "power_n_Q_mw": 16.0019989013672,
+      "n_added_Q_active": false,
+      "power_k_Q_saving_pct": -2.2025336914882843,
+      "power_k_E_mw": 14.4174671173096,
+      "power_n_E_mw": 14.7146520614624,
+      "n_added_E_active": true,
+      "power_k_E_saving_pct": 2.0196532198754835
+    },
+    {
+      "ratio": "1:2:8",
+      "k_top": "dp_top_t8h16q32e128",
+      "n_added_top": "dp_top_e64",
+      "n_added_per_baseline_dp": 1.0,
+      "area_k_um2": 21596.40591,
+      "area_n_um2": 21809.258646000002,
+      "area_k_saving_pct": 0.9759741926809617,
+      "power_k_H_mw": 15.893228530883801,
+      "power_n_H_mw": 15.3282642364502,
+      "n_added_H_active": false,
+      "power_k_H_saving_pct": -3.6857682364982436,
+      "power_k_Q_mw": 16.6199417114258,
+      "power_n_Q_mw": 16.0019989013672,
+      "n_added_Q_active": false,
+      "power_k_Q_saving_pct": -3.861660120510324,
+      "power_k_E_mw": 17.594673156738303,
+      "power_n_E_mw": 18.232769966125502,
+      "n_added_E_active": true,
+      "power_k_E_saving_pct": 3.49972500378557
+    },
+    {
+      "ratio": "1:4:8",
+      "k_top": "dp_top_t8h16q64e128_opt",
+      "n_added_top": "dp_top_q32e64",
+      "n_added_per_baseline_dp": 1.0,
+      "area_k_um2": 27191.144615,
+      "area_n_um2": 27860.336796000003,
+      "area_k_saving_pct": 2.401952948020647,
+      "power_k_H_mw": 15.744144439697301,
+      "power_n_H_mw": 15.3282642364502,
+      "n_added_H_active": false,
+      "power_k_H_saving_pct": -2.7131591472578487,
+      "power_k_Q_mw": 28.788990020752003,
+      "power_n_Q_mw": 29.5824413299561,
+      "n_added_Q_active": true,
+      "power_k_Q_saving_pct": 2.6821698059132926,
+      "power_k_E_mw": 20.5634365081787,
+      "power_n_E_mw": 21.4140911102295,
+      "n_added_E_active": true,
+      "power_k_E_saving_pct": 3.9724058222785907
+    }
+  ]
+}
