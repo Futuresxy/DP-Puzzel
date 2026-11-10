@@ -1,100 +1,63 @@
 % !TeX root = ../main.tex
-% Implementation: baseline v1.8, mixed/QE v1.9; unchanged standalone E64.
-% Evidence map: ../research_plan.md and ../references/notes/dp_comparison.md.
-\section{多精度共享与低精度扩展的点积微架构}
+\section{共享多精度点积微架构}
 \label{sec:architecture}
 
-DP-Puzzle 以一个输出位置的点积计算为基本边界，在通用通路中复用乘法、对齐和规约资源，再通过低精度专用组增加目标模式的吞吐。这样可以分别研究两个问题：支持多种精度需要保留哪些共享资源，以及新增低精度算力应在归约维 $K$ 还是输出维 $N$ 上部署。以下描述对应已验证的基础 DP v1.8 和混合 DP v1.9；独立 E64 保留原专用实现。
+多精度点积的共享不仅取决于乘法器能否拆分，还取决于不同数量的乘积能否进入同一套对齐、规约和输出电路。高精度模式需要较宽的有效数与指数范围，低精度模式则需要更多并行乘积。DP-Puzzle 采用 lane、group 和 DP 三层组织，将元素并行度差异限制在前端，以统一的组部分和连接共享后端。
 
-已有设计从不同边界实现资源共享：FPnew 面向多格式标量和 SIMD 运算~\cite{mach2020fpnew}，Ten-Four 将浮点与整数点积接入统一累加通路~\cite{rout2026tenfourv2}，MPICC 支持低精度异构操作数组合与随机舍入~\cite{huangMPICCMultiplePrecisionInterCombined2025}，MXDOTP 提供原生 MXFP8 缩放点积~\cite{islamoglu2025mxdotp}，TransDot 重构乘法和移位资源以支持 FP16/FP8/FP4 点积~\cite{transdot2026}。本文在共享通路之上，进一步构造不同低精度吞吐配比，并比较同能力 K/N 组合的成本及负载适用范围。
-
-\subsection{计算边界与分层组织}
+\subsection{层级组织与计算边界}
 \label{sec:brick_definition}
 
-每笔请求计算 $D=C+\sum_i a_i b_i$，块尺度按相应格式作用于乘积组。浮点模式接收并输出 FP32 的 $C/D$，INT8 模式使用 INT32。DP 不保存跨请求累加状态，后续请求的 $C$ 由上层提供。所有顶层保持八级流水、启动间隔一拍；这表示独立请求可逐拍发射，不表示同一输出的累加依赖可每拍回馈。datatype 随请求传递，允许不同精度请求同时在途；同步低有效复位取消在途有效位，输出无反压。
+H、Q、E 分别表示 BF16/FP16、MXFP8/6 和 MXFP4/NVFP4/HiF4。一个 lane 接收每侧 32 位数据，可计算一个 TF32、两个 H、四个 Q 或八个 E 乘积，记为 T1H2Q4E8。两个 lane 构成 T2H4Q8E16 group，四个 group 构成 T8H16Q32E64 DP。基线还支持四项/lane 的 INT8 计算。各精度复用同一组物理资源，模式互斥，其峰值不能同时相加。
 
-H、Q、E 分别表示 BF16/FP16、MXFP8/6 和 MXFP4/NVFP4/HiF4。完整基线还支持 TF32 和 INT8。一个 lane 接收每侧 32 位原始数据，提供 T1H2Q4E8 的原生容量；两个 lane 组成 T2H4Q8E16 group，四个 group 构成 T8H16Q32E64 DP（图~\ref{fig:dp_architecture}）。后缀表示一次请求处理的乘积项数，在 II=1 下也是对应模式的峰值 MAC/cycle。各模式互斥，不能将 H、Q、E 的容量同时加总。此处 group 是 DP 内部算术分组，与阵列中的 DP 广播组不同。
+图~\ref{fig:dp_architecture} 给出基础结构。每笔请求完成式~\eqref{eq:blockdot} 的缩放点积与一次 $C$ 合并，输出一个 FP32 结果；整数模式使用 INT32 累加输入和输出。DP 采用八级流水，独立请求可每拍发射。跨请求的部分和由外部累加存储提供，因此启动间隔一拍不意味着同一输出的反馈依赖也能每拍解除。
 
 \begin{figure}[t]
 \centering
-\fbox{\parbox{0.91\columnwidth}{\centering
-基础前端：4 个 T2H4Q8E16 group\\
-每个 group：2 个 T1H2Q4E8 lane\\[2pt]
-扩展前端：2/4 个 E16 或 4 个 Q8E16 group\\[2pt]
-$\downarrow$\quad S5 统一符号、幅值、指数与状态\quad $\downarrow$\\[2pt]
-S6：所有参与 group 与唯一 $C$ 的全局对齐\\
-S7：carry-save 合并、双行选择、唯一 CPA\\
-S8：规格化、FP32 舍入或 INT32 输出}}
-\caption{DP organization. Specialized groups extend the reduction length while sharing one C input and one output backend.}
+\includegraphics[width=\columnwidth]{baseline_arch.png}
+\caption{Baseline lane--group--DP hierarchy. Four groups share global alignment, C accumulation, and one normalization/rounding backend.}
 \label{fig:dp_architecture}
 \end{figure}
 
-\subsection{统一解码与跨精度通路复用}
+\subsection{Lane：统一解码与共享乘法}
 \label{sec:unpack_recode}
 \label{sec:full_brick}
 
-每个 16 位解包原子块承载一个 H、两个 Q 或四个 E 元素，TF32 使用 32 位容器，FP6 使用 8 位槽位。Q 将有限数映射到五位指数和四位有效数，保留非正规数与特殊值分类。MXFP4/NVFP4 的 E2M1 元素则精确表示为带符号的四位定点系数：幅值系数取 $\{0,1,2,3,4,6,8,12\}$，小数位为一位。元素指数已吸收到系数，因而 E2M1 组内无需逐元素指数对齐。HiF4 在解包时融合一级微指数，二级微指数留在 lane 内处理。
+\textbf{以紧凑表示消除不必要的格式差异。} 每个 16 位原子块容纳一个 H、两个 Q 或四个 E 元素，TF32 使用完整 32 位容器，FP6 使用 8 位槽位。Q 格式统一为五位指数和四位有效数，非正规数使用零隐藏位，特殊值单独传播。MXFP4/NVFP4 的元素指数范围较小，可直接吸收到四位定点幅值中：系数取 $\{0,1,2,3,4,6,8,12\}$，对应一位小数。由此，E2M1 乘积无需逐元素指数对齐。HiF4 同样在解码时将一级微指数融合进幅值，保留 lane 共享的二级微指数用于局部处理。
 
-每个 lane 配置两套 $8\times8$、$8\times4$、$4\times8$ 和 $4\times4$ 无符号乘法叶。FP16/TF32 的有效数按高低位拆分，重构为
+\textbf{通过分段重构覆盖高精度，通过独立路由提供低精度并行度。} 每个 lane 包含两套 $8\times8$、$8\times4$、$4\times8$ 和 $4\times4$ 无符号乘法叶。对 FP16/TF32，将有效数拆成高位和低四位，乘积重构为
 \begin{equation}
-p=(p_{HH}\ll8)+((p_{HL}+p_{LH})\ll4)+p_{LL}.
+p=2^8p_{HH}+2^4(p_{HL}+p_{LH})+p_{LL}.
 \end{equation}
-FP16 启用两套资源，TF32 仅启用一套；BF16 使用两个 $8\times8$ 叶。Q 将其中四个乘法叶用于独立四位有效数乘法，E 则使用全部八个叶，宽端口的未用高位补零。此组织复用物理乘法器，同时保留各精度的独立元素语义，不通过忽略拼接乘法的交叉项获得低精度并行度。
+FP16 使用两套资源，TF32 使用一套；BF16 直接使用两个 $8\times8$ 叶。Q 将其中四个叶用于独立四位乘法，E 则使用全部八个叶，宽端口的冗余高位补零。每个低精度元素独立路由到乘法叶，避免打包乘法中的跨元素交叉项。符号与无符号幅值分别处理，以便在后续对齐和规约中共享算术资源。
 
-共享范围延伸至对齐和规约。T/H/Q 在 S2 求同一 group 内有限非零乘积的最大指数，S3 复用每 lane 四路幅值移位器进行对齐并恢复符号，S4 经四叶树形成 lane 部分和，S5 合并两个 lane。默认局部幅值窗口为 28 位，对应 S3 的 29 位有符号叶子和 S4 的 31 位 lane 和。E 不参加该指数 MAX，也不经过宽动态移位器；其八个乘积先形成四个 10 位有符号 pair，再进入共享树。MXFP4/NVFP4 通过固定补零，HiF4 通过树后至多两位的局部左移，统一为四位小数坐标。
+\subsection{Group：共享对齐与尺度融合}
 
-组尺度在局部规约后处理。MX 的 E8M0 尺度进入指数路径；NVFP4/HiF4 的尺度有效数由两侧四位系数相乘，再以 $14\times8$ 无符号乘法作用于组幅值。其余格式旁路该乘法。算术 group 与量化块分别定义：Q 的 32 元素尺度块覆盖四个 group，MXFP4 的 32 元素块覆盖两个，NVFP4 的 16 元素块覆盖一个，HiF4 的 64 元素块覆盖四个。扩展改变计算并行度，不改变量化块或重新量化输入。
+\textbf{先统一坐标，再规约两个 lane。} T/H/Q 的有限非零乘积共同选择 group 内最大指数，各 lane 复用四路幅值移位器完成对齐和符号恢复。四叶树随后将乘积规约为 lane 部分和，两个 lane 因使用同一坐标可直接相加，避免在组和之前增加一次动态对齐。默认局部幅值窗口为 28 位，符号与规约进位另行保留。
 
-\subsection{低精度 lane 与 group 的专用化}
-\label{sec:specialized_midgroups}
+E 模式通过更窄的数值表示接入这棵共享树。八个乘积先形成四个 10 位有符号 pair，绕过元素指数 MAX 和宽移位器，再进入 lane 规约。MXFP4/NVFP4 通过固定补零，HiF4 通过 lane 和后的至多两位左移，将自然系数统一到四位小数坐标。二级微指数在 lane 内消耗，不形成跨 lane 的最大指数和宽移位依赖。
 
-专用化沿解包、乘法、对齐、规约和寄存器逐层裁剪。E8 lane 只保留八个 $4\times4$ 乘法器，移除 T/H 的宽乘积重构、Q 的元素指数 MAX 和宽对齐。S2 将八个有符号乘积两两相加，保存四个 10 位 pair；S3 以平衡树得到 12 位和，先扩展到 14 位，再融合 HiF4 二级微指数。MXFP4/NVFP4 在同一位置固定补两位零。两个 lane 在 S4 合成 15 位组和并取 14 位幅值，S5 完成尺度处理。
+\textbf{在规约后施加块尺度。} MX 的 E8M0 尺度直接并入组指数；NVFP4/HiF4 的两侧尺度有效数先相乘，再作用于紧凑的组幅值。由于规约结果包含已知结构零位，尺度乘法只需 $14\times8$ 的无符号电路，其余模式旁路。这样避免将尺度乘法复制到每个元素，也不必驱动完整的宽幅值通路。
 
-E group 在 S5 使用 22 位容器：NVFP4/HiF4 保存完整尺度乘积，MXFP4 将 14 位幅值低补八位零。前导零检测仅作用于该容器，再低补九位零接入公共 31 位幅值接口。非零值在低位补零前后的前导零个数相同，因而内部窄通路可直接连接共享后端；零值由参与条件排除。上述 S3 微指数融合和 22 位检测属于 v1.9 扩展 E group；独立 E64 保留原切分。
+算术 group 与量化块分别定义。Q 的 32 元素尺度块覆盖四个 group，MXFP4 的尺度块覆盖两个，NVFP4 覆盖一个，HiF4 覆盖四个。相同尺度在这些 group 间广播，前端分组不改变量化粒度。该边界也使不同数量的 group 能够在保持格式语义的条件下组合。
 
-Q4E8 lane 同样去除 T/H/INT8，但保留 Q 的五位元素指数、六位乘积指数及 28 位对齐窗口。Q 使用八个四位乘法器中的四个，E 使用全部八个并绕过 Q 对齐。由于 Q/E 仍共享宽规约树，QE 在 S4 树后融合 E 的二级微指数，在 S5 合并两个 lane。它比通用 lane 少了高精度资源，但不能等同于完全专用 E lane 的位宽或功耗。
+\subsection{DP：统一组表示与融合输出}
 
-\subsection{统一组接口与单次全局对齐}
+组部分和采用符号 $s_g$、未规格化幅值 $m_g$ 和原始指数锚点 $A_g$ 表示。令幅值容器宽度为 $W_m$，则
+\begin{equation}
+v_g=(-1)^{s_g}m_g2^{A_g-(W_m-1)}.
+\end{equation}
+为了同时减少串联移位和避免零值占用对齐窗口，组出口还生成比较指数
+\begin{equation}
+e_g=A_g-\operatorname{clz}(m_g),\qquad m_g\ne0.
+\end{equation}
+全局 MAX 使用 $e_g$，幅值对齐则使用 $A_g$ 与共同指数的差值。幅值无需先左移规格化再右移对齐，而是一次双向移位到目标坐标。零乘积和局部相消产生的零组不参与 MAX，使有限窗口用于保留实际非零贡献。
 
-不同前端在 S5 输出相同的数值接口：符号 $s_g$、未规格化幅值 $m_g$、原始指数锚点 $A_g$、比较指数 $e_g$ 及有效和特殊值状态。对有限非零 group，幅值宽度 $W_m=31$，其不变量为
-\begin{align}
-v_g&=(-1)^{s_g}m_g2^{A_g-(W_m-1)},\\
-e_g&=A_g-\operatorname{clz}(m_g).
-\end{align}
-$A_g$ 在 S3 由元素坐标和无偏尺度指数预计算，$e_g$ 在 S5 形成。S6 按 $e_g$ 选取共同指数 $E_{\max}$，但按 $A_g-E_{\max}$ 对原幅值做一次双向移位，避免先规格化再重新对齐。零乘积和相消为零的组不竞争最大指数，防止无数值贡献的高指数挤占有限窗口。
+$C$ 与所有 group 在同一全局坐标下合并。FP32 非正规 $C$ 保留 $0.xxx$ 幅值，并以其有效指数作为比较上界，从而省去独立的前导零检测。默认全局叶子为 40 位有符号数。四个 group 先经 4:2 压缩成为两行，再与 $C$ 做 3:2 压缩，最终只通过一次进位传播加法，得到包含增长位的 43 位总和。规格化与 FP32 舍入集中在输出端，摊薄每个乘积的后处理成本。
 
-$C$ 只在 S5 解包并加入一次。当前实现不对 $C$ 执行前导零检测；FP32 非正规 $C$ 保留 $0.xxx$ 幅值，以 $-126$ 作为比较指数上界。因此不能假定 S6 必有规格化首位一。默认全局叶子为 40 位有符号数；幅值右移采用 RTZ，S8 最终输出采用 RNE。有限对齐窗口不等于无限精度融合点积，验证分别检查 RTL 对 CModel 的逐位一致性与相对精确数学参考的误差。
+幅值对齐采用向零截断，输出采用最近偶数舍入。FP32 输出不等同于无限精度点积：局部和全局窗口共同决定数值误差，验证同时检查有限窗口模型的一致性与相对精确数学结果的偏差。
 
-\subsection{K 扩展与 N 组合}
-\label{sec:brick_composition}
+\subsection{流水组织与精度门控}
 
-内部 $K$ 扩展让新增 group 计算同一输出的不同归约片段。基础四组保持不变，添加两个 E16、四个 E16 或四个 Q8E16，分别得到 H16Q32E96、H16Q32E128 和 H16Q64E128，对应 $1:2:6$、$1:2:8$ 和 $1:4:8$。扩展采用空间并行，不增加发射轮次或流水级。
+八级流水将解码、乘积生成、局部对齐、lane 规约、组尺度处理、全局对齐、压缩累加和输出舍入分开。不同格式在同一组边界汇合，使共享后端不需要依赖格式改变流水长度。
 
-S6 对全部参与源使用唯一的 $E_{\max}$，避免两支分别截断求和后再次对齐。S7 将基础四组用 4:2 压缩器变为两行，再与 $C$ 做 3:2 压缩。两个扩展组可直接与基础两行做 4:2 压缩；四个扩展组先压成两行，再与基础两行合并。随后同时选择 sum/carry 两行，经唯一的进位传播加法器（CPA）求和。carry 行已包含左移位权。七源结构输出 43 位，九源结构输出 44 位，完整保留累加增长位。
-
-外部 $N$ 组合将完整 DP 分配给不同输出列，每个 DP 保留自己的 $C/D$ 与规格化舍入后端。令 $\mathcal F$ 为基线完整 DP，$\mathcal E$ 为 E64，$\mathcal L$ 为 Q32E64；$\mathcal K_{126/128/148}$ 表示三个完整 K 扩展 DP。表~\ref{tab:brick_compositions} 用整数实例匹配各精度峰值。其中 $1:2:6$ 必须比较两个 E96 DP 与两个基线加一个 E64，不能将半个完整 E64 当作实际部署单元。
-
-\begin{table}[t]
-\centering
-\caption{Capacity-matched compositions of complete DPs; aggregate capacity is in H/Q/E MACs per cycle.}
-\label{tab:brick_compositions}
-\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}cllc@{}}\toprule
-Ratio & $K$ composition & $N$ composition & Capacity \\\midrule
-$1:2:4$ & $\mathcal F$ & $\mathcal F$ & 16/32/64 \\
-$1:2:6$ & $2\mathcal K_{126}$ & $2\mathcal F+\mathcal E$ & 32/64/192 \\
-$1:2:8$ & $\mathcal K_{128}$ & $\mathcal F+\mathcal E$ & 16/32/128 \\
-$1:4:8$ & $\mathcal K_{148}$ & $\mathcal F+\mathcal L$ & 16/64/128 \\
-\bottomrule
-\end{tabular*}\endgroup
-\end{table}
-
-$K$ 扩展共享 $C$ 处理与输出后端，但增加输入宽度及全局对齐源数；$N$ 组合增加独立输出，可复用同行 A，却同时增加累加状态和读写端口需求。峰值匹配并不保证实际 GEMM 的利用率相同，二者还受输出形状、原生 K 的边界填充和累加依赖约束。当前硬件证据覆盖完整单 DP；N 组合的成本相加与阵列带宽仍属于结构模型。
-
-若同一模式下输出列数扩大 $r$ 倍，且保留相同数量的交织上下文，FP32 累加状态容量也扩大 $r$ 倍。部分和驻留可减少远端交换，却仍需提供近端累加读写端口。Blackwell 将 MMA 累加结果驻留于 TMEM，再由 epilogue 载入寄存器~\cite{nvidia2026tmem}，说明累加存储是需要独立设计的资源；这一实例并不确定其内部采用本文的 K 或 N 扩展方式。
-
-\subsection{逐请求门控与实现边界}
-
-扩展组仅在支持的模式下接收请求，数据寄存器以有效位和本级精度控制更新，valid 每拍推进以传递气泡。参与位必须随流水保存，不能用当前输入格式关闭仍在途的低精度计算。非参与组在数值 MAX、特殊值 OR 和全负零 AND 中分别贡献无效候选、零和一；仅将其幅值清零不足以隔离寄存器中残留的 NaN 或负零状态。
-
-当前基础 DP、三个扩展 DP、E64 与 Q32E64 均保持 L8/II=1。面积和功耗比较使用 N12、TT、0.7\,V、85$^\circ$C、1\,GHz 的综合后结果，活动来自 Qwen3-8B MLP。该证据不含 CTS、布线寄生或阵列存储互连。后续工作负载分析以 BF16、MXFP8 E4M3 和 MXFP4 E2M1 为代表；格式支持范围与已经测量功耗的范围分别报告。
+精度相关使能沿请求传播，只有当前阶段有效且该字段参与计算时才更新数据寄存器。低精度模式关闭宽乘积的冗余高位及结构零位寄存段，读取时恢复确定的零值；未使用的乘法和尺度输入同时隔离。有效位持续推进以传递气泡，因而门控不会阻止不同格式请求交织。共享减少资源复制，而分段门控进一步限制低精度请求在宽通路中的活动。

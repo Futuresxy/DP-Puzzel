@@ -1,0 +1,73 @@
+% !TeX root = ../main.tex
+\section{低精度专用化与算力配比扩展}
+\label{sec:expansion}
+
+基线的 H/Q/E 峰值为 $16/32/64$ MAC/cycle，对应 $1:2:4$。提高低精度占比可以沿两条轴展开：在同一 DP 内增加归约长度 $K$，或增加独立输出列 $N$。前者共享输出后端，后者扩大输出并行度。两种方式都需要低成本的低精度计算构件，区别在于这些构件在何处合并，以及是否保留独立的累加与舍入边界。
+
+图~\ref{fig:kn_datapaths} 将两种组合放在相同的 group 边界上比较。K 扩展在最终浮点结果产生前合并部分和；N 扩展为新增计算配置完整后端，产生独立输出。
+
+\begin{figure}[t]
+\centering
+% 待作者绘图：左侧 K 扩展，将四个共享 group 与 2/4 个 E 或四个 QE group
+% 接入同一个全局 MAX/移位、CSA、双行 MUX、CPA 和规格化/舍入后端；C 仅一份。
+% 右侧 N 组合，将完整基线 DP 与完整 E64/Q32E64 并列，各有 C/D 和独立后端。
+% 用虚线框标明 DP 边界，颜色区分共享前端、专用前端和后端；箭头仅表示算术流。
+% 精确匹配实例数见组合表，1:2:6 不绘制“半个 E64”。
+\fbox{\parbox[c][24mm][c]{0.90\columnwidth}{\centering
+架构图待补\\[3pt]K 内部扩展与 N 外部组合}}
+\caption{Internal K expansion versus independent N outputs. Dashed outlines mark complete DPs; arrows show arithmetic flow, not array scheduling. Exact capacity-matched compositions are listed in Table~\ref{tab:brick_compositions}.}
+\label{fig:kn_datapaths}
+\end{figure}
+
+\subsection{E 与 QE 专用计算构件}
+\label{sec:specialized_midgroups}
+
+\textbf{E 专用化同时缩窄算术和寄存。} 基线在 E 模式下仍保留高精度乘法叶、宽规约树及格式选择。专用 E lane 将元素计算缩为八个 $4\times4$ 乘法器，删除高精度部分积重构、元素指数比较和宽局部移位。乘法后立即两两相加，只保存四个 10 位 pair。下一阶段以平衡树得到 12 位和，先扩展到 14 位再融合 HiF4 二级微指数；MXFP4/NVFP4 在相同位置固定补零。将小范围指数处理留在窄通路内，避免把其控制传播到后续宽网络。
+
+两个 E lane 构成 E16 group。组和与取幅值提前完成，尺度阶段仅处理 14 位幅值与八位尺度系数。尺度乘积保留为 22 位，MXFP4 旁路值通过低位补零进入同一容器。前导零检测在该窄容器内完成，随后补零连接公共组接口。非零幅值低位补零不改变前导零个数，因此专用前端能够保留共享后端所需的数值坐标，而无需恢复内部宽算术。
+
+\textbf{QE 专用化保留 Q 所必需的对齐能力。} QE lane 删除 T/H/INT8 通路，使用八个四位乘法器，Q 模式激活其中四个。Q 仍需五位元素指数、六位乘积指数和宽局部对齐，因此 Q/E 共用较宽的规约树；E 绕过该对齐网络，并在树后融合局部微指数。两个 lane 构成 Q8E16 group。与 E 专用结构相比，QE 承担额外的 Q 对齐和宽寄存成本，换取 FP8/6 与 FP4 之间的资源复用。
+
+两种构件均输出符号、幅值、指数及特殊值状态。该公共表示将组合边界与内部位宽解耦：同一低精度前端既可接入基线的共享后端，也可连接独立后端形成完整 DP。
+
+\subsection{K 方向的内部扩展}
+\label{sec:k_expansion}
+
+K 扩展让新增 group 处理同一输出的额外归约片段。基础四个多精度 group 保持不变，添加两个 E16、四个 E16 或四个 Q8E16，分别得到 H16Q32E96、H16Q32E128 和 H16Q64E128。扩展通过空间并行增加低精度乘积数，高精度容量不变，仍保持八级流水和每拍一笔请求。
+
+\textbf{输入与对齐网络随参与源扩展。} 新增 group 接收额外 A/B 片段及其尺度，而 $C$ 仍只有一份。所有参与 group 的比较指数与 $C$ 共同选择唯一全局指数，每个新增源配置相应的全局移位和符号恢复通路。基础支与扩展支可以分别求 MAX 候选，但在数值对齐前必须合并候选；若先在各支独立对齐求和，再将两个结果重新对齐，就会增加串联运算及额外截断。
+
+\textbf{在 carry-save 状态下合并新增乘积。} 基础四组与 $C$ 压缩后的两行直接连接扩展压缩网络。两个新增组与基础两行组成一次 4:2 压缩；四个新增组先压成两行，再与基础两行做 4:2 压缩。按当前请求选择基础或扩展后的两行，最后经过唯一的进位传播加法器。该组织避免先对扩展支求和、再与基线结果相加所形成的串联进位链。七个输入源需要 43 位总和，九个输入源需要 44 位，输出规格化通路相应保留增长位。
+
+\textbf{掩码必须控制数值和活动，而不只是最终结果。} E 扩展仅在 E 模式参与，QE 扩展在 Q/E 模式参与。参与信息与请求共同通过流水，控制前端更新、全局 MAX 候选、移位输入和压缩树叶子。数值零与非参与状态分别处理：参与的特殊值仍需传播，而关闭组中残留的特殊值不能污染当前结果；全负零判定也只针对参与项。由此，高精度请求可旁路扩展压缩支，同时抑制未用前端的切换活动。
+
+\subsection{N 方向的完整 DP 组合}
+\label{sec:n_expansion}
+
+N 扩展为低精度 group 配置独立的全局对齐、$C$ 合并和输出后端，再沿输出列与基线 DP 组合。四个 E16 group 形成 E64，四个 Q8E16 group 形成 Q32E64。每个完整 DP 计算不同的输出位置，同行可共享 A，各列接收自己的 B 和 $C$，并产生独立 D。对于不支持的精度，附加列不参与计算。
+
+独立 E64 采用另一种局部流水划分：lane 保存窄部分和及微指数，group 再完成微指数融合，并在完整组幅值上检测前导零；其后端保留 C 前导零检测和五输入加法树。K 扩展中的 E 构件则采用前述 lane 内融合、窄幅值检测及 carry-save 后端。二者具有相同的格式容量和吞吐，但具体电路配置不同；成本比较包含这些实现差异。
+
+令 $\mathcal F$、$\mathcal E$、$\mathcal L$ 分别表示基线、E64 和 Q32E64 完整 DP，$\mathcal K_{126}$、$\mathcal K_{128}$、$\mathcal K_{148}$ 表示三个 K 扩展 DP。表~\ref{tab:brick_compositions} 给出容量匹配的组合。$1:2:6$ 采用两个 K 扩展 DP 对比两个基线与一个 E64，以整数实例匹配绝对算力；半个 E64 仅可用于归一化成本，不能作为实际部署单元。
+
+\begin{table}[t]
+\centering
+\caption{Capacity-matched K/N compositions. Capacity is aggregate H/Q/E MACs per cycle.}
+\label{tab:brick_compositions}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}cllc@{}}\toprule
+Ratio & K composition & N composition & Capacity \\\midrule
+$1:2:4$ & $\mathcal F$ & $\mathcal F$ & 16/32/64 \\
+$1:2:6$ & $2\mathcal K_{126}$ & $2\mathcal F+\mathcal E$ & 32/64/192 \\
+$1:2:8$ & $\mathcal K_{128}$ & $\mathcal F+\mathcal E$ & 16/32/128 \\
+$1:4:8$ & $\mathcal K_{148}$ & $\mathcal F+\mathcal L$ & 16/64/128 \\
+\bottomrule
+\end{tabular*}\endgroup
+\end{table}
+
+\subsection{两种组合的结构取舍}
+\label{sec:brick_composition}
+
+K 扩展增加每个输出的输入宽度、全局移位源数和规约规模，同时共享 $C$ 处理、最终加法和舍入。N 扩展保留较短的单 DP 归约，增加 A 的列间复用，却复制后端并产生更多同时存活的输出部分和。二者峰值相同时，输入供给和累加存储需求仍可能不同。
+
+这种差异也影响实际利用率。K 扩展需要足够长的归约维，较短 K 的尾块可能产生空槽；N 扩展需要足够多的独立输出，窄矩阵可能无法填满新增列。后续先比较同能力结构的电路成本，再分析带宽与累加状态，最后在明确的面积模型下研究四种 K 配比的负载适用范围。

@@ -1,12 +1,12 @@
 # DAC 2027 论文
 
-## 当前写作批次（2026-11-10）
+## 当前中文初稿（2026-11-10）
 
-[微架构正文](sections/03_architecture.tex) 已按基础 v1.8、混合/QE v1.9 和保留原设计的 E64 重写；[研究路线](research_plan.md) 连接 DP、K/N 成本、带宽及面积/功耗约束下的负载分析，[相关工作核验](references/notes/dp_comparison.md) 记录五项工作的格式和 PPA 比较边界。
+正文按七章组织：引言、背景、共享 DP 微架构、低精度专用化与 K/N 扩展、硬件评估、负载配比建模、结论。[main.tex](main.tex) 是入口；第三章只描述基线，第五章报告电路证据，第六章讨论解析预测。正文不使用代码版本、模块路径或实验 run ID，来源映射放在 [研究路线](research_plan.md)、[相关工作核验](references/notes/dp_comparison.md) 和 [硬件更新说明](data/evidence/n12_current/README.md)。
 
-本轮优先完成微架构。其余章节、`data/inputs/hardware_n12.json` 与配比图仍是下述历史稿，尚未迁移到当前 N12、1 GHz、Qwen3-8B 活动批次；不能将第 4 节或摘要的旧数字作为新版结果。DeepSeek 的固定版本、工作量、`data/expected` 和 `data/evidence` 继续保留。后续只更新硬件成本并重算；按用户确认，NVFP4 可暂用 MXFP4 功耗代理，需显式标注，补入实测后更新能耗分区。
+硬件输入已更新为当前 N12、0.7 V、85°C、1 GHz 的六 DP 测量批次。四种 K 配比的部署、时间、能耗、分区及 DeepSeek 轨迹已重算。DeepSeek 模型版本和工作量映射保持不变；`data/expected` 保留历史回归证据，旧硬件输入归档到 `data/evidence/n12_legacy/`。NVFP4 暂用 MXFP4 功耗代理，输入与结果 manifest 均明确标注；补入 NVFP4 功耗后重算能耗分区。
 
-后续写作入口为 `main.tex`，正文按章节放在 `sections/`。当前全文以 DP-puzzle-SW/paper 的指定中文版本恢复；删除原图 7、十三种扩展配比的构造与分析，以及摘要和贡献中的“16 种新增配比”表述。其余文字、图表和引用沿用源稿，保留已有 PNG 重绘及 XeLaTeX 预览配置。继续使用 10 pt 中文工作稿，不为当前篇幅调整字体或压缩正文。
+当前保持 10 pt 中文工作稿，不通过缩小字体压缩篇幅。基线架构图使用作者现有 `baseline_arch.png`；K/N 架构图留占位，绘图内容见章节源码注释及 [研究路线](research_plan.md)，由作者补图。不自动生成架构图片。早期 22 nm 和 Select8 结果保留作为历史资料，不再被当前正文引用。
 
 ## 保存后预览 PDF
 
@@ -35,7 +35,7 @@ make                    # 仅编译正文，输出 build/main.pdf
 make reproduce          # 重算部署、负载、三角分区、两张图和三张表
 make diagrams           # 重绘 DP 背景和 K/N 组织示意图
 make cost-figures       # 按可编辑 CSV 重绘 select8 面积/功耗和 H16Q32E64 面积占比
-make check              # 重算默认实验，与迁移前的论文结果逐字段比较
+make check              # 保持历史工作量不变，核验当前测量输入、部署与时间/能耗
 make test               # 临时目录内验证修改参数后的重算
 ```
 
@@ -52,7 +52,7 @@ make test               # 临时目录内验证修改参数后的重算
 | [scripts/workloads.py](scripts/workloads.py)、[scripts/deepseek_v41.py](scripts/deepseek_v41.py) | V4/V4.1 的有效 GEMM 工作量、注意力与 CED 计算规则 |
 | [scripts/plot_triangles.py](scripts/plot_triangles.py) | 配色、字号、标记和轨迹；标题及图注由 LaTeX 管理 |
 
-例如把 `baseline_cores` 改为 32 后，默认硬件下部署核数变为 32/29/28/26。修改面积和功耗应同时更新来源信息；自行设定的数据属于敏感性分析，不能作为新的硬件测量。
+例如把 `baseline_cores` 改为 32 后，默认硬件下部署核数变为 32/30/29/26。修改面积和功耗应同时更新来源信息；自行设定的数据属于敏感性分析，不能作为新的硬件测量。
 
 独立试验可以不覆盖论文图表：
 
@@ -62,7 +62,7 @@ python3 scripts/reproduce.py --config data/inputs/experiment.json --output /tmp/
 
 `--config` 中的 `hardware` 相对该配置文件解析；模型配置固定从本目录 `data/inputs/models/` 读取。当前入口针对四种既定配比和三个模型，不是任意设计空间生成器。
 
-**重绘更新数值表格和图形，不自动改写正文结论。** 修改参数后需同步审核正文中的面积、核数、百分比、轨迹端点和图注中的上下文范围。`make check` 只适用于未改变默认输入时的迁移回归；新参数不应被迫匹配旧结果。
+**重绘更新数值表格和图形，不自动改写正文结论。** 修改参数后需同步审核正文中的面积、核数、百分比、轨迹端点和图注中的上下文范围。`make check` 核对默认测量输入，并检查历史工作量保持不变；自定义参数用独立输出目录和 `make test` 验证，不要求新硬件结果匹配历史值。
 
 ## 建模口径
 
@@ -82,7 +82,7 @@ E_j = sum_f(F_f*P_j,f/C_j,f)
 
 默认 `growth=0`，固定每个核心的外围面积；预算为等效核心池面积，并非商业芯片实测 die 面积。固定频率、充分利用的模型中，增加实例同时增加功耗和吞吐，所以实例数在单位工作能耗中抵消。外围面积不能按比例换算外围功耗。
 
-三角坐标是 H/Q/E 的 **FLOP 占比**，不是执行时间占比。吞吐分区比较总时间；能耗分区比较总 DP 能耗。MX/NV 两类 FP4 使用相同峰值但分别计功耗，能耗图实色部分在两种编码之间保持相同优胜配比，斜线部分取决于编码混合比例。
+三角坐标是 H/Q/E 的 **FLOP 占比**，不是执行时间占比。吞吐分区比较总时间；能耗分区比较总 DP 能耗。MX/NV 两类 FP4 使用相同峰值，数据结构保留独立功耗字段。当前 NV 功耗取 MX 代理，因此图中编码选择区域完全重合，不能据此声称实际 NV/MX 能耗相同。换入独立 NV 功耗后，绘图支持标出随编码混合比例改变的区域。
 
 两类轨迹均由配置和计算公式重算：
 
@@ -91,24 +91,34 @@ E_j = sum_f(F_f*P_j,f/C_j,f)
 
 三模型均统计纯文本冷 prefill 的有效 GEMM；V4.1 包含 CED 缓存构建与有限窗口重放。FP32 单独统计并排除出 H/Q/E 分母。这是由已固定版本来源导出的计算需求，不是现场运行 vLLM 的 trace，不代表量化精度验证或端到端延迟实测。
 
-12 nm 功耗是旧论文所用 Qwen3-0.6B 活动下的 DP 表征；22 nm 的 RQ1/RQ2 数据另存于 `data/evidence/n22/`。**这些数据不等于本仓库当前 `src/verilog` 新版 RTL 的 PPA。** 迁移没有重跑综合、功耗或推理测量。
+当前 12 nm 功耗来自 Qwen3-8B 第一层 MLP down-projection 的连续活动窗口，用于 DeepSeek 工作量时属于活动代理。H 以 BF16 代表，NVFP4 暂用 MXFP4 功耗；结果不包含外设、存储、通信及停顿能耗。本次写作复用已有硬件测量，未重新运行 EDA 或模型推理。
+
+更新输入后可运行：
+
+```bash
+python3 scripts/import_dp_measurements.py
+make check
+make test
+```
+
+导入脚本读取仓库中固定批次的六架构 CSV，并保留来源 hash、测量工况和代理说明。若要更新测量批次，应修改导入来源并核验测量条件。
 
 ## 目录与结果
 
-- `sections/`：摘要、引言、背景、架构、评估、结论；固定面积与模型评估位于 `k4_fixed_area_prefill.tex`。
-- `references/references.bib`：正文所需 32 条文献及 1 个 BibTeX 格式控制条目。
+- `sections/`：摘要及七章正文；微架构为 `03_architecture.tex`，扩展为 `04_expansion.tex`，硬件评估为 `05_evaluation.tex`，负载模型为 `06_workload.tex`。
+- `references/references.bib`：文献和 BibTeX 格式控制条目；五项 DP 相关工作的比较条件另存于 notes。
 - `figures/`：正文插图；四张原有架构/格式图保留 PNG，其余提供绘图代码。
 - `tables/`：固定面积部署、MXFP4 区域占比及 prefill 端点三张表，由脚本生成。其余表格在章节内维护。
 - `data/inputs/`：可修改的实验输入。
 - `data/results/`：重新计算的核数/算力/功耗 CSV、两类模型点与逐配比结果、工作量账本、扫描结果、精确区域及输入 hash。由 Git 忽略，随时重建。
-- `data/expected/`：迁移前论文的五份精简基准，用于数值回归，不参与新结果计算。
+- `data/expected/`：历史论文的五份精简基准，不参与新结果计算；当前回归核对其中不应随硬件变化的工作量字段。
 - `data/evidence/`：输入来源、版本、校验和及其他正文表格的紧凑证据；原始路径仅用于溯源，不是运行依赖。
 - `template/`、`submission/`：保留目标工程原有模板来源、投稿要求和 AI 使用记录。
 
-默认结果：405.5663803392 mm²，核心数 36/33/32/29，两类映射共 42 个点；迁移回归核对 1,843 个字段。当前保持 10 pt 中文工作稿的自然篇幅，英文稿确定后再核对最终投稿页数。作者仍需审核论文论断与最终投稿材料。
+默认面积预算为 496.59255257088006 mm²，四配比核心数为 36/34/32/29，两类映射共 42 个工作量点、168 个配比评估。1:2:6 的延迟/能耗最优区域分别占 7.94%/2.84%，旧稿的“无优势区域”结论不再适用。模型输出为计算服务时间和 DP 活动能耗，不能表述成整芯片实测。
 
 ## Select8 成本与 DP 面积占比图
 
-运行 `make cost-figures` 生成 Select8 的面积与功耗图。评估章节直接引用仓库中的 PETile 参考图。[Select8 数据说明](data/DP_area_power/README.md) · [PETile 参考图](figures/H16Q32E64_area_pie.png)
+运行 `make cost-figures` 可重建历史 Select8 面积与功耗图；当前正文不引用这些图。[Select8 数据说明](data/DP_area_power/README.md) · [PETile 参考图](figures/H16Q32E64_area_pie.png)
 
 新版六种 DP 的七类面积与总功耗分别保存在两张 CSV。运行 `make dp-share-figures` 重绘六张面积图和六张总功耗图。[面积](data/H16Q32E64_area/README.md) · [总功耗](data/H16Q32E64_power/README.md)

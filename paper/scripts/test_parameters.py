@@ -17,7 +17,7 @@ with tempfile.TemporaryDirectory(prefix='dp-paper-parameters-') as tmp:
     cfgpath=root/'experiment.json'; cfgpath.write_text(json.dumps(config))
     reproduce.run(cfgpath,root/'cores32')
     result=json.loads((root/'cores32/data/results/manifest.json').read_text())
-    assert result['integer_cores']==[32,29,28,26]
+    assert result['integer_cores']==[32,30,29,26]
     assert result['model_points']==6
     with (root/'cores32/data/results/prefill_points.csv').open() as f: points=list(csv.DictReader(f))
     for p in points:
@@ -31,7 +31,9 @@ with tempfile.TemporaryDirectory(prefix='dp-paper-parameters-') as tmp:
     reproduce.run(cfgpath,root/'changed_costs')
     result=json.loads((root/'changed_costs/data/results/manifest.json').read_text())
     assert result['integer_cores'][:2]==[36,36]
-    assert abs(result['area_budget_mm2']-405.5663803392*.5*.3/.4)<1e-10
+    expected_budget=36*8*16*hw['designs'][0]['area_um2']/1e6/.4
+    assert abs(result['area_budget_mm2']-expected_budget)<1e-10
     regions=json.loads((root/'changed_costs/data/results/energy_encoding_regions.json').read_text())
-    assert regions['mx_only'][1]['fraction']>0  # Previously absent region now has a winner.
+    base_regions=json.loads((root/'cores32/data/results/energy_encoding_regions.json').read_text())
+    assert regions['mx_only'][1]['fraction']>base_regions['mx_only'][1]['fraction']
 print('PASS: changed core budget, array size, area fraction, hardware area/power, batch and short context lists')

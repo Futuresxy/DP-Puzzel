@@ -51,7 +51,9 @@ def run(config_path, output):
     if not cfg['models'] or len(set(cfg['models'])) != len(cfg['models']) or any(m not in supported for m in cfg['models']):
         raise ValueError('Select distinct supported DeepSeek models')
     hp = (config_path.parent / cfg['hardware']).resolve()
-    raw = json.loads(hp.read_text())['designs']
+    hardware_input = json.loads(hp.read_text())
+    raw = hardware_input['designs']
+    power_assumptions = hardware_input.get('power_assumptions', {})
     ratios = [h['ratio'] for h in raw]
     if ratios != ['1:2:4', '1:2:6', '1:2:8', '1:4:8']:
         raise ValueError('This paper compares four ordered ratios with 1:2:4 baseline')
@@ -116,7 +118,9 @@ def run(config_path, output):
     workloads.write_csv(out/'simplex_sweep.csv', sweep)
     (out/'regions.json').write_text(json.dumps(dict(**regions,
         time_continuous=winner_regions(1/np.array([d['capacity'][:3] for d in continuous]))),indent=2)+'\n')
-    (out/'energy_encoding_regions.json').write_text(json.dumps(dict(mx_only=regions['energy'],
+    (out/'energy_encoding_regions.json').write_text(json.dumps(dict(
+        evidence_scope='conditional_on_input_power_assumptions', power_assumptions=power_assumptions,
+        mx_only=regions['energy'],
         nv_only=winner_regions(cost4[:,[0,1,3]]),encoding_independent=robust),indent=2)+'\n')
     all_points = {}
     for profile, prefix in [('reference_work',''), ('nvfp4_experts','nvfp4_')]:
@@ -171,6 +175,9 @@ def run(config_path, output):
     inputs = [config_path,hp]+[workloads.SOURCE/m/'inference/config.json' for m in cfg['models']]
     def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
     manifest = dict(status='analytical_compute_only',configuration=cfg,area_budget_mm2=budget,
+                    power_assumptions=power_assumptions,
+                    power_evidence={h['ratio']:{f:h['power'][f].get('evidence_status','unspecified')
+                                               for f in FORMATS} for h in raw},
                     integer_cores=[int(d['count']) for d in designs],model_points=len(ref)+len(nv),
                     energy_scope='DP active power only; excludes peripheral, memory, communication and stalls',
                     inputs=[dict(path=str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else p.name,sha256=digest(p)) for p in inputs],

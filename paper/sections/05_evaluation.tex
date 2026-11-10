@@ -1,0 +1,131 @@
+% !TeX root = ../main.tex
+\section{硬件实现与实验评估}
+\label{sec:evaluation}
+
+本节先分析基线的成本构成，再考察专用化与配比扩展，最后在相同峰值能力下比较 K/N 两种组织。电路结果用于确定可供负载模型使用的面积和模式功耗，阵列带宽与累加存储则作为独立的结构约束讨论。
+
+\subsection{实验方法}
+\label{sec:eval_setup}
+
+六种完整 DP 均采用 12\,nm 标准单元库，由 Synopsys Design Compiler 综合，工况为 TT、0.7\,V、85$^\circ$C，目标频率为 1\,GHz，启用集成时钟门控。所有设计均保持八级流水和每拍一笔独立请求，并在该工况下满足综合后的建立、保持及电气约束。报告面积包括数据通路、流水寄存器和门控单元，不包括阵列存储与互连。
+
+功耗采用 Qwen3-8B 第一层 MLP down-projection 的激活与权重驱动~\cite{qwen3technicalreport}，分别映射为 BF16、MXFP8 E4M3 和 MXFP4 E2M1。各设计在连续发射的稳定窗口内采样 512 个周期，利用 VCS 门级仿真生成 SAIF，由 Power Compiler 计算内部、网络切换及泄漏功耗~\cite{synopsysActivityPower}。活动注释覆盖全部目标对象，RTL 与门级数值结果保持一致。以下结果为综合后、时钟树与布线前估计，不包含实际布线寄生及存储访问功耗。
+
+一次 MAC 按两个 FLOP 计数。除总面积与功耗外，报告面效 $2K_f\nu/A$ 和单位计算能耗 $P_f/(2K_f\nu)$，其中 $K_f$ 为模式 $f$ 的原生乘积数，$\nu$ 为频率。这样可以区分增加并行度带来的总功耗增长与单位计算成本变化。
+
+\subsection{基线的面积与功耗构成}
+\label{sec:reuse_evaluation}
+\label{sec:area_breakdown}
+
+基线面积为 0.016165\,mm$^2$，BF16、MXFP8 和 MXFP4 总功耗分别为 15.328、16.002 和 11.197\,mW。表~\ref{tab:baseline_breakdown} 按主要功能归集组合逻辑及其相关寄存器。乘法占面积的 24.15\%，规约与对齐合计占 38.91\%，说明只关注乘法器无法解释完整 DP 的主要成本。解包和指数处理另占 27.21\%，来自格式兼容、尺度与数值坐标处理。
+
+\begin{table}[t]
+\centering
+\caption{Baseline functional shares (\%). H/Q/E use BF16/MXFP8/MXFP4. Power includes dynamic and leakage components.}
+\label{tab:baseline_breakdown}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrr@{}}\toprule
+Function & Area & $P_H$ & $P_Q$ & $P_E$ \\\midrule
+Multiplication & 24.15 & 15.87 & 14.55 & 16.07 \\
+Reduction & 21.84 & 14.54 & 14.56 & 16.59 \\
+Alignment & 17.07 & 20.51 & 20.74 & 13.31 \\
+Exponent & 11.19 & 11.80 & 12.49 & 8.28 \\
+Unpacking & 16.02 & 17.54 & 18.12 & 21.31 \\
+Norm./round & 3.04 & 2.42 & 2.16 & 2.85 \\
+Others & 6.70 & 17.32 & 17.39 & 21.59 \\
+\bottomrule
+\end{tabular*}\endgroup
+\end{table}
+
+Q 模式的对齐功耗占比达到 20.74\%，而 E 模式降至 13.31\%，与 E 绕过元素指数对齐的结构一致。E 模式下，解包和其余控制、门控及未单列逻辑的相对占比上升；降低元素位宽并不会按比例降低整个 DP 的功耗。因此，低精度增配除了缩小乘法，还应裁剪宽寄存、指数和选择路径。功能分解用于定位成本，不能将不同完整设计之间的差额全部归因于某一个局部优化。
+
+\subsection{与已有点积及浮点单元的比较}
+\label{sec:related_dp_evaluation}
+
+表~\ref{tab:related_dp} 比较格式覆盖、计算边界和原文报告的效率。FPnew 侧重标量与 SIMD 浮点运算，Ten-Four 将多格式点积与整数累加结合；MPICC 支持低精度异构操作数组合，MXDOTP 聚焦原生 MXFP8 缩放点积，TransDot 则共享多精度 SIMD 与点积资源。DP-Puzzle 同时覆盖 H/Q/E 与块尺度处理，并通过专用前端改变低精度容量。
+
+\begin{table*}[t]
+\centering
+\caption{Functionality and reported hardware costs. Results use different technologies, arithmetic boundaries and evaluation stages; they are not an iso-technology ranking. A dash denotes a metric not tabulated here.}
+\label{tab:related_dp}
+\begingroup\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{p{0.11\textwidth}p{0.25\textwidth}p{0.18\textwidth}p{0.31\textwidth}}\toprule
+Design & Formats and operation & Area / implementation & Reported efficiency \\\midrule
+Ten-Four~\cite{rout2026tenfourv2} & TF32, FP16/BF16, FP8/BF8, INT8/4; MX; FP32/INT32 output & 0.001960 mm$^2$; predictive 7 nm synthesis & 6.28 mW for the reported eight-element configuration; $F_{\max}=1.571$ GHz \\
+MPICC~\cite{huangMPICCMultiplePrecisionInterCombined2025} & FP8/6/4, INT4, LOG4 combinations; stochastic rounding; FP12 emulation & ---; 28 nm, 0.9 V, TT & FP8 area/energy efficiency: $1.17\times/1.19\times$ its selected references; FP4: $4.69\times/3.64\times$ \\
+MXDOTP~\cite{islamoglu2025mxdotp} & MXFP8 E4M3/E5M2; eight-term dot product into FP32 & 0.00315 mm$^2$; 12 nm, 0.8 V & 17.4 GFLOP/s and 2035 GFLOP/s/W for the standalone unit at 1.09 GHz \\
+FPnew~\cite{mach2020fpnew} & FP64/32/16, BF16, FP8; scalar/SIMD and mixed-format FMA & ---; 22FDX silicon & 178 GFLOP/s/W (FP64) to 2.95 TFLOP/s/W (FP8), across measured operating points \\
+TransDot~\cite{transdot2026} & FP32 FMA; FP16/8/4 dot products of length 2/4/8 into FP32 & ---; 12 nm post-layout, 0.8 V, 1 GHz & FP16/FP8/FP4 dot products: 1.80/0.84/0.41 pJ/FLOP; FP16/FP8 area efficiency $1.46\times/2.92\times$ FPnew \\
+DP-Puzzle baseline & TF32, FP16/BF16, MXFP8/6/4, NVFP4, HiF4, INT8 & 0.016165 mm$^2$; 12 nm synthesis, 0.7 V, 1 GHz & BF16/MXFP8/MXFP4: 1.980/3.959/7.918 TFLOP/s/mm$^2$; 0.479/0.250/0.0875 pJ/FLOP \\
+\bottomrule
+\end{tabular}\endgroup
+\end{table*}
+
+比较需要保留运算语义。INT4 支持不能替代浮点 FP4，FP4 元素乘法也不自动包含 MX/NV 尺度处理；多步高精度仿真与原生高精度并行度不同。DP-Puzzle 的 A/B 同格式计算不覆盖 MPICC 的全部异构组合。由于工艺、电压、点积长度及功耗活动条件不同，表中绝对能效不用于宣称同条件优胜；本文的受控比较集中在相同工况下的六种 DP 及其组合。
+
+\subsection{专用化与六种 DP 的成本}
+\label{sec:lowp_costs}
+
+表~\ref{tab:six_dp_costs} 汇总六种完整 DP。独立 E64 与 Q32E64 的面积相对基线分别降低 65.08\% 和 27.65\%。在相同 K64 的 MXFP4 模式下，三者功耗分别为 7.036、10.218 和 11.197\,mW。E 专用结构去除了 Q 对齐和宽规约资源，因而进一步降低成本；QE 则以较高成本保留 Q/E 复用能力。
+
+\begin{table}[t]
+\centering
+\caption{Complete-DP costs at 1 GHz. Area: $10^3\,\mu$m$^2$; power: mW. Dashes denote unsupported modes.}
+\label{tab:six_dp_costs}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrr@{}}\toprule
+H/Q/E capacity & Area & $P_H$ & $P_Q$ & $P_E$ \\\midrule
+16/32/64 & 16.165 & 15.328 & 16.002 & 11.197 \\
+16/32/96 & 18.863 & 15.637 & 16.354 & 14.417 \\
+16/32/128 & 21.596 & 15.893 & 16.620 & 17.595 \\
+16/64/128 & 27.191 & 15.744 & 28.789 & 20.563 \\
+0/0/64 & 5.644 & --- & --- & 7.036 \\
+0/32/64 & 11.695 & --- & 13.580 & 10.218 \\
+\bottomrule
+\end{tabular*}\endgroup
+\end{table}
+
+K 扩展的 E96/E128 分别增加 16.69\%/33.60\% 面积，获得 50\%/100\% 的 E 吞吐增长，MXFP4 每 MAC 能耗相对基线降低 14.16\%/21.43\%。Q64E128 增加 68.21\% 面积，将 Q/E 峰值同时翻倍；其 MXFP8 每 MAC 能耗降低 10.05\%，但总功耗达到 28.789\,mW。单位能耗改善与瞬时功耗上升可以同时发生，后者会影响功耗受限的部署。
+
+三个扩展设计执行 BF16 时仅增加 2.01\%--3.69\% 功耗，说明精度门控限制了附加通路的活动。面积仍由全部物理资源决定，未扩展模式也承担漏电、共享控制和后端变化的成本。因此不能只按目标低精度的收益选择配比。
+
+\subsection{同能力 K/N 组合比较}
+\label{sec:kn_evaluation}
+
+按照表~\ref{tab:brick_compositions} 的整数实例组合，K 方案使用扩展 DP 的结果，N 方案将完整 DP 成本相加。表~\ref{tab:kn_costs} 仅比较附加单元均参与的低精度模式，避免将未知的空闲功耗当作零。相同模式峰值下，功耗降低也对应单位计算能耗降低。
+
+\begin{table}[t]
+\centering
+\caption{Capacity-matched K/N component estimates. Area: $10^3\,\mu$m$^2$; power: mW. N costs sum complete-DP measurements and exclude array interconnect and accumulator storage.}
+\label{tab:kn_costs}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lcrrrr@{}}\toprule
+Ratio & Mode & $A_K$ & $A_N$ & $P_K$ & $P_N$ \\\midrule
+$1:2:6$ & E & 37.727 & 37.974 & 28.835 & 29.429 \\
+$1:2:8$ & E & 21.596 & 21.809 & 17.595 & 18.233 \\
+$1:4:8$ & Q & 27.191 & 27.860 & 28.789 & 29.582 \\
+$1:4:8$ & E & 27.191 & 27.860 & 20.563 & 21.414 \\
+\bottomrule
+\end{tabular*}\endgroup
+\end{table}
+
+K 组合的面积低 0.65\%--2.40\%，低精度活动功耗低 2.02\%--3.97\%。在所评估实现中，后端共享与局部通路优化共同补偿了新增全局移位及压缩网络的成本，但净收益有限。由于独立 E64 与内部 E 构件的局部流水和后端不同，该差额不能视为仅改变组合位置的消融收益。N 的功耗为同源单元活动结果的相加估计，尚不包含真实阵列中的广播相关性、互连和累加存储，因此这些结果说明当前电路构件的组合趋势，而不是布局后阵列的最终差距。
+
+\subsection{输入复用与累加存储的带宽取舍}
+
+设基线输出形状为 $m\times n$，原生归约长度为 $k$，某一精度的容量扩展倍率为 $r$。K 方案使用 $m\times n\times rk$，N 方案使用 $m\times rn\times k$，每次发射均完成 $rmnk$ MAC。令 $w(k)$ 为含尺度的单侧输入向量位数，理想行列广播下有
+\begin{equation}
+b_{AB,K}=(m+n)w(rk),\quad b_{AB,N}=(m+rn)w(k).
+\end{equation}
+当尺度块完整且 $w(rk)=rw(k)$ 时，N 通过复用 A 每次少读 $(r-1)mw(k)$ bit。这是输出维扩展的输入带宽优势。
+
+另一方面，令累加宽度为 $c=32$，为隐藏反馈延迟而交织的独立上下文数为 $u$，两方案的累加状态容量分别为 $umnc$ 和 $urmn c$。N 增加 $r$ 倍同时存活的输出；若每次发射均从近端存储读 C、写 D，其端口流量也增加 $r$ 倍。Blackwell 将 MMA 累加结果存于 TMEM，再由 epilogue 载入寄存器~\cite{nvidia2026tmem}，体现了累加存储作为独立资源的重要性，但不能据此推断其采用本文某一种扩展方式。
+
+若在所讨论的更远层级，每 $\tau$ 次更新才交换一次 C/D，且两方案具有相同 $\tau$，则
+\begin{equation}
+b_N-b_K=(r-1)m\left(\frac{2cn}{\tau}-w(k)\right).
+\label{eq:kn_bandwidth_difference}
+\end{equation}
+频繁交换部分和时，K 的输出流量较低；长期驻留时，N 的输入复用更有利。对于相同完整 GEMM，两方案的更新次数和驻留时间还可能不同，最终输出总字节数不能与近端端口压力混为一谈。
+
+综合电路成本和累加状态需求，本文选用 K 扩展作为后续配比分析的实现基础。该选择适用于本文评估的构件及充分供数模型；输入带宽紧张、输出形状或驻留策略改变时，仍需重新评估两种组织。

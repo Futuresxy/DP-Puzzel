@@ -3,16 +3,16 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.path import Path as PolygonPath
+from matplotlib.patches import Patch
 from simplex import xy
 MODEL_STYLES=(("#26354a","o","-"),("#7e649e","s","--"),("#996b39","^","-."))
 REGION_COLORS=("#ede8f2","#fce6d5","#dae3f5","#e3f2d9")
 def draw_figure(points, regions, objective, nv_points, models, ratios, output):
     """One compact panel; captions and shared model legend live in LaTeX."""
-    plt.rcParams.update({'font.family':'Arial', 'font.size':7.5,
+    plt.rcParams.update({'font.family':'sans-serif', 'font.sans-serif':['Arial','DejaVu Sans'], 'font.size':8.5,
                          'mathtext.fontset':'stix',
                          'hatch.linewidth':.3})
-    fig, ax = plt.subplots(figsize=(1.70, 1.57))
+    fig, ax = plt.subplots(figsize=(3.15, 2.80))
     if objective == 'energy':
         v=xy([[1,0,0],[0,1,0],[0,0,1]])
         ax.fill(v[:,0],v[:,1],facecolor='#fafafa',edgecolor='#969696',
@@ -36,17 +36,11 @@ def draw_figure(points, regions, objective, nv_points, models, ratios, output):
     ax.text(.5,.90,'H',ha='center',va='bottom',weight='bold',fontsize=8)
     ax.text(0,-.035,'Q',ha='center',va='top',weight='bold',fontsize=8)
     ax.text(1,-.035,'E',ha='center',va='top',weight='bold',fontsize=8)
-    positions=({0:(.50,.61),2:(.83,.07),3:(.29,.31)} if objective=='time'
-               else {0:(.50,.695),2:(.75,.27),3:(.35,.40)})
-    for region in regions:
-        if region['fraction']>1e-10:
-            j=region['index']
-            polygon=xy(region['vertices_hqe'])
-            position=positions.get(j,polygon.mean(axis=0))
-            if not PolygonPath(polygon).contains_point(position):
-                position=polygon.mean(axis=0)
-            ax.text(*position,ratios[j],ha='center',va='center',
-                    fontsize=7.5,weight='bold',color='#222222',zorder=5)
+    ax.legend(handles=[Patch(facecolor=color, edgecolor='#6d717b', label=ratio)
+                       for color,ratio in zip(REGION_COLORS,ratios)],
+              loc='upper center', bbox_to_anchor=(.5,-.015), ncol=4,
+              frameon=False, fontsize=7.5, handlelength=1.0,
+              handletextpad=.35, columnspacing=.8)
     for is_nv, source in ((False,points),(True,nv_points)):
         for mi,model in enumerate(models):
             rows=[p for p in source if p['model']==model]
