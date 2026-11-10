@@ -239,41 +239,51 @@ $C$ retains its original encoding until the backend, where it aligns with Group 
 \section{Low-Precision Specialization and Throughput-Ratio Expansion}
 \label{sec:expansion}
 
-For $D=AB+C$, computing $m\times n$ outputs with $k$ products each takes $2mnk$ operations (two per MAC). Processing this block each cycle allows throughput to scale through longer DP reductions or more parallel outputs. Fig.~\ref{fig:kn_datapaths} illustrates both approaches from $1:2:4$ to $1:2:8$. We derive E-only and shared Q/E Lanes and Groups from the baseline, preserving its pipeline depth and Group output interface.
+Dot-product tensor units organize DPs into an $m\times n$ array with systolic or broadcast operand delivery. At full steady-state utilization and one input per DP per cycle, a homogeneous array provides
+\begin{equation}
+\mathrm{Peak}_{p}=2mnK_{p}f \quad (\mathrm{FLOP/s}),
+\label{eq:array_peak_throughput}
+\end{equation}
+where $K_p$ is the native dot-product length for precision $p$, $f$ is the clock frequency in Hz, and each MAC counts as two operations. With high-precision capacity unchanged, ratios can shift by increasing low-precision $K_p$ or adding low-precision DPs along M/N. Fig.~\ref{fig:kn_datapaths} illustrates expansion from $1:2:4$ to $1:2:8$. We derive E-only and shared Q/E Lanes and Groups from the baseline, preserving its pipeline depth and Group interface.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\columnwidth]{kn_composition.png}
-\caption{Two ways to expand $1:2:4$ to $1:2:8$. Left: add E resources within each DP while keeping the output count unchanged. Right: add E-only DP columns for independent outputs.}
+\caption{Expanding $1:2:4$ to $1:2:8$. Left: add E resources within each DP, retaining the output count. Right: add E-only DP columns for independent outputs.}
 \label{fig:kn_datapaths}
 \end{figure}
 
 \subsection{Specializing Low-Precision Lanes and Groups}
 \label{sec:specialized_midgroups}
 
-\textbf{E-only design.} An E Lane retains eight $4\times4$ multipliers and a narrow reduction tree. It removes T/H/Q/INT8 decoding, high-precision partial-product reconstruction, and element-exponent alignment. HiF4's second-level scale exponent is applied locally. Two Lanes form an E16 Group. An unsigned $14\times8$ multiplier scales the Group-sum magnitude. Leading-zero detection precedes low-order padding of the 22-bit result to the common 31-bit interface. This narrows arithmetic and registers without changing the Anchor interpretation.
+Unpacking and its registers contribute appreciably to baseline area (Table~\ref{tab:baseline_breakdown}). Specialization therefore removes unsupported field extraction, numerical mapping, classification, and selection logic while narrowing registers and arithmetic.
 
-\textbf{Shared Q/E design.} A QE Lane removes T/H/INT8 paths and retains eight $4\times4$ multipliers, four active in Q mode. Q uses exponent comparison, 28-bit alignment, and wide reduction; E bypasses alignment and applies HiF4's second-level scale exponent after reduction. Two Lanes form a Q8E16 Group, retaining Q's wide sum and leading-zero detection while reusing E scale-significand multiplication. Both Group types use the common magnitude, exponent, and status interface for shared or independent DP processing.
+\textbf{E-only design.} An E8 Lane retains MXFP4/NVFP4/HiF4 unpacking and removes T/H/Q/INT8 branches, passing compact magnitudes, signs, and scale information to the datapath. Eight unsigned $4\times4$ multipliers feed a narrow reduction tree. The 8- and 5-bit element-exponent adders, significand-alignment shifters, and cross-Lane exponent MAX are removed. HiF4's two 1-bit second-level exponents produce a 2-bit shift amount for scaling after reduction, yielding a 14-bit signed Lane result. Two Lanes form an E16 Group: their sums share fixed-point coordinates and combine into a 15-bit signed result with a 14-bit magnitude. Significand scaling uses unsigned $14\times8$ multiplication when required. Low-order zero padding connects to the common 31-bit interface while preserving the Anchor interpretation.
+
+\textbf{Shared Q/E design.} A Q4E8 Lane retains Q/E unpacking and removes T/H/INT8 decoding and arithmetic. Q retains exponents, significands, and special-value classification; E uses compact magnitudes. Q activates four of the eight $4\times4$ multipliers and retains exponent comparison, local alignment, and wide reduction. E bypasses alignment and applies HiF4's second-level exponent after reduction. Two Lanes form a Q8E16 Group, retaining Q's wide sum and leading-zero detection while reusing E scale-significand multiplication. Both Group types use common magnitude, exponent, and status interfaces for shared or independent DP processing.
 
 \subsection{Internal Expansion Along K}
 \label{sec:k_expansion}
 
-The four-Group baseline provides H16Q32E64 throughput. Adding two E16, four E16, or four Q8E16 Groups realizes the ratios in Table~\ref{tab:brick_compositions} while preserving T/INT8 support. Added Groups receive further A/B segments and scales for the same output, sharing $C$, normalization, and rounding.
+The four-Group baseline provides H16Q32E64 throughput. Adding two E16, four E16, or four Q8E16 Groups realizes Table~\ref{tab:brick_compositions}'s ratios, preserving TF32/INT8 support. Added Groups receive further A/B segments and scales for the same output, sharing $C$, normalization, and rounding.
 
-The DP adds two global bidirectional shifters for $1:2:6$ and four for $1:2:8$ or $1:4:8$. All retain the 39-bit unsigned alignment window; the new Group exponents enter the global MAX. In Fig.~\ref{fig:dp_csa_expansion}, added sources merge with the baseline's two carry-save rows. A selector chooses the baseline or extended row pair before one shared CPA. Including $C$, reduction grows from five sources to seven or nine, retaining 43 or 44 sum bits, respectively. Pipeline depth and initiation interval remain unchanged.
-
-E extensions activate only in E mode; QE extensions activate in Q/E modes. Participation masks control frontend updates, MAX, shifting, reduction, and special-value propagation.
+The DP adds two, four, or four global bidirectional shifters for $1:2:6$, $1:2:8$, or $1:4:8$, respectively, retaining the unsigned alignment window. Added Group exponents enter the global MAX. Group results merge with the baseline's two carry-save output rows; a row-pair selector precedes one shared CPA (Fig.~\ref{fig:dp_csa_expansion}). For $N_{\mathrm{group}}$ baseline and added Groups and alignment width $W$, the sum width is
+\begin{equation}
+W_{\mathrm{sum}}=W+1+\left\lceil\log_2(N_{\mathrm{group}}+1)\right\rceil.
+\label{eq:expanded_sum_width}
+\end{equation}
+Here, $W+1$ includes sign restoration after alignment; $N_{\mathrm{group}}+1$ includes the single $C$ input, and the ceiling term reserves carry growth. Pipeline depth and initiation interval remain unchanged. E extensions activate only in E mode, and QE extensions in Q/E modes. Masks control frontend updates, MAX, shifting, reduction, and special-value propagation.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.70\columnwidth]{DP_CSAmodule.png}
-\caption{Carry-save reduction for K expansion. The dashed upper-right 4:2 compressor reduces four added sources to two rows for $1:2:8$ and $1:4:8$. For $1:2:6$, two sources feed the lower-right merge directly. The bottom selector chooses the baseline or extended row pair for the shared CPA.}
+\caption{K-expanded carry-save reduction. The dashed upper-right compressor reduces four added sources to two rows for $1:2:8$ and $1:4:8$; $1:2:6$ feeds two sources directly to the lower-right merge. The selector chooses the baseline or extended row pair for the shared CPA.}
 \label{fig:dp_csa_expansion}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Resources added for each ratio. $N_{\mathrm{dp}}=mn$ is the DP count of the $1:2:4$ baseline array}
+\caption{Added resources. $N_{\mathrm{dp}}=mn$ is the DP count of the $1:2:4$ baseline array}
 \label{tab:brick_compositions}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}cll@{}}\toprule
@@ -289,9 +299,9 @@ $1:4:8$ & $4\times$ Q8E16 & $N_{\mathrm{dp}}\times$ Q32E64 \\
 \label{sec:n_expansion}
 \label{sec:brick_composition}
 
-A DP array can add outputs along M or N. We designate the shorter dimension as N and add low-precision DPs along it. Four E16 or Q8E16 Groups with an independent backend form an E64 or Q32E64 DP. Their H/Q/E peaks, normalized to baseline H throughput, are $0:0:4$ and $0:2:4$. Both retain the baseline hierarchy and floating-point flow, removing unsupported-format control and the INT8/INT32 accumulation bypass. Columns share A within each row but have separate B, $C$, and D.
+An array can add independent outputs along M or N. We designate the shorter dimension as N and add low-precision DPs along it. Four E16 or Q8E16 Groups with an independent backend form E64 or Q32E64, respectively, giving $0:0:4$ or $0:2:4$ relative to baseline H throughput. Both retain the baseline hierarchy, floating-point flow, interface, and throughput, removing unsupported-format control and the integer accumulation bypass. Added columns share A within each row but have separate B, $C$, and D.
 
-Table~\ref{tab:brick_compositions} specifies additions to the same baseline array. For $1:2:6$, adding half as many E64 DPs as baseline DPs requires an even baseline column count when adding complete columns. The other ratios double the DP count. K expansion instead replaces each baseline DP with its expanded counterpart, matching each precision's peak. K shares output processing; N adds independent accumulation and output state. Section~\ref{sec:evaluation} evaluates their area, power, and bandwidth trade-offs.
+Table~\ref{tab:brick_compositions} specifies additions to the same baseline array. The $1:2:6$ design adds half as many E64 DPs as baseline DPs; adding complete columns requires an even baseline column count. The other ratios add equally many E64 or Q32E64 DPs. K expansion instead replaces each baseline DP with its expanded counterpart, matching each precision's peak. K shares output processing; N adds independent accumulation and output state. Section~\ref{sec:evaluation} compares both implementations.
 % END REVIEW PAIR: 04_expansion.tex
 
 % BEGIN REVIEW PAIR: 05_evaluation.tex
