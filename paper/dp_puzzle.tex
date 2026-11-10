@@ -115,7 +115,7 @@ Table~\ref{tab:vendor_ratios} summarizes representative products and development
 
 \begin{table}[t]
 \centering
-\caption{Per-device matrix peaks (PFLOP/s) and roadmap target.}
+\caption{Per-device matrix peaks (PFLOP/s) and roadmap target}
 \label{tab:vendor_ratios}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrl@{}}\toprule
@@ -151,7 +151,7 @@ Table~\ref{tab:precision_families} defines the notation. One Lane supports T1H2Q
 
 \begin{table}[t]
 \centering
-\caption{Precision, fixed-point, and parallelism notation. Q-format integer widths exclude the sign bit~\cite{ti2003qformat}.}
+\caption{Precision, fixed-point, and parallelism notation. Q-format integer widths exclude the sign bit~\cite{ti2003qformat}}
 \label{tab:precision_families}
 \begingroup
 \footnotesize
@@ -185,7 +185,7 @@ T1H2Q4E8 & 1/2/4/8 A--B element products per cycle in mutually exclusive T/H/Q/E
 \label{sec:unpack_recode}
 \label{sec:full_brick}
 
-Figure~\ref{fig:data_unpack} shows input unpacking. T/H retain exponent and significand fields; Q inputs are converted to common E5M3; INT8 inputs are separated into sign and magnitude. MXFP4/NVFP4 element exponents are folded into UQ3.1 magnitudes. HiF4 folds its first-level micro-exponent into UQ2.2 magnitudes and retains the second-level micro-exponent shared by a Lane. E formats therefore require no per-element floating-point alignment.
+Fig.~\ref{fig:data_unpack} shows input unpacking. T/H retain exponent and significand fields; Q inputs are converted to common E5M3; INT8 inputs are separated into sign and magnitude. MXFP4/NVFP4 element exponents are folded into UQ3.1 magnitudes. HiF4 folds its first-level micro-exponent into UQ2.2 magnitudes and retains the second-level micro-exponent shared by a Lane. E formats therefore require no per-element floating-point alignment.
 
 \begin{figure}[!t]
 \centering
@@ -241,7 +241,7 @@ $C$ retains its original encoding until the backend, where it aligns with Group 
 
 The baseline provides $16/32/64$ H/Q/E MACs per cycle, corresponding to $1:2:4$. Additional low-precision capacity can extend the reduction length $K$ within a DP or add independent output columns $N$. K expansion shares the output backend; N expansion increases output parallelism. Both require inexpensive low-precision components, but differ in where partial results merge and whether accumulation and rounding remain independent.
 
-Figure~\ref{fig:kn_datapaths} compares the two organizations at a common group boundary. K expansion merges partial sums before producing a final floating-point result. N expansion gives the added components complete backends and independent outputs.
+Fig.~\ref{fig:kn_datapaths} compares the two organizations at a common group boundary. K expansion merges partial sums before producing a final floating-point result. N expansion gives the added components complete backends and independent outputs.
 
 \begin{figure}[t]
 \centering
@@ -283,7 +283,7 @@ Let $\mathcal F$, $\mathcal E$, and $\mathcal L$ denote complete baseline, E64, 
 
 \begin{table}[t]
 \centering
-\caption{Capacity-matched K/N compositions. Capacity is aggregate H/Q/E MACs per cycle.}
+\caption{Capacity-matched K/N compositions. Capacity is aggregate H/Q/E MACs per cycle}
 \label{tab:brick_compositions}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}cllc@{}}\toprule
@@ -327,7 +327,7 @@ The baseline occupies 0.016165\,mm$^2$ and consumes 15.328, 16.002, and 11.197\,
 
 \begin{table}[t]
 \centering
-\caption{Baseline functional shares (\%). H/Q/E use BF16/MXFP8/MXFP4. Power includes dynamic and leakage components.}
+\caption{Baseline functional shares (\%). H/Q/E use BF16/MXFP8/MXFP4. Power includes dynamic and leakage components}
 \label{tab:baseline_breakdown}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrr@{}}\toprule
@@ -354,7 +354,7 @@ Table~\ref{tab:related_features} separates native input formats from datapath fe
 % Entries refer to reported configurations, not hypothetical reconfiguration.
 \begin{table*}[t]
 \centering
-\caption{Supported input formats and datapath features of related arithmetic units.}
+\caption{Supported input formats and datapath features of related arithmetic units}
 \label{tab:related_features}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 \def\Y{$\checkmark$}\def\N{$\times$}
@@ -382,7 +382,7 @@ FP8/FP4 denote element arithmetic and do not imply scale support. FPnew addition
 % Sources and arithmetic conversions: references/notes/dp_comparison.md.
 \begin{table*}[t]
 \centering
-\caption{Implementation conditions and precision-specific efficiency. Columns retain each work's reported technology and arithmetic boundary.}
+\caption{Implementation conditions and precision-specific efficiency. Columns retain each work's reported technology and arithmetic boundary}
 \label{tab:related_dp}
 \begingroup\footnotesize\setlength{\tabcolsep}{4pt}
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l*{6}{c}@{}}\toprule
@@ -431,7 +431,7 @@ Table~\ref{tab:six_dp_costs} summarizes the six complete units. Standalone E64 a
 
 \begin{table}[t]
 \centering
-\caption{Complete-DP costs at 1 GHz. Area: $10^3\,\mu$m$^2$; power: mW. Dashes denote unsupported modes.}
+\caption{Complete-DP costs at 1 GHz. Area: $10^3\,\mu$m$^2$; power: mW. Dashes denote unsupported modes}
 \label{tab:six_dp_costs}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrr@{}}\toprule
@@ -457,7 +457,7 @@ Using the integer-instance compositions in Table~\ref{tab:brick_compositions}, K
 
 \begin{table}[t]
 \centering
-\caption{Capacity-matched K/N component estimates. Area: $10^3\,\mu$m$^2$; power: mW. N costs sum complete-DP measurements and exclude array interconnect and accumulator storage.}
+\caption{Capacity-matched K/N component estimates. Area: $10^3\,\mu$m$^2$; power: mW. N costs sum complete-DP measurements and exclude array interconnect and accumulator storage}
 \label{tab:kn_costs}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lcrrrr@{}}\toprule
@@ -526,7 +526,7 @@ Table~\ref{tab:k4_absolute} shows that expansion changes both per-core capacity 
 
 \begin{table}[!t]
 \centering
-\caption{Area-constrained N12 deployment. $A_C$: core area (mm$^2$); $C$: TFLOP/s; $P$: DP-only power (W).}
+\caption{Area-constrained N12 deployment. $A_C$: core area (mm$^2$); $C$: TFLOP/s; $P$: DP-only power (W)}
 \label{tab:k4_absolute}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 % BEGIN INLINE TABLE: tables/hardware_compact_table.tex
@@ -556,7 +556,7 @@ C_{\mathrm{eff},j}&=\frac{F}{T_j},
 \end{align}
 Energy sums each precision's execution time multiplied by its active DP power. Core count cancels in energy per FLOP, $\varepsilon_{j,f}=p_{j,f}/(2\nu m_{j,f})$: additional cores shorten execution without changing energy per unit work in this model. The area constraint therefore affects latency through deployable throughput, whereas energy depends on each mode's power-to-throughput ratio. The two objectives need not select the same configuration.
 
-Both $T_j$ and $\mathcal E_j$ are linear in workload composition $\boldsymbol x$; equal candidate costs define region boundaries. We derive exact polygonal regions by pairwise comparisons and scan 5,151 compositions at one-percentage-point intervals. Figure~\ref{fig:k4_time_prefill} shows the maximum-effective-throughput and minimum-energy regions. Table~\ref{tab:k4_regions} gives their area fractions when E uses MXFP4.
+Both $T_j$ and $\mathcal E_j$ are linear in workload composition $\boldsymbol x$; equal candidate costs define region boundaries. We derive exact polygonal regions by pairwise comparisons and scan 5,151 compositions at one-percentage-point intervals. Fig.~\ref{fig:k4_time_prefill} shows the maximum-effective-throughput and minimum-energy regions. Table~\ref{tab:k4_regions} gives their area fractions when E uses MXFP4.
 
 BF16 represents H power, and MXFP4 measurements represent E power. NVFP4 and MXFP4 have the same peak throughput; we currently use MXFP4 power as a proxy for NVFP4. If $\rho$ is the NVFP4 fraction of E work, the E energy coefficient can later be replaced by $\varepsilon_{j,E}=(1-\rho)\varepsilon_{j,\mathrm{MX}}+\rho\varepsilon_{j,\mathrm{NV}}$. The current equal coefficients make the energy regions independent of encoding mix. This is a power approximation, not a claim of equal measured energy. Without a power cap, updating this coefficient changes only energy boundaries.
 
@@ -573,7 +573,7 @@ BF16 represents H power, and MXFP4 measurements represent E power. NVFP4 and MXF
 
 \begin{table}[!t]
 \centering
-\caption{Optimal-region fractions with MXFP4 as E. Energy fractions are unchanged by integer core deployment.}
+\caption{Optimal-region fractions with MXFP4 as E. Energy fractions are unchanged by integer core deployment}
 \label{tab:k4_regions}
 \begingroup\footnotesize\setlength{\tabcolsep}{2pt}
 % BEGIN INLINE TABLE: tables/region_table.tex
@@ -602,7 +602,7 @@ GEMMs contribute $2MNK$ FLOPs; MoE counts only active experts. Attention and ind
 
 \begin{table}[!t]
 \centering
-\caption{Reference W4A8 prefill endpoints. H/Q/E shares are normalized over useful GEMM FLOPs. Speedup and DP energy reduction $\Delta E$ compare $1:4:8$ against $1:2:4$.}
+\caption{Reference W4A8 prefill endpoints. H/Q/E shares are normalized over useful GEMM FLOPs. Speedup and DP energy reduction $\Delta E$ compare $1:4:8$ against $1:2:4$}
 \label{tab:k4_prefill_points}
 \begingroup\footnotesize\setlength{\tabcolsep}{4pt}
 % BEGIN INLINE TABLE: tables/prefill_compact_table.tex
