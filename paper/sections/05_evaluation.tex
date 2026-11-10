@@ -12,7 +12,17 @@
 \label{sec:area_breakdown}
 \label{sec:related_dp_evaluation}
 
-图~\ref{fig:baseline_breakdown} 显示，基线乘法占面积的 24.15\%，累加与对齐合计占 38.91\%，解包另占 16.02\%，说明专用化需同时裁剪算术和格式处理。H/Q 的对齐功耗占比分别为 20.51\%/20.74\%，E 绕过局部对齐后降至 13.31\%，但解包占比升至 21.31\%。表~\ref{tab:related_dp} 仅列与本文重叠精度的能效和面效，分别按 $2K_pf/P_p$ 和 $2K_pf/A$ 计算；不同工艺、累加精度与活动条件下的数值不作同工况排名。
+图~\ref{fig:baseline_breakdown} 显示，基线乘法占面积的 24.15\%，累加与对齐合计占 38.91\%，解包另占 16.02\%，说明专用化需同时裁剪算术和格式处理。H/Q 的对齐功耗占比分别为 20.51\%/20.74\%，E 绕过局部对齐后降至 13.31\%，但解包占比升至 21.31\%。
+
+表~\ref{tab:related_dp} 比较原始工艺下的实现条件及重叠精度的效率，能效和面效分别为 $2K_pf/P_p$ 和 $2K_pf/A$。本文 MXFP8 能效为 4.000\,TFLOP/s/W、面效为 3.959\,TFLOP/s/mm$^2$；同为 12\,nm 的 MXDOTP 分别为 2.035 和 5.524。本文支持更广精度范围，但电压、活动及实现阶段的差异仍影响比较。Ten-Four 采用 All fmts 的 Q8/Q16 配置，其 $1{:}2{:}4$ 指 TF32:H:Q，并非本文的 H:Q:E。
+
+为近似比较 Ten-Four 的 7\,nm 与本文的 12\,nm，采用 DeepScaleTool~\cite{sarangi2021deepscaletool} 的 14$\to$7\,nm 系数，以 14\,nm 代理 12\,nm：面积、延迟和能量系数分别为 $S_A=7.273$、$S_D=1.132$、$S_E=1.727$。反向折算 Ten-Four 时，面积与延迟分别乘以 $S_A$、$S_D$，故
+\begin{equation}
+\widehat{\eta}_{A,14}=\frac{\eta_{A,7}}{S_A S_D},\qquad
+\widehat{\eta}_{E,14}=\frac{\eta_{E,7}}{S_E}.
+\label{eq:process_proxy}
+\end{equation}
+All fmts 的 MXFP8 面效由 10.500/10.839 折算为 1.275/1.316\,TFLOP/s/mm$^2$，本文在该代理模型下为其 3.01--3.10 倍；若对比其 MXFP8-only 专用配置，则为 1.27--1.30 倍。该估计包含频率缩放，不代表同库复现。Ten-Four 未给出对应单 DP 的逐精度功耗，因此不由 Tensor Core 级功耗推算表中能效。
 
 \begin{figure}[t]
 \centering
