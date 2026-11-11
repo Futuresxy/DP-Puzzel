@@ -1,0 +1,68 @@
+% !TeX root = ../main.tex
+\section{低精度专用化与算力配比扩展}
+\label{sec:expansion}
+
+点积型张量计算单元将 DP 组织为 $m\times n$ 阵列，通过脉动或广播网络供给操作数。当阵列稳态满利用且各 DP 每周期接收一组输入时，同构基线在精度 $p$ 下的理论峰值算力为
+\begin{equation}
+\mathrm{Peak}_{p}=2mnK_{p}f \quad (\mathrm{FLOP/s}),
+\label{eq:array_peak_throughput}
+\end{equation}
+其中 $K_{p}$ 为单个 DP 在该精度下的原生点积长度，$f$ 为时钟频率，系数 2 表示每次 MAC 计为两次运算。保持高精度计算能力不变时，可通过增大低精度通路的 $K_{p}$，或沿 M/N 维增配低精度专用 DP，调整算力配比。图~\ref{fig:kn_datapaths} 以 $1:2:4$ 扩展至 $1:2:8$ 为例，展示这两种组织方式。为此，本文从基线裁剪出 E 专用和 Q/E 共享两类 Lane、Group，保持与基线一致的流水深度和 Group 输出接口。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\columnwidth]{kn_composition.png}
+\caption{从 $1:2:4$ 到 $1:2:8$ 的两种扩展方式。左：在 DP 内增加 E 计算资源，保持输出数不变；右：增加 E 专用 DP 列，计算独立输出。}
+\label{fig:kn_datapaths}
+\end{figure}
+\subsection{低精度专用Lane 与 Group 的资源裁剪优化}
+\label{sec:specialized_midgroups}
+
+输入解包及相关寄存是基线面积的重要组成。因此，专用化同时覆盖解包与计算通路：删除不支持格式的字段提取、数值映射、分类和选择逻辑，并缩窄对应寄存。
+
+\textbf{E 专用设计。} E8 Lane 仅保留 MXFP4/NVFP4/HiF4 解包，删除 T/H/Q/INT8 分支，以紧凑幅值、符号和缩放信息连接计算通路。计算通路采用八个 $4\times4$ 无符号乘法器及窄规约树，删除 8 位和 5 位元素指数加法、尾数对齐移位器及跨 Lane 指数 MAX。HiF4 的两个 1 位二级指数相加产生 2 位移位量，在规约树后完成局部缩放，Lane 输出为 14 位有符号数。两个 Lane 构成 E16 Group，在统一定点坐标下相加得到 15 位有符号组和，并提取 14 位幅值。需要尾数缩放时，采用 $\mathrm{U14}\times\mathrm{U8}$ 乘法；输出时低位补零至公共 31 位接口，并保持原有Anchor 计算坐标。
+
+\textbf{Q/E 共享设计。} Q4E8 Lane 保留 Q/E 解包，删除 T/H/INT8 的解包与计算通路。Q 保留指数、有效数及特殊值分类，E 沿用紧凑幅值表示。八个 $4\times4$ 乘法器中，Q 模式启用四个，并保留元素指数比较、局部对齐和宽规约树；E 绕过对齐，在树后融合 HiF4 二级缩放指数。两个 Lane 构成 Q8E16 Group，保留 Q 所需的宽组和与前导零检测，并复用 E 的尺度尾数乘法。两类 Group 采用统一的幅值、指数和状态接口，可接入共享或独立的 DP 层。
+
+\subsection{K 维内部扩展}
+\label{sec:k_expansion}
+
+基线包含四个多精度 Group，峰值为 H16Q32E64。分别加入两个 E16、四个 E16 或四个 Q8E16 Group，得到表~\ref{tab:brick_compositions} 中的三种配比，并保留基线的 TF32 和 INT8 能力。新增 Group 接收同一输出对应的额外 A/B 片段及尺度，共享一份 $C$ 和最终规格化、舍入通路。
+
+DP 层分别为 $1:2:6$、$1:2:8$ 和 $1:4:8$ 增加两个、四个和四个全局双向移位器，沿用原先的双向无符号对齐窗口，并将新增 Group 的指数纳入全局 MAX。图~\ref{fig:dp_csa_expansion} 给出扩展规约结构：新增group与基线的两个 carry-save adder输出合并，经双行选择后共用一个 CPA。设规约树接入的 Group 总数为 $N_{\mathrm{group}}$（含基线与扩展 Group），沿用无符号对齐窗口位宽 $W$，则累加结果的保留位宽为
+\begin{equation}
+W_{\mathrm{sum}}=W+1+\left\lceil\log_2(N_{\mathrm{group}}+1)\right\rceil.
+\label{eq:expanded_sum_width}
+\end{equation}
+其中，$W+1$ 为经过全局移位器和符号化处理的数值位宽，$N_{\mathrm{group}}+1$ 计入唯一的 $C$ 输入，向上取整的对数项为进位增长位。扩展保持流水级数与发射间隔不变。
+
+E 扩展仅在 E 模式激活，QE 扩展仅在 Q/E 模式激活；掩码同步控制前端更新、MAX、移位、规约及特殊值传播。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.55\columnwidth]{DP_CSAmodule.png}
+\caption{K 扩展的 carry-save 规约结构。右上虚线 4:2 压缩器仅用于 $1:2:8$、$1:4:8$，将四个新增源压缩为两行；$1:2:6$ 的两个新增源直接进入右下合并级。底部选择基础或扩展两行，共享最终 CPA。}
+\label{fig:dp_csa_expansion}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{目标配比及新增资源。$N_{\mathrm{dp}}=mn$ 为 $1:2:4$ 基线阵列的 DP 总数}
+\label{tab:brick_compositions}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}cll@{}}\toprule
+H:Q:E & K：每个 DP 新增 Group & N：整个阵列新增 DP \\\midrule
+$1:2:6$ & $2\times$ E16 & $(N_{\mathrm{dp}}/2)\times$ E64 \\
+$1:2:8$ & $4\times$ E16 & $N_{\mathrm{dp}}\times$ E64 \\
+$1:4:8$ & $4\times$ Q8E16 & $N_{\mathrm{dp}}\times$ Q32E64 \\
+\bottomrule
+\end{tabular*}\endgroup
+\end{table}
+
+\subsection{M/N 维阵列组合}
+\label{sec:n_expansion}
+\label{sec:brick_composition}
+
+二维 DP 阵列可沿 M 或 N 维增加独立输出。本文将较短输出维记为 N，并沿该维增配低精度 DP。四个 E16 或 Q8E16 Group 配置独立后端，分别形成 E64、Q32E64，其 H/Q/E 峰值以基线 H 为基准，分别归一化为 $0:0:4$、$0:2:4$。专用 DP 沿用基线的分层组织与浮点处理流程，删除不支持格式的控制及 整数累加旁路，保持接口和吞吐一致。新增部分在阵列层面与基线同行共享 A，各列使用独立的 B、$C$ 并生成 D。
+
+表~\ref{tab:brick_compositions} 按相同基线阵列给出新增资源。$1:2:6$ 新增的 E64 数量为基线 DP 数量的一半，按完整列扩展时要求基线列数为偶数；$1:2:8$、$1:4:8$ 分别增加与基线等量的 E64、Q32E64。比较时，K 方案将同一基线阵列中的各 DP 替换为对应扩展设计，使两方案的各精度峰值一致。K 扩展共享输出处理通路，N 组合增加独立的累加与输出状态；我们在下一章节分析两种实现方式的对比与分析。

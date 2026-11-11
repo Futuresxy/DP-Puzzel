@@ -1,0 +1,43 @@
+top,category,area_um2
+dp_top,Multiplication,3903.3446399998174
+dp_top,Addition & accumulation,3530.760191999728
+dp_top,Alignment & shifting,2758.938623999948
+dp_top,Exponent processing,1808.2529279999744
+dp_top,Data unpacking,2590.285823999918
+dp_top,Norm & round,490.84416000000056
+dp_top,Others,1082.6956799999919
+dp_top_t8h16q32e96,Multiplication,4475.842559999779
+dp_top_t8h16q32e96,Addition & accumulation,4387.885055999749
+dp_top_t8h16q32e96,Alignment & shifting,3280.8591359999264
+dp_top_t8h16q32e96,Exponent processing,1908.1175039999628
+dp_top_t8h16q32e96,Data unpacking,3064.9466879998954
+dp_top_t8h16q32e96,Norm & round,491.5814400000022
+dp_top_t8h16q32e96,Others,1254.039551999965
+dp_top_t8h16q32e128,Multiplication,5048.082431999768
+dp_top_t8h16q32e128,Addition & accumulation,5135.597567999858
+dp_top_t8h16q32e128,Alignment & shifting,3783.2785919998096
+dp_top_t8h16q32e128,Exponent processing,2107.514879999961
+dp_top_t8h16q32e128,Data unpacking,3538.3541759998816
+dp_top_t8h16q32e128,Norm & round,583.1147520000003
+dp_top_t8h16q32e128,Others,1400.4633599999597
+dp_top_t8h16q64e128_opt,Multiplication,5486.985215999944
+dp_top_t8h16q64e128_opt,Addition & accumulation,6900.498432000404
+dp_top_t8h16q64e128_opt,Alignment & shifting,4938.559487999827
+dp_top_t8h16q64e128_opt,Exponent processing,2813.0918399999573
+dp_top_t8h16q64e128_opt,Data unpacking,4633.39929599976
+dp_top_t8h16q64e128_opt,Norm & round,538.0300800000023
+dp_top_t8h16q64e128_opt,Others,1880.580095999898
+dp_top_e64,Multiplication,1102.2704639999793
+dp_top_e64,Addition & accumulation,1499.443200000023
+dp_top_e64,Alignment & shifting,943.0917119999866
+dp_top_e64,Exponent processing,287.3180160000002
+dp_top_e64,Data unpacking,977.5964159999902
+dp_top_e64,Norm & round,478.9002240000017
+dp_top_e64,Others,355.5164160000113
+dp_top_q32e64,Multiplication,1671.118847999979
+dp_top_q32e64,Addition & accumulation,3319.1976959997655
+dp_top_q32e64,Alignment & shifting,2199.08505600001
+dp_top_q32e64,Exponent processing,1092.1697279999953
+dp_top_q32e64,Data unpacking,2069.7661440000065
+dp_top_q32e64,Norm & round,478.5315840000009
+dp_top_q32e64,Others,865.3455360000004

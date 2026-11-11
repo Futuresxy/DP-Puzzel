@@ -1,0 +1,179 @@
+{
+  "schema": "dp_inputs_v1",
+  "format": "mxfp8_e5m2",
+  "logical_k": 32,
+  "k_fp16": 16,
+  "count": 961,
+  "segments": [
+    {
+      "dataset": "batch64_random",
+      "case": "batch64_random",
+      "start": 0,
+      "stop": 64,
+      "count": 64,
+      "include_in_precision_rate": true,
+      "require_bit_exact": false,
+      "seed": 20262611,
+      "distribution": {
+        "c_sigma": 2.0,
+        "data_clip": [
+          -8.0,
+          8.0
+        ],
+        "data_sigma": 1.5,
+        "e4m3_scale_raw_range": [
+          "0x01",
+          "0x77"
+        ],
+        "e6m2_scale_raw_range": [
+          "0x00",
+          "0xfb"
+        ],
+        "e8m0_scale_raw_range": [
+          "0x00",
+          "0xfe"
+        ],
+        "inactive_group_data_policy": "zero_filled",
+        "kind": "gaussian_biased_raw_codes",
+        "mxfp4_cancel_corner_policy": "reject local two-PEGroup shared-scale sums that are exactly zero",
+        "scale_policy_detail": "uniform_finite_non_nan_non_inf_codes"
+      },
+      "sources": [
+        "petile_full16/mxfp8_e5m2/batch64_random"
+      ]
+    },
+    {
+      "dataset": "batch128_mixed_random",
+      "case": "batch128_mixed_random",
+      "start": 64,
+      "stop": 192,
+      "count": 128,
+      "include_in_precision_rate": true,
+      "require_bit_exact": false,
+      "seed": 20462611,
+      "distribution": {
+        "c_policy_detail": "mix zero, clipped gaussian finite FP32, and finite exponent-band FP32",
+        "cancellation_policy": "reject low-precision transactions when sum(abs(products))/abs(dot_plus_c) exceeds 32",
+        "data_sigma": 2.5,
+        "inactive_group_data_policy": "zero_filled",
+        "input_nonfinite_policy": "excluded",
+        "kind": "mixed_finite_raw_and_scale_codes",
+        "mxfp4_cancel_corner_policy": "reject local two-PEGroup shared-scale sums that are exactly zero",
+        "output_nonfinite_policy": "allowed_when_finite_inputs_overflow",
+        "raw_code_policy": "mix zero, gaussian-weighted typical finite codes, uniform finite codes, and small/large finite edge bands; FP8/FP6 default regression caps decoded finite magnitude at 4",
+        "scale_policy_detail": "E8M0 samples stratify the A/B product exponent across -80..80 and randomly split it across safe operand exponents -127..125; UE4M3 mixes zero, subnormal, near-unit, small, and large finite scales; MXFP4 reserves 1/64 transactions for a -80/+80 two-block delta",
+        "txn_count": 128
+      },
+      "sources": [
+        "petile_full16/mxfp8_e5m2/batch128_mixed_random"
+      ]
+    },
+    {
+      "dataset": "batch256_deepseek_ai_load",
+      "case": "batch256_deepseek_ai_load",
+      "start": 192,
+      "stop": 448,
+      "count": 256,
+      "include_in_precision_rate": true,
+      "require_bit_exact": false,
+      "seed": 20260705,
+      "distribution": {
+        "bias_tensor": "model.layers.0.self_attn.q_proj.bias",
+        "c_source": "matching output-channel values from model.layers.0.self_attn.q_proj.bias",
+        "golden": "decode_quantized_raw_inputs_and_accumulate_dot_plus_c_once_to_fp32",
+        "kind": "ai_load_deepseek_r1_distill_qwen_1p5b_layer0_qproj",
+        "low_precision_source": "activation_fp16 and weight_fp16",
+        "raw_sample_file": "tests/data/petile_test_data/sources/ai/deepseek_r1_distill_qwen_1p5b/deepseek_r1_distill_qwen_1p5b_layer0_qproj_samples256.pt",
+        "raw_sample_sha256": "272d7628919817025e4e8f441bcab5c86b46848b7678a9539585c08ddd0a047d",
+        "scale_slots": "fixed four slots per MidGroup",
+        "source_model": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+        "source_revision": "ad9f0ae0864d7fbcd1cd905e3c6c5b069cc8b562"
+      },
+      "sources": [
+        "petile_full16/mxfp8_e5m2/batch256_deepseek_ai_load",
+        "petile_full16_fp416/mxfp8_e5m2/batch256_deepseek_ai_load",
+        "petile_full16_fp432/mxfp8_e5m2/batch256_deepseek_ai_load",
+        "petile_full16_fp448/mxfp8_e5m2/batch256_deepseek_ai_load",
+        "petile_full16_fp48/mxfp8_e5m2/batch256_deepseek_ai_load"
+      ]
+    },
+    {
+      "dataset": "batch512_ai_load",
+      "case": "batch512_ai_load",
+      "start": 448,
+      "stop": 960,
+      "count": 512,
+      "include_in_precision_rate": true,
+      "require_bit_exact": false,
+      "seed": 20260705,
+      "distribution": {
+        "bias_tensor": null,
+        "c_source": "activation-derived FP32 C addend; source q_proj has no bias tensor",
+        "golden": "decode_quantized_raw_inputs_and_accumulate_dot_plus_c_once_to_fp32",
+        "kind": "ai_load_qwen3_0p6b_layer0_qproj",
+        "low_precision_source": "activation_fp16 and weight_fp16",
+        "raw_sample_file": "tests/data/petile_test_data/sources/ai/qwen3_0p6b_layer0_qproj_samples512.pt",
+        "raw_sample_sha256": "fa28ec751670fae7befbaa916cccb7e473a87323f7020b0de4f8dcc0d0a7a173",
+        "scale_slots": "fixed four slots per MidGroup",
+        "source_model": "Qwen/Qwen3-0.6B",
+        "source_revision": "c1899de289a04d12100db370d81485cdf75e47ca"
+      },
+      "sources": [
+        "petile_full16/mxfp8_e5m2/batch512_ai_load",
+        "petile_full16_fp416/mxfp8_e5m2/batch512_ai_load",
+        "petile_full16_fp432/mxfp8_e5m2/batch512_ai_load",
+        "petile_full16_fp448/mxfp8_e5m2/batch512_ai_load",
+        "petile_full16_fp48/mxfp8_e5m2/batch512_ai_load"
+      ]
+    },
+    {
+      "dataset": "ones",
+      "case": "ones",
+      "start": 960,
+      "stop": 961,
+      "count": 1,
+      "include_in_precision_rate": false,
+      "require_bit_exact": true,
+      "seed": null,
+      "distribution": {},
+      "sources": [
+        "petile_full16/mxfp8_e5m2/ones",
+        "petile_full16_fp416/mxfp8_e5m2/ones",
+        "petile_full16_fp432/mxfp8_e5m2/ones",
+        "petile_full16_fp448/mxfp8_e5m2/ones",
+        "petile_full16_fp48/mxfp8_e5m2/ones"
+      ]
+    }
+  ],
+  "source_golden_model": "fp64_dequant_dot_plus_c_v1",
+  "sources": {
+    "case.json": {
+      "path": "hw/test/data/petile_ratio/mxfp8_e5m2/K32/correct_961/case.json",
+      "sha256": "a878991a67bf73fc3f011cc88caa4fffb8a59aff57c5a9770480cb31bed4b476"
+    },
+    "inputs.txt": {
+      "path": "hw/test/data/petile_ratio/mxfp8_e5m2/K32/correct_961/inputs.txt",
+      "sha256": "872f3959daa1697ea22441efc7a9a413f5c7e3fc3cac80305bb3daa1c1a4a9ab"
+    },
+    "golden.txt": {
+      "path": "hw/test/data/petile_ratio/mxfp8_e5m2/K32/correct_961/golden.txt",
+      "sha256": "bdc29baafc88623927d2d95155608361456f61c780c0bed78124d843a1a6acb7"
+    }
+  },
+  "input_sha256": "3498e300fb9eef74025cf163ee2f0edaee0c8e8cefc1f5aa399d43439c4df3ee",
+  "reference_sha256": "bdc29baafc88623927d2d95155608361456f61c780c0bed78124d843a1a6acb7",
+  "input_layout": "test/data/README.md",
+  "legacy_thresholds_adopted": false,
+  "golden": {
+    "config": {
+      "k_fp16": 16,
+      "local_shift_mag_width": 28,
+      "global_signed_align_width": 40,
+      "post_scale_norm_extra_stage": 0
+    },
+    "model_source_sha256": "3edc4dba7663df7ad5101f23a006590b63e84ca6328be3481bedca68072dfcd2",
+    "expected_sha256": "1b1617690b258a9ddbcc8e8f7008e734c4450687db2b84f2930874138f760002",
+    "reference": "independent Fraction finite-window oracle + exact mathematical reference",
+    "status": "cmodel_verified_not_rtl"
+  }
+}

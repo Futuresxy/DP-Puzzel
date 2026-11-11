@@ -3,8 +3,13 @@
 | 项目 | 结果 |
 | --- | --- |
 | RTL export | {export_id} |
+| 运行时间 / 目的 | {time} / {purpose} |
+| RTL 文件 | {sources} |
 | 数据状态 | {status} |
 | 工艺 profile / DC | {technology} / {dc} |
+| PVT | {pvt} |
+| Clock gating | {clock_gating} |
+| 层级策略 | {hierarchy} |
 | 目标周期 ns | {period} |
 | 时序判定 | {timing} |
 | 标准单元总面积 µm² | {area} |
@@ -15,7 +20,7 @@
 | 无效原因 | {errors} |
 
 完整字段、约束与来源见 `summary.json`；面积分项与关键路径见 `reports/`。
-`inputs/hashes.json` 保存综合输入指纹，`outputs.sha256.json` 保存报告及网表指纹。
+RTL 导出目录的单个指纹关联真实回归和本次综合，不再为每份文件记录指纹。
 `netlist/` 中的 mapped Verilog、DDC、SDC 保留给后续功耗流程。
 
 本记录只覆盖逻辑综合。未包含布局布线、CTS 或提取寄生；未执行真实负载功耗、

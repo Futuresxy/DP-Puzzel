@@ -1,0 +1,85 @@
+{
+  "area_bars": 6,
+  "power_bars": 15,
+  "formats": [
+    "bf16",
+    "mxfp8_e4m3",
+    "mxfp4_e2m1"
+  ],
+  "power_layout": "six ratio groups, widths proportional to supported precision count plus gap",
+  "power_group_bars": [
+    1,
+    2,
+    3,
+    3,
+    3,
+    3
+  ],
+  "power_group_widths": [
+    1.9,
+    2.9,
+    3.9,
+    3.9,
+    3.9,
+    3.9
+  ],
+  "x_tick_labels": [
+    "0:0:4",
+    "0:2:4",
+    "1:2:4",
+    "1:2:6",
+    "1:2:8",
+    "1:4:8"
+  ],
+  "power_quantity": "tool-reported total_mw",
+  "power_stacked": false,
+  "area_reference_top": "dp_top",
+  "area_reference_um2": 16165.122154,
+  "power_reference_top": "dp_top",
+  "power_reference_format": "bf16",
+  "power_reference_total_mw": 15.3282642364502,
+  "dpi": 400,
+  "figures": [
+    "latest6_area.png",
+    "latest6_power.png"
+  ],
+  "runtime": {
+    "python": "3.11.13",
+    "numpy": "2.4.6",
+    "matplotlib": "3.11.2"
+  },
+  "inputs": [
+    {
+      "file": "latest6_area.csv",
+      "sha256": "283d096731f8fe35e0c4fe80b565e4c303547db8cb32ad30f28169adf4768d00"
+    },
+    {
+      "file": "latest6_power.csv",
+      "sha256": "2540506d11426ec8c2d2f9fb2a121c4f81133635a3cf6beabccf2d7e31ee2abe"
+    },
+    {
+      "file": "latest6_sources.json",
+      "sha256": "bf28d9f690084e82b8da26f04075f472ef415f20b5c60f117df0484553dead86"
+    }
+  ],
+  "scripts": [
+    {
+      "file": "plot_latest6_area_power.py",
+      "sha256": "a1be9772bb9d43efb4abf7385c676f1129976f5e816505de431c81d63cf37a4c"
+    },
+    {
+      "file": "plot_area_power.py",
+      "sha256": "84d5ef70d74863d4be29e7abde78b43062cba8da11cdd6cb4c58007ce7e78877"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "latest6_area.png",
+      "sha256": "b823ab5cff81fabadd5b3cb5da96eb3359683f58f441d155d4b56ae66388146d"
+    },
+    {
+      "file": "latest6_power.png",
+      "sha256": "dd5242bac618a61a88f84d1aa2bb74364744899ca9149deebe901ea040db4f80"
+    }
+  ]
+}

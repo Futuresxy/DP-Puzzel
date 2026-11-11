@@ -1,0 +1,5 @@
+{
+  "source": "DP-puzzle-SW/paper/DP-Puzzle: Exploring Throughput Ratios in Multi-Precision Floating-Point Tensor Cores with Composable Dot-Product Units.tex",
+  "sha256": "bb819118a9886b9fa64764e08550dcf4cf328887a8f78ae9f523051f996926d9",
+  "scope": "Introduction and background as primary prose; four-ratio scope and DP/K/N definitions reconciled with current evaluation"
+}

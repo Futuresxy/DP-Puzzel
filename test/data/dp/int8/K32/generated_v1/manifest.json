@@ -1,0 +1,51 @@
+{
+  "schema": "dp_inputs_v1",
+  "format": "int8",
+  "logical_k": 32,
+  "k_fp16": 16,
+  "count": 1045,
+  "generator": "test/cases/generate_extensions.py",
+  "generator_sha256": "ffa47f093fee3f428f18d868ae47fed5aa6aa9c4630548905abdff963902897b",
+  "seed": 20271104,
+  "segments": [
+    {
+      "dataset": "full_encoding_random",
+      "start": 0,
+      "stop": 512,
+      "require_bit_exact": true
+    },
+    {
+      "dataset": "finite_random_and_accumulator_boundaries",
+      "start": 512,
+      "stop": 1024,
+      "require_bit_exact": true
+    },
+    {
+      "dataset": "directed_boundaries",
+      "start": 1024,
+      "stop": 1044,
+      "require_bit_exact": true
+    },
+    {
+      "dataset": "ones",
+      "start": 1044,
+      "stop": 1045,
+      "require_bit_exact": true
+    }
+  ],
+  "input_layout": "test/data/README.md",
+  "input_sha256": "b58d288b092c85bae00947e21f6b80c86bf024bfb5b988c23b38031c10cda8ef",
+  "reference": "Python unbounded signed integer + modulo 2^32",
+  "golden": {
+    "config": {
+      "k_fp16": 16,
+      "local_shift_mag_width": 28,
+      "global_signed_align_width": 40,
+      "post_scale_norm_extra_stage": 0
+    },
+    "model_source_sha256": "3edc4dba7663df7ad5101f23a006590b63e84ca6328be3481bedca68072dfcd2",
+    "expected_sha256": "0e80063e3b2d305dbd0c818d3b27a79dcd50ca4fadc38cab656cffd950d0adc8",
+    "reference": "independent Fraction finite-window oracle + exact mathematical reference",
+    "status": "cmodel_verified_not_rtl"
+  }
+}

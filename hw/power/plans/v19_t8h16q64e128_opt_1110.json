@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "campaign": "v19_t8h16q64e128_opt_1110",
+  "status": "new_dc_bound_ready_for_replay",
+  "engine": "VCS native gate-level SAIF + Synopsys Power Compiler",
+  "condition": "original N12 TT 0.7V 85C / 1GHz / clock gating / L8 II1",
+  "measurement_window": {
+    "name": "dp-qwen8b-middle512-v1",
+    "first_source_index": 256,
+    "end_source_index_exclusive": 768,
+    "cycles": 512,
+    "frequency_hz": 1000000000,
+    "duration_ns": 512,
+    "issue_policy": "1024 independent transactions, once each, II=1",
+    "boundary": "same clock phase before driving transactions 256 and 768",
+    "pipeline": "includes steady-state in-flight transactions; not output-ID filtering"
+  },
+  "saif_generated": false,
+  "power_measured": false,
+  "points": [
+    {
+      "cmodel_config": {
+        "architecture_v19": true,
+        "global_signed_align_width": 40,
+        "k_fp16": 16,
+        "local_shift_mag_width": 28,
+        "post_scale_norm_extra_stage": 0
+      },
+      "cmodel_frontend": "t8h16q64e128_opt",
+      "dataset_directory": "hw/power/runs/v19_reference_1109/data/t8h16q64e128_opt/bf16",
+      "dataset_files_sha256": {
+        "expected.jsonl": "3f6b68f440ed8e07e6ac1dcde185a40b9cb372b459179ec82ba063227d82145c",
+        "inputs.txt": "e162fb09afa935cd2ab33879c5f77cb14523a5f5df95a26cc18d7e0ac1023616",
+        "source_reference.jsonl": "0bd2beef61a65aa20c38e90c3e5c314cc871de5b8e789667a7fe36f5c773a7c5"
+      },
+      "dataset_manifest_sha256": "7d15bce5443a884291c474bfa427551be3bb030986c7c8692a418e4614ee2d95",
+      "expected_field": "cmodel_results.t8h16q64e128_opt",
+      "format": "bf16",
+      "logical_k": 16,
+      "power_mw": null,
+      "reference_model": {
+        "directory": "hw/power/runs/v19_reference_1109",
+        "manifest_sha256": "561243e157a66173d5eeef6b383237cc18c54815af3fe7a38014d4890b55f5f1"
+      },
+      "status": "planned_requires_rtl_gate_gls_saif_and_annotation_audits",
+      "top": "dp_top_t8h16q64e128_opt",
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351",
+      "export_id": "DP_verilog_t8h16q64e128_opt_337f9288b9f6ee50",
+      "original_verification_id": "20261109T154835039049Z",
+      "artifacts": {
+        "mapped_verilog": {
+          "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351/netlist/dp_top_t8h16q64e128_opt_mapped.v",
+          "sha256": "da1e56a40626ecaf8f3e51801c24396190bfca90c490fe4bd6566ce76f5897aa",
+          "bytes": 13091391
+        },
+        "ddc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351/netlist/dp_top_t8h16q64e128_opt.ddc",
+          "sha256": "3ef4ddd4fbaa818c003390a915a00e35158c45d68197fe98d93435e6d989f7d8",
+          "bytes": 15343616
+        },
+        "sdc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351/netlist/dp_top_t8h16q64e128_opt.sdc",
+          "sha256": "b671eca89ffd854da0a5735867b659a1bbafdf64cea55a454d0f1d57b38abfde",
+          "bytes": 318235
+        }
+      }
+    },
+    {
+      "cmodel_config": {
+        "architecture_v19": true,
+        "global_signed_align_width": 40,
+        "k_fp16": 16,
+        "local_shift_mag_width": 28,
+        "post_scale_norm_extra_stage": 0
+      },
+      "cmodel_frontend": "t8h16q64e128_opt",
+      "dataset_directory": "hw/power/runs/v19_reference_1109/data/t8h16q64e128_opt/mxfp8_e4m3",
+      "dataset_files_sha256": {
+        "expected.jsonl": "1761f9092b485fbc556895d727c6ebd790e74f43eb2c024a17469d4fb00ae53a",
+        "inputs.jsonl": "427b7d7ccfab05ae4aa6dc0e223d1c016aa82cada0ebf8c4bbd46011b9457888",
+        "source_reference.jsonl": "1429f82b824a7373db6143e26a0d176efab7e1398f1b9fe9cc5169e78ea41be9"
+      },
+      "dataset_manifest_sha256": "9cefc6fb7136ee2516bf28396fc9283dd5c7fa52a9e84573d96879b382df95ee",
+      "expected_field": "cmodel_results.t8h16q64e128_opt",
+      "format": "mxfp8_e4m3",
+      "logical_k": 64,
+      "power_mw": null,
+      "reference_model": {
+        "directory": "hw/power/runs/v19_reference_1109",
+        "manifest_sha256": "561243e157a66173d5eeef6b383237cc18c54815af3fe7a38014d4890b55f5f1"
+      },
+      "status": "planned_requires_rtl_gate_gls_saif_and_annotation_audits",
+      "top": "dp_top_t8h16q64e128_opt",
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351",
+      "export_id": "DP_verilog_t8h16q64e128_opt_337f9288b9f6ee50",
+      "original_verification_id": "20261109T154835039049Z",
+      "artifacts": {
+        "mapped_verilog": {
+          "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351/netlist/dp_top_t8h16q64e128_opt_mapped.v",
+          "sha256": "da1e56a40626ecaf8f3e51801c24396190bfca90c490fe4bd6566ce76f5897aa",
+          "bytes": 13091391
+        },
+        "ddc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351/netlist/dp_top_t8h16q64e128_opt.ddc",
+          "sha256": "3ef4ddd4fbaa818c003390a915a00e35158c45d68197fe98d93435e6d989f7d8",
+          "bytes": 15343616
+        },
+        "sdc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351/netlist/dp_top_t8h16q64e128_opt.sdc",
+          "sha256": "b671eca89ffd854da0a5735867b659a1bbafdf64cea55a454d0f1d57b38abfde",
+          "bytes": 318235
+        }
+      }
+    },
+    {
+      "cmodel_config": {
+        "architecture_v19": true,
+        "global_signed_align_width": 40,
+        "k_fp16": 16,
+        "local_shift_mag_width": 28,
+        "post_scale_norm_extra_stage": 0
+      },
+      "cmodel_frontend": "t8h16q64e128_opt",
+      "dataset_directory": "hw/power/runs/v19_reference_1109/data/t8h16q64e128_opt/mxfp4_e2m1",
+      "dataset_files_sha256": {
+        "expected.jsonl": "a1d286366e30d7ee6b897f39c56bcac16c1a8fa9e83b07bff10d3e8a78a8dad9",
+        "inputs.jsonl": "2df0c944d62578c83c27fcc9be4c38cea8fbdf33f678e12f614e41b926eea308",
+        "source_reference.jsonl": "7848ec9c82bcdb1b1e2d2c880ebc8b34984e7c9eebfedb84b8cb910c75843f7b"
+      },
+      "dataset_manifest_sha256": "4e841d9eb83fedb0378e6a8009dfc407a992288f49be14e5df2c6a26c3bd50dc",
+      "expected_field": "cmodel_results.t8h16q64e128_opt",
+      "format": "mxfp4_e2m1",
+      "logical_k": 128,
+      "power_mw": null,
+      "reference_model": {
+        "directory": "hw/power/runs/v19_reference_1109",
+        "manifest_sha256": "561243e157a66173d5eeef6b383237cc18c54815af3fe7a38014d4890b55f5f1"
+      },
+      "status": "planned_requires_rtl_gate_gls_saif_and_annotation_audits",
+      "top": "dp_top_t8h16q64e128_opt",
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351",
+      "export_id": "DP_verilog_t8h16q64e128_opt_337f9288b9f6ee50",
+      "original_verification_id": "20261109T154835039049Z",
+      "artifacts": {
+        "mapped_verilog": {
+          "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351/netlist/dp_top_t8h16q64e128_opt_mapped.v",
+          "sha256": "da1e56a40626ecaf8f3e51801c24396190bfca90c490fe4bd6566ce76f5897aa",
+          "bytes": 13091391
+        },
+        "ddc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351/netlist/dp_top_t8h16q64e128_opt.ddc",
+          "sha256": "3ef4ddd4fbaa818c003390a915a00e35158c45d68197fe98d93435e6d989f7d8",
+          "bytes": 15343616
+        },
+        "sdc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351/netlist/dp_top_t8h16q64e128_opt.sdc",
+          "sha256": "b671eca89ffd854da0a5735867b659a1bbafdf64cea55a454d0f1d57b38abfde",
+          "bytes": 318235
+        }
+      }
+    }
+  ]
+}

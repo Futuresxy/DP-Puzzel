@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "campaign": "e64_fresh_saif_1109",
+  "status": "plan_only",
+  "catalog_path": "hw/dc_syn/records/latest_six_dp.json",
+  "catalog_sha256": "2b631ddfdab9427e64724272107a28f5de7a442f0e03fa39a62efaa97834193c",
+  "engine": "VCS native gate-level SAIF + Synopsys Power Compiler",
+  "condition": "original N12 TT 0.7V 85C / 1GHz / clock gating / L8 II1",
+  "measurement_window": {
+    "name": "dp-qwen8b-middle512-v1",
+    "first_source_index": 256,
+    "end_source_index_exclusive": 768,
+    "cycles": 512,
+    "frequency_hz": 1000000000,
+    "duration_ns": 512,
+    "issue_policy": "1024 independent transactions, once each, II=1",
+    "boundary": "same clock phase before driving transactions 256 and 768",
+    "pipeline": "includes steady-state in-flight transactions; not output-ID filtering"
+  },
+  "pilot_top": "dp_top",
+  "points": [
+    {
+      "top": "dp_top_e64",
+      "cmodel_frontend": "e",
+      "format": "mxfp4_e2m1",
+      "logical_k": 64,
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_e64_11080854",
+      "export_id": "DP_verilog_e64_628e283760c4e830",
+      "original_verification_id": "20261108T004627771406Z",
+      "artifacts": {
+        "mapped_verilog": {
+          "path": "hw/dc_syn/runs/dc_dp_top_e64_11080854/netlist/dp_top_e64_mapped.v",
+          "sha256": "7a5883822312310d4061f171930af8e6dc8717a8ac19cd29ebe6f36a2ca298c0",
+          "bytes": 2375256
+        },
+        "ddc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_e64_11080854/netlist/dp_top_e64.ddc",
+          "sha256": "4bb1056dab31097f2f071aded9bacf8b2742df5618f5c7c2116e010463bda385",
+          "bytes": 3670016
+        },
+        "sdc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_e64_11080854/netlist/dp_top_e64.sdc",
+          "sha256": "ffdd75b2edf320fa07ec5a4bab66cc1fdf007b53d7e503a6183d7663c81fb5d4",
+          "bytes": 168363
+        }
+      },
+      "dataset_directory": "hw/power/runs/v19_reference_1109/data/e64_mxfp4",
+      "dataset_manifest_sha256": "91edff666bc27ead3895fddcabe65d5478cf8b13680b6bb60f9bcade24c8fb9a",
+      "dataset_files_sha256": {
+        "inputs.jsonl": "491f55e1de2d43aa58354ff9f7442cd5d74fe13e5b82245060a7a1b583bf6e9e",
+        "expected.jsonl": "7b628cd468d4b789253d0573333fd6163cefc39c02e7eb9b81b5ac8e46169d0d",
+        "source_reference.jsonl": "3fe2d7873dc5ea56d732f8465844b3666d1dace41dc53d22d26bc4b35dcf4e96"
+      },
+      "expected_field": "cmodel_results.e",
+      "status": "planned_requires_rtl_gate_gls_saif_and_annotation_audits",
+      "power_mw": null,
+      "reference_model": {
+        "directory": "hw/power/runs/v19_reference_1109",
+        "manifest_sha256": "561243e157a66173d5eeef6b383237cc18c54815af3fe7a38014d4890b55f5f1"
+      },
+      "cmodel_config": {
+        "frontend": "e",
+        "architecture_v19": false
+      }
+    }
+  ],
+  "execution_order": "dp_top three formats first; then remaining compatible points",
+  "saif_generated": false,
+  "power_measured": false
+}

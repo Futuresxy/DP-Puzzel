@@ -1,0 +1,153 @@
+{
+  "baseline_run": "dc_dp_top_11081432",
+  "new_run": "dc_dp_top_11090056",
+  "baseline_export": "DP_verilog_a32ed7ef4b093ffa",
+  "new_export": "DP_verilog_ce47b3d5b06c0eca",
+  "same_technology_constraints_parameters": true,
+  "comparison": [
+    {
+      "scope": "dp_top_total",
+      "baseline_um2": 17782.087803,
+      "new_um2": 16831.217776,
+      "delta_um2": -950.8700269999972,
+      "reduction_percent": 5.3473474967296974
+    },
+    {
+      "scope": "dp_top_combinational",
+      "baseline_um2": 14102.286526,
+      "new_um2": 13193.220274,
+      "delta_um2": -909.0662520000005,
+      "reduction_percent": 6.446233029828035
+    },
+    {
+      "scope": "dp_top_sequential_including_icg",
+      "baseline_um2": 3679.801277,
+      "new_um2": 3637.997501,
+      "delta_um2": -41.8037760000002,
+      "reduction_percent": 1.1360335206492782
+    },
+    {
+      "scope": "sum_u_lane_unpack",
+      "baseline_um2": 3364.3193,
+      "new_um2": 2375.4792,
+      "delta_um2": -988.8400999999999,
+      "reduction_percent": 29.391981314020935
+    },
+    {
+      "scope": "sum_u_operand_a",
+      "baseline_um2": 1588.5801999999999,
+      "new_um2": 1091.6536,
+      "delta_um2": -496.9265999999998,
+      "reduction_percent": 31.281177997812122
+    },
+    {
+      "scope": "sum_u_operand_b",
+      "baseline_um2": 1587.9537,
+      "new_um2": 1091.3217,
+      "delta_um2": -496.63200000000006,
+      "reduction_percent": 31.27496727391989
+    }
+  ],
+  "setup": {
+    "status": "PASS",
+    "wns_ns": 0.0,
+    "tns_ns": 0.0,
+    "violating_paths": 0,
+    "worst_reported_slack_ns": 3.1829e-05
+  },
+  "hold": {
+    "status": "PASS",
+    "wns_ns": 0.0,
+    "tns_ns": 0.0,
+    "violating_paths": 0,
+    "worst_reported_slack_ns": 3.0205e-05
+  },
+  "synthesis_valid": true,
+  "flow_pass": true,
+  "electrical_violations": [],
+  "multi_vt": {
+    "max_cell_percent": 20.0,
+    "measured_nonblackbox_cell_percent": 19.4,
+    "measured_all_cell_percent": 19.36,
+    "status": "PASS"
+  },
+  "stages": {
+    "S1": {
+      "startpoint": "in_a_datatype[0]",
+      "endpoint": "g_group_0__u_group_unit/g_lane_1__u_lane/u_lane_unpack/u_operand_b/g_atom_1__ff_s0_s1_mantissas_ff_storage_out_q_reg_6_",
+      "path_group": "clock",
+      "arrival_ns": 0.957075417,
+      "required_ns": 0.998399794,
+      "slack_ns": 0.041324377
+    },
+    "S2": {
+      "startpoint": "g_group_1__u_group_unit/g_lane_0__u_lane/ff_s0_s1_type_s1_ff_storage_out_q_reg_2_",
+      "endpoint": "g_group_1__u_group_unit/g_lane_0__u_lane/g_product_register_3__ff_s1_s2_product_upper_ff_storage_out_q_reg_5_",
+      "path_group": "clock",
+      "arrival_ns": 1.00203824,
+      "required_ns": 1.002110839,
+      "slack_ns": 7.2598e-05
+    },
+    "S3": {
+      "startpoint": "g_group_2__u_group_unit/g_lane_1__u_lane/ff_s1_s2_type_s2_ff_storage_out_q_reg_2_",
+      "endpoint": "g_group_2__u_group_unit/g_lane_1__u_lane/g_leaf_register_3__ff_s2_s3_leaf_upper_ff_storage_out_q_reg_3_",
+      "path_group": "clock",
+      "arrival_ns": 1.00220108,
+      "required_ns": 1.002244949,
+      "slack_ns": 4.3869e-05
+    },
+    "S4": {
+      "startpoint": "g_group_2__u_group_unit/g_lane_1__u_lane/ff_s2_s3_type_s3_ff_storage_out_q_reg_0_",
+      "endpoint": "g_group_2__u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_28_",
+      "path_group": "clock",
+      "arrival_ns": 1.0001688,
+      "required_ns": 1.001117587,
+      "slack_ns": 0.000948787
+    },
+    "S5": {
+      "startpoint": "g_group_0__u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_1_",
+      "endpoint": "g_group_0__u_group_unit/ff_s4_s5_out_z_ff_storage_out_q_reg_0_",
+      "path_group": "clock",
+      "arrival_ns": 1.001964331,
+      "required_ns": 1.002027631,
+      "slack_ns": 6.33e-05
+    },
+    "S6": {
+      "startpoint": "ff_s4_s5_c_datatype_ff_storage_out_q_reg_0_",
+      "endpoint": "ff_s5_s6_leaves_ff_storage_out_q_reg_182_",
+      "path_group": "clock",
+      "arrival_ns": 1.002818227,
+      "required_ns": 1.002850056,
+      "slack_ns": 3.1829e-05
+    },
+    "S7": {
+      "startpoint": "ff_s5_s6_leaves_ff_storage_out_q_reg_120_",
+      "endpoint": "ff_s6_s7_sum_ff_storage_out_q_reg_40_",
+      "path_group": "clock",
+      "arrival_ns": 1.00459373,
+      "required_ns": 1.004832506,
+      "slack_ns": 0.000238776
+    },
+    "S8": {
+      "startpoint": "ff_s6_s7_c_datatype_ff_storage_out_q_reg_0_",
+      "endpoint": "ff_s7_s8_out_d_ff_storage_out_q_reg_24_",
+      "path_group": "clock",
+      "arrival_ns": 1.002960086,
+      "required_ns": 1.003049254,
+      "slack_ns": 8.9169e-05
+    }
+  },
+  "source": "official summary.json and area_hierarchy.rpt from both runs; inclusive module boundaries; children not added to parents",
+  "note": "Hierarchy unpack includes exponent/sign/abs and S1 storage; not the seven-category Data unpacking slice. No new power analysis.",
+  "register_comparison": {
+    "baseline_dff": 5383,
+    "new_dff": 5319,
+    "icg_both": 148,
+    "removed": 64,
+    "removed_class_high": 32,
+    "removed_signaling": 32,
+    "all_removed_in": "u_lane_unpack/u_operand_[ab]/g_atom_0 slots 2 and 3",
+    "source": "reports/register_stages.tsv and reports/clock_gating.rpt in both runs",
+    "explanation": "RTL DFF declarations unchanged; direct layout makes E-only slot class-high and sNaN constants explicit for synthesis pruning."
+  }
+}

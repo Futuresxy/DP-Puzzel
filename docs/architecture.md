@@ -1,6 +1,16 @@
 # 项目架构、职责与数据流
 
-## 研究边界
+> 2026-11-04 重规划：用户明确旧 DP 设计已过时，将重新定义 spec。新设计在根目录 `src/{spec,cmodel,chisel,verilog}/`，共用测试在根目录 `test/`。开发顺序为 **DP / Cube 整体 spec → CModel → Chisel 与独立手写 Verilog → 共用验证 → DC/功耗**，见 [重规划记录](dp-cube-replan.md)。本文“历史系统架构与研究边界”及其后章节描述此前架构；其中的 PE 组织、参数、周期和阵列候选不自动约束新设计。新 spec 确认前不开始新实现。
+
+## 新版硬件层级（首批要求）
+
+当前使用 [TensorCore](../src/spec/tensorcore/README.md) → [DP-Group](../src/spec/dp-group/README.md) → [DP](../src/spec/dp/README.md)：16×4 阵列由四个 4×4 广播组竖直拼接，组内 DP 无脉动。组间网络待定义。DP 按 FP16 基准 K4/K8/K16 参数化，支持 TF32/FP16/BF16/MXFP8/6/4/NVFP4/HiF4/INT8；HiF8 暂不支持。
+
+~~精度、≤8级和 1.41 GHz 为设计约束；在满足约束的前提下功耗第一、面积第二。容量已定为 T2H4Q8E16 基本组的 1/2/4 组并行；DP 内加 FP32 C，C 依赖归指令层，last 末输出后切模式，使用固定 E/M/S 解包及全局统一复位。逐级位宽、scale/HiF4 数值映射与舍入合同继续完善；本轮无实现或 EDA 结果。~~
+
+**v1.2 当前定义：** 精度、≤8级和 1.41 GHz 为设计约束，功耗第一、面积第二。DP 三层为 T1H2Q4E8→T2H4Q8E16→H16Q32E64（T8），C 内部合并、依赖归指令层。v1.2 使用逐请求 datatype，取消会话锁定；last 只透传，C 在 S5 解包。局部移位器固定宽度参数化，经输入 mux 复用；功能块保留面积/功耗映射。仍仅 spec，时序与数值边界继续审阅。
+
+## 历史系统架构与研究边界
 
 给定目标工作负载与质量要求，在面积/功耗预算以及存储和运行条件约束下，选择 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 的算力配比及其硬件实现，分析负载延迟的成本收益。
 
@@ -44,8 +54,8 @@ flowchart TD
 
 | 部分 | 接收 | 处理 | 交付 |
 | --- | --- | --- | --- |
-| hw/spec | 格式来源、微架构问题、目标约束 | 定义精度与周期语义 | 模块/单核规格、验收矩阵 |
-| hw/chisel_src + configs | 已明确规格和参数 | 单阵列/单核实现 | 源码与可复现参数 |
+| src/spec | 格式来源、微架构问题、目标约束 | 定义精度与周期语义 | 模块/单核规格、验收矩阵 |
+| src/chisel、src/verilog、src/cmodel | 已明确规格和参数 | 单阵列/单核实现 | 源码与可复现参数 |
 | hw/rtl + test | 设计、独立参考、测试/负载向量 | 导出及最终 RTL 验证 | 同一份 RTL、module 映射、验证证据 |
 | hw/dc_syn | 通过门禁的 RTL、库和约束 | 挂载 EDA 中综合 | 面积/时序、netlist 和来源 |
 | hw/power | 同源硬件、真实负载活动、工况 | 活动回放及功耗测量 | 功耗分解、覆盖率、窗口、active/idle 数据 |
@@ -71,4 +81,6 @@ L2、NoC、SIMT、控制器、HBM PHY 等按实验声明为显式模型、固定
 - 块缩放格式的位宽不等于有效存储成本或算术吞吐，转换、缩放与累加实现都需要证据。
 - 本项目不自动假设所有 GEMM 都可改成最低精度；精度可行性由负载规范或外部质量验证提供。
 
-文档描述目标架构，不代表已实现完整能力。当前仅实现 DC 自动化基础设施与统一 RTL 证据门禁，提供显式选择的历史工艺/时序参考配置；未执行 EDA、未形成硬件证据。其他框架、阵列结构、芯片工况和规模仍待确定，不生成假 profile 或 PPA 数值。
+本文描述目标系统架构。历史实现 [五族六种PE](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/six-pe-design.md)：SubPE_X → PEGroup_X → PE_X_gN → K_PE/MN_PE。HQE/QE/E保留原分级复用，H/Q专用16/32路一次全局对齐；六种PE统一S11输出坐标，K/MN公共C/D总18级，四个对齐参数显式传递。完整RTL格式/scale精度回归、PPA与ratio_dse尚未完成；有限定向坐标/valid检查不能替代最终验收。
+
+阵列方向已确定为 2×2 group 组内广播、组间脉动，物理规模参数化；M8N32 是逻辑指令块。L0 与状态机的 [调研讨论稿](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/array-design-discussion.md) 区分已实现传输层、外部公开机制和本项目设计建议，审核前不进入阵列实现。

@@ -1,43 +1,24 @@
 ---
 name: dc-synthesis
-description: Prepare, run, inspect, and maintain DP-Puzzel Design Compiler synthesis for verified RTL exports, with explicit technology and timing constraints, area and setup/hold reports, power netlist handoff, and scoped cleanup.
+description: Run evidence-gated single-DP Design Compiler synthesis and inspect stage timing with explicit technology and constraints.
 ---
 
-# DC 综合自动化
+# DP Design Compiler 综合
 
-在 DP-Puzzel 处理新 RTL 的 DC 综合、N12/N22 切换、面积/时序报告或综合产物维护时使用。硬件边界为单阵列/单核心；实际 EDA 依当前任务授权和挂载环境可用性执行。
+入口为 `scripts/dc_syn.sh`，实际运行遵从当前用户授权；本机绑定只写忽略的 `hw/dc_syn/configs/machines/machine.local.json`。先读根 AGENTS.md、`hw/dc_syn/README.md` 和 `hw/dc_syn/input-contract.md`。
 
-先读根 AGENTS.md、[流程入口](../../hw/dc_syn/README.md)。环境排查和历史经验读 [machine-experience.md](references/machine-experience.md)；接入 export/验证生产器读 [输入契约](../../hw/dc_syn/input-contract.md)。命令从仓库根执行。
+1. 记录分支、实际基线、top、参数、容量、L/II。DP 主实现为纯 Verilog；不混入同名 SystemVerilog 模块，不固定功能输入。
+2. 构建固定依赖 CModel，运行 `python3 test/run_verilog.py --implementation verilog --phase all`。只能消费该次通过的 `hw/rtl/DP_verilog_<fingerprint>/`，运行 `python3 scripts/rtl_gate.py EXPORT_ID`。不手改 `ppa_eligible`、PASS 或回执。
+3. 读取已有工艺 profile 和机器绑定，运行 `python3 hw/dc_syn/scripts/check_environment.py --technology TECHNOLOGY --machine MACHINE`，核验真实许可证及精确 DB。库版本/PVT不符不能替换；原始工具/库日志私有保存。
+4. `bash scripts/dc_syn.sh check ...` → `prepare ...` → 已授权时 `run --run-id ...` → `report --run-id ...`。check/prepare 不启动 DC。输入变化建立新 run。
+5. 默认门控开启、保持层级、保留 DP 子树；显式传入参数和 Verilog language，时钟与同步 reset 正常计时。不可通过 false path/multicycle/case analysis 隐藏违例。
+6. 同时检查 link、未映射叶、check_design/check_timing、setup/hold、单位、库、门控、网表/SDC/DDC。退出码 0=完整且时序与 Vt 配额通过，2=无效，3=有效但时序或 Vt 配额失败，4=未知。
+   若只剩 hold 违例，可在新 run 使用 `prepare --hold-repair-from SOURCE_RUN`；门禁/配置必须一致，临时增加 1 ps 修复裕量后恢复原始约束，复查全部报告。
+7. DP 每级报告 `timing_S1.rpt` 至 `timing_S8.rpt`，以 `register_stages.tsv` 复核寄存归属；检查 unclassified 和输出边界。读 startpoint/endpoint 及路径逻辑，不仅看 WNS。
+8. 首先保留基线测量，再提出等价组合优化或流水重新分配；每个改动版本重新 RTL 回归和综合。任何架构改变同步 spec、CModel、TB；不能从估算声称时序通过。
 
-## 新 RTL / 新综合任务
+结果限于指定库/PVT/预算下的综合，不代表布线或多 corner 签核。功耗须另有活动与一致性证据；`power_ready=false`。records 只存精简结果与来源，PDK、私有路径、许可证不提交。
 
-1. 明确 export ID、top、工艺/PVT、周期、IO min/max/transition/load 和层次策略，优先已有配置。1410 MHz 文件只是历史预算起点，不自动选工艺或约束。
-2. 用公共 `scripts/rtl_gate.py EXPORT_ID` 检查同一份 RTL 的 SV testbench 精度与周期证据。新单文件也走 export manifest/files.f。缺证据或 hash 失效时停止 PPA，报告需实际回归；不手写 PASS、不直接综合裸 sv。
-3. 在忽略的 `hw/dc_syn/configs/machines/machine.local.json` 绑定库与工具绝对路径，逐库核对 ID/PVT/hash。N12 base+LVT 必须同角；不改 PDK，不提交私有路径/许可证。
-4. 调用 check，再 prepare，均不启动 DC。需要实际执行且当前任务已授权、已接入挂载 EDA 时调用 run；已有授权不重复询问。仅准备流程的任务保留未执行状态。
+日常综合结果按 [运行产物保留](../../scripts/README.md#运行产物保留) 轮转。需要作为长期基线、重要节点或论文证据的 run 先与用户确认，再标记保留。
 
-```bash
-bash scripts/dc_syn.sh check --export-id "$export_id" \
-  --technology "$technology_json" --constraints "$constraints_json" --machine "$machine_json"
-bash scripts/dc_syn.sh prepare --export-id "$export_id" \
-  --technology "$technology_json" --constraints "$constraints_json" --machine "$machine_json" --run-id "$run_id"
-# 仅在已授权且挂载 EDA 可运行时：
-bash scripts/dc_syn.sh run --run-id "$run_id"
-bash scripts/dc_syn.sh report --run-id "$run_id"
-```
-
-唯一 runner 为 hw/dc_syn/scripts/run_dc.py，DC 模板为 hw/dc_syn/templates/DC.tcl。维护公共脚本，不新增绑定 top/日期/私有路径的一次性脚本。输入变化创建新 run，不编辑快照继续启动。
-
-## 判定与交付
-
-- 综合完成、面积有效、setup/hold 通过分别判断。退出 0 才是完整证据下 timing PASS；2 无效、3 有效测量但 timing FAIL、4 UNKNOWN。不能用进程返回 0、COMPLETE 或非零面积替代时序验收。
-- 读明确 run 的 summary.json 和原始 area/qor/timing_setup/timing_hold/check_timing。缺项不补零；微小负 slack 仍失败。全设计 QoR 覆盖所有路径组，detail 复核舍入。
-- Vt 上限、hold 修复、clock gating、层次策略影响 PPA，比较时须一致。X-2025.06 不依赖 design area attribute，不请求已知可能忽略的面积高强度选项；面积恢复看 optimize_netlist 和官方报告。
-- 交付 netlist 下 mapped.v/SDC/DDC、可选 SDF、库指纹及 export/verification/run ID。power_ready=false 保持到独立完成一致性与活动检查；不把 DC vectorless 功耗当 workload 功耗。
-- 数据在 run 的 summary JSON/CSV 与 REPORT.md。长期摘要按 hw/dc_syn/records/README.md 去私有路径并关联可核验归档后提交。未经实际运行，不能声称当前库/许可证可用或该 Tcl 已通过本项目真实 DC。
-
-## 清理与维护
-
-先 `bash scripts/dc_syn.sh clean --run-id "$run_id"` 看计划，任务已授权清理时加 --apply，只删终态 run 的 work/。保留网表、约束、证据、报告和日志，不自动删 DDC/SDF、整份 run 或下游引用物。活跃/中断状态或符号链接被拒绝时调查进程与路径，不绕过保护。
-
-修改后运行 `python3 -m unittest discover -s hw/dc_syn/tests -v`、`bash -n scripts/dc_syn.sh` 和 Tcl 完整性检查。假工具测试只证明软件行为，不能宣称 EDA 兼容或硬件验证通过。新工艺、多时钟、宏/blackbox、UPF、时序例外先更新契约及验收。
+软件维护后运行 `python3 -m unittest discover -s hw/dc_syn/tests -v` 和 `bash -n scripts/dc_syn.sh`。fixture 不能作为硬件或 EDA 通过证据。流程通用部分来源于本仓库 `be850fc04659c42ce65badde75557bae1776aa69`，此次接入新版 DP 合同；历史经验见 `references/machine-experience.md`，不继承旧 BF16 测量。

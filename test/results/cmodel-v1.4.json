@@ -1,0 +1,606 @@
+{
+  "formats": [
+    {
+      "format": "bf16",
+      "logical_k": 16,
+      "count": 961,
+      "architecture_mismatches": 0,
+      "exact_count": 950,
+      "at_most_1_ulp": 959,
+      "max_ulp": 4,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 961,
+      "source_reference_vs_exact_differences": 0,
+      "fp64_vs_exact_differences": 0,
+      "fp64_vs_exact_difference_ids": [],
+      "model_vs_fp64_count": 0,
+      "model_vs_fp64_at_most_1_ulp": 0,
+      "model_vs_fp64_max_ulp": null,
+      "segments": [
+        {
+          "name": "batch64_random",
+          "count": 64,
+          "exact": 64,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch128_mixed_random",
+          "count": 128,
+          "exact": 118,
+          "max_ulp": 4
+        },
+        {
+          "name": "batch256_deepseek_ai_load",
+          "count": 256,
+          "exact": 256,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch512_ai_load",
+          "count": 512,
+          "exact": 511,
+          "max_ulp": 1
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "2013bba6061ce4444ac8b38f692792f612eafb1804f954636d37823216b34cfb"
+    },
+    {
+      "format": "fp16",
+      "logical_k": 16,
+      "count": 961,
+      "architecture_mismatches": 0,
+      "exact_count": 934,
+      "at_most_1_ulp": 956,
+      "max_ulp": 16,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 961,
+      "source_reference_vs_exact_differences": 0,
+      "fp64_vs_exact_differences": 0,
+      "fp64_vs_exact_difference_ids": [],
+      "model_vs_fp64_count": 0,
+      "model_vs_fp64_at_most_1_ulp": 0,
+      "model_vs_fp64_max_ulp": null,
+      "segments": [
+        {
+          "name": "batch64_random",
+          "count": 64,
+          "exact": 61,
+          "max_ulp": 5
+        },
+        {
+          "name": "batch128_mixed_random",
+          "count": 128,
+          "exact": 112,
+          "max_ulp": 7
+        },
+        {
+          "name": "batch256_deepseek_ai_load",
+          "count": 256,
+          "exact": 254,
+          "max_ulp": 1
+        },
+        {
+          "name": "batch512_ai_load",
+          "count": 512,
+          "exact": 506,
+          "max_ulp": 16
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "7c66b89a22f758bf799e989c005fbf1fe92ad058a6ea3ac08c7bc974e8b98499"
+    },
+    {
+      "format": "hif4",
+      "logical_k": 64,
+      "count": 961,
+      "architecture_mismatches": 0,
+      "exact_count": 961,
+      "at_most_1_ulp": 961,
+      "max_ulp": 0,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 961,
+      "source_reference_vs_exact_differences": 0,
+      "fp64_vs_exact_differences": 0,
+      "fp64_vs_exact_difference_ids": [],
+      "model_vs_fp64_count": 0,
+      "model_vs_fp64_at_most_1_ulp": 0,
+      "model_vs_fp64_max_ulp": null,
+      "segments": [
+        {
+          "name": "batch64_random",
+          "count": 64,
+          "exact": 64,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch128_mixed_random",
+          "count": 128,
+          "exact": 128,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch256_deepseek_ai_load",
+          "count": 256,
+          "exact": 256,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch512_ai_load",
+          "count": 512,
+          "exact": 512,
+          "max_ulp": 0
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "1fe6d3a63625331ea83f57ad21ec5f2d02590a0cb6e479e50f2c29d2b0e8dc3c"
+    },
+    {
+      "format": "mxfp4_e2m1",
+      "logical_k": 64,
+      "count": 961,
+      "architecture_mismatches": 0,
+      "exact_count": 961,
+      "at_most_1_ulp": 961,
+      "max_ulp": 0,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 946,
+      "source_reference_vs_exact_differences": 0,
+      "fp64_vs_exact_differences": 0,
+      "fp64_vs_exact_difference_ids": [],
+      "model_vs_fp64_count": 0,
+      "model_vs_fp64_at_most_1_ulp": 0,
+      "model_vs_fp64_max_ulp": null,
+      "segments": [
+        {
+          "name": "batch64_random",
+          "count": 64,
+          "exact": 64,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch128_mixed_random",
+          "count": 128,
+          "exact": 128,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch256_deepseek_ai_load",
+          "count": 256,
+          "exact": 256,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch512_ai_load",
+          "count": 512,
+          "exact": 512,
+          "max_ulp": 0
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "d00d0914f80d1c7e12f66ccb8a624588d79eac68a3abc673c3a0ae2df82e4754"
+    },
+    {
+      "format": "mxfp6_e2m3",
+      "logical_k": 32,
+      "count": 961,
+      "architecture_mismatches": 0,
+      "exact_count": 961,
+      "at_most_1_ulp": 961,
+      "max_ulp": 0,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 951,
+      "source_reference_vs_exact_differences": 0,
+      "fp64_vs_exact_differences": 0,
+      "fp64_vs_exact_difference_ids": [],
+      "model_vs_fp64_count": 0,
+      "model_vs_fp64_at_most_1_ulp": 0,
+      "model_vs_fp64_max_ulp": null,
+      "segments": [
+        {
+          "name": "batch64_random",
+          "count": 64,
+          "exact": 64,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch128_mixed_random",
+          "count": 128,
+          "exact": 128,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch256_deepseek_ai_load",
+          "count": 256,
+          "exact": 256,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch512_ai_load",
+          "count": 512,
+          "exact": 512,
+          "max_ulp": 0
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "1e7dd9655eadee8d1d6a2e094a2042db2793d7fc7b47c8f4fbf00a66a0220427"
+    },
+    {
+      "format": "mxfp6_e3m2",
+      "logical_k": 32,
+      "count": 961,
+      "architecture_mismatches": 0,
+      "exact_count": 961,
+      "at_most_1_ulp": 961,
+      "max_ulp": 0,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 955,
+      "source_reference_vs_exact_differences": 0,
+      "fp64_vs_exact_differences": 0,
+      "fp64_vs_exact_difference_ids": [],
+      "model_vs_fp64_count": 0,
+      "model_vs_fp64_at_most_1_ulp": 0,
+      "model_vs_fp64_max_ulp": null,
+      "segments": [
+        {
+          "name": "batch64_random",
+          "count": 64,
+          "exact": 64,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch128_mixed_random",
+          "count": 128,
+          "exact": 128,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch256_deepseek_ai_load",
+          "count": 256,
+          "exact": 256,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch512_ai_load",
+          "count": 512,
+          "exact": 512,
+          "max_ulp": 0
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "c755fc9723829f9c6920782ce202f9c68657428be0d21d156281227993b43e48"
+    },
+    {
+      "format": "mxfp8_e4m3",
+      "logical_k": 32,
+      "count": 961,
+      "architecture_mismatches": 0,
+      "exact_count": 961,
+      "at_most_1_ulp": 961,
+      "max_ulp": 0,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 951,
+      "source_reference_vs_exact_differences": 0,
+      "fp64_vs_exact_differences": 0,
+      "fp64_vs_exact_difference_ids": [],
+      "model_vs_fp64_count": 0,
+      "model_vs_fp64_at_most_1_ulp": 0,
+      "model_vs_fp64_max_ulp": null,
+      "segments": [
+        {
+          "name": "batch64_random",
+          "count": 64,
+          "exact": 64,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch128_mixed_random",
+          "count": 128,
+          "exact": 128,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch256_deepseek_ai_load",
+          "count": 256,
+          "exact": 256,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch512_ai_load",
+          "count": 512,
+          "exact": 512,
+          "max_ulp": 0
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "4fc569adc32902e6bae6e1b2199c04dbc52949b9e234e732a678320185ab5964"
+    },
+    {
+      "format": "mxfp8_e5m2",
+      "logical_k": 32,
+      "count": 961,
+      "architecture_mismatches": 0,
+      "exact_count": 954,
+      "at_most_1_ulp": 961,
+      "max_ulp": 1,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 951,
+      "source_reference_vs_exact_differences": 1,
+      "fp64_vs_exact_differences": 0,
+      "fp64_vs_exact_difference_ids": [],
+      "model_vs_fp64_count": 0,
+      "model_vs_fp64_at_most_1_ulp": 0,
+      "model_vs_fp64_max_ulp": null,
+      "segments": [
+        {
+          "name": "batch64_random",
+          "count": 64,
+          "exact": 64,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch128_mixed_random",
+          "count": 128,
+          "exact": 121,
+          "max_ulp": 1
+        },
+        {
+          "name": "batch256_deepseek_ai_load",
+          "count": 256,
+          "exact": 256,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch512_ai_load",
+          "count": 512,
+          "exact": 512,
+          "max_ulp": 0
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "3498e300fb9eef74025cf163ee2f0edaee0c8e8cefc1f5aa399d43439c4df3ee"
+    },
+    {
+      "format": "nvfp4",
+      "logical_k": 64,
+      "count": 961,
+      "architecture_mismatches": 0,
+      "exact_count": 961,
+      "at_most_1_ulp": 961,
+      "max_ulp": 0,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 961,
+      "source_reference_vs_exact_differences": 0,
+      "fp64_vs_exact_differences": 0,
+      "fp64_vs_exact_difference_ids": [],
+      "model_vs_fp64_count": 0,
+      "model_vs_fp64_at_most_1_ulp": 0,
+      "model_vs_fp64_max_ulp": null,
+      "segments": [
+        {
+          "name": "batch64_random",
+          "count": 64,
+          "exact": 64,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch128_mixed_random",
+          "count": 128,
+          "exact": 128,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch256_deepseek_ai_load",
+          "count": 256,
+          "exact": 256,
+          "max_ulp": 0
+        },
+        {
+          "name": "batch512_ai_load",
+          "count": 512,
+          "exact": 512,
+          "max_ulp": 0
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "79faa0fac1d3ea5144ce0ced2a74e80df52e30017290fcc376d004f3e1e38a34"
+    },
+    {
+      "format": "int8",
+      "logical_k": 32,
+      "count": 1045,
+      "architecture_mismatches": 0,
+      "exact_count": 1045,
+      "at_most_1_ulp": 1045,
+      "max_ulp": 0,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 0,
+      "source_reference_vs_exact_differences": 0,
+      "fp64_vs_exact_differences": 0,
+      "fp64_vs_exact_difference_ids": [],
+      "model_vs_fp64_count": 0,
+      "model_vs_fp64_at_most_1_ulp": 0,
+      "model_vs_fp64_max_ulp": null,
+      "segments": [
+        {
+          "name": "full_encoding_random",
+          "count": 512,
+          "exact": 512,
+          "max_ulp": 0
+        },
+        {
+          "name": "finite_random_and_accumulator_boundaries",
+          "count": 512,
+          "exact": 512,
+          "max_ulp": 0
+        },
+        {
+          "name": "directed_boundaries",
+          "count": 20,
+          "exact": 20,
+          "max_ulp": 0
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "b58d288b092c85bae00947e21f6b80c86bf024bfb5b988c23b38031c10cda8ef"
+    },
+    {
+      "format": "tf32",
+      "logical_k": 8,
+      "count": 1053,
+      "architecture_mismatches": 0,
+      "exact_count": 1024,
+      "at_most_1_ulp": 1053,
+      "max_ulp": 1,
+      "nonfinite_comparison_count": 0,
+      "finite_bound_checks": 669,
+      "source_reference_vs_exact_differences": 0,
+      "fp64_vs_exact_differences": 2,
+      "fp64_vs_exact_difference_ids": [
+        397,
+        1049
+      ],
+      "model_vs_fp64_count": 1014,
+      "model_vs_fp64_at_most_1_ulp": 1014,
+      "model_vs_fp64_max_ulp": 1,
+      "segments": [
+        {
+          "name": "full_encoding_random",
+          "count": 512,
+          "exact": 509,
+          "max_ulp": 1
+        },
+        {
+          "name": "finite_random_and_accumulator_boundaries",
+          "count": 512,
+          "exact": 486,
+          "max_ulp": 1
+        },
+        {
+          "name": "directed_boundaries",
+          "count": 28,
+          "exact": 28,
+          "max_ulp": 0
+        },
+        {
+          "name": "ones",
+          "count": 1,
+          "exact": 1,
+          "max_ulp": 0
+        }
+      ],
+      "input_sha256": "62d31eadb0cd2ff2e9ce6cd8e0c33fed8870a0b37cdc2c01eaf163b5af799ed2"
+    }
+  ],
+  "failures": [],
+  "status": "passed",
+  "config": {
+    "k_fp16": 16,
+    "local_shift_mag_width": 27,
+    "global_signed_align_width": 40,
+    "post_scale_norm_extra_stage": 0
+  },
+  "phase": "all",
+  "python": "3.13.11",
+  "model_version": {
+    "architecture": "dp-cube/v1.4",
+    "boost": "1_83",
+    "json": 31103,
+    "model": "dp-cmodel-1"
+  },
+  "model_source_sha256": "5ffabc43bc785bbe41066462ff16dce8f2379ff4fd3ab2c1611a15340f82f927",
+  "scope": "CModel and independent mathematical checks; no RTL or EDA",
+  "recorded_at": "2026-11-04T22:06:32+08:00",
+  "baseline_spec_commit": "1f5220bb36176e8a495946b404fb5c09d81c2f17",
+  "test_source_sha256": "5c5586e2cf9ce11518f7bda8eedbf35c6b7edb77aa9906d4d37beb30ea3eb11b",
+  "spec_source_sha256": "d91fc66f9c2d919fa6a8b27ec29357e6c853af0af0457b00200b56fd66279b02",
+  "commands": [
+    "cmake -S src/cmodel -B src/cmodel/build -DCMAKE_BUILD_TYPE=RelWithDebInfo",
+    "cmake --build src/cmodel/build -j 2",
+    "python3 test/run_cmodel.py --phase all --write-goldens",
+    "python3 -m unittest discover -s test/tests -v",
+    "cmake -S src/cmodel -B src/cmodel/build/sanitize -DCMAKE_BUILD_TYPE=Debug -DDP_SANITIZE=ON",
+    "cmake --build src/cmodel/build/sanitize -j 2",
+    "python3 test/run_cmodel.py --phase all --binary src/cmodel/build/sanitize/dp_cmodel_cli --run-dir test/runs/cmodel/sanitize"
+  ],
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "cmake": "cmake version 3.28.3",
+  "directed_unittest": {
+    "methods": 9,
+    "status": "passed",
+    "scopes": [
+      "K4/K8/K16",
+      "windows 27/40,28/48,32/64",
+      "L8/L9",
+      "IEEE edges",
+      "scale codes",
+      "mixed formats",
+      "reset/bubbles",
+      "INT32 wrap",
+      "invalid payload"
+    ]
+  },
+  "sanitizer": {
+    "status": "passed",
+    "kinds": [
+      "address",
+      "undefined",
+      "leak"
+    ],
+    "cases": 10747,
+    "initial_sandbox_failure": "LeakSanitizer cannot exit under ptrace; identical campaign rerun outside sandbox passed",
+    "leak_detection_disabled": false
+  },
+  "documentation_version": "v1.4.1",
+  "documentation_change": "Editorial cleanup only; same tested v1.4 arithmetic and interfaces."
+}

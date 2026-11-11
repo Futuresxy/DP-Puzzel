@@ -1,0 +1,44 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "latex-workshop.latex.autoBuild.run": "onSave",
+    "latex-workshop.latex.outDir": "%DIR%/build",
+    "latex-workshop.latex.recipe.default": "DP-Puzzel (XeLaTeX)",
+    "latex-workshop.latex.recipes": [
+      {
+        "name": "DP-Puzzel (XeLaTeX)",
+        "tools": [
+          "dp-puzzel-xelatexmk"
+        ]
+      }
+    ],
+    "latex-workshop.latex.tools": [
+      {
+        "name": "dp-puzzel-xelatexmk",
+        "command": "latexmk",
+        "cwd": "%DIR%",
+        "args": [
+          "-xelatex",
+          "-synctex=1",
+          "-interaction=nonstopmode",
+          "-halt-on-error",
+          "-file-line-error",
+          "-outdir=%OUTDIR%",
+          "%DOC%"
+        ]
+      }
+    ],
+    "latex-workshop.view.pdf.viewer": "tab",
+    "latex-workshop.view.pdf.tab.editorGroup": "right",
+    "latex-workshop.latex.build.enableMagicComments": true
+  },
+  "extensions": {
+    "recommendations": [
+      "james-yu.latex-workshop"
+    ]
+  }
+}

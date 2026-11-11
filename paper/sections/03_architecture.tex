@@ -1,0 +1,93 @@
+% !TeX root = ../main.tex
+% 中文审核稿：本章已按确认内容同步至 dp_puzzle.tex；英文采用精简学术表述。
+\section{共享多精度点积微架构}
+\label{sec:architecture}
+\label{sec:brick_definition}
+
+DP-Puzzle 采用 Lane、Group 和 DP三层组合式架构（图~\ref{fig:dp_architecture}）。在Lane内复用元素乘法与局部对齐和规约累加，消除多精度计算的并行度差异，Group 融合缩放因子尺度并统一部分和表示，DP 共享全局对齐与累加后端。同时我们设计统一的 Group 接口使低精度专用优化单元能够独立裁剪和增配，是后续配比扩展的组合边界。
+
+表~\ref{tab:precision_families} 统一定义精度简称、定点格式和并行度记号。一个 Lane 支持 T1H2Q4E8；两个 Lane 构成 Group，四个 Group 构成 T8H16Q32E64 基线。此外，每个 Lane 支持四路 INT8 乘法，DP 支持 INT32 累加。各模式采用八级流水，每拍接收一笔独立请求。
+
+\begin{table}[t]
+\centering
+\caption{精度简称、定点格式与计算并行度记号。Q 格式采用整数位不含符号位的约定~\cite{ti2003qformat}。}
+\label{tab:precision_families}
+\begingroup
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.0}
+\begin{tabular}{@{}p{0.29\columnwidth}p{0.68\columnwidth}@{}}
+\toprule
+记号 & 含义 \\
+\midrule
+T & TF32 \\
+H & FP16、BF16 \\
+Q & MXFP8（E4M3/E5M2）、MXFP6（E2M3/E3M2） \\
+E & MXFP4、NVFP4、HiF4 \\
+\midrule
+$\mathrm{Q}I.F$ & 有符号补码：$I$ 位整数（不含符号位）、$F$ 位小数，总宽度 $1+I+F$。 \\
+$\mathrm{UQ}I.F$ & 无符号定点数：$I$ 位整数、$F$ 位小数，总宽度 $I+F$；如 UQ2.26 为 28 位。 \\
+T1H2Q4E8 & T/H/Q/E 浮点模式每拍分别计算 1/2/4/8 对元素的乘积；每对含一个 A 和一个 B，模式互斥。 \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{baseline_arch.png}
+\caption{缩放粒度驱动的 Lane--Group--DP 划分。HiF4 每 8 个元素共享一个二级微指数，对应一个 Lane 的 8 路 E 类乘积；NVFP4 每 16 个元素共享一个尺度，因此由两个 Lane 构成一个 Group。更大的量化块向多个 Group 广播同一尺度，保持原格式的缩放粒度。}
+\label{fig:dp_architecture}
+\end{figure}
+
+\subsection{Lane：解码与算术复用}
+\label{sec:unpack_recode}
+\label{sec:full_brick}
+
+图~\ref{fig:data_unpack} 给出共享计算所需的解包表示：T/H 保留指数与有效数，Q 统一为内部 E5M3 表示，INT8 分离符号与幅值。MXFP4/NVFP4 将元素指数融入 UQ3.1 定点幅值；HiF4 将一级微指数并入 UQ2.2 幅值，保留 Lane 共享的二级微指数。E 类因此无需逐元素浮点对齐。
+
+\begin{figure}[t]
+\centering
+% 图稿待作者统一数量标签：按完整 Lane 标注时，FP16 为 2x，E 为 8x；
+% 右侧 10/16/4 位描述单个字段组，每个 Lane 包含两个字段组。
+\includegraphics[width=\columnwidth]{unpack_layout.png}
+\caption{输入格式到共享指数、有效数和符号字段的映射。Q 使用统一内部编码，E 将元素指数吸收到定点幅值中；未用字段补零，特殊值标志独立传播。}
+\label{fig:data_unpack}
+\end{figure}
+
+% Park 的子乘法器组成依据作者提供的文献解读，待对照原文电路图复核。
+\textbf{乘法器复用。}BitFusion 将四个 $2\times2$ 乘法组合为一个 $4\times4$ 乘法，或用于多路低位宽并行计算~\cite{bitfusion2018}；Park 等采用四个 $4\times8$ 和一个 $4\times4$ 乘法器，复用实现一路 FP16、两路 INT8 或四路 INT4 乘法~\cite{parkMultimode8KMACHWutilizationaware2022}。本文沿用部分积拆分与组合的思路，采用两套 $8\times8$、$8\times4$、$4\times8$ 和 $4\times4$ 乘法单元，通过部分积组合或独立路由支持不同位宽及并行度，避免按格式复制完整乘法阵列。
+
+\textbf{移位器复用。}T/H/Q 乘积按小数点位置静态补零后，进入四路共享右移器。MMA-Sim 的逆向分析表明，Blackwell 的 MXFP8 融合求和保留 25 位小数精度~\cite{xie2025mmasim}。以此为位宽选择的参考，本文采用 28\,bit 无符号局部对齐窗口 UQ2.26，保留 26 位小数。两个 Lane 使用共同的最大乘积指数完成对齐。E/INT8 旁路该网络，复用后续规约树；HiF4 在 Lane 部分和上施加二级微指数的小范围左移。
+
+\subsection{Group：尺度融合与 Anchor Recompute}
+
+\textbf{规约后尺度融合。}两个 Lane 共享尺度，Group 因而先求和并取幅值，再乘两侧尺度尾数的乘积 $\mathrm{Scale}_{\mathrm{mant}}$。NVFP4/HiF4 的紧凑组幅值与尺度尾数乘积分别为 14 位和 8 位，两种格式共用一套无符号 $14\times8$ 乘法器，避免逐元素复制尺度乘法。MX 的幂次尺度仅计入指数，旁路尾数乘法。
+
+\textbf{统一部分和表示。}将 Group 输出幅值记为 $\mathrm{SoP}$（sum of products），位宽及小数位数分别记为 $\mathrm{Group}_{\mathrm{mag}}$ 和 $\mathrm{Group}_{\mathrm{frac}}$；本文采用 31\,bit 幅值。$\mathrm{Anchor}$ 表示幅值最高物理位对应的指数，由局部对齐指数 $\mathrm{Anchor}_{\mathrm{lane}}$、两侧尺度的无偏指数和 $\mathrm{Scale}_{\mathrm{exp}}$ 及元素偏置 $\mathrm{Bias}$ 共同确定：
+\begin{equation}
+\begin{aligned}
+\mathrm{Anchor}={}&\mathrm{Anchor}_{\mathrm{lane}}+\mathrm{Scale}_{\mathrm{exp}}\\
+ &+\mathrm{Group}_{\mathrm{mag}}-1-\mathrm{Group}_{\mathrm{frac}}-2\mathrm{Bias}.
+\end{aligned}
+\label{eq:anchor_recompute}
+\end{equation}
+格式相关修正可预先确定，使 Anchor Recompute 与尾数规约并行。E 的元素指数已融入幅值，局部对齐指数与元素偏置均取零；无尺度格式的尺度指数和取零。
+
+\textbf{前导零与双向移位。}Group 在尺度融合后的 SoP 上检测前导零，以原始 Anchor 减去前导零数得到最高有效位的比较指数。有限乘积或组幅值为零时，参与掩码将其排除于相应的指数 MAX，避免零项抬高对齐基准；流水请求仍保持有效。令 $\mathrm{Exp}_{\mathrm{max}}$ 为 Group 与 $C$ 中有效源的最大比较指数，$\Delta=\mathrm{Anchor}-\mathrm{Exp}_{\mathrm{max}}$。令 $W$ 为全局无符号幅值窗口的位宽，将 SoP 低位补零至 $W$ 位，记为 $\mathrm{SoP}_{\mathrm{pad}}$，则对齐结果为
+\begin{equation}
+\mathrm{SoP}_{\mathrm{align}}=
+\begin{cases}
+0, & |\Delta|\ge W,\\
+\mathrm{SoP}_{\mathrm{pad}}\ll\Delta, & 0\le\Delta<W,\\
+\mathrm{SoP}_{\mathrm{pad}}\gg(-\Delta), & -W<\Delta<0.
+\end{cases}
+\label{eq:bidirectional_alignment}
+\end{equation}
+其中 $\ll$ 与 $\gg$ 分别表示 $W$ 位逻辑左移与右移；移位量达到窗口位宽时幅值清零。有效非零 Group 的左移量不超过其前导零数，因而不丢失高位有效位。以原始 Anchor 确定净移位量，将前导零规格化与全局对齐合并为一次移位。
+
+\subsection{DP：共享累加与整数旁路}
+
+Ten-Four 将 $C$ 纳入前端最大指数比较~\cite{rout2026tenfourv2}；Lutz 等的 early accumulation 方案则在乘积计算期间并行处理 $C$ 的对齐~\cite{lutzFusedFP84Way2024}。本文将 $C$ 的对齐与累加推迟至 DP 层：E 类元素指数范围窄，实际量级还取决于组尺度，先完成组内规约与尺度融合，可避免较大的 $C$ 指数使局部乘积过早右移截断。该组织与 MMA-Sim 对 Blackwell NVFP4 的分组缩放模型一致，即先计算组点积并施加尺度，再将各组结果与 $C$ 对齐求和~\cite{xie2025mmasim}。
+
+$C$ 保持原始编码传递至后端，与各 Group 在 39\,bit 无符号全局窗口内对齐，恢复符号后进入共享累加器。基线经 4:2 和 3:2 压缩及一次进位传播加法完成融合累加，中间部分和不转换为 FP32，最终统一规格化与舍入。INT8/INT32 使用固定整数坐标，旁路浮点对齐及输出规格化舍入，复用累加通路。浮点幅值右移采用向零截断，最终 FP32 输出采用最近偶数舍入。

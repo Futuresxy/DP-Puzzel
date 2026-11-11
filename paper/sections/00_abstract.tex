@@ -1,1 +1,7 @@
-% TODO: approximately 100 words, after contributions and results are established.
+% !TeX root = ../main.tex
+\begin{abstract}
+多精度张量计算的设计不仅需要支持不同浮点格式，还需要确定有限面积下的高、低精度算力配比。相同配比可以通过增加单个输出的归约并行度，或增加独立输出数量实现，两者具有不同的电路与供数成本。本文提出 DP-Puzzle，以 lane、group 和 DP 三层结构共享解码、乘法、对齐与融合输出，并通过 E、QE 专用构件实现 $1:2:6$、$1:2:8$ 和 $1:4:8$ 的低精度扩展。基于 12\,nm、1\,GHz 下六种 DP 的综合与活动驱动功耗评估，相同峰值的 K 内部扩展较 N 外部组合节省 0.65\%--2.40\% 的构件面积，低精度活动功耗估计降低 2.02\%--3.97\%。带宽分析进一步区分输入复用、累加状态容量与输出端口压力。固定整核面积下，四种 K 配比在 H/Q/E 工作量空间中均有独立的延迟和能耗优势区域。叠加三个 DeepSeek 模型的 prefill 工作量后，参考 W4A8 映射偏向 $1:4:8$，而 FP4 专家与长上下文可使部分负载转向 $1:2:8$。本文将点积电路成本与混合精度计算需求连接，为负载驱动的算力配比规划提供设计与分析依据。
+\end{abstract}
+\begin{IEEEkeywords}
+Composable Dot-Product Architecture, Multi-Precision Tensor Cores, Throughput Ratios, Hardware Cost--Performance Trade-offs
+\end{IEEEkeywords}

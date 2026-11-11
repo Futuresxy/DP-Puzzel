@@ -1,0 +1,12 @@
+{
+  "name": "DeepScaleTool",
+  "release": "2021-03-03 SourceForge spreadsheet",
+  "url": "https://downloads.sourceforge.net/project/deepscaletool/DeepScaleTool/DeepScaleTool.xlsm",
+  "sha256": "561a3f8f5e91a3c496d6e0f4262c09412209f3bbc6d22b714cde323ebd958df8",
+  "size_bytes": 33581,
+  "license": "GPL-3.0 (upstream SourceForge project listing)",
+  "directory": ".deps/deepscaletool/561a3f8f5e91a3c496d6e0f4262c09412209f3bbc6d22b714cde323ebd958df8",
+  "purpose": "Read area/delay/energy coefficients for approximate paper PPA normalization; no Excel macro execution",
+  "retrieved_on": "2026-11-11",
+  "paper": "https://doi.org/10.1109/ISCAS51556.2021.9401196"
+}

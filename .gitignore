@@ -9,9 +9,14 @@ __pycache__/
 target/
 .bsp/
 .metals/
+hw/out/
+/src/cmodel/build/
+/src/chisel/out/
+/src/verilog/build/
+/test/runs/
+hw/.bloop/
 hw/project/project/
 hw/rtl/*/
-hw/test/runs/
 hw/dc_syn/runs/
 hw/power/runs/
 ratio_dse/results/*
@@ -81,7 +86,6 @@ htmlcov/
 /paper/submission/packages/
 
 # Large workload/EDA inputs and generated activities
-/hw/test/vectors/generated/
 /hw/power/activity/generated/
 /hw/power/workloads/raw/
 /ratio_dse/workloads/raw/

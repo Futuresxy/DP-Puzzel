@@ -1,0 +1,58 @@
+{
+  "status": "research_only",
+  "source": {
+    "name": "asc-devkit",
+    "upstream": "https://gitcode.com/cann/asc-devkit.git",
+    "commit": "e5451c7feba11f9e259f4fbc19c4bf82f8c0496c",
+    "license": "CANN Open Software License Agreement Version 2.0",
+    "local_directory": ".deps/asc-devkit",
+    "purpose": "official example, API implementation and hardware constraints",
+    "navigation_master_commit": "4b40fcab44231e32d565adafdf8efbc41b603914",
+    "tag": "v9.1.0",
+    "release_file_matches": [
+      {
+        "path": "impl/basic_api/dav_c220/kernel_operator_mm_impl.h",
+        "matches_official_release": true,
+        "sha256": "d8adf0bc52f62cc9ff91d8584c488d72547939b1f37cdae4c59343283b0a4945"
+      },
+      {
+        "path": "impl/basic_api/kernel_operator_mm_base_impl.h",
+        "matches_official_release": true,
+        "sha256": "d9772dd5cd23eed0d63d4f2eafc65b913bbaf1503bd018e03517cdc1b0b609a0"
+      },
+      {
+        "path": "impl/basic_api/kernel_operator_mm_intf_impl.h",
+        "matches_official_release": true,
+        "sha256": "98a2ad8196c005ce7906064b1024f391def4060c79b0c0ba5c542d75b5b219e7"
+      }
+    ],
+    "access_method": "git show e5451c7feba11f9e259f4fbc19c4bf82f8c0496c:<path>"
+  },
+  "tools": [
+    {
+      "name": "cann-bisheng-compiler-9.1.0",
+      "official_container_url": "https://ascend-cann-open.obs.cn-north-4.myhuaweicloud.com/CANN/CANN%209.1.0/Ascend-cann-toolkit_9.1.0_linux-x86_64.run",
+      "component_filename": "cann-bisheng-compiler_9.1.0_linux-x86_64.run",
+      "version": "9.1.0",
+      "component_sha256": "cc2cba95a1007673c87fd997305ca24be470a27baf31566171eba3d8f128cf6c",
+      "payload_sha256": "deade3da54e00241bcb7951111521e93bd3de8ff64618702e49d5054e47b814f",
+      "local_directory": ".deps/cann-bisheng-compiler-9.1.0",
+      "license": "Official CANN component license distributed in the archive; binaries are not redistributed",
+      "purpose": "compile-only external Cube ISA research",
+      "installed_system_wide": false
+    },
+    {
+      "name": "cann-asc-devkit-9.1.0",
+      "official_container_url": "https://ascend-cann-open.obs.cn-north-4.myhuaweicloud.com/CANN/CANN%209.1.0/Ascend-cann-toolkit_9.1.0_linux-x86_64.run",
+      "component_filename": "cann-asc-devkit_9.1.0_linux-x86_64.run",
+      "version": "9.1.0",
+      "component_sha256": "4b07f896da2df9d2bf2da332face40ca992be257dbe2515fccd6c73fd8d06f0e",
+      "payload_sha256": "64d25569b0c788090b594ca02cbe8800873f532dd631a9102c1710ae9029caa0",
+      "local_directory": ".deps/cann-asc-devkit-9.1.0",
+      "license": "Official CANN component license distributed in the archive; binaries are not redistributed",
+      "purpose": "compile-only external Cube ISA research",
+      "installed_system_wide": false
+    }
+  ],
+  "patches": []
+}

@@ -1,0 +1,69 @@
+% !TeX root = ../main.tex
+\section{case study：负载驱动的算力配比分析}
+\label{sec:workload}
+
+低精度扩展的收益取决于单核吞吐、部署密度与负载精度组成之间的权衡。为刻画这一关系，本节在统一面积预算下比较 $1:2:4$、$1:2:6$、$1:2:8$ 和 $1:4:8$，确定延迟与能耗的最优配比区域，并结合 DeepSeek prefill 计算密集型负载分析其适用性。
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.5\textwidth]{k4_n12_prefill_comparison.png}
+\caption{Equal-area ratio selection for (a) compute latency with integer core deployment and (b) DP compute energy. Each region is labeled by its optimal H:Q:E ratio and geometric area fraction. The inset illustrates H/Q/E = 20\%/30\%/50\%. Trajectories are model-derived DeepSeek prefill workloads: dashed/solid lines use routed-expert W4A8/W4A4, with other computations unchanged. Arrows follow contexts of 1K, 4K, 16K, 64K, 256K, 512K, and 1M; filled markers denote 1M. NVFP4 energy uses the MXFP4 power proxy.}
+\label{fig:k4_time_prefill}
+\end{figure}
+
+\subsection{等面积约束下的算力模型}
+\label{sec:k4_area}
+
+每个 AI 计算核心采用 $m=n=16$ 的 DP 阵列。参考 Luo 等人的计算单元面积构成~\cite{luo2024hifloat8area}及公开核心数量~\cite{huawei950}，取 $\alpha=0.30$、$N_0=36$ 构造等效面积预算，不对应实际芯片面积。
+
+令配比 $j$ 的单 DP 面积为 $a_j$，阵列面积 $A_{T,j}=256a_j$，下标 0 表示 $1:2:4$。基准整核面积、固定外围面积及总预算为
+\begin{equation}
+A_{C,0}=\frac{A_{T,0}}{\alpha},\quad
+A_O=A_{C,0}-A_{T,0},\quad
+A_{\mathrm{bud}}=N_0A_{C,0}.
+\label{eq:k4_area_definition}
+\end{equation}
+固定每核外围面积 $A_O$，在 $A_{\mathrm{bud}}=496.59$\,mm$^2$ 内部署完整核心：
+\begin{equation}
+n_j=\left\lfloor\frac{A_{\mathrm{bud}}}{A_O+A_{T,j}}\right\rfloor.
+\label{eq:core_area_budget}
+\end{equation}
+令 $d\in\{H,Q,E\}$ 表示精度，$m_{j,d}$ 为单 DP 每周期 MAC 数，$p_{j,d}$ 为第五节测得的满吞吐活动功耗。按 2 FLOP/MAC、时钟频率 $f=1$\,GHz，部署后的总峰值算力与 DP 活动功耗为
+\begin{equation}
+C_{j,d}=2f\,256n_jm_{j,d},\qquad
+P_{j,d}=256n_jp_{j,d}.
+\label{eq:k4_capacity_power}
+\end{equation}
+
+固定面积下，四种配比分别可部署 36、34、32、29 个核心（表~\ref{tab:k4_absolute}）。低精度扩展同时带来单核吞吐增益与部署密度下降，其净收益取决于低精度加速能否补偿 H 吞吐损失。
+
+\begin{table}[!t]
+\centering
+\caption{Area-constrained N12 deployment. $A_C$: core area (mm$^2$); $C$: TFLOP/s; $P$: DP-only power (W).}
+\label{tab:k4_absolute}
+\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
+\input{tables/hardware_compact_table.tex}
+\endgroup
+\end{table}
+
+\subsection{混合精度负载的最优配比区域}
+\label{sec:k4_simplex}
+
+令 $F=\sum_d F_d$ 为 H/Q/E 有效 GEMM 总计算量，$x_d=F_d/F$ 且 $\sum_d x_d=1$。假设各精度阶段顺序执行并充分利用全部核心，计算延迟与 DP 能耗为
+\begin{align}
+T_j&=F\sum_d\frac{x_d}{C_{j,d}},&
+C_{\mathrm{eff},j}&=\frac{F}{T_j},
+\label{eq:k4_time}\\
+\mathcal E_j&=\sum_d P_{j,d}\frac{Fx_d}{C_{j,d}}.
+\label{eq:k4_energy}
+\end{align}
+在 H/Q/E 三类精度组成的三角区域内，以 1 个百分点的间隔评估 5,151 种组成，分别求取最小 $T_j$ 和 $\mathcal E_j$。固定 $F$ 时，两者均为 $\boldsymbol x$ 的线性函数，配比间的等成本条件确定最优区域的直线边界（图~\ref{fig:k4_time_prefill}）。图中标注各配比最优区域的几何面积占比，而非硬件面积或应用出现概率。沿平行于对边的网格线读取三边刻度，即可得到任一点的 H/Q/E 计算占比，三者之和为 $100\%$。
+
+H、E、Q 密集区域分别倾向于 $1:2:4$、$1:2:8$ 和 $1:4:8$；$1:2:6$ 在 H/E 混合、Q 较少时，以较小面积增量平衡 E 加速与 H 吞吐损失。决定延迟收益的是各阶段的 $F_d/C_{j,d}$，而非单项 FLOP 占比；单位 FLOP 能耗 $P_{j,d}/C_{j,d}=p_{j,d}/(2fm_{j,d})$ 则与核心数无关，因此两类最优区域并不重合。
+
+\subsection{DeepSeek 混合精度负载与配比演变}
+\label{sec:k4_prefill}
+
+依据官方配置~\cite{deepseekv4,deepseekv4flashsource,deepseekv4prosource,deepseekv41source}，按 $2MNK$ 统计 V4-Flash、V4-Pro、V4.1-Flash 在 batch=1、1K--1M 七种上下文下的冷启动 prefill，仅计激活专家，并纳入稀疏/压缩注意力及 V4.1 的 CED 与索引复用。BF16 注意力与分组输出投影、W4A8 专家计算与 FP8 投影、MXFP4 索引(Indexer)点积分别归入 H/Q/E；NVFP4 W4A4 映射仅将路由专家从FP8转至FP4。每种映射含 21 个点，覆盖 GEMM 计算量的 97.11\%--99.37\%。
+
+全部 W4A8 采样点均以 $1:4:8$ 的延迟和能耗最低。专家 W4A4 后，V4-Flash 在 512K 的能耗最优配比、1M 的延迟最优配比转为 $1:2:8$，另两模型至 1M 仍选择 $1:4:8$。在 V4-Flash 的 1M 点，$1:2:8$ 相对 $1:4:8$ 的延迟与估计能耗优势为 1.45\% 和 2.03\%，边界附近收益较小，因此在当前典型负载下$1:4:8$更占优势。未来FP4低比特计算进一步拓展到Attention等计算时，伴随长上下文的增长$1:2:8$的配比选择将更具潜力；

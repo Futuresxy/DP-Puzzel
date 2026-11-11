@@ -1,0 +1,23 @@
+% Scope: reported formats; MX element-only support is explicitly distinguished.
+\begin{table}[t]
+\centering
+\caption{Format coverage and compositional throughput-ratio support}
+\label{tab:related_features}
+\begingroup\footnotesize\setlength{\tabcolsep}{1pt}
+\def\Y{$\checkmark$}\def\N{$\times$}\def\E{$\triangle$}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}l*{10}{c}@{}}\toprule
+Design & TF32 & FP16 & BF16 & \shortstack{MX\\FP8} & \shortstack{MX\\FP6} & \shortstack{MX\\FP4} & INT8 & \shortstack{NV\\FP4} & HiF4 & \shortstack{Ratio\\comp.} \\\midrule
+Ten-Four~\cite{rout2026tenfourv2} & \Y & \Y & \Y & \Y & \N & \N & \Y & \N & \N & --- \\
+MPICC~\cite{huangMPICCMultiplePrecisionInterCombined2025} & \N & \N & \N & \E & \E & \E & \N & \N & \N & --- \\
+MXDOTP~\cite{islamoglu2025mxdotp} & \N & \N & \N & \Y & \N & \N & \N & \N & \N & --- \\
+FPnew~\cite{mach2020fpnew} & \N & \Y & \Y & \E & \N & \N & \N & \N & \N & --- \\
+TransDot~\cite{transdot2026} & \N & \Y & \N & \E & \N & \E & \N & \N & \N & --- \\
+\midrule
+DP-Puzzle & \Y & \Y & \Y & \Y & \Y & \Y & \Y & \Y & \Y & \Y \\
+\bottomrule\end{tabular*}
+\par\smallskip
+\parbox{\columnwidth}{\raggedright
+$\checkmark$: supported; $\times$: absent in the reported configuration; $\triangle$: element arithmetic supported, integrated MX scaling not established; ---: not reported.
+Ratio comp.: varying throughput ratios by composing shared DPs with dedicated low-precision units. FPnew uses SIMD FMA.}
+\endgroup
+\end{table}

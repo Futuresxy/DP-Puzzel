@@ -1,0 +1,203 @@
+{
+  "architecture": "dp-cube/v1.6",
+  "baseline_commit": "f5999eacec02fb82dd22e81c558f914daec0968a",
+  "parameters": {
+    "K_FP16": 16,
+    "LOCAL_W": 28,
+    "GLOBAL_W": 40
+  },
+  "interface": {
+    "clock": "clock",
+    "reset": "rst_n",
+    "reset_kind": "synchronous",
+    "reset_active": "low"
+  },
+  "latency": 8,
+  "ii": 1,
+  "dc_rerun": false,
+  "power_rerun": false,
+  "rtl": {
+    "multi": {
+      "run_id": "20261106T041413762570Z",
+      "export_id": "DP_verilog_7e706da2d08e5386",
+      "source_fingerprint": "7e706da2d08e53865fd081f558c66cfba965398cb763fbc68e7fa18821e90e94",
+      "rtl_fingerprint": "16257a2228cfe27a4e047b3910ba6bc83787d175561a8f3c7381ad42908a090d",
+      "summary_sha256": "94e38a2a15bb377af8cbafa91e70ad09294a20980c602139d490b72f0132163f",
+      "receipt_sha256": "df9bfb7af34434cda245bbd686ea0dd80de84ad3e985f78b50221d34531bdc38",
+      "cutpoints_checked": 231654,
+      "numerical": [
+        {
+          "name": "bf16",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "fp16",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "hif4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "nvfp4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "tf32",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1
+        }
+      ],
+      "mixed": [
+        {
+          "name": "mixed-k4-l27-g40",
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "mixed-k8-l27-g40",
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "mixed-k4-l28-g48",
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "mixed-k8-l32-g64",
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        }
+      ]
+    },
+    "e": {
+      "run_id": "20261106T041321972556Z",
+      "export_id": "DP_verilog_e_e15e97bed4d92100",
+      "source_fingerprint": "e15e97bed4d92100484363ae2df87f5f9ffd34ea2a4bb4939343996b1de789e2",
+      "rtl_fingerprint": "fac04d00529e14afa24443fad1931e0e64ba55fdd7492b52b85fa5fe591351ac",
+      "summary_sha256": "20d441692c3afc41958b0029e43ff7c1a98d418dd6599d1e899395e040608ec7",
+      "receipt_sha256": "10919e245c96424131c6a1aaee0d5a7ee3a549edb806dc1eb1722f35a573e631",
+      "cutpoints_checked": 1106924,
+      "numerical": [
+        {
+          "name": "hif4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "nvfp4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "directed-e",
+          "golden_exact": 5288,
+          "math_exact": 5288,
+          "max_ulp": 0
+        }
+      ],
+      "mixed": [
+        {
+          "name": "mixed-k4-l27-g40",
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7"
+        },
+        {
+          "name": "mixed-k8-l27-g40",
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7"
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7"
+        },
+        {
+          "name": "mixed-k4-l28-g48",
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7"
+        },
+        {
+          "name": "mixed-k8-l32-g64",
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7"
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7"
+        }
+      ]
+    }
+  },
+  "cmodel_diff": {
+    "existing_results": 10747,
+    "full_trace_requests": 672,
+    "cycle_responses": 906,
+    "baseline_binary_sha256": "5c955dbf04b73c00c9b155a2f5400fec8943981f5eb67395a76cbfc0ecc55b56",
+    "new_binary_sha256": "142621996e8b34c03358cf83ebfbf61b38e8847bce769830d22f6839d48eb1cb",
+    "passed": true
+  },
+  "software_tests": {
+    "cmodel_unittests": 16,
+    "dc_flow_and_gate": 34,
+    "synchronous_reset_hold_checks": 8,
+    "legacy_sv_tb_compile": "passed"
+  },
+  "cmodel_runs": {
+    "multi": "20261106T040841690334Z",
+    "e": "20261106T040842853186Z"
+  }
+}

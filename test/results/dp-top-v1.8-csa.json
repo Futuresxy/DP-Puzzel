@@ -1,0 +1,18 @@
+{
+  "export_id": "DP_verilog_e84d765a8a29dc88",
+  "rtl_fingerprint": "02c70395309c90e2ad47f7bcb11b4554db15a3f3bad2baba285c579745dfc474",
+  "checks": [
+    "PASS N=2 W=3 checked=64 seed=180927\n/home/songxy/DP-Puzzel/test/rtl_tb/dp_csa_tb.v:53: $finish called at 64000 (1ps)",
+    "PASS N=3 W=3 checked=512 seed=180927\n/home/songxy/DP-Puzzel/test/rtl_tb/dp_csa_tb.v:53: $finish called at 512000 (1ps)",
+    "PASS N=5 W=3 checked=32768 seed=180927\n/home/songxy/DP-Puzzel/test/rtl_tb/dp_csa_tb.v:53: $finish called at 32768000 (1ps)",
+    "PASS N=2 W=40 checked=2008 seed=180927\n/home/songxy/DP-Puzzel/test/rtl_tb/dp_csa_tb.v:53: $finish called at 2008000 (1ps)",
+    "PASS N=3 W=40 checked=2008 seed=180927\n/home/songxy/DP-Puzzel/test/rtl_tb/dp_csa_tb.v:53: $finish called at 2008000 (1ps)",
+    "PASS N=5 W=40 checked=2008 seed=180927\n/home/songxy/DP-Puzzel/test/rtl_tb/dp_csa_tb.v:53: $finish called at 2008000 (1ps)",
+    "PASS N=2 W=64 checked=2008 seed=180927\n/home/songxy/DP-Puzzel/test/rtl_tb/dp_csa_tb.v:53: $finish called at 2008000 (1ps)",
+    "PASS N=3 W=64 checked=2008 seed=180927\n/home/songxy/DP-Puzzel/test/rtl_tb/dp_csa_tb.v:53: $finish called at 2008000 (1ps)",
+    "PASS N=5 W=64 checked=2008 seed=180927\n/home/songxy/DP-Puzzel/test/rtl_tb/dp_csa_tb.v:53: $finish called at 2008000 (1ps)"
+  ],
+  "bench_sha256": "a390c5a913499b99f821a0e69253196b94bb19523d8aa82bbb46b7455df43d11",
+  "runner_sha256": "cbf21227b031c82232d2a368f8cf40c864e8847fc129f8a3205c0362896b1194",
+  "tool": "Icarus Verilog version 14.0 (devel) (35a809d)"
+}

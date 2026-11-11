@@ -1,16 +1,38 @@
 # DAC 2027 · 多精度张量计算算力配比 DSE
 
+**当前阶段：DP spec v1.5 / 实现映射 v1.5.1，单 DP 手写 RTL 与共用验证已建立。** 当前主方案为 T8H16Q32E64 分组共享八级 DP；维护 Verilog 主实现；SystemVerilog 冻结为 T8H16Q32E64 历史参考，当前默认局部/全局窗口为 28/40。S5 的 NVFP4/HiF4 幅值共用 14×8 无符号 scale 乘法。历史 27/40 的 N12 TT DC 在 1.41GHz setup 未通过，1GHz 经独立 hold 修复后 setup/hold 均通过，见 [时序分析](hw/dc_syn/records/README.md#历史记录)。E64 专用 CModel 与 [dp_top_e](src/verilog/top/dp_top_e.v) 已实现并通过同源 Verilator 验证，复用公共后端算术；[E64 测试](test/results/e64-v1.5.8.md)及[同工况面积对比](hw/dc_syn/records/README.md#历史记录)按用户要求长期保留。后续[时序优先复测](hw/dc_syn/records/README.md#历史记录)保持 E64 RTL 不变，关闭显式面积回收后通过1GHz setup/hold，最差余量仍很小。Chisel、Cube 阵列尚未实施。
+
+| 入口 | 内容 |
+| --- | --- |
+| [设计规范](src/spec/README.md) | 架构、接口、每级数值与资源共享 |
+| [CModel](src/cmodel/README.md) | C++ 位精确 / 逐级周期模型与构建命令 |
+| [手写 RTL](src/verilog/README.md) | 单 DP、参数化 Verilog；SV 仅作冻结的历史参考 |
+| [共用测试](test/README.md) | Packed 数据、独立参考及回归 |
+| [模型报告](test/results/cmodel-v1.4.md) / [RTL 报告](test/results/verilog-v1.4.md) | 精度、流水断点、周期协议与覆盖边界 |
+
+设计开发在 `src/`，功能验证在 `test/`，分析所用 RTL 快照、DC 与功耗在 [hw/](hw/README.md)。文档采用当前定义优先的排版，只有相邻两个主要版本的核心变更保留删除线；见 [维护规则](src/spec/document-control.md)。
+
+## 历史项目背景与旧实现记录
+
+以下 PE、配置和实验说明属于旧设计，不构成新版架构的默认合同。
+
 面向 AI 芯片张量计算，研究 **BF16/FP16 : MXFP8/6 : MXFP4/NVFP4/HiF4** 的算力配比如何选择，以及不同物理实现对**面积、真实负载功耗和计算延迟**的成本收益影响。
 
 系统应支持两类设计决策：在已有架构的面积余量内增配计算资源，以及在下一代芯片的面积/功耗预算内重新分配张量计算资源。结果应给出可行配置、成本与收益分解及 Pareto 前沿，而不是预设一种“最佳比例”。
 
-**当前状态：项目定义、论文准备及 DC 自动化基础设施。没有硬件/芯片模型实现或实验结果。** 已搭建 [DC 综合入口](hw/dc_syn/README.md) 和 [项目 skill](.skill/dc-synthesis/SKILL.md)，仅完成软件检查；真实 DC 和功耗分析须在获准的本机挂载 EDA 环境验收，本次未执行。已准备 [paper 入口](paper/README.md)、IEEEtran 模板及学术润色 skill。
+历史实现为五族六种基础 PE 及参数化 K/MN 编排。 H/Q专用路径改为16/32路统一对齐，HQE/QE/E保留分级复用；PE_E_g2/g4输出坐标对齐。详见 [六种PE设计](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/six-pe-design.md)、[配置](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/configs/README.md) 和 [源码导航](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/legacy/chisel_src/README.md)。编译/结构及有限定向检查不等于完整RTL精度验证；尚无PPA或ratio_dse实现。
+
+阵列扩展目前只做 [调研与方案讨论](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/array-design-discussion.md)：2×2 group 组内广播/组间脉动、L0 A/B/C、逻辑 M8N32 指令及 GEMM 调度。物理阵列规模参数化；方案待用户审核，尚未新增阵列代码。
+
+进一步的 [OS 内部调度调研](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/os-array-scheduling-research.md) 聚焦一条指令如何拆成物理 tile，比较 L0C 反馈与 group 本地累加，并给出论文、逆向研究和公开 RTL 的依据。
+
+[官方 Ascend C → MMAD ISA 分析](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/ascend-official-mmad-isa-analysis.md) 从官方 v9.1.0 样例追到实际编译的 IR、后端汇编和机器指令字，并结合 L0 容量推导 FP16 指令的 M/N/K 边界；这属于外部 ISA 编译研究，尚无芯片执行或数值验证。
 
 ## 两个核心部分
 
 | 部分 | 范围 | 对外输出 |
 | --- | --- | --- |
-| hw | 单计算阵列或单计算核心的 spec、Chisel、RTL testbench、DC 面积/时序、真实负载功耗 | 经过验证且带来源的硬件特征与活动成本 |
+| hw | 单计算阵列或单计算核心的 RTL 快照、DC 面积/时序、真实负载功耗 | 经过验证且带来源的硬件特征与活动成本 |
 | ratio_dse | 多核心、多阵列 AI 芯片，包含共享 HBM、核心内 L1/L0、映射与调度 | 芯片级 area / power / gemm_compute_latency 与配比权衡 |
 
 芯片模型参照多个 SM/AICore 的组织方式，不默认复现某一厂商芯片。格式名称、共享缩放、累加与转换必须显式定义，不能简单按位宽比例推导面积或吞吐。
@@ -26,12 +48,10 @@
     │   ├── experiments.md     配比、预算、目标函数与比较方法
     │   ├── development.md     分支、PR、日常同步、依赖和产物管理
     │   └── roadmap.md         实施顺序与待定事项
+    ├── src/                  设计规格、CModel、Chisel、Verilog
+    ├── test/                 数据、参考模型、RTL 测试和验证回执
     ├── hw/
-    │   ├── spec/              数值语义、接口、周期、验收标准
-    │   ├── configs/           后续硬件参数集
-    │   ├── chisel_src/        后续单阵列/单核硬件
-    │   ├── rtl/               唯一生成 RTL 存储位置
-    │   ├── test/              Verilog/SystemVerilog 验证职责
+    │   ├── rtl/               唯一 EDA 输入快照目录
     │   ├── dc_syn/            挂载 EDA 中的面积、时序分析
     │   ├── power/             真实负载活动与功耗分析
     │   └── characterization/  hw 向 ratio_dse 交付的硬件特征
@@ -51,4 +71,4 @@
 
 建议按 [术语](CONTEXT.md) → [架构与数据流](docs/architecture.md) → [数据契约](docs/data-contracts.md) → [实验定义](docs/experiments.md) 阅读，再按 [后续路线](docs/roadmap.md) 逐项明确设计。
 
-远程仓库：git@github.com:Futuresxy/DP-Puzzel.git。所有新增功能先建分支、提交 PR 后合并；有代码变更的工作日至少一次 commit + push，重大架构/关键数据更新及时同步。规则见 [开发流程](docs/development.md)。
+远程仓库为 `git@github.com:Futuresxy/DP-Puzzel.git`。小改动直接提交到本地 `feat/dp-verilog-v14`。需要并行推进的大任务经用户同意建立分支，通过 PR 合入 `main`。规则见 [开发流程](docs/development.md)。

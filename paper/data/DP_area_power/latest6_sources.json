@@ -1,0 +1,72 @@
+{
+  "scope": "Existing verified N12 measurements; no new synthesis or power run",
+  "sources": [
+    {
+      "path": "hw/dc_syn/records/v19_six_dp_20261110.json",
+      "sha256": "ef79fe0c64d8ca6803fa6d21f67c28fd1b73b02f0ad6870366854a88214c957a"
+    },
+    {
+      "path": "hw/power/records/v19_six_architectures_20261110.json",
+      "sha256": "a894ac00cee47a361ce4ee7c046ef9125f6c15e90dc6240c97ef5eab7e449f35"
+    },
+    {
+      "path": "hw/power/records/v19_six_architectures_20261110.csv",
+      "sha256": "7affcb37099b37245873fa7e14f09fe572c7131eac2713dc2de12fae418aec4f"
+    }
+  ],
+  "source_created_utc": "2026-11-09T16:31:01.926410+00:00",
+  "condition": {
+    "technology": {
+      "schema_version": 1,
+      "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+      "process": "TSMC CLN12FFCLL",
+      "pvt": {
+        "corner": "TT",
+        "voltage_v": 0.7,
+        "temperature_c": 85
+      },
+      "target_libraries": [
+        "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"
+      ],
+      "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+      "operating_condition": "tt0p7v85c",
+      "wire_load_model": "ZeroWireload",
+      "area_unit": "um2",
+      "multi_vt": {
+        "base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c",
+        "max_lvt_percent": 20.0
+      },
+      "reference_dc_version": "X-2025.06",
+      "library_release": "120a (Liberty revision 120)",
+      "standard_cell_type": "BWP6T16P96CPD, 6-track standard cells",
+      "time_unit": "ns",
+      "capacitance_unit": "pF",
+      "area_unit_evidence": "Liberty area cross-checked against matching 120a LEF cell SIZE product (micrometres squared)",
+      "corner_basis": "Existing project N12 TT setup analysis profile; not worst-corner or multi-corner signoff"
+    },
+    "frequency_hz": 1000000000.0,
+    "duration_ns": 512,
+    "clock_slew_ns": 0.1,
+    "window": {
+      "name": "dp-qwen8b-middle512-v1",
+      "first_source_index": 256,
+      "end_source_index_exclusive": 768,
+      "cycles": 512,
+      "frequency_hz": 1000000000,
+      "duration_ns": 512,
+      "issue_policy": "1024 independent transactions, once each, II=1",
+      "boundary": "same clock phase before driving transactions 256 and 768",
+      "pipeline": "includes steady-state in-flight transactions; not output-ID filtering"
+    }
+  },
+  "workload": "Qwen3-8B layer 0 MLP down_proj; 1024 independent transactions",
+  "boundary": "Post-synthesis zero-delay, pre-CTS/pre-route; no SDF/SPEF",
+  "implementation": "Repaired v1.8 dp_top baseline; v1.9 mixed and Q32E64 designs; original E64 netlist",
+  "measurement_batch": "All 15 points replayed with fresh native SAIF and Power Compiler in the v1.9 comparison batch",
+  "power_components": "Dynamic = internal + switching; static = leakage",
+  "total_policy": "Keep tool-reported total_mw; component sums differ by report rounding",
+  "area_reference": "dp_top",
+  "power_reference": "dp_top/bf16"
+}

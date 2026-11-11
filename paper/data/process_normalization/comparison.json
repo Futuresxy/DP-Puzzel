@@ -1,0 +1,92 @@
+{
+  "status": "analytical_uncalibrated",
+  "tenfour_source": "https://arxiv.org/html/2512.00053v3#S4.T2",
+  "scaling_method": "https://arxiv.org/html/2102.10195v1#S3",
+  "factors_source": "User-supplied DeepScaleTool 14-to-7 nm screenshot; not a new spreadsheet execution",
+  "factors_14_to_7": {
+    "area": 7.273,
+    "delay": 1.132,
+    "energy": 1.727
+  },
+  "factor_rule": "target value = current value / factor",
+  "reverse_efficiency_rules": {
+    "area": "eta_A7 / (SA * SD)",
+    "energy": "eta_E7 / SE"
+  },
+  "assumptions": [
+    "14 nm approximates our 12 nm for this comparison only",
+    "Frequency changes inversely with delay; no additional voltage scaling",
+    "No calibration of predictive versus commercial libraries, temperature, utilization or activity"
+  ],
+  "ours": {
+    "source": "paper/data/DP_area_power/latest6_power.csv",
+    "sha256": "2540506d11426ec8c2d2f9fb2a121c4f81133635a3cf6beabccf2d7e31ee2abe",
+    "area_eff_mxfp8_tflops_mm2": 3.959141130533519,
+    "energy_eff_mxfp8_tflops_w": 3.9995003370817552
+  },
+  "tenfour_tcu_reported_energy_eff_tflops_w": 2.771,
+  "tenfour_tcu_proxy14_energy_eff_tflops_w": 1.6045165026056745,
+  "energy_limit": "TCU-level reported efficiency only; mode-specific DP power unavailable. Do not use this scalar as a DP efficiency or infer per-mode power from it.",
+  "rows": [
+    {
+      "variant": "all_formats",
+      "q_mac_per_cycle": 8,
+      "frequency_7_ghz": 1.58,
+      "area_7_um2": 2400.0,
+      "throughput_7_gflops": 25.2,
+      "area_eff_7_tflops_mm2": 10.5,
+      "area_proxy14_um2": 17455.2,
+      "frequency_proxy14_ghz": 1.3957597173144878,
+      "throughput_proxy14_gflops": 22.26148409893993,
+      "area_eff_proxy14_tflops_mm2": 1.2753497008879837,
+      "area_eff_proxy14_fixed_frequency_tflops_mm2": 1.4436958614051973,
+      "ours_over_proxy_area_eff": 3.104357281596491,
+      "energy_eff_dp_tflops_w": null
+    },
+    {
+      "variant": "all_formats",
+      "q_mac_per_cycle": 16,
+      "frequency_7_ghz": 1.58,
+      "area_7_um2": 4650.0,
+      "throughput_7_gflops": 50.4,
+      "area_eff_7_tflops_mm2": 10.838709677419356,
+      "area_proxy14_um2": 33819.45,
+      "frequency_proxy14_ghz": 1.3957597173144878,
+      "throughput_proxy14_gflops": 44.52296819787986,
+      "area_eff_proxy14_tflops_mm2": 1.3164900138198543,
+      "area_eff_proxy14_fixed_frequency_tflops_mm2": 1.4902666956440749,
+      "ours_over_proxy_area_eff": 3.0073461165466,
+      "energy_eff_dp_tflops_w": null
+    },
+    {
+      "variant": "mxfp8_only",
+      "q_mac_per_cycle": 8,
+      "frequency_7_ghz": 1.66,
+      "area_7_um2": 1060.0,
+      "throughput_7_gflops": 26.6,
+      "area_eff_7_tflops_mm2": 25.094339622641513,
+      "area_proxy14_um2": 7709.38,
+      "frequency_proxy14_ghz": 1.4664310954063604,
+      "throughput_proxy14_gflops": 23.498233215547707,
+      "area_eff_proxy14_tflops_mm2": 3.04800557444927,
+      "area_eff_proxy14_fixed_frequency_tflops_mm2": 3.450342310276573,
+      "ours_over_proxy_area_eff": 1.2989284415101103,
+      "energy_eff_dp_tflops_w": null
+    },
+    {
+      "variant": "mxfp8_only",
+      "q_mac_per_cycle": 16,
+      "frequency_7_ghz": 1.55,
+      "area_7_um2": 1930.0,
+      "throughput_7_gflops": 49.6,
+      "area_eff_7_tflops_mm2": 25.699481865284977,
+      "area_proxy14_um2": 14036.89,
+      "frequency_proxy14_ghz": 1.3692579505300355,
+      "throughput_proxy14_gflops": 43.81625441696114,
+      "area_eff_proxy14_tflops_mm2": 3.121507286654034,
+      "area_eff_proxy14_fixed_frequency_tflops_mm2": 3.533546248492366,
+      "ours_over_proxy_area_eff": 1.268342748216792,
+      "energy_eff_dp_tflops_w": null
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "checked_utc": "2026-11-10T03:50:43.248122+00:00",
+  "scope": "Retire failed DC predecessors and the old CModel executable/source snapshot. Audit completed measurements only.",
+  "original_collection_sha256": "93132953a5a00269b733365c50f139be52df198a61f58a1d984bfe67c8d5a1e9",
+  "repairs": {
+    "hw/dc_syn/runs/dc_dp_top_11092301": {
+      "source_run": "dc_dp_top_11091816",
+      "final_resolved_sha256": "95f59a2170bcc3999f5cb7b6e4db9b8f135087df00b6ca48d37b82588b40e67f",
+      "source_summary_sha256": "8c87a664f3b71e3f04630e36a82a08ce5365a49f7c8e5c827674156004754c55",
+      "verified_before_retirement": true
+    },
+    "hw/dc_syn/runs/dc_dp_top_q32e64_11092358": {
+      "source_run": "dc_dp_top_q32e64_11092350",
+      "final_resolved_sha256": "4cd0078d721fea992a3f520475e99535abf0957d5da40808113d50892d218ab5",
+      "source_summary_sha256": "31b8b0182e2d0c10a37813b16b114ce8bffb3abe4efe2a4d80fcacb3dc4794df",
+      "verified_before_retirement": true
+    }
+  },
+  "retained_datasets": {
+    "hw/power/runs/baseline_v18_reference_1109/data/bf16": "hw/power/runs/power_baseline_v18_repaired_1109/dp_top__bf16/workload_evidence",
+    "hw/power/runs/baseline_v18_reference_1109/data/mxfp8_e4m3": "hw/power/runs/power_baseline_v18_repaired_1109/dp_top__mxfp8_e4m3/workload_evidence",
+    "hw/power/runs/baseline_v18_reference_1109/data/mxfp4_e2m1": "hw/power/runs/power_baseline_v18_repaired_1109/dp_top__mxfp4_e2m1/workload_evidence"
+  },
+  "removed": [
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_11091816",
+      "allocated_bytes": 35008512
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_q32e64_11092350",
+      "allocated_bytes": 31854592
+    },
+    {
+      "path": "hw/power/runs/baseline_v18_reference_1109",
+      "allocated_bytes": 3805184
+    }
+  ]
+}

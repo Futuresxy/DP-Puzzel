@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "baseline_run": "hw/dc_syn/runs/dc_dp_top_11080044",
+  "optimized": {
+    "purpose": "S1-S3 precision register gating; same dp_top arithmetic L8 II1; compare original Qwen workload power",
+    "time": "2026-11-08T14:32:49+08:00",
+    "technology": {
+      "schema_version": 1,
+      "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+      "process": "TSMC CLN12FFCLL",
+      "pvt": {
+        "corner": "TT",
+        "voltage_v": 0.7,
+        "temperature_c": 85
+      },
+      "target_libraries": [
+        "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"
+      ],
+      "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+      "operating_condition": "tt0p7v85c",
+      "wire_load_model": "ZeroWireload",
+      "area_unit": "um2",
+      "multi_vt": {
+        "base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c",
+        "max_lvt_percent": 20.0
+      },
+      "library_release": "120a (Liberty revision 120)",
+      "standard_cell_type": "BWP6T16P96CPD, 6-track standard cells",
+      "time_unit": "ns",
+      "capacitance_unit": "pF",
+      "area_unit_evidence": "Liberty area cross-checked against matching 120a LEF cell SIZE product (micrometres squared)",
+      "corner_basis": "Existing project N12 TT setup analysis profile; not worst-corner or multi-corner signoff"
+    },
+    "export_id": "DP_verilog_a32ed7ef4b093ffa",
+    "rtl_fingerprint": "047d0fb2f38fbe641613b91e89a84b7b1195ff638be8b5e26abefa281f09da7f",
+    "parameters": {
+      "K_FP16": 16,
+      "LOCAL_W": 28,
+      "GLOBAL_W": 40
+    },
+    "multi_vt": {
+      "max_cell_percent": 20.0,
+      "measured_nonblackbox_cell_percent": 18.52,
+      "measured_all_cell_percent": 18.49,
+      "status": "PASS"
+    },
+    "hold_repair": null,
+    "timing_repair": null,
+    "design_rule_repair": null,
+    "electrical_violations": [],
+    "critical_setup_path": {
+      "startpoint": "g_group_3__u_group_unit/ff_s4_s5_out_magnitude_ff_storage_out_q_reg_11_",
+      "endpoint": "ff_s5_s6_leaves_ff_storage_out_q_reg_109_",
+      "path_group": "clock",
+      "arrival_ns": 1.001104832,
+      "required_ns": 1.001146078,
+      "slack_ns": 4.1246e-05
+    },
+    "stage_setup_paths": {
+      "S1": {
+        "startpoint": "in_a_datatype[3]",
+        "endpoint": "g_group_3__u_group_unit/g_lane_1__u_lane/u_lane_unpack/u_operand_b/g_atom_0__g_precision_classes_g_class_0__ff_s0_s1_class_low_ff_storage_out_q_reg_0_",
+        "path_group": "clock",
+        "arrival_ns": 1.033943534,
+        "required_ns": 1.034006,
+        "slack_ns": 6.2466e-05
+      },
+      "S2": {
+        "startpoint": "g_group_3__u_group_unit/g_lane_1__u_lane/ff_s0_s1_type_s1_ff_storage_out_q_reg_0_",
+        "endpoint": "g_group_3__u_group_unit/g_lane_1__u_lane/g_product_register_0__ff_s1_s2_product_upper_ff_storage_out_q_reg_6_",
+        "path_group": "clock",
+        "arrival_ns": 1.003059745,
+        "required_ns": 1.003218412,
+        "slack_ns": 0.000158668
+      },
+      "S3": {
+        "startpoint": "g_group_3__u_group_unit/g_lane_1__u_lane/ff_s1_s2_type_s2_ff_storage_out_q_reg_2_",
+        "endpoint": "g_group_3__u_group_unit/g_lane_1__u_lane/g_leaf_register_0__ff_s2_s3_leaf_lower_ff_storage_out_q_reg_9_",
+        "path_group": "clock",
+        "arrival_ns": 1.00253427,
+        "required_ns": 1.002640367,
+        "slack_ns": 0.000106096
+      },
+      "S4": {
+        "startpoint": "g_group_2__u_group_unit/g_lane_1__u_lane/ff_s2_s3_type_s3_ff_storage_out_q_reg_1_",
+        "endpoint": "g_group_2__u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_28_",
+        "path_group": "clock",
+        "arrival_ns": 0.937616408,
+        "required_ns": 1.001117587,
+        "slack_ns": 0.063501179
+      },
+      "S5": {
+        "startpoint": "g_group_1__u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_0_",
+        "endpoint": "g_group_1__u_group_unit/ff_s4_s5_out_anchor_ff_storage_out_q_reg_0_",
+        "path_group": "clock",
+        "arrival_ns": 1.000853658,
+        "required_ns": 1.00093627,
+        "slack_ns": 8.2612e-05
+      },
+      "S6": {
+        "startpoint": "g_group_3__u_group_unit/ff_s4_s5_out_magnitude_ff_storage_out_q_reg_11_",
+        "endpoint": "ff_s5_s6_leaves_ff_storage_out_q_reg_109_",
+        "path_group": "clock",
+        "arrival_ns": 1.001104832,
+        "required_ns": 1.001146078,
+        "slack_ns": 4.1246e-05
+      },
+      "S7": {
+        "startpoint": "ff_s5_s6_leaves_ff_storage_out_q_reg_41_",
+        "endpoint": "ff_s6_s7_sum_ff_storage_out_q_reg_40_",
+        "path_group": "clock",
+        "arrival_ns": 1.001741767,
+        "required_ns": 1.001825929,
+        "slack_ns": 8.4162e-05
+      },
+      "S8": {
+        "startpoint": "ff_s6_s7_c_datatype_ff_storage_out_q_reg_0_",
+        "endpoint": "ff_s7_s8_out_d_ff_storage_out_q_reg_28_",
+        "path_group": "clock",
+        "arrival_ns": 1.005316496,
+        "required_ns": 1.005613208,
+        "slack_ns": 0.000296712
+      }
+    },
+    "source_files": [
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_dff_en.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_dff_sync_reset.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_lib_DFFE.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_lib_DFFRE.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_lib_DFFRU.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_lib_DFFSE.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_lib_DFFSU.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_lib_DFFU.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_lib_bin2onehot.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_lib_onehot2bin.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/common/dp_lib_onehot_mux.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/arithmetic/dp_bidir_shift.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/arithmetic/dp_exponent_add.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/arithmetic/dp_fp32_round.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/arithmetic/dp_lzd.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/arithmetic/dp_max_tree.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/arithmetic/dp_mul_unsigned.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/arithmetic/dp_rtz_shift.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/arithmetic/dp_scale_multiply.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/arithmetic/dp_sum_tree.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/group/dp_group.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/lane/dp_exponent_bank.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/lane/dp_lane_align.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/lane/dp_lane.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/lane/dp_mantissa_bank.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/top/common/dp_global_align.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/top/dp_top.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/unpack/dp_c_unpack.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/unpack/dp_lane_operand_unpack.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/unpack/dp_lane_unpack.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/unpack/dp_operand_unpack.v",
+      "hw/rtl/DP_verilog_a32ed7ef4b093ffa/src/src/verilog/unpack/dp_scale_unpack.v"
+    ],
+    "run": "hw/dc_syn/runs/dc_dp_top_11081432",
+    "dc_version": "X-2025.06",
+    "frequency_mhz": 1000.0,
+    "clock_gating": true,
+    "result": {
+      "synthesis_valid": true,
+      "total_area_um2": 17782.087803,
+      "combinational_area_um2": 14102.286526,
+      "sequential_area_um2": 3679.801277,
+      "setup": "PASS",
+      "hold": "PASS",
+      "flow_pass": true,
+      "setup_wns_ns": 0.0,
+      "setup_tns_ns": 0.0,
+      "setup_violating_paths": 0,
+      "setup_slack_ns": 4.1246e-05,
+      "hold_slack_ns": 0.000172973
+    },
+    "top": "dp_top",
+    "capacity": "T8H16Q32E64",
+    "frontend": "multi",
+    "q_native": 32,
+    "e_native": 64,
+    "verification_id": "20261108T063108307834Z",
+    "verification_receipt_sha256": "eff79a79fa14a8bf0df32e752618c8453a3d8e92fae6fc5e0e05917144d31f1d",
+    "evidence_scope": "archived_snapshot_and_original_receipt",
+    "clock_gating_measurement": {
+      "gating_elements": 148,
+      "gated_registers": 5307,
+      "total_registers": 5383,
+      "gated_percent": 98.59
+    },
+    "power_preparation": {
+      "status": "synthesis_artifacts_retained_not_power_validated",
+      "power_ready": false,
+      "power_mw": null,
+      "artifacts": {
+        "mapped_verilog": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11081432/netlist/dp_top_mapped.v",
+          "sha256": "f848e1e5b866d3e0ea5acc50ec8d6e20c76466e6b702e34d971fab9f546f8f50",
+          "bytes": 8465257
+        },
+        "ddc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11081432/netlist/dp_top.ddc",
+          "sha256": "ec3af1c1e9f38bd4619bc5ed63c1e64cb3aa66fc0d45b99e1ea461686a75aeba",
+          "bytes": 9797632
+        },
+        "sdc": {
+          "path": "hw/dc_syn/runs/dc_dp_top_11081432/netlist/dp_top.sdc",
+          "sha256": "f2af242ab66bc7257f155fdbb753119e1ec8ff99861bd2df5ddc4db5bf83d1aa",
+          "bytes": 168363
+        }
+      },
+      "supported_modes": [
+        "tf32",
+        "fp16",
+        "bf16",
+        "mxfp8_e4m3",
+        "mxfp8_e5m2",
+        "mxfp6_e3m2",
+        "mxfp6_e2m3",
+        "mxfp4_e2m1",
+        "nvfp4",
+        "hif4",
+        "int8"
+      ],
+      "current_source_content_differences": [],
+      "source_relocations": [],
+      "current_source_gate_revalidation_required": true,
+      "pending": [
+        "select matched workload and active measurement window",
+        "validate the exact RTL input scope used for power",
+        "VCS mapped-netlist numerical/protocol equivalence using exact cell models",
+        "VCS native gate-level SAIF capture",
+        "Power Compiler annotation and leaf-pin activity audit"
+      ]
+    },
+    "area_delta_percent": 0.0
+  },
+  "purpose": "precision register gating; unchanged arithmetic and L8; workload power recorded separately"
+}
