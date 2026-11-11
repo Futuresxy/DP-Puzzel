@@ -9,7 +9,7 @@ python3 paper/data/DP_area_power/plot_latest6_area_power.py --scope ratios
 # 或 make -C paper cost-figures PYTHON=/path/to/python
 ```
 
-输出 `figures/ratio4_area.png`、`ratio4_power.png` 及 `ratio4_plot_manifest.json`；派生数值保存到本目录 `ratio4_costs.csv`。面积相对基线，**功耗分别相对基线同精度**，不是旧图的统一 BF16 分母。所有柱均为实际支持且已测量的格式。无参数运行仍保留旧六设计绘图行为。
+输出 `figures/ratio4_area.png`、`ratio4_power.png` 及 `ratio4_plot_manifest.json`；派生数值保存到本目录 `ratio4_costs.csv`。面积相对基线。功耗沿用 `latest6_power.png` 的画法：柱高和柱顶为实测总功耗（mW），旁侧竖括号的倍率统一以 **1:2:4 的 BF16 功耗 15.3282642364502 mW** 为分母；仅去掉 0:0:4 和 0:2:4。CSV 中各 `*_power_ratio` 也使用这一共同分母。所有柱均为实际支持且已测量的格式。无参数运行仍保留旧六设计绘图行为。
 
 ## 最新六种 DP：2026-11-10 v1.9 比较批次，N12 / 1GHz
 

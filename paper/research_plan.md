@@ -34,7 +34,7 @@
 ## 当前可用证据
 
 - 单 DP 面积与功耗：`data/DP_area_power/latest6_{area,power}.csv`；原始测量索引和边界见该目录 README。
-- 四候选图：`figures/ratio4_{area,power}.png`。从上述 CSV 筛选完整 H/Q/E 设计；面积相对 baseline，功耗相对 baseline **同精度**。派生值见 `data/DP_area_power/ratio4_costs.csv`，来源 hash 见图目录的 `ratio4_plot_manifest.json`。
+- 四候选图：`figures/ratio4_{area,power}.png`。从上述 CSV 筛选完整 H/Q/E 设计；面积相对 baseline，功耗柱高为实测 mW，倍率统一相对 baseline **BF16**。派生值见 `data/DP_area_power/ratio4_costs.csv`，来源 hash 见图目录的 `ratio4_plot_manifest.json`。
 - 四配比面积倍率为 1、1.1669、1.3360、1.6821；不能概括为都只增加约 1.3–1.5 倍。
 - DSE 硬件输入：`data/inputs/hardware_n12.json`；配置：`data/inputs/experiment.json`。默认整核预算 496.59 mm²，可部署 36/34/32/29 核；该预算是参考参数构造的等效模型，不是 Ascend 实际芯片面积。
 - 当前负载已由 `scripts/workloads.py`、`scripts/deepseek_v41.py` 和固定配置复算，包含 V4-Flash、V4-Pro、V4.1-Flash 七个上下文。不能称为“只有 AI 给出的占比”，也不能称为已经实现通用自动算子提取。

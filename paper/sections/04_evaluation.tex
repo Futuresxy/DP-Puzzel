@@ -10,15 +10,15 @@
 \subsection{四种配比的面积与功耗}
 \label{sec:lowp_costs}
 
-图~\ref{fig:ratio4_costs} 给出面积及各精度总功耗相对基线的变化。$1:2:6$ 和 $1:2:8$ 分别将 E 算力提高 50\% 和 100\%，DP 面积仅增加 16.69\% 和 33.60\%，E 模式功耗增加 28.77\% 和 57.14\%。两者的 H/Q 模式功耗增幅均低于 4\%，表明共享后端与按模式激活能够限制增配资源对其他精度的影响。
+图~\ref{fig:ratio4_costs} 给出四种配比的面积与总功耗，功耗倍率统一以基线 BF16 为参照。以下各模式增幅均与基线的同精度功耗比较。$1:2:6$ 和 $1:2:8$ 分别将 E 算力提高 50\% 和 100\%，DP 面积仅增加 16.69\% 和 33.60\%，E 模式功耗增加 28.77\% 和 57.14\%。两者的 H/Q 模式功耗增幅均低于 4\%，表明共享后端与按模式激活能够限制增配资源对其他精度的影响。
 
 $1:4:8$ 将 Q/E 算力同时翻倍，面积增加 68.21\%；Q 和 E 模式功耗分别增加 79.91\% 和 83.66\%，H 模式仅增加 2.71\%。其 Q 模式总功耗达到 28.789\,mW，为四种候选的最高测量值。与 E 专用增配相比，QE Group 还需保留 Q 的指数比较、局部对齐及宽规约通路，因而具有更高成本。
 
 \begin{figure}[t]
 \centering
 \subfloat[面积倍率\label{fig:ratio4_area}]{\includegraphics[width=0.94\columnwidth]{ratio4_area.png}}\par
-\subfloat[各精度功耗倍率\label{fig:ratio4_power}]{\includegraphics[width=0.94\columnwidth]{ratio4_power.png}}
-\caption{四种配比的综合面积与总功耗。面积以 $1:2:4$ 为基准；功耗分别以基线的 BF16、MXFP8、MXFP4 功耗归一化，每种精度独立比较。}
+\subfloat[总功耗\label{fig:ratio4_power}]{\includegraphics[width=0.94\columnwidth]{ratio4_power.png}}
+\caption{四种配比的综合面积与总功耗。面积以 $1:2:4$ 为基准；功耗柱高为实测值（mW），旁侧倍率统一以 $1:2:4$ 的 BF16 功耗为基准。}
 \label{fig:ratio4_costs}
 \end{figure}
 

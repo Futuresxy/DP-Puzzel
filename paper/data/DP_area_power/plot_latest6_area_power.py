@@ -177,6 +177,46 @@ def style_axes(ax, centers, maximum, ylabel, separators, labels=None):
         ax.axvline(x, color="#DDDDDD", linestyle="--", linewidth=.4, zorder=0)
 
 
+def draw_power(groups, output, dpi, ratios, stem, figure_width=9.2):
+    """Original latest6 style: measured mW and one dp_top/BF16 ratio reference."""
+    plt.rcParams.update({"font.family": "serif",
+        "font.serif": ["Times New Roman", "Liberation Serif", "DejaVu Serif"],
+        "font.size": 10, "axes.labelsize": 11, "ytick.labelsize": 9,
+        "axes.edgecolor": "#5D6770", "text.color": "#263340",
+        "axes.labelcolor": "#263340", "xtick.color": "#263340", "ytick.color": "#263340"})
+    power_ref = float(next(r["total_mw"] for g in groups for r in g
+                           if r["top"] == "dp_top" and r["format"] == "bf16"))
+    widths = np.array([len(group) + .9 for group in groups])
+    edges = np.r_[0, np.cumsum(widths)]
+    centers = (edges[:-1] + edges[1:])/2
+    fig, ax = plt.subplots(figsize=(figure_width, 2.8))
+    fig.subplots_adjust(left=.09, right=.99, bottom=.24, top=.86)
+    maximum = max(float(r["total_mw"]) for g in groups for r in g)
+    for center, group in zip(centers, groups):
+        for index, row in enumerate(group):
+            x = center + index - (len(group)-1)/2
+            total = float(row["total_mw"])
+            baseline = row["top"] == "dp_top" and row["format"] == "bf16"
+            bars = ax.bar(x, total, width=.42, color=COLORS[row["format"]],
+                          edgecolor="#F39A24" if baseline else "#7A7A7A",
+                          linewidth=1.8 if baseline else .45, zorder=2)
+            ax.bar_label(bars, labels=[f"{total:.3f}"], padding=3, fontsize=7.5)
+            bracket(ax, x, total, total/power_ref)
+    style_axes(ax, centers, maximum, "Total Power (mW)", edges[1:-1], labels=ratios)
+    ax.set_xlim(edges[0], edges[-1])
+    handles = [Patch(facecolor=COLORS[fmt], edgecolor="#7A7A7A", linewidth=.45, label=label)
+               for fmt, label in zip(FORMATS, LABELS)]
+    ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(.5, 1.01), ncols=3,
+              frameon=False, fontsize=8, columnspacing=1.5, handletextpad=.4, handlelength=1.4)
+    save_figure(fig, output, stem, dpi)
+    return dict(power_bars=sum(len(g) for g in groups), formats=list(FORMATS),
+                power_layout="ratio groups, widths proportional to supported precision count plus gap",
+                power_group_bars=[len(g) for g in groups], power_group_widths=widths.tolist(),
+                x_tick_labels=ratios, power_quantity="tool-reported total_mw", power_stacked=False,
+                power_reference_top="dp_top", power_reference_format="bf16",
+                power_reference_total_mw=power_ref)
+
+
 def draw(areas, groups, output, dpi):
     plt.rcParams.update({"font.family": "serif",
         "font.serif": ["Times New Roman", "Liberation Serif", "DejaVu Serif"],
@@ -184,8 +224,6 @@ def draw(areas, groups, output, dpi):
         "axes.edgecolor": "#5D6770", "text.color": "#263340",
         "axes.labelcolor": "#263340", "xtick.color": "#263340", "ytick.color": "#263340"})
     area_ref = float(next(r["area_um2"] for r in areas if r["top"] == "dp_top"))
-    power_ref = float(next(r["total_mw"] for g in groups for r in g
-                           if r["top"] == "dp_top" and r["format"] == "bf16"))
     values = [float(r["area_um2"])/1000 for r in areas]
     centers = np.arange(6)
     fig, ax = plt.subplots(figsize=(6.8, 2.4))
@@ -201,46 +239,17 @@ def draw(areas, groups, output, dpi):
     ax.set_xlim(-.5, 5.85)
     save_figure(fig, output, "latest6_area", dpi)
 
-    widths = np.array([len(group) + .9 for group in groups])
-    edges = np.r_[0, np.cumsum(widths)]
-    centers = (edges[:-1] + edges[1:])/2
-    fig, ax = plt.subplots(figsize=(9.2, 2.8))
-    fig.subplots_adjust(left=.09, right=.99, bottom=.24, top=.86)
-    maximum = max(float(r["total_mw"]) for g in groups for r in g)
-    for center, group in zip(centers, groups):
-        for index, row in enumerate(group):
-            x = center + index - (len(group)-1)/2
-            total = float(row["total_mw"])
-            baseline = row["top"] == "dp_top" and row["format"] == "bf16"
-            bars = ax.bar(x, total, width=.42, color=COLORS[row["format"]],
-                          edgecolor="#F39A24" if baseline else "#7A7A7A",
-                          linewidth=1.8 if baseline else .45, zorder=2)
-            ax.bar_label(bars, labels=[f"{total:.3f}"], padding=3, fontsize=7.5)
-            bracket(ax, x, total, total/power_ref)
-    style_axes(ax, centers, maximum, "Total Power (mW)", edges[1:-1])
-    ax.set_xlim(edges[0], edges[-1])
-    handles = [Patch(facecolor=COLORS[fmt], edgecolor="#7A7A7A", linewidth=.45, label=label)
-               for fmt, label in zip(FORMATS, LABELS)]
-    ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(.5, 1.01), ncols=3,
-              frameon=False, fontsize=8, columnspacing=1.5, handletextpad=.4, handlelength=1.4)
-    save_figure(fig, output, "latest6_power", dpi)
-    return dict(area_bars=6, power_bars=15, formats=list(FORMATS),
-                power_layout="six ratio groups, widths proportional to supported precision count plus gap",
-                power_group_bars=[len(g) for g in groups], power_group_widths=widths.tolist(),
-                x_tick_labels=[c[1] for c in CONFIGS],
-                power_quantity="tool-reported total_mw", power_stacked=False,
-                area_reference_top="dp_top", area_reference_um2=area_ref,
-                power_reference_top="dp_top", power_reference_format="bf16",
-                power_reference_total_mw=power_ref, dpi=dpi,
-                figures=["latest6_area.png", "latest6_power.png"])
+    power_metadata = draw_power(groups, output, dpi, [c[1] for c in CONFIGS], "latest6_power")
+    return dict(area_bars=6, area_reference_top="dp_top", area_reference_um2=area_ref,
+                dpi=dpi, figures=["latest6_area.png", "latest6_power.png"], **power_metadata)
 
 
 def draw_ratios(areas, groups, output, dpi):
-    """Four full-DP candidates; normalize power to the same baseline mode."""
+    """Four full-DP candidates; all power ratios use dp_top/BF16."""
     selected = [(a, g) for a, g in zip(areas, groups) if int(a["H"]) > 0]
     require(len(selected) == 4, "Expected four H/Q/E ratio candidates")
     area_ref = float(selected[0][0]["area_um2"])
-    power_ref = {r["format"]: float(r["total_mw"]) for r in selected[0][1]}
+    power_ref = float(next(r["total_mw"] for r in selected[0][1] if r["format"] == "bf16"))
     ratios = [a["ratio"] for a, _ in selected]
     centers = np.arange(len(selected))
     plt.rcParams.update({"font.family": "serif",
@@ -253,7 +262,7 @@ def draw_ratios(areas, groups, output, dpi):
         for point in group:
             fmt = point["format"]
             row[fmt + "_total_mw"] = float(point["total_mw"])
-            row[fmt + "_power_ratio"] = float(point["total_mw"])/power_ref[fmt]
+            row[fmt + "_power_ratio"] = float(point["total_mw"])/power_ref
         rows.append(row)
     write_csv(HERE / "ratio4_costs.csv", rows)
 
@@ -277,25 +286,13 @@ def draw_ratios(areas, groups, output, dpi):
     axes(ax, "Normalized area")
     save_figure(fig, output, "ratio4_area", dpi)
 
-    fig, ax = plt.subplots(figsize=(3.5, 1.65))
-    fig.subplots_adjust(left=.14, right=.99, bottom=.26, top=.83)
-    for i, (fmt, label) in enumerate(zip(FORMATS, ("BF16", "MXFP8", "MXFP4"))):
-        bars = ax.bar(centers + (i-1)*.24, [r[fmt+"_power_ratio"] for r in rows],
-                      width=.22, color=COLORS[fmt], edgecolor="#7A7A7A",
-                      linewidth=.45, label=label)
-        ax.bar_label(bars, fmt="%.2f", padding=2, fontsize=6.5, rotation=90)
-    axes(ax, "Normalized power")
-    ax.set_ylim(0, 2.35)
-    ax.legend(loc="lower center", bbox_to_anchor=(.5, 1.01), ncols=3,
-              frameon=False, fontsize=7, columnspacing=1, handletextpad=.35,
-              handlelength=1.2, borderaxespad=0)
-    save_figure(fig, output, "ratio4_power", dpi)
-    return dict(area_bars=4, power_bars=12, formats=list(FORMATS),
-                x_tick_labels=ratios, area_reference_um2=area_ref,
-                power_reference_total_mw_by_format=power_ref,
-                power_quantity="tool-reported total_mw, normalized per format",
+    power_groups = [g for _, g in selected]
+    # Keep the original bar/label/bracket spacing while removing two ratio groups.
+    figure_width = 9.2 * sum(len(g)+.9 for g in power_groups) / sum(len(g)+.9 for g in groups)
+    power_metadata = draw_power(power_groups, output, dpi, ratios, "ratio4_power", figure_width)
+    return dict(area_bars=4, area_reference_um2=area_ref,
                 boundary="Same measured inputs as latest6; no new hardware experiments",
-                dpi=dpi, figures=["ratio4_area.png", "ratio4_power.png"])
+                dpi=dpi, figures=["ratio4_area.png", "ratio4_power.png"], **power_metadata)
 
 
 def main():

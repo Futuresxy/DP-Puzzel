@@ -1,10 +1,30 @@
 {
   "area_bars": 4,
+  "area_reference_um2": 16165.122154,
+  "boundary": "Same measured inputs as latest6; no new hardware experiments",
+  "dpi": 400,
+  "figures": [
+    "ratio4_area.png",
+    "ratio4_power.png"
+  ],
   "power_bars": 12,
   "formats": [
     "bf16",
     "mxfp8_e4m3",
     "mxfp4_e2m1"
+  ],
+  "power_layout": "ratio groups, widths proportional to supported precision count plus gap",
+  "power_group_bars": [
+    3,
+    3,
+    3,
+    3
+  ],
+  "power_group_widths": [
+    3.9,
+    3.9,
+    3.9,
+    3.9
   ],
   "x_tick_labels": [
     "1:2:4",
@@ -12,19 +32,11 @@
     "1:2:8",
     "1:4:8"
   ],
-  "area_reference_um2": 16165.122154,
-  "power_reference_total_mw_by_format": {
-    "bf16": 15.3282642364502,
-    "mxfp8_e4m3": 16.0019989013672,
-    "mxfp4_e2m1": 11.1965341567993
-  },
-  "power_quantity": "tool-reported total_mw, normalized per format",
-  "boundary": "Same measured inputs as latest6; no new hardware experiments",
-  "dpi": 400,
-  "figures": [
-    "ratio4_area.png",
-    "ratio4_power.png"
-  ],
+  "power_quantity": "tool-reported total_mw",
+  "power_stacked": false,
+  "power_reference_top": "dp_top",
+  "power_reference_format": "bf16",
+  "power_reference_total_mw": 15.3282642364502,
   "runtime": {
     "python": "3.11.13",
     "numpy": "2.4.6",
@@ -47,7 +59,7 @@
   "scripts": [
     {
       "file": "plot_latest6_area_power.py",
-      "sha256": "8b3fbaf5eca382964eae604921a4231189269b9c0064dc5d2993a2ab8538da2a"
+      "sha256": "bc6de669c42a62f90ad2ae2ba8c687da75dd1e5d53643d3176c77a60b403b7bc"
     },
     {
       "file": "plot_area_power.py",
@@ -61,7 +73,7 @@
     },
     {
       "file": "ratio4_power.png",
-      "sha256": "929ad5f08c86e2256d102f8925f2e0a9ba38dfb5c8af8c59e205b253519d2a75"
+      "sha256": "036a342791647ebd05b18ef59c6e30edcadad1434e97e56dd86d65134acc2a35"
     }
   ]
 }

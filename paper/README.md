@@ -12,7 +12,7 @@ make -C paper watch                  # 中文保存后持续编译
 make -C paper -f Makefile.en          # 上一轮英文：paper/build/dp_puzzle.pdf
 ```
 
-硬件成本继续引用现有 N12、0.7 V、85°C、1 GHz 测量，未重新执行 EDA。四种配比面积及逐精度功耗图为 `figures/ratio4_{area,power}.png`，功耗按基线的相同精度归一化。生成数据与 hash 见 [data/DP_area_power/README.md](data/DP_area_power/README.md)。旧六 DP 图、测量数据和历史对比依赖保留。
+硬件成本继续引用现有 N12、0.7 V、85°C、1 GHz 测量，未重新执行 EDA。四种配比面积及逐精度功耗图为 `figures/ratio4_{area,power}.png`，功耗柱高为实测 mW，所有倍率统一以 1:2:4 的 BF16 功耗为基线。生成数据与 hash 见 [data/DP_area_power/README.md](data/DP_area_power/README.md)。旧六 DP 图、测量数据和历史对比依赖保留。
 
 当前负载来自固定配置和模型特定规则；新增通用提取流程、V3.2/R1 及两个实际专家量化版本的核验列为后续实验。正文中的专家 W4A4 是迁移场景，NVFP4 能耗暂用 MXFP4 活动功耗代理。`data/results` 是当前硬件结果；`data/expected` 保持历史工作量回归，不用于替换现行时间/能耗。
 
