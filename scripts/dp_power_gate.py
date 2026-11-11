@@ -49,7 +49,7 @@ def original_dc_receipt(root, point, resolved, fingerprint, frontend, verificati
     return path
 
 
-def frozen_dc_source(root, point):
+def frozen_dc_source(root, point, *, retired_repair=None):
     root = Path(root).resolve()
     require(isinstance(point.get('original_verification_id'), str) and
             re.fullmatch(r'\d{8}T\d{12}Z', point['original_verification_id']),
@@ -83,7 +83,8 @@ def frozen_dc_source(root, point):
         require('/systemverilog/' not in name, 'Frozen SV cannot be substituted')
         contained(export, name)
     run = contained(root, point['dc_run'])
-    resolved = read_json(run / 'inputs/resolved.json')
+    resolved_path = run / 'inputs/resolved.json'
+    resolved = read_json(resolved_path)
     require(resolved['gate']['rtl_fingerprint'] == fingerprint and
             resolved['gate']['export_id'] == export.name and resolved['gate']['top'] == point['top'] and
             resolved['gate']['parameters'] == PARAMETERS, 'DC source binding mismatch')
@@ -100,13 +101,22 @@ def frozen_dc_source(root, point):
                 'Additional verification predates original DC acceptance')
         additional = dict(additional_verification_id=point['original_verification_id'],
                           additional_receipt_sha256=digest(additional_path))
-    # Re-analyze reports and verify the preserved repair chain; no tool launch.
+    # Re-analyze final reports. Completed campaign reporting may use a receipt
+    # from the last verification of a deliberately retired repair source.
     import sys
     sys.path.insert(0, str(root / 'hw/dc_syn/scripts'))
     from report_dc import analyze
     from run_dc import verify_repair_source
     require(analyze(run, resolved)['flow_pass'], 'Original DC result is not passing')
-    verify_repair_source(resolved)
+    if retired_repair is None:
+        verify_repair_source(resolved)
+    else:
+        repair = (resolved.get('design_rule_repair') or resolved.get('hold_repair')
+                  or resolved.get('timing_repair'))
+        require(repair and repair['source_run'] == retired_repair['source_run'] and
+                retired_repair['verified_before_retirement'] is True and
+                digest(resolved_path) == retired_repair['final_resolved_sha256'],
+                'Retired repair receipt does not match final DC input')
     for artifact in point['artifacts'].values():
         path = contained(root, artifact['path'])
         require(run in path.parents and digest(path) == artifact['sha256'], 'Mapped artifact changed')
@@ -117,8 +127,11 @@ def frozen_dc_source(root, point):
                 scope='archived_dc_reuse_only', resolved=resolved, **additional)
 
 
-def verify_workload_replay(root, point, receipt_path):
-    gate = frozen_dc_source(root, point)
+def verify_workload_replay(root, point, receipt_path, *, retired_repair=None, retained_dataset=None):
+    if retired_repair is None:
+        gate = frozen_dc_source(root, point)
+    else:
+        gate = frozen_dc_source(root, point, retired_repair=retired_repair)
     root = Path(root).resolve()
     receipt = read_json(receipt_path)
     require(receipt['status'] == 'passed' and receipt['method'] == 'verilog_testbench' and
@@ -130,8 +143,13 @@ def verify_workload_replay(root, point, receipt_path):
     require(receipt['simulator_version'] and receipt['commands'], 'Missing actual simulation provenance')
     require(all(receipt[field] in receipt['files_sha256'] for field in
                 ('simulation_log', 'expected_file', 'results_file')), 'Unhashed replay evidence')
+    relocated = {}
+    if retained_dataset is not None:
+        relocated = {str(Path(point['dataset_directory']) / name): contained(retained_dataset, name)
+                     for name in point['dataset_files_sha256']}
     for name, expected in receipt['files_sha256'].items():
-        require(digest(contained(root, name)) == expected, 'Workload replay input/output changed: ' + name)
+        path = relocated[name] if name in relocated else contained(root, name)
+        require(digest(path) == expected, 'Workload replay input/output changed: ' + name)
     log = contained(root, receipt['simulation_log']).read_text()
     require(not re.search(r'\bFAIL\b|FATAL|ERROR', log), 'Failed workload simulation')
     count = receipt['total_transactions']

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "dc_catalog": "hw/dc_syn/records/v19_six_dp_20261110.json",
+  "points": [
+    {
+      "top": "dp_top",
+      "format": "bf16",
+      "campaign": "hw/power/runs/power_baseline_v18_repaired_1109",
+      "reused": false
+    },
+    {
+      "top": "dp_top",
+      "format": "mxfp8_e4m3",
+      "campaign": "hw/power/runs/power_baseline_v18_repaired_1109",
+      "reused": false
+    },
+    {
+      "top": "dp_top",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_baseline_v18_repaired_1109",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e96",
+      "format": "bf16",
+      "campaign": "hw/power/runs/power_v19_t8h16q32e96_1110",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e96",
+      "format": "mxfp8_e4m3",
+      "campaign": "hw/power/runs/power_v19_t8h16q32e96_1110",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e96",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_v19_t8h16q32e96_1110",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e128",
+      "format": "bf16",
+      "campaign": "hw/power/runs/power_v19_t8h16q32e128_1110",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e128",
+      "format": "mxfp8_e4m3",
+      "campaign": "hw/power/runs/power_v19_t8h16q32e128_1110",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q32e128",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_v19_t8h16q32e128_1110",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q64e128_opt",
+      "format": "bf16",
+      "campaign": "hw/power/runs/power_v19_t8h16q64e128_opt_1110",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q64e128_opt",
+      "format": "mxfp8_e4m3",
+      "campaign": "hw/power/runs/power_v19_t8h16q64e128_opt_1110",
+      "reused": false
+    },
+    {
+      "top": "dp_top_t8h16q64e128_opt",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_v19_t8h16q64e128_opt_1110",
+      "reused": false
+    },
+    {
+      "top": "dp_top_e64",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_e64_fresh_saif_1109",
+      "reused": false
+    },
+    {
+      "top": "dp_top_q32e64",
+      "format": "mxfp8_e4m3",
+      "campaign": "hw/power/runs/power_v19_q32e64_1110",
+      "reused": false
+    },
+    {
+      "top": "dp_top_q32e64",
+      "format": "mxfp4_e2m1",
+      "campaign": "hw/power/runs/power_v19_q32e64_1110",
+      "reused": false
+    }
+  ],
+  "include_provenance_columns": true,
+  "report": {
+    "title": "最新六种DP：面积与真实负载功耗",
+    "architecture_description": "dp_top为v1.8修复基线，三个混合顶层及Q32E64迁移至v1.9；E64保持原专用E设计。",
+    "collection_description": "15个支持的架构/精度点全部重新进行冻结RTL/门级重放、VCS native SAIF和Power Compiler；E64只复用原网表，活动与功耗本轮重新采集。",
+    "comparison_heading": "与旧精度寄存器门控版比较",
+    "comparison_description": "历史对照数值见原 v1.9 汇总；旧运行大产物已按用户要求清理，本入口仅复核当前15点。"
+  },
+  "retirement_receipt": "hw/dc_syn/maintenance/final_six_dependency_retirement.json"
+}

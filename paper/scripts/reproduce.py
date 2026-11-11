@@ -14,7 +14,7 @@ import numpy as np
 from costs import FORMATS, deploy, evaluate, mapped_work
 import workloads
 from simplex import workload_grid, winner_regions, robust_energy_regions
-from plot_triangles import draw_figure
+from plot_triangles import redraw
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -170,8 +170,7 @@ def run(config_path, output):
           ['Ratio','Time (cont.)','Time (int.)','DP energy'],
           [[f'${r}$',*[f'{group[j]["fraction"]*100:.2f}\\%' for group in
             (continuous_regions,regions['time'],regions['energy'])]] for j,r in enumerate(ratios)])
-    for objective in ('time','energy'):
-        draw_figure(ref,regions['time'] if objective=='time' else robust,objective,nv,cfg['models'],ratios,figures)
+    redraw(out, figures, models=cfg['models'], ratios=ratios)
     inputs = [config_path,hp]+[workloads.SOURCE/m/'inference/config.json' for m in cfg['models']]
     def digest(p):return hashlib.sha256(p.read_bytes()).hexdigest()
     manifest = dict(status='analytical_compute_only',configuration=cfg,area_budget_mm2=budget,

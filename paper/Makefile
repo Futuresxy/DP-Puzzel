@@ -21,6 +21,7 @@ cost-figures:
 
 dp-share-figures:
 	$(PYTHON) data/H16Q32E64_area/plot_area.py
+	$(PYTHON) data/H16Q32E64_power/plot_power.py
 
 # Optional terminal watcher; Ctrl-C stops it. The VS Code recipe already builds on save.
 watch:

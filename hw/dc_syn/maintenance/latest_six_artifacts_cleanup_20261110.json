@@ -1,0 +1,996 @@
+{
+  "created_utc": "2026-11-10T03:18:56.682967+00:00",
+  "authorization": "User 2026-11-10: delete historical run artifacts, retain latest six DP results and numerical verification; retain historical experiment records for comparison.",
+  "keep": [
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_11091816",
+      "reasons": [
+        "required repair ancestor for dp_top",
+        "dependency of hw/dc_syn/runs/dc_dp_top_11092301"
+      ]
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_11092301",
+      "reasons": [
+        "current DC dp_top",
+        "current power dp_top bf16",
+        "current power dp_top mxfp8_e4m3",
+        "current power dp_top mxfp4_e2m1",
+        "dependency of hw/power/runs/power_baseline_v18_repaired_1109",
+        "dependency of hw/power/runs/functions_v19_1109"
+      ]
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_e64_11080854",
+      "reasons": [
+        "current DC dp_top_e64",
+        "current power dp_top_e64 mxfp4_e2m1",
+        "dependency of hw/power/runs/power_e64_fresh_saif_1109",
+        "dependency of hw/power/runs/functions_v19_1109"
+      ]
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_q32e64_11092350",
+      "reasons": [
+        "required repair ancestor for dp_top_q32e64",
+        "dependency of hw/dc_syn/runs/dc_dp_top_q32e64_11092358"
+      ]
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_q32e64_11092358",
+      "reasons": [
+        "current DC dp_top_q32e64",
+        "current power dp_top_q32e64 mxfp8_e4m3",
+        "current power dp_top_q32e64 mxfp4_e2m1",
+        "dependency of hw/power/runs/power_v19_q32e64_1110",
+        "dependency of hw/power/runs/functions_v19_1109"
+      ]
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_t8h16q32e128_11092351",
+      "reasons": [
+        "current DC dp_top_t8h16q32e128",
+        "current power dp_top_t8h16q32e128 bf16",
+        "current power dp_top_t8h16q32e128 mxfp8_e4m3",
+        "current power dp_top_t8h16q32e128 mxfp4_e2m1",
+        "dependency of hw/power/runs/power_v19_t8h16q32e128_1110",
+        "dependency of hw/power/runs/functions_v19_1109"
+      ]
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_t8h16q32e96_11092351",
+      "reasons": [
+        "current DC dp_top_t8h16q32e96",
+        "current power dp_top_t8h16q32e96 bf16",
+        "current power dp_top_t8h16q32e96 mxfp8_e4m3",
+        "current power dp_top_t8h16q32e96 mxfp4_e2m1",
+        "dependency of hw/power/runs/power_v19_t8h16q32e96_1110",
+        "dependency of hw/power/runs/functions_v19_1109"
+      ]
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351",
+      "reasons": [
+        "current DC dp_top_t8h16q64e128_opt",
+        "current power dp_top_t8h16q64e128_opt bf16",
+        "current power dp_top_t8h16q64e128_opt mxfp8_e4m3",
+        "current power dp_top_t8h16q64e128_opt mxfp4_e2m1",
+        "dependency of hw/power/runs/functions_v19_1109",
+        "dependency of hw/power/runs/power_v19_t8h16q64e128_opt_1110"
+      ]
+    },
+    {
+      "path": "hw/power/runs/baseline_v18_reference_1109",
+      "reasons": [
+        "current power dp_top bf16",
+        "current power dp_top mxfp8_e4m3",
+        "current power dp_top mxfp4_e2m1",
+        "dependency of hw/power/runs/power_baseline_v18_repaired_1109",
+        "dependency of test/runs/power/power_baseline_v18_repaired_1109"
+      ]
+    },
+    {
+      "path": "hw/power/runs/functions_v19_1109",
+      "reasons": [
+        "current seven-category area/power evidence",
+        "dependency of hw/power/runs/v19_reference_1109"
+      ]
+    },
+    {
+      "path": "hw/power/runs/power_baseline_v18_repaired_1109",
+      "reasons": [
+        "current power dp_top bf16",
+        "current power dp_top mxfp8_e4m3",
+        "current power dp_top mxfp4_e2m1",
+        "dependency of hw/power/runs/power_baseline_v18_repaired_1109",
+        "dependency of hw/power/runs/functions_v19_1109",
+        "dependency of test/runs/power/power_baseline_v18_repaired_1109"
+      ]
+    },
+    {
+      "path": "hw/power/runs/power_e64_fresh_saif_1109",
+      "reasons": [
+        "current power dp_top_e64 mxfp4_e2m1",
+        "dependency of hw/power/runs/power_e64_fresh_saif_1109",
+        "dependency of test/runs/power/power_e64_fresh_saif_1109",
+        "dependency of hw/power/runs/functions_v19_1109"
+      ]
+    },
+    {
+      "path": "hw/power/runs/power_v19_q32e64_1110",
+      "reasons": [
+        "current power dp_top_q32e64 mxfp8_e4m3",
+        "current power dp_top_q32e64 mxfp4_e2m1",
+        "dependency of hw/power/runs/power_v19_q32e64_1110",
+        "dependency of test/runs/power/power_v19_q32e64_1110",
+        "dependency of hw/power/runs/functions_v19_1109"
+      ]
+    },
+    {
+      "path": "hw/power/runs/power_v19_t8h16q32e128_1110",
+      "reasons": [
+        "current power dp_top_t8h16q32e128 bf16",
+        "current power dp_top_t8h16q32e128 mxfp8_e4m3",
+        "current power dp_top_t8h16q32e128 mxfp4_e2m1",
+        "dependency of hw/power/runs/power_v19_t8h16q32e128_1110",
+        "dependency of test/runs/power/power_v19_t8h16q32e128_1110",
+        "dependency of hw/power/runs/functions_v19_1109"
+      ]
+    },
+    {
+      "path": "hw/power/runs/power_v19_t8h16q32e96_1110",
+      "reasons": [
+        "current power dp_top_t8h16q32e96 bf16",
+        "current power dp_top_t8h16q32e96 mxfp8_e4m3",
+        "current power dp_top_t8h16q32e96 mxfp4_e2m1",
+        "dependency of hw/power/runs/power_v19_t8h16q32e96_1110",
+        "dependency of test/runs/power/power_v19_t8h16q32e96_1110",
+        "dependency of hw/power/runs/functions_v19_1109"
+      ]
+    },
+    {
+      "path": "hw/power/runs/power_v19_t8h16q64e128_opt_1110",
+      "reasons": [
+        "current power dp_top_t8h16q64e128_opt bf16",
+        "current power dp_top_t8h16q64e128_opt mxfp8_e4m3",
+        "current power dp_top_t8h16q64e128_opt mxfp4_e2m1",
+        "dependency of test/runs/power/power_v19_t8h16q64e128_opt_1110",
+        "dependency of hw/power/runs/functions_v19_1109",
+        "dependency of hw/power/runs/power_v19_t8h16q64e128_opt_1110"
+      ]
+    },
+    {
+      "path": "hw/power/runs/v19_reference_1109",
+      "reasons": [
+        "current power dp_top_t8h16q32e96 bf16",
+        "current power dp_top_t8h16q32e96 mxfp8_e4m3",
+        "current power dp_top_t8h16q32e96 mxfp4_e2m1",
+        "current power dp_top_t8h16q32e128 bf16",
+        "current power dp_top_t8h16q32e128 mxfp8_e4m3",
+        "current power dp_top_t8h16q32e128 mxfp4_e2m1",
+        "current power dp_top_t8h16q64e128_opt bf16",
+        "current power dp_top_t8h16q64e128_opt mxfp8_e4m3",
+        "current power dp_top_t8h16q64e128_opt mxfp4_e2m1",
+        "current power dp_top_e64 mxfp4_e2m1",
+        "current power dp_top_q32e64 mxfp8_e4m3",
+        "current power dp_top_q32e64 mxfp4_e2m1",
+        "dependency of hw/power/runs/power_v19_t8h16q32e128_1110",
+        "dependency of hw/power/runs/power_v19_t8h16q32e96_1110",
+        "dependency of test/runs/power/power_v19_t8h16q64e128_opt_1110",
+        "dependency of test/runs/power/power_v19_t8h16q32e96_1110",
+        "dependency of hw/power/runs/v19_reference_1109",
+        "dependency of test/runs/power/power_v19_t8h16q32e128_1110",
+        "dependency of hw/power/runs/power_e64_fresh_saif_1109",
+        "dependency of hw/power/runs/power_v19_q32e64_1110",
+        "dependency of test/runs/power/power_v19_q32e64_1110",
+        "dependency of test/runs/power/power_e64_fresh_saif_1109",
+        "dependency of hw/power/runs/power_v19_t8h16q64e128_opt_1110"
+      ]
+    },
+    {
+      "path": "hw/rtl/DP_verilog_d7c8c865ebf856be",
+      "reasons": [
+        "current DC dp_top",
+        "current power dp_top bf16",
+        "current power dp_top mxfp8_e4m3",
+        "current power dp_top mxfp4_e2m1",
+        "test/results/mixed-rtl-v1.9.md",
+        "dependency of test/runs/verilog/20261109T101330231426Z",
+        "dependency of hw/power/runs/power_baseline_v18_repaired_1109",
+        "dependency of hw/dc_syn/runs/dc_dp_top_11091816",
+        "dependency of hw/power/runs/functions_v19_1109",
+        "dependency of test/runs/power/power_baseline_v18_repaired_1109",
+        "dependency of hw/rtl/DP_verilog_d7c8c865ebf856be",
+        "dependency of hw/dc_syn/runs/dc_dp_top_11092301",
+        "dependency of test/runs/verilog/20261109T155135350091Z",
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e64_628e283760c4e830",
+      "reasons": [
+        "current DC dp_top_e64",
+        "current power dp_top_e64 mxfp4_e2m1",
+        "dependency of hw/rtl/DP_verilog_e64_628e283760c4e830",
+        "dependency of test/runs/verilog/20261108T004627771406Z",
+        "dependency of hw/power/runs/power_e64_fresh_saif_1109",
+        "dependency of test/runs/power/power_e64_fresh_saif_1109",
+        "dependency of hw/power/runs/functions_v19_1109",
+        "dependency of hw/dc_syn/runs/dc_dp_top_e64_11080854",
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e64_b41489680453ddf8",
+      "reasons": [
+        "test/results/mixed-rtl-v1.9.md",
+        "dependency of hw/rtl/DP_verilog_e64_b41489680453ddf8",
+        "dependency of test/runs/verilog/20261109T155019878067Z",
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "hw/rtl/DP_verilog_q32e64_862eed2557d6dfb5",
+      "reasons": [
+        "current DC dp_top_q32e64",
+        "current power dp_top_q32e64 mxfp8_e4m3",
+        "current power dp_top_q32e64 mxfp4_e2m1",
+        "test/results/mixed-rtl-v1.9.md",
+        "dependency of test/runs/verilog/20261109T154835041784Z",
+        "dependency of hw/dc_syn/runs/dc_dp_top_q32e64_11092358",
+        "dependency of hw/rtl/DP_verilog_q32e64_862eed2557d6dfb5",
+        "dependency of hw/dc_syn/runs/dc_dp_top_q32e64_11092350",
+        "dependency of hw/power/runs/power_v19_q32e64_1110",
+        "dependency of test/runs/power/power_v19_q32e64_1110",
+        "dependency of hw/power/runs/functions_v19_1109",
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e128_4a6980b07b36ba7d",
+      "reasons": [
+        "current DC dp_top_t8h16q32e128",
+        "current power dp_top_t8h16q32e128 bf16",
+        "current power dp_top_t8h16q32e128 mxfp8_e4m3",
+        "current power dp_top_t8h16q32e128 mxfp4_e2m1",
+        "test/results/mixed-rtl-v1.9.md",
+        "dependency of hw/power/runs/power_v19_t8h16q32e128_1110",
+        "dependency of hw/rtl/DP_verilog_t8h16q32e128_4a6980b07b36ba7d",
+        "dependency of test/runs/verilog/20261109T154835046185Z",
+        "dependency of hw/dc_syn/runs/dc_dp_top_t8h16q32e128_11092351",
+        "dependency of test/runs/power/power_v19_t8h16q32e128_1110",
+        "dependency of hw/power/runs/functions_v19_1109",
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e96_8954fff85bd0a51a",
+      "reasons": [
+        "current DC dp_top_t8h16q32e96",
+        "current power dp_top_t8h16q32e96 bf16",
+        "current power dp_top_t8h16q32e96 mxfp8_e4m3",
+        "current power dp_top_t8h16q32e96 mxfp4_e2m1",
+        "test/results/mixed-rtl-v1.9.md",
+        "dependency of hw/power/runs/power_v19_t8h16q32e96_1110",
+        "dependency of hw/rtl/DP_verilog_t8h16q32e96_8954fff85bd0a51a",
+        "dependency of test/runs/power/power_v19_t8h16q32e96_1110",
+        "dependency of hw/dc_syn/runs/dc_dp_top_t8h16q32e96_11092351",
+        "dependency of test/runs/verilog/20261109T154835040869Z",
+        "dependency of hw/power/runs/functions_v19_1109",
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_opt_337f9288b9f6ee50",
+      "reasons": [
+        "current DC dp_top_t8h16q64e128_opt",
+        "current power dp_top_t8h16q64e128_opt bf16",
+        "current power dp_top_t8h16q64e128_opt mxfp8_e4m3",
+        "current power dp_top_t8h16q64e128_opt mxfp4_e2m1",
+        "test/results/mixed-rtl-v1.9.md",
+        "dependency of test/runs/power/power_v19_t8h16q64e128_opt_1110",
+        "dependency of test/runs/verilog/20261109T154835039049Z",
+        "dependency of hw/power/runs/functions_v19_1109",
+        "dependency of hw/rtl/DP_verilog_t8h16q64e128_opt_337f9288b9f6ee50",
+        "dependency of hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11092351",
+        "dependency of hw/power/runs/power_v19_t8h16q64e128_opt_1110",
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "test/runs/cmodel/v19_all_tests_final.log",
+      "reasons": [
+        "final v1.9 CModel evidence",
+        "test/results/mixed-cmodel-v1.9.json"
+      ]
+    },
+    {
+      "path": "test/runs/cmodel/v19_baseline_compat",
+      "reasons": [
+        "final v1.9 CModel evidence",
+        "test/results/mixed-cmodel-v1.9.json"
+      ]
+    },
+    {
+      "path": "test/runs/cmodel/v19_narrow_lzd.log",
+      "reasons": [
+        "final v1.9 CModel evidence"
+      ]
+    },
+    {
+      "path": "test/runs/cmodel/v19_validation",
+      "reasons": [
+        "final v1.9 CModel evidence"
+      ]
+    },
+    {
+      "path": "test/runs/power/power_baseline_v18_repaired_1109",
+      "reasons": [
+        "current power dp_top bf16",
+        "current power dp_top mxfp8_e4m3",
+        "current power dp_top mxfp4_e2m1"
+      ]
+    },
+    {
+      "path": "test/runs/power/power_e64_fresh_saif_1109",
+      "reasons": [
+        "current power dp_top_e64 mxfp4_e2m1"
+      ]
+    },
+    {
+      "path": "test/runs/power/power_v19_q32e64_1110",
+      "reasons": [
+        "current power dp_top_q32e64 mxfp8_e4m3",
+        "current power dp_top_q32e64 mxfp4_e2m1"
+      ]
+    },
+    {
+      "path": "test/runs/power/power_v19_t8h16q32e128_1110",
+      "reasons": [
+        "current power dp_top_t8h16q32e128 bf16",
+        "current power dp_top_t8h16q32e128 mxfp8_e4m3",
+        "current power dp_top_t8h16q32e128 mxfp4_e2m1"
+      ]
+    },
+    {
+      "path": "test/runs/power/power_v19_t8h16q32e96_1110",
+      "reasons": [
+        "current power dp_top_t8h16q32e96 bf16",
+        "current power dp_top_t8h16q32e96 mxfp8_e4m3",
+        "current power dp_top_t8h16q32e96 mxfp4_e2m1"
+      ]
+    },
+    {
+      "path": "test/runs/power/power_v19_t8h16q64e128_opt_1110",
+      "reasons": [
+        "current power dp_top_t8h16q64e128_opt bf16",
+        "current power dp_top_t8h16q64e128_opt mxfp8_e4m3",
+        "current power dp_top_t8h16q64e128_opt mxfp4_e2m1"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/20261108T004627771406Z",
+      "reasons": [
+        "current DC dp_top_e64",
+        "dependency of hw/rtl/DP_verilog_e64_628e283760c4e830",
+        "dependency of test/runs/verilog/20261108T004627771406Z"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/20261109T101330231426Z",
+      "reasons": [
+        "current DC dp_top",
+        "dependency of test/runs/verilog/20261109T101330231426Z"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/20261109T154835039049Z",
+      "reasons": [
+        "current DC dp_top_t8h16q64e128_opt",
+        "dependency of test/runs/verilog/20261109T154835039049Z",
+        "dependency of hw/rtl/DP_verilog_t8h16q64e128_opt_337f9288b9f6ee50"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/20261109T154835040869Z",
+      "reasons": [
+        "current DC dp_top_t8h16q32e96",
+        "dependency of hw/rtl/DP_verilog_t8h16q32e96_8954fff85bd0a51a",
+        "dependency of test/runs/verilog/20261109T154835040869Z"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/20261109T154835041784Z",
+      "reasons": [
+        "current DC dp_top_q32e64",
+        "dependency of test/runs/verilog/20261109T154835041784Z",
+        "dependency of hw/rtl/DP_verilog_q32e64_862eed2557d6dfb5"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/20261109T154835046185Z",
+      "reasons": [
+        "current DC dp_top_t8h16q32e128",
+        "dependency of hw/rtl/DP_verilog_t8h16q32e128_4a6980b07b36ba7d",
+        "dependency of test/runs/verilog/20261109T154835046185Z"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/20261109T155019878067Z",
+      "reasons": [
+        "dependency of hw/rtl/DP_verilog_e64_b41489680453ddf8",
+        "dependency of test/runs/verilog/20261109T155019878067Z"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/20261109T155135350091Z",
+      "reasons": [
+        "dependency of hw/rtl/DP_verilog_d7c8c865ebf856be",
+        "dependency of test/runs/verilog/20261109T155135350091Z"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/20261109T155145Z-v19-csa-boundaries",
+      "reasons": [
+        "test/results/mixed-rtl-v1.9.md",
+        "dependency of test/runs/verilog/20261109T155145Z-v19-csa-boundaries"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_d7c8c865ebf856be.f",
+      "reasons": [
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e64_628e283760c4e830.f",
+      "reasons": [
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e64_b41489680453ddf8.f",
+      "reasons": [
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_q32e64_862eed2557d6dfb5.f",
+      "reasons": [
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q32e128_4a6980b07b36ba7d.f",
+      "reasons": [
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q32e96_8954fff85bd0a51a.f",
+      "reasons": [
+        "retained export filelist"
+      ]
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q64e128_opt_337f9288b9f6ee50.f",
+      "reasons": [
+        "retained export filelist"
+      ]
+    }
+  ],
+  "delete": [
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_11080044",
+      "allocated_bytes": 61833216,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_11081432",
+      "allocated_bytes": 37564416,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_11090056",
+      "allocated_bytes": 55287808,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_11091807",
+      "allocated_bytes": 77824,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_11091811",
+      "allocated_bytes": 823296,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_q32e64_11080855",
+      "allocated_bytes": 30158848,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_q32e64_11081629",
+      "allocated_bytes": 30912512,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_t8h16q32e128_11080056",
+      "allocated_bytes": 79314944,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_t8h16q32e128_11081739",
+      "allocated_bytes": 129769472,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_t8h16q32e96_11080048",
+      "allocated_bytes": 81920000,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_t8h16q32e96_11081649",
+      "allocated_bytes": 42905600,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11080804",
+      "allocated_bytes": 95973376,
+      "deleted": true
+    },
+    {
+      "path": "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11081717",
+      "allocated_bytes": 112115712,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/dp_top_cones_1108_232611",
+      "allocated_bytes": 12697600,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/dp_top_functional_1108_224637",
+      "allocated_bytes": 99368960,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/dp_top_seven_1109_0015",
+      "allocated_bytes": 12054528,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/lane_compare_gated_e64_1108",
+      "allocated_bytes": 93929472,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/lane_power_diagnostic_1108",
+      "allocated_bytes": 69115904,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/power_precision_gated_t8h16q32e128_1108",
+      "allocated_bytes": 541396992,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/power_precision_gated_t8h16q32e96_1108",
+      "allocated_bytes": 482197504,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/power_precision_gated_t8h16q64e128_opt_1108",
+      "allocated_bytes": 720474112,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/power_precision_register_gating_1108",
+      "allocated_bytes": 403476480,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/power_qe_precision_register_gating_1108",
+      "allocated_bytes": 209272832,
+      "deleted": true
+    },
+    {
+      "path": "hw/power/runs/power_qwen8b_six_1108",
+      "allocated_bytes": 2264952832,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_094a23e8843f8ee1",
+      "allocated_bytes": 311296,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_39ffdce94e14ccc1",
+      "allocated_bytes": 303104,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_6f18f40494226c8c",
+      "allocated_bytes": 380928,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_a32ed7ef4b093ffa",
+      "allocated_bytes": 393216,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_ce47b3d5b06c0eca",
+      "allocated_bytes": 331776,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e84d765a8a29dc88",
+      "allocated_bytes": 352256,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_q32e64_7600e600b2574f57",
+      "allocated_bytes": 311296,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_q32e64_8fc17d1108154f48",
+      "allocated_bytes": 323584,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_q32e64_990c53c841c930ae",
+      "allocated_bytes": 331776,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e128_5445bcfaea80f9e9",
+      "allocated_bytes": 409600,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e128_703b37f461e5e9c5",
+      "allocated_bytes": 454656,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e128_c6ff05e2fc04febd",
+      "allocated_bytes": 499712,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e96_300dc85956eabde8",
+      "allocated_bytes": 454656,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e96_dc87c7e852d8a093",
+      "allocated_bytes": 499712,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e96_e6ec3988d4a438c2",
+      "allocated_bytes": 409600,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_opt_1a09c2e720da808b",
+      "allocated_bytes": 499712,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_opt_5b3970766ee38480",
+      "allocated_bytes": 454656,
+      "deleted": true
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69",
+      "allocated_bytes": 438272,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/cmodel/20261109T092748792625Z",
+      "allocated_bytes": 2998272,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/cmodel/20261109T092913951470Z",
+      "allocated_bytes": 2998272,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/cmodel/20261109T094153935929Z",
+      "allocated_bytes": 2998272,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/cmodel/config.json",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/cmodel/mixed_summary.json",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/cmodel/roundtrip.txt",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/cmodel/v19_all_tests.log",
+      "allocated_bytes": 12288,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/cmodel/v19_baseline_compat.log",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/cmodel/v19_bootstrap",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/cmodel/v19_validation.log",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/power/power_precision_gated_t8h16q32e128_1108",
+      "allocated_bytes": 24576,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/power/power_precision_gated_t8h16q32e96_1108",
+      "allocated_bytes": 24576,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/power/power_precision_gated_t8h16q64e128_opt_1108",
+      "allocated_bytes": 32768,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/power/power_precision_register_gating_1108",
+      "allocated_bytes": 24576,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/power/power_qe_precision_register_gating_1108",
+      "allocated_bytes": 16384,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/power/power_qwen8b_1108_pilot02",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/power/power_qwen8b_six_1108",
+      "allocated_bytes": 122880,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261107T155800980506Z",
+      "allocated_bytes": 639471616,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261107T155800988891Z",
+      "allocated_bytes": 646029312,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261107T155940228035Z",
+      "allocated_bytes": 1201991680,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261107T233427568086Z",
+      "allocated_bytes": 660606976,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261108T004633001215Z",
+      "allocated_bytes": 10653696,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261108T063108307834Z",
+      "allocated_bytes": 6955008,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261108T063933216613Z",
+      "allocated_bytes": 6955008,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261108T082824929343Z",
+      "allocated_bytes": 597766144,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261108T082826078457Z",
+      "allocated_bytes": 669351936,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261108T084804171991Z",
+      "allocated_bytes": 646934528,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261108T084805338509Z",
+      "allocated_bytes": 653496320,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261108T165436428176Z",
+      "allocated_bytes": 1212469248,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261109T095337458679Z",
+      "allocated_bytes": 1246638080,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261109T095602174363Z",
+      "allocated_bytes": 1246695424,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261109T154538518540Z",
+      "allocated_bytes": 694083584,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261109T154612022265Z",
+      "allocated_bytes": 730890240,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261109T154612023697Z",
+      "allocated_bytes": 403738624,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261109T154612028461Z",
+      "allocated_bytes": 713109504,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/20261109T154926275742Z",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_094a23e8843f8ee1.f",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_39ffdce94e14ccc1.f",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_6f18f40494226c8c.f",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_a32ed7ef4b093ffa.f",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_ce47b3d5b06c0eca.f",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e84d765a8a29dc88.f",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_q32e64_7600e600b2574f57.f",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_q32e64_8fc17d1108154f48.f",
+      "allocated_bytes": 4096,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_q32e64_990c53c841c930ae.f",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q32e128_5445bcfaea80f9e9.f",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q32e128_703b37f461e5e9c5.f",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q32e128_c6ff05e2fc04febd.f",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q32e96_300dc85956eabde8.f",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q32e96_dc87c7e852d8a093.f",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q32e96_e6ec3988d4a438c2.f",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q64e128_opt_1a09c2e720da808b.f",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q64e128_opt_5b3970766ee38480.f",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69.f",
+      "allocated_bytes": 8192,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/precision_gating_20261108T063932Z",
+      "allocated_bytes": 67993600,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/precision_gating_20261108T082920Z",
+      "allocated_bytes": 596279296,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/precision_gating_four_state_1108",
+      "allocated_bytes": 13869056,
+      "deleted": true
+    },
+    {
+      "path": "test/runs/verilog/qe_precision_gating_four_state_1108",
+      "allocated_bytes": 7028736,
+      "deleted": true
+    }
+  ],
+  "delete_allocated_bytes": 18357166080,
+  "completed_utc": "2026-11-10T03:18:58.629202+00:00",
+  "post_cleanup_audit": {
+    "status": "PASS",
+    "power_points": 15,
+    "latest_result_values_and_artifact_hashes_unchanged": true,
+    "report": "hw/power/records/latest_six_retained.json",
+    "report_sha256": "143b2a077e91ebbd1382fac95cd2ee55728e21889eafd4e0c048dbb7611fe2ea",
+    "all_deleted_paths_absent": true,
+    "all_retained_paths_present": true,
+    "note": "Read-only evidence audit; no new DC, VCS or Power Compiler measurement."
+  }
+}

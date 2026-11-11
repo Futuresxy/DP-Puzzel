@@ -15,11 +15,9 @@
 
 ## 当前结果
 
-统一入口：[v1.9比较批次六种DP面积与功耗](records/v19_six_architectures_20261110.md)，同时提供[JSON](records/v19_six_architectures_20261110.json)和[CSV](records/v19_six_architectures_20261110.csv)。dp_top为v1.8修复基线，三个混合顶层和Q32E64为v1.9；E64保持原设计及已验收网表。15个兼容点全部重新进行RTL/门级负载重放、VCS native SAIF和Power Compiler测量。
+先看 [实验记录与当前结果索引](records/README.md)。[当前完整报告](records/latest_six_retained.md)、[CSV](records/latest_six_retained.csv)、[JSON](records/latest_six_retained.json) 汇总六种 DP 的15个兼容点，包含动态、静态和总功耗。
 
-固定选择：[v19_six_architectures_20261110.json](plans/v19_six_architectures_20261110.json)。该文件只选择已完成的测量点，用于汇总，不是run_power.py的仿真输入计划。新报告逐点对照[旧精度门控六架构报告](records/current_six_precision_gated.md)，旧报告及[current_six_precision_gated选择文件](plans/current_six_precision_gated.json)保持原内容。
-
-按用户最新要求，全部旧功耗数据、报告和其依赖的DC/RTL/验证证据保留，作为新旧对照；仅清理无引用旧测试与综合候选。清单见[清理回执](../dc_syn/maintenance/precision_gated_six_cleanup_20261108.json)。原批次见[六架构基线](records/power_qwen8b_six_1108.md)，局部实验见[dp_top门控比较](records/precision_register_gating_1108.md)与[Q32E64门控比较](records/qe_precision_register_gating_1108.md)。
+2026-11-10 用户授权清理被替代的历史运行大产物，保留当前六架构及必要依赖。历史报告和对比数值仍保存在 `records/`，但其中旧 run 链接可能已退役。[原 v1.9 对照报告](records/v19_six_architectures_20261110.md)不改写历史数值。当前复核使用 [保留批次选择文件](plans/latest_six_retained.json)，使用[退役回执](../dc_syn/maintenance/final_six_dependency_retirement.json)及最终功耗批次保存的负载证据；它用于报告审计，不是 `run_power.py` 的仿真输入计划。删除明细见 [维护回执](../dc_syn/maintenance/latest_six_artifacts_cleanup_20261110.json)。
 
 ## 执行
 

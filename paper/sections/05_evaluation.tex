@@ -5,61 +5,55 @@
 \subsection{实验方法}
 \label{sec:eval_setup}
 
-基线及五种变体均由 Synopsys Design Compiler 在 12\,nm、TT、0.7\,V、85$^\circ$C 下综合，采用 1\,GHz 时钟和集成时钟门控，保持八级流水、每拍一笔请求，并满足综合后的时序与电气约束。面积包括组合逻辑、流水寄存器及门控单元。功耗输入取自 Qwen3-8B 第一层 MLP down-projection~\cite{qwen3technicalreport}，分别编码为 BF16、MXFP8 E4M3 和 MXFP4 E2M1。VCS 对综合后网表连续发射 1024 笔独立请求，在中间 512 个周期采集原生 SAIF；Power Compiler 基于完整活动注释估计内部、切换和泄漏功耗~\cite{synopsysActivityPower}。RTL 与门级结果逐笔核对。以下均为综合后、CTS/布线前估计。
+六种 DP 均用 Synopsys Design Compiler 在 12\,nm、TT、0.7\,V、85$^\circ$C 下综合，采用 1\,GHz 时钟与集成时钟门控，保持八级流水和 II=1，并满足时序与电气约束。面积计入组合逻辑、流水寄存器和门控单元。功耗负载来自 Qwen3-8B 首层 MLP 下投影~\cite{qwen3technicalreport}，编码为 BF16、MXFP8 E4M3 或 MXFP4 E2M1。VCS 门级仿真连续发出 1024 笔独立请求，取中间 512 拍生成 SAIF。Power Compiler 基于完整活动注释估计内部、切换和泄漏功耗~\cite{synopsysActivityPower}。面积与功耗均为综合后、CTS/布线前估计。
 
-\subsection{基线成本与同类工作比较}
+\subsection{基线性能与同类工作比较}
 \label{sec:reuse_evaluation}
 \label{sec:area_breakdown}
 \label{sec:related_dp_evaluation}
+% 图~\ref{fig:baseline_breakdown} 中，乘法、累加、移位对齐和解包分别占基线面积的 24.15\%、21.8\%、17.1\% 和 16.02\%，是主要优化对象。
 
-图~\ref{fig:baseline_breakdown} 显示，基线乘法占面积的 24.15\%，累加与对齐合计占 38.91\%，解包另占 16.02\%，说明专用化需同时裁剪算术和格式处理。
 
-表~\ref{tab:related_dp} 列出原始实现条件，能效与面效仅报告归一化后的 12\,nm 代理值，能效和面效分别为 $2K_pf/P_p$ 和 $2K_pf/A$。本文 MXFP8 能效为 4.000\,TFLOP/s/W、面效为 3.959\,TFLOP/s/mm$^2$；同为 12\,nm 的 MXDOTP 分别为 2.035 和 5.524。本文支持更广精度范围，但电压、活动及实现阶段的差异仍影响比较。Ten-Four 采用 All fmts 的 Q8/Q16 配置，其 $1{:}2{:}4$ 指 TF32:H:Q，并非本文的 H:Q:E。
+表~\ref{tab:related_dp} 用 DeepScaleTool~\cite{sarangi2021deepscaletool} 将 7、22 和 28\,nm 的结果折算至 12\,nm 工艺代理。Ten-Four 全格式 Q8/Q16 的 MXFP8 代理面效为 1.275/1.316\,TFLOP/s/mm$^2$。本文基线为其 3.01--3.10 倍，$1{:}4{:}8$ 为其 3.58--3.69 倍。Q32E64 的 MXFP8 能效是 MXDOTP 的 2.32 倍，E64 的 MXFP4 能效是 MPICC FP4 工艺转换值的 1.58 倍，两组面效接近。展现了DP-Puzzle 兼顾了多精度算力类型和低精度专用化扩展下的面积与能效优势。
 
-采用 DeepScaleTool~\cite{sarangi2021deepscaletool} 将 7、22 和 28\,nm 结果近似折算到 12\,nm。工具不含 12\,nm 节点，故以 14\,nm 代理；原生 12\,nm 结果保持不变。定义源节点到目标节点的面积、延迟和能量系数为 $S_A,S_D,S_E$，工具按“目标值$=$原值$/S$”换算，因而
-\begin{equation}
-\widehat{\eta}_{A,12}=\eta_A S_A S_D,\qquad
-\widehat{\eta}_{E,12}=\eta_E S_E.
-\label{eq:process_proxy}
-\end{equation}
-All fmts 的 MXFP8 面效由 10.500/10.839 折算为 1.275/1.316\,TFLOP/s/mm$^2$，本文在该代理模型下为其 3.01--3.10 倍；若对比其 MXFP8-only 专用配置，则为 1.27--1.30 倍。该估计包含频率缩放，不代表同库复现。Ten-Four 未给出对应单 DP 的逐精度功耗，因此不由 Tensor Core 级功耗推算表中能效。
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.60\columnwidth]{v19_six/v19_dp_top_area_functions.png}
-\caption{基线按功能归集的面积分布，各类别包含相关流水寄存器。}
-\label{fig:baseline_breakdown}
-\end{figure}
+% \begin{figure}[t]
+% \centering
+% \includegraphics[width=0.60\columnwidth]{v19_six/v19_dp_top_area_functions.png}
+% \caption{基线按功能的面积分布，各类别包含相关流水寄存器。}
+% \label{fig:baseline_breakdown}
+% \end{figure}
 
 \input{tables/related_ppa.tex}
 
-\subsection{专用化与 K/N 组合成本}
+图~\ref{fig:six_dp_costs} 比较六种 DP 的面积与功耗。裁剪高精度通路后，E64/Q32E64 的面积为基线的 34.92\%/72.35\%。K 扩展的 $1{:}2{:}6$ 和 $1{:}2{:}8$ 以 16.69\%/33.60\% 的面积增量换取 50\%/100\% 的 E 算力增量。$1{:}4{:}8$ 将 Q/E 算力翻倍，Q 模式功耗升至 28.789\,mW，为该设计的功耗峰值。各精度的功耗变化与面积增量并不成正比。
+
+\subsection{K/N 扩展的面积与功耗}
 \label{sec:lowp_costs}
 \label{sec:kn_evaluation}
-
-图~\ref{fig:six_dp_costs} 比较六种 DP。E64/Q32E64 面积分别为基线的 34.92\%/72.35\%。E96/E128 以 16.69\%/33.60\% 的面积增长换取 50\%/100\% 的 E 算力增长；Q64E128 的 Q/E 算力翻倍，但 Q 功耗达到 28.789\,mW。增加低精度算力并不意味着总功耗按面积同比增长。
 
 \begin{figure}[t]
 \centering
 \subfloat[Area\label{fig:six_dp_area}]{\includegraphics[width=0.94\columnwidth]{latest6_area.png}}\par
 \subfloat[Power\label{fig:six_dp_power}]{\includegraphics[width=0.94\columnwidth]{latest6_power.png}}
-\caption{基线及五种变体的面积和总功耗。图中面积倍率以基线面积归一化，功耗倍率均以基线 BF16 功耗归一化；缺失柱表示不支持该精度。}
+\caption{六种 DP 的面积和总功耗，分别以基线面积和基线 BF16 功耗归一化。}
 \label{fig:six_dp_costs}
 \end{figure}
 
-K/N 比较采用 DP 成本叠加模型：阵列面积仅计完整 DP 面积之和，功耗仅计活动 DP 的模式功耗，忽略存储、互连及其他逻辑。N 方案中不支持当前精度的附加 DP 假设理想 power gating，动态与泄漏功耗均为零，不计关断与唤醒开销；其物理面积仍保留。表~\ref{tab:kn_costs} 按基线 DP 数归一化，使两方案各精度的峰值一致。新增单元参与时，K 的面积低 0.65\%--2.40\%，功耗低 2.02\%--3.97\%；H 模式下，理想关断的 N 方案功耗更低。独立 E64 与内部 E 构件的局部流水及规约实现不同，因此差额包含实现差异，并非仅改变组合位置的消融结果。
+表~\ref{tab:kn_costs} 在各精度峰值匹配下按基线 DP 数归一化。模型只累加完整 DP 的面积和活动功耗，省略存储、互连及外围逻辑。N 中未参与的附加 DP 理想关断，保留面积，忽略动态、泄漏及关断和唤醒开销。K 共享移位对齐和累加后端，面积低 0.65\%--2.40\%，在新增单元参与的模式下功耗低 2.02\%--3.97\%。两种方案的 DP 成本接近，K扩展因复用浮点和整数输出模块面积能效略占优势。
 
 \input{tables/kn_costs.tex}
 
-\subsection{阵列复用与累加带宽}
+\subsection{K/N 扩展的带宽需求}
 
-采用稳态行列复用模型：A 沿行共享、B 沿列共享，广播或脉动供数均按理想复用计，忽略填充与排空。对某精度扩展 $r$ 倍算力时，K/N 方案分别为 $m\times n\times rk$ 和 $m\times rn\times k$。若原生输入向量（含尺度）占 $V$ bit，完整缩放块扩展后占 $rV$ bit，累加位宽为 $c$ bit（FP32 取 32），所分析存储接口每 $\tau$ 次更新交换一次 C/D，则
+设某精度算力扩展 $r$ 倍，K/N 阵列分别为 $m\times n\times rk$ 和 $m\times rn\times k$。稳态下 A 沿行、B 沿列空间复用，忽略填充与排空。进一步令 m 侧 A 每 $\tau_m$ 次发射装载一次，期间驻留复用；n 侧 B 每次发射更换，C/D 每 $\tau$ 次累加更新读写一次。$\tau_m$ 与 $\tau$ 分别描述输入和部分和驻留，互不等同。令 $f$ 为发射频率、$V$ 为含块尺度的向量位宽（K 扩展后为 $rV$）、$c$ 为累加位宽。在驻留缓冲与累加上下文充足、两方案取相同 $\tau_m$ 和 $\tau$ 时，驻留存储与上一级存储间的平均带宽（bit/s）为
 \begin{equation}
 \begin{aligned}
-B_K &= f[(m+n)rV+2mnc/\tau],\\
-B_N &= f[(m+rn)V+2rmnc/\tau],\\
-B_N-B_K &= f(r-1)m(2nc/\tau-V).
+B_K &= f[mrV/\tau_m+nrV+2mnc/\tau],\\
+B_N &= f[mV/\tau_m+rnV+2rmnc/\tau],\\
+B_N-B_K &= f(r-1)m(2nc/\tau-V/\tau_m).
 \end{aligned}
 \label{eq:kn_bandwidth_difference}
 \end{equation}
-其中带宽单位为 bit/s，两方案取相同 $\tau$。N 的每个累加上下文由 $mn$ 个结果增至 $rmn$ 个，存储容量与 C/D 端口需求均增至 $r$ 倍，同时通过行内复用减少 A 供数。当 $2nc/\tau>V$ 时，K 的总接口带宽更小；长期驻留部分和或输入向量较宽时，N 的输入复用优势更明显。该式比较稳态接口压力，并不表示完整 GEMM 的最终输出量增加。基于 DP 成本与累加状态开销，后续负载分析采用 K 扩展。
+N 通过列间共享 A 节省输入流量，但并行累加状态和 C/D 流量增至 $r$ 倍。在相同驻留参数下（$r>1$），$2nc/\tau>V/\tau_m$ 时 K 的平均接口带宽较低，小于时 N 较低，等号时相同。以 NVFP4 K64、FP32 累加为例，$V=64(4+8/16)=288$ bit~\cite{nvidia2024nvfp4}，K 的优势条件为 $n>4.5\tau/\tau_m$。当 $\tau_m=\tau=1$ 时，$n\ge5$ 有利于 K；$m=16$ 或 32、$n\le4$ 的长条阵列则有利于 N。若 $\tau_m\ge5,\tau=1$，任意 $n\ge1$ 下 K 的带宽均较低。
+
+带宽优劣由调度及输入、累加缓冲容量共同决定。固定 $\tau$ 时，m 侧权重驻留（WS）增大 $\tau_m$，摊薄 K 的 A 装载开销；固定 $\tau_m$ 时，输出驻留（OS）增大 $\tau$，减轻 N 的 C/D 开销，是否反转取决于上述判据。输入复用是 CUTLASS 等高性能 GEMM 的常用优化~\cite{nvidia2026cutlassgemm}；NVIDIA collector 也支持复用 A、切换 B，但不保证命中~\cite{nvidia2025ptxcollector}。因此，本文聚焦输入充分复用的场景，结合 K 的 DP 成本与累加状态优势，下一节采用 K 扩展分析负载。

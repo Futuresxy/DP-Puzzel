@@ -60,6 +60,12 @@ def compare_workloads(old_point, new_point):
 
 def generate(selection, output):
     collection = read(selection)
+    retirement_name = collection.get('retirement_receipt')
+    retirement = {}
+    if retirement_name:
+        retirement = read(contained(retirement_name))
+        if retirement['schema_version'] != 1:
+            raise ValueError('Unknown dependency retirement receipt version')
     catalog_path = contained(collection['dc_catalog'])
     catalog = read(catalog_path)
     architectures = {row['top']: row for row in catalog['records']}
@@ -101,14 +107,20 @@ def generate(selection, output):
         for name, sha in result['artifacts_sha256'].items():
             if digest(contained(name)) != sha:
                 raise ValueError('Power artifact changed: ' + name)
-        dataset = contained(point['dataset_directory'])
+        retained_name = retirement.get('retained_datasets', {}).get(point['dataset_directory'])
+        retained_dataset = contained(retained_name) if retained_name else None
+        if retained_dataset is not None and directory not in retained_dataset.parents:
+            raise ValueError('Retained dataset must be inside its measured point directory')
+        dataset = retained_dataset if retained_dataset is not None else contained(point['dataset_directory'])
         if digest(dataset / 'manifest.json') != point['dataset_manifest_sha256']:
             raise ValueError('Dataset manifest changed')
         for name, sha in point['dataset_files_sha256'].items():
             if digest(dataset / name) != sha:
                 raise ValueError('Dataset changed')
         receipt = ROOT / 'test/runs/power' / campaign.name / directory.name / 'verification.json'
-        verify_workload_replay(ROOT, point, receipt)
+        verify_workload_replay(ROOT, point, receipt,
+                               retired_repair=retirement.get('repairs', {}).get(point['dc_run']),
+                               retained_dataset=retained_dataset)
         condition = dict(technology=result['technology'], frequency_hz=result['frequency_hz'],
                          duration_ns=result['duration_ns'], clock_slew_ns=result['clock_slew_ns'],
                          window=read(campaign / 'plan.json')['measurement_window'])
@@ -130,7 +142,7 @@ def generate(selection, output):
         comparison_points = {(p['top'], p['format']): p for p in comparison['points']}
         if len(comparison_points) != len(comparison['points']) or set(comparison_points) != expected:
             raise ValueError('Comparison selection must contain the same 15 supported points')
-    for result in results:
+    for result in (results if baseline_selection or collection.get('comparison_baseline') else []):
         baseline_campaign = contained(comparison_points[(result['top'], result['format'])]['campaign']
                                       if baseline_selection else collection['comparison_baseline'])
         if read(baseline_campaign / 'state.json')['status'] != 'completed':
@@ -173,6 +185,9 @@ def generate(selection, output):
                    comparison_selection=baseline_selection,
                    comparison_selection_sha256=digest(contained(baseline_selection)) if baseline_selection else None,
                    comparisons=comparisons)
+    if retirement_name:
+        summary.update(retirement_receipt=retirement_name,
+                       retirement_receipt_sha256=digest(contained(retirement_name)))
     output.parent.mkdir(parents=True, exist_ok=True)
     output.with_suffix('.json').write_text(json.dumps(summary, indent=2, ensure_ascii=False) + '\n')
     with output.with_suffix('.csv').open('w') as stream:
@@ -196,12 +211,13 @@ def generate(selection, output):
               '| --- | --- | ---: | ---: | ---: | ---: | ---: |']
     for row in results:
         lines.append(f"| {architectures[row['top']]['capacity']} | {row['format']} | {row['logical_k']} | {row['dynamic_mw']:.6f} | {row['static_mw']:.6f} | {row['total_mw']:.6f} | {row['pj_per_mac']:.6f} |")
-    lines += ['', '## ' + labels.get('comparison_heading', '与原精度寄存器门控前批次比较'), '',
-              labels.get('comparison_description', '旧功耗原始数据及依赖按用户要求全部保留；原有valid门控在两个版本中均开启。差值包含精度寄存器门控、映射及后端时序修复的整体影响，不能当作单个门控单元的独立贡献。'), '',
-              '| 架构 | 精度 | 原动态 mW | 新动态 mW | 动态变化 | 总功耗变化 |',
-              '| --- | --- | ---: | ---: | ---: | ---: |']
-    for row, comp in zip(results, comparisons):
-        lines.append(f"| {architectures[row['top']]['capacity']} | {row['format']} | {comp['baseline']['dynamic_mw']:.6f} | {row['dynamic_mw']:.6f} | {comp['dynamic_change_percent']:+.2f}% | {comp['total_change_percent']:+.2f}% |")
+    if comparisons:
+        lines += ['', '## ' + labels.get('comparison_heading', '与原精度寄存器门控前批次比较'), '',
+                  labels.get('comparison_description', '旧功耗原始数据及依赖按用户要求全部保留；原有valid门控在两个版本中均开启。差值包含精度寄存器门控、映射及后端时序修复的整体影响，不能当作单个门控单元的独立贡献。'), '',
+                  '| 架构 | 精度 | 原动态 mW | 新动态 mW | 动态变化 | 总功耗变化 |',
+                  '| --- | --- | ---: | ---: | ---: | ---: |']
+        for row, comp in zip(results, comparisons):
+            lines.append(f"| {architectures[row['top']]['capacity']} | {row['format']} | {comp['baseline']['dynamic_mw']:.6f} | {row['dynamic_mw']:.6f} | {comp['dynamic_change_percent']:+.2f}% | {comp['total_change_percent']:+.2f}% |")
     receipt_pairs = {(comp['top'], comp['baseline_dc_original_verification_id'],
                       comp['baseline_point_verification_id']) for comp in comparisons
                      if comp['baseline_dc_original_verification_id'] != comp['baseline_point_verification_id']}
@@ -216,15 +232,18 @@ def generate(selection, output):
               '时钟对象包括寄存器和门控相关引脚，不等同于关闭寄存器数。极小正slack仅代表指定TT角综合通过，不是多角布线签核。', '',
               '范围：综合后零延迟、CTS/布线前，无SDF/SPEF，不包含真实布线毛刺、SRAM或阵列互连；NVFP4/HiF4未在本轮实测功耗。', '',
               '完整Internal/Switching、DC/原验证/本次采样索引见同名JSON/CSV；DC索引为 `' + collection['dc_catalog'] + '`。',
-              '复核：`python3.11 hw/power/scripts/report_current_six.py --selection ' + str(selection.relative_to(ROOT)) + ' --output ' + str(output.relative_to(ROOT)) + '`。旧选择文件和历史证据保持原路径保留。', '']
+              '复核：`python3.11 hw/power/scripts/report_current_six.py --selection ' + str(selection.relative_to(ROOT)) + ' --output ' + str(output.relative_to(ROOT)) + '`。历史数值及原始产物是否仍保留，见 records/README.md 和维护回执。', '']
+    if retirement_name:
+        lines += ['两条修复链使用清理前的校验回执。基线三点使用原功耗批次保留的负载输入和 golden。'
+                  '历史修复及旧参考模型的执行入口已退役。', '']
     output.with_suffix('.md').write_text('\n'.join(lines))
     return summary
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--selection', type=Path, default=ROOT / 'hw/power/plans/current_six_precision_gated.json')
-    parser.add_argument('--output', type=Path, default=ROOT / 'hw/power/records/current_six_precision_gated')
+    parser.add_argument('--selection', type=Path, default=ROOT / 'hw/power/plans/latest_six_retained.json')
+    parser.add_argument('--output', type=Path, default=ROOT / 'hw/power/records/latest_six_retained')
     args = parser.parse_args()
     summary = generate(args.selection.resolve(), args.output.resolve())
     print('PASS current six architectures,', len(summary['results']), 'power points')

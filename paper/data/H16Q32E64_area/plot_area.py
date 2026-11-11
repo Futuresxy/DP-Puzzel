@@ -1,4 +1,4 @@
-"""Plot six DP architectures from compact area and total-power tables."""
+"""Plot six DP area distributions; shared style helpers for power plots."""
 import argparse
 import csv
 import hashlib
@@ -138,24 +138,6 @@ def plot_area(top, area, path, dpi, metadata):
     save_figure(fig, path, dpi, metadata)
 
 
-def plot_power(top, power, path, dpi, metadata):
-    fig, axes = plt.subplots(1, len(MODES), figsize=(10.8, 3.8))
-    for ax, (mode, title) in zip(axes, MODES.items()):
-        if mode in power:
-            wedges = donut(ax, power[mode], title, 'mW', label_size=12)
-        else:
-            ax.set_axis_off()
-            ax.text(.5, .56, title, transform=ax.transAxes, ha='center', va='center',
-                    fontsize=12, fontweight='bold')
-            ax.text(.5, .44, 'Unsupported', transform=ax.transAxes, ha='center', va='center',
-                    fontsize=12, color='#666666')
-    fig.suptitle(f'{ARCHITECTURES[top]} · Total power', fontsize=16, fontweight='bold', y=.97)
-    fig.legend(wedges, LABELS, loc='lower center', ncol=4, frameon=False,
-               bbox_to_anchor=(.5, .025), handlelength=1.1, columnspacing=1.4)
-    fig.subplots_adjust(left=.015, right=.985, bottom=.15, top=.9, wspace=.12)
-    save_figure(fig, path, dpi, metadata)
-
-
 def figure_metadata(data_path, font):
     input_hash = hashlib.sha256(data_path.read_bytes()).hexdigest()
     return {'Description': f'{data_path.name} SHA-256 {input_hash}. Font: {font}. '
@@ -176,17 +158,20 @@ def main():
         parser.error('Area and power require separate CSV files')
     if args.refresh_from is not None:
         refresh_tables(args.refresh_from, args.area_data, args.power_data)
-    data = load_data(read_index(args.area_data, KEY_FIELDS), read_index(args.power_data, KEY_FIELDS))
+    area_table = read_index(args.area_data, KEY_FIELDS)
+    keys = {(top, label) for top in ARCHITECTURES for label in LABELS}
+    if set(area_table) != keys:
+        raise ValueError('Area table needs one row per architecture and category')
+    data = {top: values_for([area_table[top, label] for label in LABELS], 'area_um2')
+            for top in ARCHITECTURES}
 
     plt.rcParams.update({'font.family': 'serif', 'font.serif': SERIF_FONTS, 'font.size': 11})
     font = font_manager.FontProperties(family=['serif']).get_name()
     area_metadata = figure_metadata(args.area_data, font)
-    power_metadata = figure_metadata(args.power_data, font)
     args.figure_dir.mkdir(parents=True, exist_ok=True)
-    for top, (area, power) in data.items():
+    for top, area in data.items():
         plot_area(top, area, args.figure_dir / f'v19_{top}_area_functions.png', args.dpi, area_metadata)
-        plot_power(top, power, args.figure_dir / f'v19_{top}_power_functions.png', args.dpi, power_metadata)
-    print(f'12 figures in {args.figure_dir} ({font}, {args.dpi} dpi)')
+    print(f'6 area figures in {args.figure_dir} ({font}, {args.dpi} dpi)')
 
 
 if __name__ == '__main__':

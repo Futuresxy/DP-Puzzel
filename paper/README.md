@@ -19,6 +19,8 @@ make -C paper pdf                    # 中文：paper/build/main.pdf
 
 当前完整英文初译已经保留，后续章节仍属待审工作稿。逐章推进顺序为：第三章微架构 → 第四章 K/N 扩展实现 → 第五章实验评估 → 第六章负载分析 → 第七章结论。每轮只处理当前讨论章节并同步中英文，不因初译已完成而将后续表述视为定稿。
 
+2026-11-11：按用户要求，以最新中文第三章至结论为依据同步英文主稿，使用项目 [academic-humanizer](../.skill/academic-humanizer/SKILL.md) 规范处理学术表达，保留信息量、论证顺序与结论强度。第三至第七章的章节层级、公式、表格数值、引用和图源已逐项核对；英文稿移除中文已删去的展开分析，更新输入/部分和驻留带宽模型与 DeepSeek 配比趋势。未来 FP4 attention 保持条件性展望，不表述为本轮验证结果。中文第四章仅删除已撤下面积分布图的失效图号，其余中文内容不变；摘要、前两章及图表数据不在本轮修改范围内。
+
 定点记号统一为 `SxPy` / `UxPy`：`x` 不含符号位，`y` 为小数位数，位宽分别为 `1+x+y` 与 `x+y`。`Lane_align` 和 `DP_align` 均表示无符号幅值移位窗口，基线分别为 28 和 39 位；恢复符号后的全局累加输入为 40 位。
 
 ## 当前中文初稿（2026-11-10）
@@ -61,6 +63,20 @@ make test               # 临时目录内验证修改参数后的重算
 ```
 
 `make` 不会自动覆盖图表。可先运行 `make reproduce` 检查新结果，再 `make` 更新 PDF。编译和分析均不依赖原工程、网络或 GPU。
+
+### 负载配比分区图
+
+第六节使用 `figures/k4_n12_prefill_comparison.png`，左右分别为整数核心部署下的最小计算延迟与最小 DP 计算能耗。图内标注四种配比及其最优区域的几何面积占比，并提供 H/Q/E 百分比刻度、20%/30%/50% 读数示例和三模型×两种专家量化映射的图例。原区域表不再单独排入正文；连续/整数部署及能耗的数值仍保留于 `tables/region_table.tex` 和 `data/results/regions.json`。
+
+组合图将读数示例置于两三角图之间的上方空白处，底部仅保留两行量化方案、三列模型的紧凑图例。配比标签不加底色；区域百分比、轨迹方向和实心终点的解释放在论文图注。
+
+仅重绘、不重算负载或覆盖结果数据：
+
+```bash
+python3 scripts/plot_triangles.py  # 使用已安装 requirements.txt 的 Python 环境
+```
+
+脚本读取 `data/results/{regions.json,prefill_points.csv,nvfp4_prefill_points.csv}`，仅输出组合图及两个独立面板的 400 dpi PNG，字体与 `data/H16Q32E64_area/plot_area_comparison.py` 使用相同的衬线字体配置；输入哈希、实际字体和区域百分比记录于 `figures/k4_n12_prefill_plot_manifest.json`。完整 `reproduce.py` 使用同一绘图入口。NVFP4 能耗仍使用 MXFP4 活动功耗代理；读数示例不是模型负载点。
 
 ## 修改哪些数据
 

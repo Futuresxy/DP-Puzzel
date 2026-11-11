@@ -16,5 +16,3 @@
   \item \textbf{低精度专用化与两类配比扩展。} 裁剪 E、QE 前端的不支持精度资源，以共享后端的 K 扩展或独立输出的 N 组合实现三种新增配比；使用六种 DP 的同工况结果比较构件成本，并分析输入带宽与累加存储的结构取舍。
   \item \textbf{面积约束下的负载配比模型。} 将整数核心部署、模式吞吐和活动功耗纳入计算时间与能耗模型，求解四种配比的优势区域，并用固定模型结构导出的 DeepSeek prefill 轨迹分析上下文与专家执行精度对选择的影响。
 \end{enumerate}
-
-本文其余部分安排如下：第~\ref{sec:background} 节介绍背景与动机；第~\ref{sec:architecture} 节描述基线 DP；第~\ref{sec:expansion} 节展开专用化及 K/N 组合；第~\ref{sec:evaluation} 节评估硬件成本与带宽取舍；第~\ref{sec:workload} 节进行面积约束下的负载分析；第~\ref{sec:conclusion} 节总结全文。

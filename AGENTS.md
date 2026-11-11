@@ -1,5 +1,9 @@
 # DAC 2027 工程开发约定
 
+## 最新产物清理与记录约定（2026-11-10）
+
+用户最新授权覆盖此前“全部旧功耗及依赖保留”的口径：仅保留当前六种 DP 的最终 DC、15 点功耗、精度验证和必要重放依赖，删除被替代历史运行大产物；历史 `hw/dc_syn/records/`、`hw/power/records/` 的 MD/JSON/CSV 数值与对比继续保留。当前查阅入口为这两个目录的 README.md；当前功耗重审计使用 `hw/power/plans/latest_six_retained.json`，不再依赖被清理的旧功耗批次。DC `runs/` 只保留六份最终结果。电气违例和 hold 违例的修复源及旧 `baseline_v18_reference_1109` 已删除。已完成测量的复核使用清理前的修复链回执和功耗批次内的原输入及 golden。现用 RTL 回执、E64 兼容回归、v1.9 CModel 参考和七类统计保留。清理明细见 `hw/dc_syn/maintenance/latest_six_artifacts_cleanup_20261110.json` 和 `hw/dc_syn/maintenance/final_six_dependency_retirement.json`。旧记录内“全部原始产物保留”描述是历史状态，以新入口的可用状态为准。 后续每次实验在对应 records/ 新增日期/版本明确的 MD 结果记录与 JSON/CSV，写明面积/时序或动态/静态/总功耗、run/export ID 和工况，并更新 README 的最新入口；旧数值不覆盖，清理时标记原始产物可用状态。
+
 ## dp_top v1.8 基础实现与独立修复（2026-11-10）
 
 基础 `dp_top` 已按 `src/spec/dp/dptop/dp-top-v1.8.md` 实现：E 窄 pair/共享树/局部 e2 融合，无跨 lane MAX/宽移位依赖；无偏 scale、S3 A_raw、S5 compare_exp；C 不做 LZD；S7 4:2+3:2+CPA。CModel、冻结 Verilog 的 L8/II=1/完整数据和新定向断点已通过，回执见 `test/results/dp-top-v1.8.md`。原v1.8批次未迁移其余E/QE/混合顶层；后续v1.9范围见下一节。`BASELINE_V18` 静态参数默认0，dp_top及新版混合顶层的基础组显式开启；CModel 的 legacy_multi 保留旧回放。该批扩展ADD/CSA/MUX只更新规格，后续v1.9已实现。旧功耗/综合结果仍保留为历史；v1.8 首次 N12 TT/1GHz DC 面积为16163.057770 µm²，setup/hold通过但有1条最大电容违例，该首次结果flow_pass=false。后续独立修复已通过，并完成三种真实负载功耗，见下一节。详见 hw/dc_syn/records/dp_top_v18_n12_1000mhz_20261109.md。

@@ -50,7 +50,15 @@ MPICC 原表截图来源指纹：用户附件 `codex-clipboard-91872e90-c763-4d8
 - K/N 成本由 `paper/data/kn_comparison/calculate.py` 从已有 CSV 生成，输出 CSV/JSON 和 `tables/kn_costs.tex`。统一按基线 DP 数归一化；1:2:6 对应整数部署仍为两个基线加一个 E64，对比两个扩展 DP。
 - 按用户指定，N 中不支持当前模式的附加 DP 使用理想 power-gating 假设：动态、泄漏均为零，不计电源开关、隔离、唤醒和保持开销。物理 DP 面积仍计入。模型只累加 DP 面积和活动功耗，不包含阵列存储、互连或其他逻辑。该零功耗是假设，非新测量；不用于推断已实现 power gating。
 - 同精度、同峰值下新增单元活动时，K 的面积低 0.653%--2.402%，活动功耗低 2.020%--3.972%；H 模式下 K 功耗反而高 2.015%--3.686%，E-only 扩展的 Q 模式也高 2.203%--3.862%。独立 E64 与内部 E 构件的流水和规约差异仍保留为比较边界。
-- 带宽模型以稳态行列复用、完整缩放块线性扩展和相同 C/D 交换间隔为前提，比较所选存储接口的 bit/s。`B_N-B_K=f(r-1)m(2nc/tau-V)`；`2nc/tau>V` 时 K 较小，反之 N 较小。N 的累加状态每上下文为 `rmnc` bit，K 为 `mnc` bit；不将接口压力误作完整 GEMM 的最终输出总量。
+- 带宽模型以稳态行列复用、完整缩放块线性扩展和相同 C/D 交换间隔为前提，比较所选存储接口的 bit/s。原先逐拍装载 A 的模型现为下节 `tau_m=1` 的特例。N 的累加状态每上下文为 `rmnc` bit，K 为 `mnc` bit；不将接口压力误作完整 GEMM 的最终输出总量。
+
+## m 侧驻留与 K/N 带宽模型（2026-11-11）
+
+- 按用户指定，将权重放在 m 侧 A，连续发射时复用 A、逐拍切换 n 侧 B。`tau_m` 为 A 的有效装载间隔，`tau` 为每个输出的 C/D 交换间隔；空间广播与时间驻留分别计入。比较边界位于本地驻留存储与上一级存储之间，假设相关缓冲、端口与独立累加上下文充足，非 HBM 实测。
+- 两方案取相同驻留参数时，`B_K=f(mrV/tau_m+nrV+2mnc/tau)`，`B_N=f(mV/tau_m+rnV+2rmnc/tau)`，相减为 `f(r-1)m(2nc/tau-V/tau_m)`。`tau_m=1` 恢复原式；NVFP4 K64、FP32 C/D 的 K 优势条件为 `n>4.5*tau/tau_m`。增加输入驻留时间与增加输出驻留时间的影响方向不同。
+- 来源：NVIDIA《PTX ISA 9.0》，CUDA 13.0.0 归档第 9.7.16.10 节（BibTeX `nvidia2025ptxcollector`）。[官方文档](https://docs.nvidia.com/cuda/archive/13.0.0/parallel-thread-execution/index.html) 明确描述重复 A/连续 B 或重复 B/连续 A 的 MMA 序列，以及 collector 的装载、复用和末次使用语义；该复用是机会性的，允许重新装载。正文仅引用这一机制，不将本文 WS 映射等同于 NVIDIA 的 `.ws` 指令或声称具体硬件每拍命中。
+- 同驻留周期是条件比较，并非完整 GEMM 下的必然关系。例如固定同一逻辑 N 复用窗口且无尾块时，N 扩展一次覆盖的列数增多，可能有 `tau_m,N=tau_m,K/r`，此时两方案平均 A 装载流量相等。若调度不同，须在两条原始带宽式中分别代入驻留参数；独立输出上下文也不能误作对同一 C 的重复累加。
+- 边界表述限定为平均接口带宽：在上述 NVFP4/FP32 口径下，`tau_m>=5,tau=1` 对任意 `n>=1` 满足 K 优势条件；逐拍装载/交换时 `n>=5` 利于 K、`n<=4` 利于 N。OS 增大 `tau` 只改变相对收益，是否反转仍检查同一不等式。新增 [NVIDIA CUTLASS 4.8.0 Efficient GEMM](https://docs.nvidia.com/cutlass/4.8.0/media/docs/cpp/efficient_gemm.html)（`nvidia2026cutlassgemm`）支持高性能 GEMM 的分块及寄存器内多指令复用机制；不能据此宣称任意 WS 都胜过任意 OS，或把下一节计算成本模型改称实测访存结果。
 
 ## Ten-Four 数据更新与工艺代理比较（2026-11-10）
 

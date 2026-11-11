@@ -16,7 +16,7 @@
 \usepackage{cite}
 \usepackage[hidelinks]{hyperref}
 \graphicspath{{figures/}}
-\newcommand{\PaperTitle}{DP-Puzzle: Exploring Throughput Ratios in Multi-Precision Floating-Point Tensor Cores with Composable Dot-Product Units}
+\newcommand{\PaperTitle}{DP-Puzzle: Exploring Throughput Ratios in Multi-Precision Tensor Cores with Composable Dot-Product Units}
 \title{\PaperTitle}
 \author{\IEEEauthorblockN{Anonymous Submission}}
 \hypersetup{pdfauthor={},pdftitle={\PaperTitle},pdfsubject={English manuscript}}
@@ -56,8 +56,6 @@ The contributions are:
   \item \textbf{Low-precision specialization and two expansion methods.} E and QE frontends remove resources for unsupported precisions. K expansion shares the backend, whereas N composition provides independent outputs. Six DPs characterized under identical conditions quantify component costs, complemented by an analysis of input bandwidth and accumulator storage.
   \item \textbf{An area-constrained workload model.} Integer core deployment, mode throughput, and active power determine compute time and energy across four ratios. Prefill trajectories derived from fixed DeepSeek model structures show how context length and expert execution precision affect ratio selection.
 \end{enumerate}
-
-Section~\ref{sec:background} presents the background and motivation. Sections~\ref{sec:architecture} and~\ref{sec:expansion} describe the baseline DP and its specialization and composition. Section~\ref{sec:evaluation} evaluates circuit costs and bandwidth trade-offs. Section~\ref{sec:workload} analyzes workloads under an area constraint, and Section~\ref{sec:conclusion} concludes.
 % END REVIEW PAIR: 01_introduction.tex
 
 % BEGIN REVIEW PAIR: 02_background.tex
@@ -145,19 +143,19 @@ Two questions follow. First, how can shared arithmetic, specialized low-precisio
 \label{sec:architecture}
 \label{sec:brick_definition}
 
-DP-Puzzle adopts a three-level compositional architecture consisting of Lanes, Groups, and a DP unit (Fig.~\ref{fig:dp_architecture}). Each Lane reuses multiplication, local alignment, and reduction hardware to produce one partial sum from different numbers of parallel products. Groups apply shared scales and unify partial-sum representation; the DP shares global alignment and accumulation hardware. A uniform Group interface provides the composition boundary for independently specializing and adding low-precision units.
+DP-Puzzle uses a composable Lane--Group--DP hierarchy (Fig.~\ref{fig:dp_architecture}). Each Lane shares element multiplication, local alignment, and reduction across precision modes, mapping their different product parallelisms to a common partial-sum output. Groups incorporate block scales and unify partial-sum representation, while the DP shares global alignment and accumulation. A uniform Group interface allows low-precision units to be specialized and added independently, forming the composition boundary for subsequent throughput-ratio expansion.
 
-Table~\ref{tab:precision_families} defines the notation. One Lane supports T1H2Q4E8; two Lanes form a Group, and four Groups form the T8H16Q32E64 baseline. Each Lane also supports four INT8 multiplications, with INT32 accumulation in the DP. All modes use an eight-stage pipeline accepting one request per cycle.
+Table~\ref{tab:precision_families} defines the precision families, fixed-point formats, and parallelism notation. One Lane supports T1H2Q4E8; two Lanes form a Group, and four Groups form the T8H16Q32E64 baseline. Each Lane also supports four INT8 multiplications, with INT32 accumulation at the DP level. All modes use an eight-stage pipeline that accepts one independent request per cycle.
 
 \begin{table}[t]
 \centering
-\caption{Precision, fixed-point, and parallelism notation. Q-format integer widths exclude the sign bit~\cite{ti2003qformat}}
+\caption{Precision, fixed-point, and parallelism notation. Integer widths in Q notation exclude the sign bit~\cite{ti2003qformat}.}
 \label{tab:precision_families}
 \begingroup
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.0}
-\begin{tabular}{@{}p{0.25\columnwidth}p{0.72\columnwidth}@{}}
+\begin{tabular}{@{}p{0.29\columnwidth}p{0.68\columnwidth}@{}}
 \toprule
 Notation & Meaning \\
 \midrule
@@ -166,18 +164,18 @@ H & FP16, BF16 \\
 Q & MXFP8 (E4M3/E5M2), MXFP6 (E2M3/E3M2) \\
 E & MXFP4, NVFP4, HiF4 \\
 \midrule
-$\mathrm{Q}I.F$ & Two's complement: $I$ integer bits excluding sign, $F$ fractional bits; $1+I+F$ bits total. \\
-$\mathrm{UQ}I.F$ & Unsigned: $I$ integer and $F$ fractional bits; $I+F$ bits total. UQ2.26 has 28 bits. \\
-T1H2Q4E8 & 1/2/4/8 A--B element products per cycle in mutually exclusive T/H/Q/E modes. \\
+$\mathrm{Q}I.F$ & Two's-complement fixed point: $I$ integer bits excluding sign and $F$ fractional bits; $1+I+F$ bits in total. \\
+$\mathrm{UQ}I.F$ & Unsigned fixed point: $I$ integer and $F$ fractional bits; $I+F$ bits in total. UQ2.26 has 28 bits. \\
+T1H2Q4E8 & 1/2/4/8 element-pair products per cycle in mutually exclusive T/H/Q/E modes; each pair contains one A and one B element. \\
 \bottomrule
 \end{tabular}
 \endgroup
 \end{table}
 
-\begin{figure}[!t]
+\begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{baseline_arch.png}
-\caption{Lane--Group--DP organization follows scaling granularity. A HiF4 second-level micro-exponent covers eight elements, matching eight E products per Lane. An NVFP4 scale covers 16 elements, matching two Lanes per Group. Larger blocks broadcast scales across Groups without changing quantization granularity.}
+\caption{Lane--Group--DP organization follows scaling granularity. A HiF4 second-level micro-exponent is shared by eight elements, matching the eight E products in a Lane. An NVFP4 scale is shared by 16 elements, so two Lanes form a Group. Larger quantization blocks broadcast the same scale to multiple Groups, preserving the format's scaling granularity.}
 \label{fig:dp_architecture}
 \end{figure}
 
@@ -185,28 +183,28 @@ T1H2Q4E8 & 1/2/4/8 A--B element products per cycle in mutually exclusive T/H/Q/E
 \label{sec:unpack_recode}
 \label{sec:full_brick}
 
-Fig.~\ref{fig:data_unpack} shows input unpacking. T/H retain exponent and significand fields; Q inputs are converted to common E5M3; INT8 inputs are separated into sign and magnitude. MXFP4/NVFP4 element exponents are folded into UQ3.1 magnitudes. HiF4 folds its first-level micro-exponent into UQ2.2 magnitudes and retains the second-level micro-exponent shared by a Lane. E formats therefore require no per-element floating-point alignment.
+Fig.~\ref{fig:data_unpack} shows the unpacked representation for shared arithmetic. T/H retain exponents and significands; Q uses a common internal E5M3 representation; INT8 is separated into sign and magnitude. MXFP4/NVFP4 element exponents are folded into UQ3.1 fixed-point magnitudes. HiF4 folds its first-level micro-exponent into a UQ2.2 magnitude and retains the second-level micro-exponent shared by the Lane. E formats therefore require no per-element floating-point alignment.
 
-\begin{figure}[!t]
+\begin{figure}[t]
 \centering
-% Author figure update: whole-lane counts should read 2x FP16 and 8x E.
-% The 10/16/4-bit fields describe one field group; each lane contains two.
+% Author figure update: whole-Lane counts should read 2x FP16 and 8x E.
+% The 10/16/4-bit fields describe one field group; each Lane contains two.
 \includegraphics[width=\columnwidth]{unpack_layout.png}
-\caption{Mapping input formats to shared exponent, significand, and sign fields. Q inputs use a common internal encoding; E element exponents are folded into fixed-point magnitudes. Unused fields are zero-filled, and special-value flags propagate separately.}
+\caption{Input-format mapping to shared exponent, significand, and sign fields. Q uses a common internal encoding, while E folds element exponents into fixed-point magnitudes. Unused fields are zero-filled; special-value flags propagate separately.}
 \label{fig:data_unpack}
 \end{figure}
 
 % Park multiplier composition follows the author's supplied reading;
 % verification against the original circuit figure remains pending.
-\textbf{Multiplier reuse.} BitFusion combines four $2\times2$ multipliers for one $4\times4$ multiplication or operates them independently for low-precision parallelism~\cite{bitfusion2018}. Park et al. reuse four $4\times8$ multipliers and one $4\times4$ multiplier for one FP16, two INT8, or four INT4 multiplications~\cite{parkMultimode8KMACHWutilizationaware2022}. Following this partial-product decomposition principle, each Lane contains two sets of $8\times8$, $8\times4$, $4\times8$, and $4\times4$ multipliers. Partial products are combined for wider multiplication or routed independently for parallel low-precision multiplication, avoiding per-format multiplier arrays.
+\textbf{Multiplier reuse.} BitFusion combines four $2\times2$ multipliers into one $4\times4$ multiplier or uses them for parallel low-bit-width computation~\cite{bitfusion2018}. Park et al. reuse four $4\times8$ multipliers and one $4\times4$ multiplier for one FP16, two INT8, or four INT4 multiplications~\cite{parkMultimode8KMACHWutilizationaware2022}. Following this partial-product decomposition and composition approach, we use two sets of $8\times8$, $8\times4$, $4\times8$, and $4\times4$ multipliers. Combining partial products or routing them independently supports different operand widths and parallelisms without replicating a complete multiplier array for each format.
 
-\textbf{Shifter reuse.} T/H/Q products are statically zero-padded according to their binary-point positions and fed to four shared right shifters. MMA-Sim reports 25 fractional bits for Blackwell MXFP8 fused summation~\cite{xie2025mmasim}. Using this as a reference, we choose a 28-bit UQ2.26 window with 26 fractional bits. Both Lanes align products to their common maximum product exponent. E/INT8 bypass these shifters and reuse the reduction tree. HiF4 applies its second-level micro-exponent as a small left shift of the Lane sum.
+\textbf{Shifter reuse.} T/H/Q products are statically zero-padded according to their binary-point positions before entering four shared right shifters. MMA-Sim's reverse-engineering analysis reports 25 fractional bits for Blackwell MXFP8 fused summation~\cite{xie2025mmasim}. Using this as a width-selection reference, we adopt a 28-bit unsigned UQ2.26 local alignment window with 26 fractional bits. Both Lanes align to a common maximum product exponent. E/INT8 bypass this network and reuse the downstream reduction tree; HiF4 applies a small left shift to the Lane partial sum using its second-level micro-exponent.
 
 \subsection{Group: Scale Fusion and Anchor Recompute}
 
-\textbf{Scale fusion after reduction.} The two Lanes share scales, so the Group sums their outputs and extracts the magnitude before multiplying by $\mathrm{Scale}_{\mathrm{mant}}$, the product of both input scale significands. NVFP4/HiF4 use a 14-bit compact Group magnitude and an 8-bit scale product, sharing one unsigned $14\times8$ multiplier instead of per-element scale multipliers. MX power-of-two scales are included in the exponent and bypass significand multiplication.
+\textbf{Scale fusion after reduction.} The two Lanes share scales, allowing the Group to sum their outputs and extract the magnitude before multiplying by $\mathrm{Scale}_{\mathrm{mant}}$, the product of the two input scale significands. The compact Group magnitude and scale-significand product have widths of 14 and 8 bits, respectively, for NVFP4/HiF4. These formats share one unsigned $14\times8$ multiplier, avoiding per-element scale multiplication. MX power-of-two scales contribute only to the exponent and bypass significand multiplication.
 
-\textbf{Unified partial-sum representation.} The Group output magnitude, $\mathrm{SoP}$ (sum of products), has $\mathrm{Group}_{\mathrm{mag}}$ bits (31 here) and $\mathrm{Group}_{\mathrm{frac}}$ fractional bits. $\mathrm{Anchor}$ denotes the exponent of its most significant physical bit. It combines the local alignment exponent $\mathrm{Anchor}_{\mathrm{lane}}$, the sum of the two unbiased scale exponents $\mathrm{Scale}_{\mathrm{exp}}$, and the element exponent bias $\mathrm{Bias}$:
+\textbf{Unified partial-sum representation.} Let $\mathrm{SoP}$ (sum of products) denote the Group output magnitude, with total width $\mathrm{Group}_{\mathrm{mag}}$ and fractional width $\mathrm{Group}_{\mathrm{frac}}$; we use a 31-bit magnitude. $\mathrm{Anchor}$ is the exponent associated with its most significant physical bit. It is determined by the local alignment exponent $\mathrm{Anchor}_{\mathrm{lane}}$, the sum of the two unbiased scale exponents $\mathrm{Scale}_{\mathrm{exp}}$, and the element exponent bias $\mathrm{Bias}$:
 \begin{equation}
 \begin{aligned}
 \mathrm{Anchor}={}&\mathrm{Anchor}_{\mathrm{lane}}+\mathrm{Scale}_{\mathrm{exp}}\\
@@ -214,9 +212,9 @@ Fig.~\ref{fig:data_unpack} shows input unpacking. T/H retain exponent and signif
 \end{aligned}
 \label{eq:anchor_recompute}
 \end{equation}
-Precomputed format corrections let Anchor Recompute run in parallel with significand reduction. E element exponents are already folded into magnitudes, so the local alignment exponent and element bias are zero. Unscaled formats use a zero scale-exponent sum.
+Format-dependent corrections can be determined in advance, allowing Anchor Recompute to proceed in parallel with significand reduction. E element exponents are already folded into the magnitudes, so both the local alignment exponent and element bias are zero. Formats without scales use a zero scale-exponent sum.
 
-\textbf{Leading zeros and bidirectional shifting.} The Group subtracts the leading-zero count of the scaled SoP from its original Anchor to obtain the leading-bit exponent for comparison. Masks exclude zero finite products and zero Group magnitudes from the respective exponent MAX, preventing zeros from raising the alignment reference. The request remains valid. Let $\mathrm{Exp}_{\mathrm{max}}$ be the maximum comparison exponent among participating Group and $C$ inputs, and $\Delta=\mathrm{Anchor}-\mathrm{Exp}_{\mathrm{max}}$. Padding SoP with low-order zeros to the unsigned global window width $W$ gives $\mathrm{SoP}_{\mathrm{pad}}$. Alignment produces
+\textbf{Leading zeros and bidirectional shifting.} The Group detects leading zeros in the scaled SoP and subtracts this count from the original Anchor to obtain the exponent of the leading significant bit for comparison. Participation masks exclude zero finite products and zero Group magnitudes from their respective exponent MAX operations, preventing zero terms from raising the alignment reference while keeping the pipeline request valid. Let $\mathrm{Exp}_{\mathrm{max}}$ be the maximum comparison exponent among participating Groups and $C$, and let $\Delta=\mathrm{Anchor}-\mathrm{Exp}_{\mathrm{max}}$. Appending low-order zeros to SoP forms $\mathrm{SoP}_{\mathrm{pad}}$ in the $W$-bit unsigned global window. The aligned result is
 \begin{equation}
 \mathrm{SoP}_{\mathrm{align}}=
 \begin{cases}
@@ -226,64 +224,65 @@ Precomputed format corrections let Anchor Recompute run in parallel with signifi
 \end{cases}
 \label{eq:bidirectional_alignment}
 \end{equation}
-The $W$-bit logical shifts produce zero when $|\Delta|\ge W$. A nonzero participating Group result shifts left by at most its leading-zero count, preserving significant high bits. A single shift computed from the original Anchor performs both normalization and global alignment.
+Here, $\ll$ and $\gg$ denote $W$-bit logical left and right shifts; a shift reaching the window width produces zero magnitude. A participating nonzero Group result shifts left by at most its leading-zero count, preserving its significant high-order bits. Computing the net shift from the original Anchor combines leading-zero normalization and global alignment into one shift.
 
 \subsection{DP: Shared Accumulation and Integer Bypass}
 
-Ten-Four includes $C$ in the frontend maximum-exponent comparison~\cite{rout2026tenfourv2}. Lutz et al.'s early-accumulation design aligns $C$ in parallel with product computation~\cite{lutzFusedFP84Way2024}. We defer $C$ alignment and accumulation to the DP level. E elements have narrow exponent ranges, and their actual magnitudes also depend on Group scales. Group reduction and scaling precede alignment with $C$, avoiding premature truncation of local products by a large $C$ exponent. This ordering is consistent with MMA-Sim's Blackwell NVFP4 model: compute and scale each group dot product, then align and sum the results with $C$~\cite{xie2025mmasim}.
+Ten-Four includes $C$ in the frontend maximum-exponent comparison~\cite{rout2026tenfourv2}, whereas Lutz et al.'s early-accumulation scheme aligns $C$ in parallel with product computation~\cite{lutzFusedFP84Way2024}. We defer $C$ alignment and accumulation to the DP level. E elements have a narrow exponent range, and their actual magnitudes also depend on Group scales. Performing Group reduction and scale fusion first avoids premature right-shift truncation of local products when $C$ has a large exponent. This organization is consistent with MMA-Sim's grouped Blackwell NVFP4 model: compute each Group dot product, apply its scales, and then align and sum the Group results with $C$~\cite{xie2025mmasim}.
 
-$C$ retains its original encoding until the backend, where it aligns with Group results in a 39-bit unsigned window. Signs are restored before shared accumulation. The baseline uses 4:2 and 3:2 compression followed by one carry-propagate addition. Partial sums undergo no FP32 conversion; the final output is normalized and rounded. INT8 products and the INT32 addend share the accumulator in fixed integer coordinates, bypassing floating-point alignment, normalization, and rounding. Magnitude right shifts truncate toward zero; the final FP32 result uses round-to-nearest, ties-to-even.
+$C$ retains its original encoding until the backend, where it aligns with Group results in a 39-bit unsigned global window. Signs are restored before the shared accumulator. The baseline performs fused accumulation using 4:2 and 3:2 carry-save compression followed by one carry-propagate addition. Intermediate partial sums are not converted to FP32; normalization and rounding occur only at the final output. INT8/INT32 use fixed integer coordinates and share the accumulation path while bypassing floating-point alignment, normalization, and rounding. Floating-point magnitude right shifts truncate toward zero, and final FP32 results use round-to-nearest, ties-to-even.
 % END REVIEW PAIR: 03_architecture.tex
 
 % BEGIN REVIEW PAIR: 04_expansion.tex
 \section{Low-Precision Specialization and Throughput-Ratio Expansion}
 \label{sec:expansion}
 
-Dot-product tensor units organize DPs into an $m\times n$ array with systolic or broadcast operand delivery. At full steady-state utilization and one input per DP per cycle, a homogeneous array provides
+Dot-product tensor units organize DPs into an $m\times n$ array supplied through a systolic or broadcast network. At full steady-state utilization, with each DP accepting one set of inputs per cycle, the homogeneous baseline's theoretical peak throughput in precision $p$ is
 \begin{equation}
 \mathrm{Peak}_{p}=2mnK_{p}f \quad (\mathrm{FLOP/s}),
 \label{eq:array_peak_throughput}
 \end{equation}
-where $K_p$ is the native dot-product length for precision $p$, $f$ is the clock frequency in Hz, and each MAC counts as two operations. With high-precision capacity unchanged, ratios can shift by increasing low-precision $K_p$ or adding low-precision DPs along M/N. Fig.~\ref{fig:kn_datapaths} illustrates expansion from $1:2:4$ to $1:2:8$. We derive E-only and shared Q/E Lanes and Groups from the baseline, preserving its pipeline depth and Group interface.
+where $K_p$ is the native dot-product length of one DP in precision $p$, $f$ is the clock frequency, and the factor of two counts two operations per MAC. With high-precision capacity unchanged, the throughput ratio can be adjusted by increasing $K_p$ in low-precision paths or adding specialized low-precision DPs along M/N. Fig.~\ref{fig:kn_datapaths} illustrates these alternatives for expansion from $1:2:4$ to $1:2:8$. We derive E-only and shared Q/E Lanes and Groups from the baseline, retaining its pipeline depth and Group output interface.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.85\columnwidth]{kn_composition.png}
-\caption{Expanding $1:2:4$ to $1:2:8$. Left: add E resources within each DP, retaining the output count. Right: add E-only DP columns for independent outputs.}
+\caption{Two ways to expand from $1:2:4$ to $1:2:8$. Left: add E resources inside each DP without changing the output count. Right: add E-only DP columns to compute independent outputs.}
 \label{fig:kn_datapaths}
 \end{figure}
-
-\subsection{Specializing Low-Precision Lanes and Groups}
+\subsection{Resource Pruning in Specialized Lanes and Groups}
 \label{sec:specialized_midgroups}
 
-Unpacking and its registers contribute appreciably to baseline area (Table~\ref{tab:baseline_breakdown}). Specialization therefore removes unsupported field extraction, numerical mapping, classification, and selection logic while narrowing registers and arithmetic.
+Input unpacking and its registers account for a substantial part of baseline area. Specialization therefore covers both decoding and arithmetic: field extraction, numerical mapping, classification, and selection logic for unsupported formats are removed, and the corresponding registers are narrowed.
 
-\textbf{E-only design.} An E8 Lane retains MXFP4/NVFP4/HiF4 unpacking and removes T/H/Q/INT8 branches, passing compact magnitudes, signs, and scale information to the datapath. Eight unsigned $4\times4$ multipliers feed a narrow reduction tree. The 8- and 5-bit element-exponent adders, significand-alignment shifters, and cross-Lane exponent MAX are removed. HiF4's two 1-bit second-level exponents produce a 2-bit shift amount for scaling after reduction, yielding a 14-bit signed Lane result. Two Lanes form an E16 Group: their sums share fixed-point coordinates and combine into a 15-bit signed result with a 14-bit magnitude. Significand scaling uses unsigned $14\times8$ multiplication when required. Low-order zero padding connects to the common 31-bit interface while preserving the Anchor interpretation.
+\textbf{E-only design.} An E8 Lane retains only MXFP4/NVFP4/HiF4 unpacking and removes T/H/Q/INT8 branches, feeding compact magnitudes, signs, and scaling information to the datapath. Eight unsigned $4\times4$ multipliers and a narrow reduction tree replace the general datapath; 8- and 5-bit element-exponent adders, significand-alignment shifters, and cross-Lane exponent MAX logic are removed. Adding HiF4's two 1-bit second-level exponents produces a 2-bit shift amount for local scaling after reduction, yielding a 14-bit signed Lane output. Two Lanes form an E16 Group, whose outputs are added in common fixed-point coordinates to produce a 15-bit signed sum and a 14-bit magnitude. Significand scaling, when required, uses $\mathrm{U14}\times\mathrm{U8}$ multiplication. Low-order zero padding extends the result to the common 31-bit output interface while preserving the Anchor coordinate system.
 
-\textbf{Shared Q/E design.} A Q4E8 Lane retains Q/E unpacking and removes T/H/INT8 decoding and arithmetic. Q retains exponents, significands, and special-value classification; E uses compact magnitudes. Q activates four of the eight $4\times4$ multipliers and retains exponent comparison, local alignment, and wide reduction. E bypasses alignment and applies HiF4's second-level exponent after reduction. Two Lanes form a Q8E16 Group, retaining Q's wide sum and leading-zero detection while reusing E scale-significand multiplication. Both Group types use common magnitude, exponent, and status interfaces for shared or independent DP processing.
+\textbf{Shared Q/E design.} A Q4E8 Lane retains Q/E unpacking and removes T/H/INT8 decoding and arithmetic. Q retains exponent, significand, and special-value classification, while E uses the compact magnitude representation. Q mode activates four of the eight $4\times4$ multipliers and retains element-exponent comparison, local alignment, and the wide reduction tree. E bypasses alignment and incorporates HiF4's second-level scaling exponent after the tree. Two Lanes form a Q8E16 Group, retaining Q's wide Group sum and leading-zero detection while reusing E scale-significand multiplication. Both Group types expose a common magnitude, exponent, and status interface for shared or independent DP backends.
 
 \subsection{Internal Expansion Along K}
 \label{sec:k_expansion}
 
-The four-Group baseline provides H16Q32E64 throughput. Adding two E16, four E16, or four Q8E16 Groups realizes Table~\ref{tab:brick_compositions}'s ratios, preserving TF32/INT8 support. Added Groups receive further A/B segments and scales for the same output, sharing $C$, normalization, and rounding.
+The baseline contains four multi-precision Groups and provides H16Q32E64 peak throughput. Adding two E16, four E16, or four Q8E16 Groups realizes the three ratios in Table~\ref{tab:brick_compositions}, retaining baseline TF32 and INT8 support. Added Groups receive further A/B segments and scales for the same output, sharing one $C$ input and the final normalization and rounding path.
 
-The DP adds two, four, or four global bidirectional shifters for $1:2:6$, $1:2:8$, or $1:4:8$, respectively, retaining the unsigned alignment window. Added Group exponents enter the global MAX. Group results merge with the baseline's two carry-save output rows; a row-pair selector precedes one shared CPA (Fig.~\ref{fig:dp_csa_expansion}). For $N_{\mathrm{group}}$ baseline and added Groups and alignment width $W$, the sum width is
+The DP adds two, four, and four global bidirectional shifters for $1:2:6$, $1:2:8$, and $1:4:8$, respectively, retaining the unsigned alignment window and including added Group exponents in the global MAX. Fig.~\ref{fig:dp_csa_expansion} shows the expanded reduction: added Group results merge with the baseline's two carry-save rows, and a row-pair selector feeds one shared carry-propagate adder (CPA). For a total of $N_{\mathrm{group}}$ baseline and added Groups and an unsigned alignment width $W$, the retained sum width is
 \begin{equation}
 W_{\mathrm{sum}}=W+1+\left\lceil\log_2(N_{\mathrm{group}}+1)\right\rceil.
 \label{eq:expanded_sum_width}
 \end{equation}
-Here, $W+1$ includes sign restoration after alignment; $N_{\mathrm{group}}+1$ includes the single $C$ input, and the ceiling term reserves carry growth. Pipeline depth and initiation interval remain unchanged. E extensions activate only in E mode, and QE extensions in Q/E modes. Masks control frontend updates, MAX, shifting, reduction, and special-value propagation.
+Here, $W+1$ is the width after global alignment and sign restoration, $N_{\mathrm{group}}+1$ includes the single $C$ input, and the ceiling term accounts for carry growth. Expansion preserves pipeline depth and initiation interval.
+
+E extensions activate only in E mode, and QE extensions only in Q/E modes. Masks jointly control frontend updates, MAX participation, shifting, reduction, and special-value propagation.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.70\columnwidth]{DP_CSAmodule.png}
-\caption{K-expanded carry-save reduction. The dashed upper-right compressor reduces four added sources to two rows for $1:2:8$ and $1:4:8$; $1:2:6$ feeds two sources directly to the lower-right merge. The selector chooses the baseline or extended row pair for the shared CPA.}
+\caption{Carry-save reduction for K expansion. The dashed upper-right 4:2 compressor is used only for $1:2:8$ and $1:4:8$, reducing four added sources to two rows. The two added sources in $1:2:6$ feed the lower-right merge directly. The bottom selector chooses the baseline or extended row pair for the shared final CPA.}
 \label{fig:dp_csa_expansion}
 \end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Added resources. $N_{\mathrm{dp}}=mn$ is the DP count of the $1:2:4$ baseline array}
+\caption{Target ratios and added resources. $N_{\mathrm{dp}}=mn$ is the DP count of the $1:2:4$ baseline array.}
 \label{tab:brick_compositions}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 \begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}cll@{}}\toprule
@@ -299,234 +298,157 @@ $1:4:8$ & $4\times$ Q8E16 & $N_{\mathrm{dp}}\times$ Q32E64 \\
 \label{sec:n_expansion}
 \label{sec:brick_composition}
 
-An array can add independent outputs along M or N. We designate the shorter dimension as N and add low-precision DPs along it. Four E16 or Q8E16 Groups with an independent backend form E64 or Q32E64, respectively, giving $0:0:4$ or $0:2:4$ relative to baseline H throughput. Both retain the baseline hierarchy, floating-point flow, interface, and throughput, removing unsupported-format control and the integer accumulation bypass. Added columns share A within each row but have separate B, $C$, and D.
+A two-dimensional DP array can add independent outputs along M or N. We denote the shorter output dimension by N and add low-precision DPs along it. Four E16 or Q8E16 Groups with an independent backend form E64 or Q32E64, respectively; their H/Q/E peaks, normalized to baseline H throughput, are $0:0:4$ and $0:2:4$. These specialized DPs retain the baseline hierarchy and floating-point flow while removing unsupported-format control and the integer accumulation bypass, preserving the interface and throughput. At the array level, added units share A with the baseline in each row; each column uses independent B and $C$ inputs and produces its own D.
 
-Table~\ref{tab:brick_compositions} specifies additions to the same baseline array. The $1:2:6$ design adds half as many E64 DPs as baseline DPs; adding complete columns requires an even baseline column count. The other ratios add equally many E64 or Q32E64 DPs. K expansion instead replaces each baseline DP with its expanded counterpart, matching each precision's peak. K shares output processing; N adds independent accumulation and output state. Section~\ref{sec:evaluation} compares both implementations.
+Table~\ref{tab:brick_compositions} lists resources added to the same baseline array. The $1:2:6$ configuration adds half as many E64 units as baseline DPs, requiring an even baseline column count when adding complete columns. The $1:2:8$ and $1:4:8$ configurations add E64 and Q32E64 units, respectively, equal in number to the baseline DPs. For comparison, K expansion replaces each DP in the baseline array with the corresponding expanded design, matching peak throughput in every precision. K expansion shares output processing, whereas N composition adds independent accumulation and output state. The next section compares these implementations.
 % END REVIEW PAIR: 04_expansion.tex
 
 % BEGIN REVIEW PAIR: 05_evaluation.tex
 \section{Hardware Implementation and Evaluation}
 \label{sec:evaluation}
 
-We first analyze baseline costs, then specialization and ratio expansion, and finally K/N composition at matched peak capacity. Circuit characterization supplies area and mode power to the workload model. Array bandwidth and accumulator storage are examined separately as structural constraints.
-
 \subsection{Methodology}
 \label{sec:eval_setup}
 
-All six complete DPs are synthesized with Synopsys Design Compiler using a 12\,nm standard-cell library at TT, 0.7\,V, and 85$^\circ$C, targeting 1\,GHz with integrated clock gating. Each design retains eight pipeline stages and accepts one independent request per cycle. All satisfy post-synthesis setup, hold, and electrical constraints under these conditions. Area includes datapath logic, pipeline registers, and clock-gating cells, but excludes array storage and interconnect.
+All six DPs are synthesized with Synopsys Design Compiler at 12\,nm, TT, 0.7\,V, and 85$^\circ$C, using a 1\,GHz clock and integrated clock gating. Each retains eight pipeline stages and II=1 and meets timing and electrical constraints. Area includes combinational logic, pipeline registers, and clock-gating cells. Power workloads use the first-layer MLP down-projection of Qwen3-8B~\cite{qwen3technicalreport}, encoded as BF16, MXFP8 E4M3, or MXFP4 E2M1. VCS gate-level simulation issues 1024 independent requests continuously and generates SAIF activity from the middle 512 cycles. Power Compiler estimates internal, switching, and leakage power with complete activity annotation~\cite{synopsysActivityPower}. Area and power are post-synthesis estimates before clock-tree synthesis and routing.
 
-Power activity is driven by activations and weights from the first-layer MLP down-projection of Qwen3-8B~\cite{qwen3technicalreport}, mapped to BF16, MXFP8 E4M3, and MXFP4 E2M1. VCS gate-level simulation captures a stable 512-cycle window of continuous issue and generates SAIF activity for Power Compiler, which reports internal, net-switching, and leakage power~\cite{synopsysActivityPower}. Activity annotation covers all target objects, and RTL and gate-level numerical results agree. These are post-synthesis estimates before clock-tree synthesis and routing; routed parasitics and memory-access power are excluded.
-
-We count one MAC as two FLOPs. In addition to total area and power, we report area efficiency $2K_f\nu/A$ and energy per FLOP $P_f/(2K_f\nu)$, where $K_f$ is the native product count in mode $f$ and $\nu$ is frequency. This separates total power growth from changes in the cost per operation.
-
-\subsection{Baseline Area and Power Breakdown}
+\subsection{Baseline Performance and Comparison with Prior Work}
 \label{sec:reuse_evaluation}
 \label{sec:area_breakdown}
-
-The baseline occupies 0.016165\,mm$^2$ and consumes 15.328, 16.002, and 11.197\,mW in BF16, MXFP8, and MXFP4 modes. Table~\ref{tab:baseline_breakdown} groups combinational logic and associated registers by function. Multiplication accounts for 24.15\% of area, whereas reduction and alignment together account for 38.91\%. Multiplier cost alone therefore does not explain the complete DP. Unpacking and exponent processing contribute another 27.21\%, reflecting format support, scaling, and coordinate handling.
-
-\begin{table}[t]
-\centering
-\caption{Baseline functional shares (\%). H/Q/E use BF16/MXFP8/MXFP4. Power includes dynamic and leakage components}
-\label{tab:baseline_breakdown}
-\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrr@{}}\toprule
-Function & Area & $P_H$ & $P_Q$ & $P_E$ \\\midrule
-Multiplication & 24.15 & 15.87 & 14.55 & 16.07 \\
-Reduction & 21.84 & 14.54 & 14.56 & 16.59 \\
-Alignment & 17.07 & 20.51 & 20.74 & 13.31 \\
-Exponent & 11.19 & 11.80 & 12.49 & 8.28 \\
-Unpacking & 16.02 & 17.54 & 18.12 & 21.31 \\
-Norm./round & 3.04 & 2.42 & 2.16 & 2.85 \\
-Others & 6.70 & 17.32 & 17.39 & 21.59 \\
-\bottomrule
-\end{tabular*}\endgroup
-\end{table}
-
-Alignment accounts for 20.74\% of Q-mode power but 13.31\% in E mode, consistent with E bypassing element-exponent alignment. Unpacking and the remaining control, gating, and miscellaneous logic become relatively more prominent in E mode. Reducing element width does not proportionally reduce total DP power; low-precision specialization should also prune wide registers, exponent logic, and selection paths. These functional shares locate costs but do not attribute the entire difference between complete designs to a single optimization.
-
-\subsection{Comparison with Existing Arithmetic Units}
 \label{sec:related_dp_evaluation}
 
-Table~\ref{tab:related_features} separates native input formats from datapath features. FPnew targets scalar and SIMD floating-point operations; Ten-Four combines multi-format dot products with integer accumulation; MPICC supports heterogeneous low-precision operands and stochastic rounding; MXDOTP focuses on native MXFP8 scaled dot products; and TransDot shares resources across multi-precision SIMD and dot-product operations. DP-Puzzle covers H/Q/E with block-scale processing and varies low-precision capacity through specialized frontends.
 
-% BEGIN INLINE TABLE: tables/related_features.tex
-% Entries refer to reported configurations, not hypothetical reconfiguration.
-\begin{table*}[t]
-\centering
-\caption{Supported input formats and datapath features of related arithmetic units}
-\label{tab:related_features}
-\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
-\def\Y{$\checkmark$}\def\N{$\times$}
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l*{14}{c}@{}}\toprule
-& \multicolumn{9}{c}{Native input formats} & \multicolumn{5}{c}{Datapath features} \\
-\cmidrule(lr){2-10}\cmidrule(lr){11-15}
-Design & TF32 & FP16 & BF16 & FP8 & FP6 & FP4 & INT8 & INT4 & LOG4 & DP & MX & NVFP4 & HiF4 & SR \\\midrule
-Ten-Four~\cite{rout2026tenfourv2} & \Y & \Y & \Y & \Y & \N & \N & \Y & \Y & \N & \Y & \Y & \N & \N & \N \\
-MPICC~\cite{huangMPICCMultiplePrecisionInterCombined2025} & \N & \N & \N & \Y & \Y & \Y & \N & \Y & \Y & \Y & --- & \N & \N & \Y \\
-MXDOTP~\cite{islamoglu2025mxdotp} & \N & \N & \N & \Y & \N & \N & \N & \N & \N & \Y & \Y & \N & \N & --- \\
-FPnew~\cite{mach2020fpnew} & \N & \Y & \Y & \Y & \N & \N & \N & \N & \N & \N & \N & \N & \N & \N \\
-TransDot~\cite{transdot2026} & \N & \Y & \N & \Y & \N & \Y & \N & \N & \N & \Y & \N & \N & \N & --- \\
-\midrule
-DP-Puzzle & \Y & \Y & \Y & \Y & \Y & \Y & \Y & \N & \N & \Y & \Y & \Y & \Y & \N \\
-\bottomrule\end{tabular*}
-\par\smallskip
-\parbox{\textwidth}{\raggedright
-$\checkmark$: supported; $\times$: absent from the reported configuration; ---: not established by the cited evidence.
-DP: native multi-term dot product; MX/NVFP4/HiF4: integrated block-scale handling (MX indicates at least one MX format); SR: stochastic rounding.
-FP8/FP4 denote element arithmetic and do not imply scale support. FPnew additionally supports FP32/64; TransDot supports FP32 FMA. MPICC supports heterogeneous operand combinations and FP12 emulation, which is not marked as native FP16.}
-\endgroup
-\end{table*}
-% END INLINE TABLE: tables/related_features.tex
+Table~\ref{tab:related_dp} uses DeepScaleTool~\cite{sarangi2021deepscaletool} to normalize 7, 22, and 28\,nm results to a 12\,nm process proxy. The MXFP8 area-efficiency proxies for Ten-Four's full-format Q8/Q16 configurations are 1.275/1.316\,TFLOP/s/mm$^2$. Our baseline achieves 3.01--3.10 times these values, and $1{:}4{:}8$ achieves 3.58--3.69 times. Q32E64's MXFP8 energy efficiency is 2.32 times that of MXDOTP, while E64's MXFP4 energy efficiency is 1.58 times MPICC's process-normalized FP4 value; area efficiencies are comparable within each pair. These comparisons indicate that DP-Puzzle combines multi-precision support with area and energy-efficiency benefits from low-precision specialization.
+
+
 % BEGIN INLINE TABLE: tables/related_ppa.tex
-% Sources and arithmetic conversions: references/notes/dp_comparison.md.
+% Sources and conversions: references/notes/dp_comparison.md.
 \begin{table*}[t]
 \centering
-\caption{Implementation conditions and precision-specific efficiency. Columns retain each work's reported technology and arithmetic boundary}
+\caption{Implementation conditions and process-normalized efficiency}
 \label{tab:related_dp}
-\begingroup\footnotesize\setlength{\tabcolsep}{4pt}
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l*{6}{c}@{}}\toprule
-Metric & Ten-Four~\cite{rout2026tenfourv2} & MPICC~\cite{huangMPICCMultiplePrecisionInterCombined2025} & MXDOTP~\cite{islamoglu2025mxdotp} & FPnew~\cite{mach2020fpnew} & TransDot~\cite{transdot2026} & This work \\\midrule
-Structure & Fused DP & $n$-term MAC & Scaled DP & Vector FMA & FMA / DP & Scaled DP \\
-Evaluation & Synthesis & Synthesis & Post-layout & Silicon & Post-layout & Synthesis \\
-Technology (nm) & 7 (predictive) & 28 & 12 & 22FDX & 12 & 12 \\
-Voltage (V) & 0.7 & 0.9 & 0.8 & 0.8 & 0.8 & 0.7 \\
-Frequency (GHz) & 1.5$^a$ & 1.43 & 1.09 & 0.923 & 1.0 & 1.0 \\
-Area ($\mu$m$^2$) & 1959.86 & 2295 & 3150 & 49\,000$^b$ & --- & 16\,165.12 \\
-Accumulation & FP32/INT32 & FP12/INT8 & FP32 & Mode-specific & FP32$^c$ & FP32/INT32 \\
+\begingroup\scriptsize\setlength{\tabcolsep}{2pt}
+\def\Eff#1{\begin{tabular}{@{}lr@{}}#1\end{tabular}}
+\def\Vals#1{\begin{tabular}{@{}r@{}}#1\end{tabular}}
+% BEGIN GENERATED DP AREA CELLS
+\def\DPAreas{16\,165.12 & 18\,863.27 & 21\,596.41 & 27\,191.14 & 5\,644.14 & 11\,695.21}
+% END GENERATED DP AREA CELLS
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l*{11}{c}@{}}\toprule
+Metric & Ten-Four~\cite{rout2026tenfourv3} & MPICC~\cite{huangMPICCMultiplePrecisionInterCombined2025} & MXDOTP~\cite{islamoglu2025mxdotp} & FPnew~\cite{mach2020fpnew} & TransDot~\cite{transdot2026} & \multicolumn{6}{c}{DP-Puzzle (H:Q:E)} \\
+\cmidrule(lr){7-12}
+ & & & & & & $1{:}2{:}4$ (base) & $1{:}2{:}6$ & $1{:}2{:}8$ & $1{:}4{:}8$ & $0{:}0{:}4$ & $0{:}2{:}4$ \\\midrule
+Structure & Fused DP & $n$-term MAC & MX DP & SIMD FMA & FMA / DP & \multicolumn{6}{c}{MX DP} \\
+Evaluation & Synthesis & Synthesis & Post-layout & Silicon & Post-layout & \multicolumn{6}{c}{Synthesis} \\
+Technology (nm) & 7 & 28 & 12 & 22 & 12 & \multicolumn{6}{c}{12} \\
+Voltage (V) & 0.7 & 0.9 & 0.8 & 0.8 & 0.8 & \multicolumn{6}{c}{0.7} \\
+Frequency (GHz) & 1.58 & 1.43 & 1.09 & 0.923 & 1.0 & \multicolumn{6}{c}{1.0} \\
+Area ($\mu$m$^2$) & 2400 / 4650 & 2295 & 3150 & 49\,000 & --- & \DPAreas \\
+Accumulation & FP32/INT32 & FP12/INT8 & FP32 & Per format & FP32 & \multicolumn{4}{c}{FP32/INT32} & \multicolumn{2}{c}{FP32} \\
 \midrule
-\multicolumn{7}{l}{Energy efficiency (GFLOP/s/W)} \\
-\quad FP16 & --- & --- & --- & 497.67 & 555.56 & --- \\
-\quad BF16 & --- & --- & --- & 581.96 & --- & 2087.65 \\
-\quad FP8 / MXFP8 & --- & 1948 & 2035 & 1244.78 & 1190.48 & 3999.50 \\
-\quad FP4 / MXFP4 & --- & 5931 & --- & --- & 2439.02 & 11\,432.11 \\
-\quad FP12 (emulated) & --- & 865.1 & --- & --- & --- & --- \\
+% BEGIN GENERATED EFFICIENCY ROWS
+% Generated by paper/data/process_normalization/normalize_table.py.
+\shortstack[l]{Energy efficiency\\(TFLOP/s/W)} & --- & \Eff{FP8 & 3.793\\FP4 & 11.548} & \Eff{MXFP8 & 2.035} & \Eff{FP16 & 0.786\\BF16 & 0.919\\FP8 & 1.966} & \Eff{FP16 & 0.556\\FP8 & 1.190\\FP4 & 2.439} & \Eff{BF16 & \textbf{2.088}\\MXFP8 & 4.000\\MXFP4 & 11.432} & \Vals{2.046\\3.913\\13.317} & \Vals{2.013\\3.851\\14.550} & \Vals{2.033\\4.446\\12.449} & \Vals{---\\---\\\textbf{18.192}} & \Vals{---\\\textbf{4.713}\\12.527} \\
 \midrule
-\multicolumn{7}{l}{Area efficiency (GFLOP/s/mm$^2$)} \\
-\quad FP16 & --- & --- & --- & 151.43 & --- & --- \\
-\quad BF16 & --- & --- & --- & 151.43 & --- & 1979.57 \\
-\quad FP8 / MXFP8 & --- & 1246 & 5523.81 & 302.65 & --- & 3959.14 \\
-\quad FP4 / MXFP4 & --- & 4985 & --- & --- & --- & 7918.28 \\
-\quad FP12 (emulated) & --- & 415.4 & --- & --- & --- & --- \\
+\shortstack[l]{Area efficiency\\(TFLOP/s/mm$^2$)} & \Eff{BF16 & 0.638 / 0.658\\MXFP8 & 1.275 / 1.316} & \Eff{FP8 & 6.089\\FP4 & 24.361} & \Eff{MXFP8 & 5.524} & \Eff{FP16 & 0.430\\BF16 & 0.430\\FP8 & 0.860} & --- & \Eff{BF16 & \textbf{1.980}\\MXFP8 & 3.959\\MXFP4 & 7.918} & \Vals{1.696\\3.393\\10.179} & \Vals{1.482\\2.963\\11.854} & \Vals{1.177\\4.707\\9.415} & \Vals{---\\---\\\textbf{22.678}} & \Vals{---\\\textbf{5.472}\\10.945} \\
+% END GENERATED EFFICIENCY ROWS
 \bottomrule\end{tabular*}
 \par\smallskip
-\parbox{\textwidth}{\raggedright
----: unavailable here or inapplicable; it does not mean zero. One MAC/FMA is counted as two FLOPs; an $n$-term MAC is counted as $2n$ FLOPs.
-$^a$Ten-Four targets 1.5 GHz and reports $F_{\max}=1.571$ GHz and total power 6.28 mW; no format-specific efficiency is inferred from that aggregate power.
-$^b$FPnew area and nominal SIMD energy include the entire FPU; its FP8 encoding differs from MXFP8.
-$^c$TransDot entries use dot products accumulated into FP32; energy efficiency is converted from reported pJ/FLOP.
-MXDOTP and this work use MXFP8; this work's FP4 entries use MXFP4. FPnew/MXDOTP area efficiency is calculated from reported throughput and area. Different process nodes, accumulation formats and activity conditions preclude a direct iso-technology ranking.}
+\parbox{\textwidth}{\raggedright Implementation conditions are native. DeepScaleTool~\cite{sarangi2021deepscaletool} uses 14\,nm as a proxy for 12\,nm and preserves native 12\,nm results. Bold marks the best DP-Puzzle ratio for each precision and metric. Dashes indicate unavailable results or unsupported modes.}
 \endgroup
 \end{table*}
 % END INLINE TABLE: tables/related_ppa.tex
 
-Table~\ref{tab:related_dp} lists implementation conditions and precision-specific energy and area efficiency. FPnew entries use the complete FPU's SIMD results at nominal voltage; TransDot entries use dot products accumulated into FP32. Our entries use workload-annotated BF16, MXFP8, and MXFP4 power. Ten-Four's aggregate power is not resolved by format, so we do not infer format-specific energy efficiency from it. Nor do we infer cell-area efficiency from a layout outline when standalone unit area is unavailable.
+Fig.~\ref{fig:six_dp_costs} compares area and power across the six DPs. Removing high-precision paths reduces E64/Q32E64 area to 34.92\%/72.35\% of the baseline. K-expanded $1{:}2{:}6$ and $1{:}2{:}8$ increase area by 16.69\%/33.60\% for 50\%/100\% more E throughput. The $1{:}4{:}8$ design doubles Q/E throughput; Q-mode power reaches 28.789\,mW, the highest among its modes. Power changes across precisions are not proportional to area growth.
 
-Arithmetic semantics constrain this comparison. INT4 support does not imply floating-point FP4 support, and FP4 multiplication does not imply MX/NV scale handling. Multi-step high-precision emulation differs from native high-precision parallelism. DP-Puzzle uses the same format for A and B and does not cover all MPICC heterogeneous combinations. Process, voltage, dot-product length, and activity conditions differ across works, so their absolute efficiency values do not establish an iso-condition ranking. Controlled comparisons here concern the six DPs and their compositions under common conditions.
-
-\subsection{Specialization and the Costs of Six DPs}
+\subsection{Area and Power of K/N Expansion}
 \label{sec:lowp_costs}
-
-Table~\ref{tab:six_dp_costs} summarizes the six complete units. Standalone E64 and Q32E64 reduce area by 65.08\% and 27.65\% relative to the baseline. At the same MXFP4 K64 capacity, E64, Q32E64, and the baseline consume 7.036, 10.218, and 11.197\,mW, respectively. E specialization removes Q alignment and wide reduction resources; QE retains Q/E reuse at a higher cost.
-
-\begin{table}[t]
-\centering
-\caption{Complete-DP costs at 1 GHz. Area: $10^3\,\mu$m$^2$; power: mW. Dashes denote unsupported modes}
-\label{tab:six_dp_costs}
-\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrr@{}}\toprule
-H/Q/E capacity & Area & $P_H$ & $P_Q$ & $P_E$ \\\midrule
-16/32/64 & 16.165 & 15.328 & 16.002 & 11.197 \\
-16/32/96 & 18.863 & 15.637 & 16.354 & 14.417 \\
-16/32/128 & 21.596 & 15.893 & 16.620 & 17.595 \\
-16/64/128 & 27.191 & 15.744 & 28.789 & 20.563 \\
-0/0/64 & 5.644 & --- & --- & 7.036 \\
-0/32/64 & 11.695 & --- & 13.580 & 10.218 \\
-\bottomrule
-\end{tabular*}\endgroup
-\end{table}
-
-K-expanded E96/E128 increase area by 16.69\%/33.60\% for 50\%/100\% more E throughput, reducing MXFP4 energy per MAC by 14.16\%/21.43\%. Q64E128 increases area by 68.21\% and doubles both Q and E peaks. Its MXFP8 energy per MAC falls by 10.05\%, although total power reaches 28.789\,mW. Lower energy per operation can therefore coexist with higher active power, which matters under a power cap.
-
-The expanded designs increase BF16 power by only 2.01\%--3.69\%, indicating that precision gating limits added-path activity. Area still reflects all physical resources, and modes without extra capacity still incur leakage, shared-control, and backend costs. Ratio selection must therefore consider more than the target low-precision mode.
-
-\subsection{K/N Composition at Matched Capacity}
 \label{sec:kn_evaluation}
 
-Using the integer-instance compositions in Table~\ref{tab:brick_compositions}, K costs come from expanded DPs and N costs sum complete-DP measurements. Table~\ref{tab:kn_costs} compares only low-precision modes in which all added units participate; unknown idle power is not treated as zero. At matched mode throughput, a power reduction also reduces energy per operation.
+\begin{figure}[t]
+\centering
+\subfloat[Area\label{fig:six_dp_area}]{\includegraphics[width=0.94\columnwidth]{latest6_area.png}}\par
+\subfloat[Power\label{fig:six_dp_power}]{\includegraphics[width=0.94\columnwidth]{latest6_power.png}}
+\caption{Area and total power of the six DPs, normalized to baseline area and baseline BF16 power, respectively.}
+\label{fig:six_dp_costs}
+\end{figure}
 
+Table~\ref{tab:kn_costs} compares matched per-precision peaks, normalizing costs by the number of baseline DPs. The model sums only complete-DP area and active power, excluding storage, interconnect, and peripheral logic. In N composition, inactive added DPs are assumed to be ideally power-gated: their area is retained, but dynamic power, leakage, and power-down/wakeup overheads are omitted. K expansion shares the alignment and accumulation backend, reducing area by 0.65\%--2.40\% and power by 2.02\%--3.97\% in modes that use the added units. DP costs are close for the two organizations, with reuse of floating-point and integer output circuitry giving K expansion a modest area and energy-efficiency advantage.
+
+% BEGIN INLINE TABLE: tables/kn_costs.tex
+% Generated by paper/data/kn_comparison/calculate.py from retained DP measurements.
 \begin{table}[t]
 \centering
-\caption{Capacity-matched K/N component estimates. Area: $10^3\,\mu$m$^2$; power: mW. N costs sum complete-DP measurements and exclude array interconnect and accumulator storage}
+\caption{Modeled costs per baseline DP (K / N). Area: $10^3\,\mu$m$^2$; power: mW}
 \label{tab:kn_costs}
-\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
-\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lcrrrr@{}}\toprule
-Ratio & Mode & $A_K$ & $A_N$ & $P_K$ & $P_N$ \\\midrule
-$1:2:6$ & E & 37.727 & 37.974 & 28.835 & 29.429 \\
-$1:2:8$ & E & 21.596 & 21.809 & 17.595 & 18.233 \\
-$1:4:8$ & Q & 27.191 & 27.860 & 28.789 & 29.582 \\
-$1:4:8$ & E & 27.191 & 27.860 & 20.563 & 21.414 \\
+\begingroup\footnotesize\setlength{\tabcolsep}{2pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lcccc@{}}\toprule
+Ratio & Area (K / N) & $P_H$ (K / N) & $P_Q$ (K / N) & $P_E$ (K / N) \\\midrule
+$1:2:6$ & 18.863/18.987 & 15.637/15.328 & 16.354/16.002 & 14.417/14.715 \\
+$1:2:8$ & 21.596/21.809 & 15.893/15.328 & 16.620/16.002 & 17.595/18.233 \\
+$1:4:8$ & 27.191/27.860 & 15.744/15.328 & 28.789/29.582 & 20.563/21.414 \\
 \bottomrule
 \end{tabular*}\endgroup
 \end{table}
+% END INLINE TABLE: tables/kn_costs.tex
 
-K composition reduces area by 0.65\%--2.40\% and low-precision active power by 2.02\%--3.97\%. In these implementations, backend sharing and local-path optimization together offset the added global shifters and compressors, although the net benefit is modest. Because standalone E64 and internal E components differ in local pipeline partition and backend, this is not an ablation of composition location alone. N power sums activity results from constituent units and excludes array-level broadcast correlation, interconnect, and accumulator storage. The results establish component-level trends, not final post-layout array differences.
+\subsection{Bandwidth Requirements of K/N Expansion}
 
-\subsection{Input Reuse and Accumulator Bandwidth}
-
-Let the baseline output tile be $m\times n$, its native reduction length be $k$, and the capacity multiplier for one precision be $r$. K expansion uses $m\times n\times rk$, whereas N expansion uses $m\times rn\times k$; both perform $rmnk$ MACs per issue. Let $w(k)$ be the bits in one operand vector, including scales. With ideal row/column broadcast,
+For an $r$-fold throughput expansion in a given precision, the K and N arrays have dimensions $m\times n\times rk$ and $m\times rn\times k$, respectively. In steady state, A is spatially reused along rows and B along columns; fill and drain are omitted. The m-side A data are loaded once every $\tau_m$ issues and remain resident in between, while n-side B data change every issue. C/D are read and written once every $\tau$ accumulation updates. Thus, $\tau_m$ and $\tau$ describe distinct input and partial-sum residency intervals. Let $f$ be the issue frequency, $V$ the vector width including block scales ($rV$ after K expansion), and $c$ the accumulator width. With sufficient resident buffering and accumulation contexts, and identical $\tau_m$ and $\tau$ for both organizations, average bandwidth between resident storage and the next memory level is, in bit/s,
 \begin{equation}
-b_{AB,K}=(m+n)w(rk),\quad b_{AB,N}=(m+rn)w(k).
-\end{equation}
-For complete scale blocks with $w(rk)=rw(k)$, N reuses A and reads $(r-1)mw(k)$ fewer bits per issue. This is the input-bandwidth benefit of output-dimension expansion.
-
-Conversely, let the accumulation width be $c=32$ and let $u$ independent contexts be interleaved to hide feedback latency. Accumulator capacities are $umnc$ and $urmn c$ bits. N keeps $r$ times as many outputs live; if each issue reads C and writes D in nearby storage, its accumulator-port traffic also grows by $r$. Blackwell stores MMA accumulators in TMEM before epilogues load them into registers~\cite{nvidia2026tmem}, illustrating accumulator storage as a distinct resource. This does not identify Blackwell with either composition studied here.
-
-At a more distant storage level, suppose C/D are exchanged once every $\tau$ updates and both organizations use the same $\tau$. Then
-\begin{equation}
-b_N-b_K=(r-1)m\left(\frac{2cn}{\tau}-w(k)\right).
+\begin{aligned}
+B_K &= f[mrV/\tau_m+nrV+2mnc/\tau],\\
+B_N &= f[mV/\tau_m+rnV+2rmnc/\tau],\\
+B_N-B_K &= f(r-1)m(2nc/\tau-V/\tau_m).
+\end{aligned}
 \label{eq:kn_bandwidth_difference}
 \end{equation}
-Frequent partial-sum exchange favors K's lower output traffic; long residency favors N's input reuse. For the same complete GEMM, update counts and residency durations may also differ. Total final-output bytes must therefore be distinguished from nearby accumulator-port pressure.
+N saves input traffic by sharing A across more columns, but multiplies concurrent accumulator state and C/D traffic by $r$. For identical residency parameters and $r>1$, K requires less average interface bandwidth when $2nc/\tau>V/\tau_m$; N requires less when the inequality is reversed, and equality gives the same bandwidth. For NVFP4 K64 with FP32 accumulation, $V=64(4+8/16)=288$ bits~\cite{nvidia2024nvfp4}, so K is favored when $n>4.5\tau/\tau_m$. At $\tau_m=\tau=1$, K is favored for $n\ge5$, while elongated arrays with $m=16$ or 32 and $n\le4$ favor N. If $\tau_m\ge5$ and $\tau=1$, K requires less bandwidth for any $n\ge1$.
 
-Considering component costs and accumulator-state requirements, we select K expansion for the subsequent ratio analysis. This choice applies to the evaluated components under sufficient data supply. Input-bandwidth limits, output shapes, or residency policies can change the trade-off and require reevaluation.
+The bandwidth trade-off depends jointly on scheduling and input/accumulator buffer capacity. With $\tau$ fixed, m-side weight-stationary (WS) scheduling increases $\tau_m$ and amortizes K's A-loading cost. With $\tau_m$ fixed, output-stationary (OS) scheduling increases $\tau$ and reduces N's C/D traffic; whether the preferred organization changes follows the criterion above. Input reuse is common in high-performance GEMM implementations such as CUTLASS~\cite{nvidia2026cutlassgemm}. NVIDIA's collector mechanism also supports reusing A while changing B, although reuse hits are not guaranteed~\cite{nvidia2025ptxcollector}. We therefore focus on workloads with substantial input reuse and, considering K's DP-cost and accumulator-state advantages, use K expansion for the following workload analysis.
 % END REVIEW PAIR: 05_evaluation.tex
 
 % BEGIN REVIEW PAIR: 06_workload.tex
-\section{Workload-Driven Throughput-Ratio Analysis}
+\section{Case study:Workload-Driven Throughput-Ratio Analysis}
 \label{sec:workload}
 
-Low-precision circuit efficiency alone does not determine the best ratio for a mixed workload. Increasing a DP's low-precision capacity reduces the number of cores that fit within a fixed area, while changing execution time and energy for each precision. We deploy four K-expanded designs within a common core-pool area, derive selection boundaries over H/Q/E workload fractions, and overlay prefill trajectories derived from model structures.
+The benefit of low-precision expansion depends on the trade-off among per-core throughput, deployment density, and workload precision composition. We compare $1:2:4$, $1:2:6$, $1:2:8$, and $1:4:8$ under a common area budget, identify their latency- and energy-optimal regions, and assess their applicability using compute-intensive DeepSeek prefill workloads.
 
-\subsection{Throughput Allocation Under a Core-Area Budget}
+\begin{figure}[!t]
+\centering
+\includegraphics[width=\columnwidth]{k4_n12_prefill_comparison.png}
+\caption{Equal-area ratio selection for (a) compute latency with integer core deployment and (b) DP compute energy. Each region is labeled by its optimal H:Q:E ratio and geometric area fraction. The inset illustrates H/Q/E = 20\%/30\%/50\%. Trajectories are model-derived DeepSeek prefill workloads: dashed/solid lines use routed-expert W4A8/W4A4, with other computations unchanged. Arrows follow contexts of 1K, 4K, 16K, 64K, 256K, 512K, and 1M; filled markers denote 1M. NVFP4 energy uses the MXFP4 power proxy.}
+\label{fig:k4_time_prefill}
+\end{figure}
+
+\subsection{Throughput Model Under an Equal-Area Constraint}
 \label{sec:k4_area}
 
-We compare four $K$ ratios using $16\times16$ DP arrays under the same total core-area budget. H/Q/E are represented by BF16, MXFP8 E4M3, and MXFP4 E2M1. In Huawei's 12\,nm RTL evaluation, the Cube cluster occupies 32.7\% of an AI Core and compute slices occupy approximately 80\% of that cluster~\cite{luo2024hifloat8area}. Motivated by this breakdown, we approximate the baseline DP-array share as $\alpha=0.30$ and use the full Ascend 950 architecture's 36 Cube units as the reference count $N_0$~\cite{huawei950}. These values define an equivalent area budget; they do not reproduce Ascend 950's process or die area.
+Each AI compute core contains an $m=n=16$ DP array. Using the compute-unit area breakdown reported by Luo et al.~\cite{luo2024hifloat8area} and the published core count~\cite{huawei950} as references, we set $\alpha=0.30$ and $N_0=36$ to construct an equivalent area budget, rather than reproduce an actual chip area.
 
-For ratio $j$, let $a_j$ be DP area and $A_{T,j}=256a_j$ the array area, with subscript 0 denoting $1:2:4$. Baseline core area, fixed peripheral area, and the total budget are
+For ratio $j$, let $a_j$ be the area of one DP and $A_{T,j}=256a_j$ the array area; subscript 0 denotes $1:2:4$. The baseline core area, fixed peripheral area, and total budget are
 \begin{equation}
 A_{C,0}=\frac{A_{T,0}}{\alpha},\quad
 A_O=A_{C,0}-A_{T,0},\quad
 A_{\mathrm{bud}}=N_0A_{C,0}.
 \label{eq:k4_area_definition}
 \end{equation}
-Keeping peripheral area $A_O$ fixed per core, the number of complete cores fitting within $A_{\mathrm{bud}}=496.59$\,mm$^2$ is
+Keeping peripheral area $A_O$ fixed per core, complete cores are deployed within $A_{\mathrm{bud}}=496.59$\,mm$^2$:
 \begin{equation}
 n_j=\left\lfloor\frac{A_{\mathrm{bud}}}{A_O+A_{T,j}}\right\rfloor.
 \label{eq:core_area_budget}
 \end{equation}
-Let $m_{j,f}$ and $p_{j,f}$ denote MACs per cycle and active power per DP in precision $f$, and let $\nu$ be frequency. Counting two FLOPs per MAC, deployed throughput and DP-only power are
+Let $d\in\{H,Q,E\}$ index precision, $m_{j,d}$ denote MACs per cycle per DP, and $p_{j,d}$ denote the full-throughput active power measured in Section V. Counting two FLOPs per MAC at clock frequency $f=1$\,GHz, the deployed peak throughput and DP active power are
 \begin{equation}
-C_{j,f}=2\nu\,256n_jm_{j,f},\qquad
-P_{j,f}=256n_jp_{j,f}.
+C_{j,d}=2f\,256n_jm_{j,d},\qquad
+P_{j,d}=256n_jp_{j,d}.
 \label{eq:k4_capacity_power}
 \end{equation}
 
-Table~\ref{tab:k4_absolute} shows that expansion changes both per-core capacity and deployable core count. The $1:4:8$ design reduces the count from 36 to 29 yet increases total Q throughput by 61.11\%; H throughput falls by 19.44\%. Low-precision acceleration must compensate for the longer high-precision phases caused by fewer cores. Per-DP peak throughput alone cannot determine the system-level compute benefit.
+The fixed area budget accommodates 36, 34, 32, and 29 cores for the four ratios, respectively (Table~\ref{tab:k4_absolute}). Low-precision expansion raises per-core throughput but reduces deployment density; its net benefit depends on whether low-precision acceleration offsets the loss of H throughput.
 
 \begin{table}[!t]
 \centering
-\caption{Area-constrained N12 deployment. $A_C$: core area (mm$^2$); $C$: TFLOP/s; $P$: DP-only power (W)}
+\caption{Area-constrained N12 deployment. $A_C$: core area (mm$^2$); $C$: TFLOP/s; $P$: DP-only power (W).}
 \label{tab:k4_absolute}
 \begingroup\footnotesize\setlength{\tabcolsep}{3pt}
 % BEGIN INLINE TABLE: tables/hardware_compact_table.tex
@@ -542,106 +464,36 @@ $1:4:8$ & 16.617 & 29 & 237.6/950.3/1900.5 & 116.9/213.7/152.7 \\
 \endgroup
 \end{table}
 
-\subsection{Mixed-Precision Compute Time and Energy}
+\subsection{Optimal Regions for Mixed-Precision Workloads}
 \label{sec:k4_simplex}
 
-Let $F=\sum_f F_f$ be useful H/Q/E GEMM work, $x_f=F_f/F$, and $\sum_f x_f=1$. Ternary coordinates represent FLOP fractions. Assuming precision phases execute sequentially and fully utilize all cores, compute time, effective throughput, and DP energy are
+Let $F=\sum_d F_d$ be the total useful H/Q/E GEMM work, with $x_d=F_d/F$ and $\sum_d x_d=1$. Assuming precision phases execute sequentially and fully utilize all cores, compute latency and DP energy are
 \begin{align}
-T_j&=F\sum_f\frac{x_f}{C_{j,f}},&
+T_j&=F\sum_d\frac{x_d}{C_{j,d}},&
 C_{\mathrm{eff},j}&=\frac{F}{T_j},
 \label{eq:k4_time}\\
-\mathcal E_j&=F\sum_f x_f\frac{P_{j,f}}{C_{j,f}},&
-\varepsilon_{j,f}&=\frac{P_{j,f}}{C_{j,f}}.
+\mathcal E_j&=\sum_d P_{j,d}\frac{Fx_d}{C_{j,d}}.
 \label{eq:k4_energy}
 \end{align}
-Energy sums each precision's execution time multiplied by its active DP power. Core count cancels in energy per FLOP, $\varepsilon_{j,f}=p_{j,f}/(2\nu m_{j,f})$: additional cores shorten execution without changing energy per unit work in this model. The area constraint therefore affects latency through deployable throughput, whereas energy depends on each mode's power-to-throughput ratio. The two objectives need not select the same configuration.
+We evaluate 5,151 compositions at one-percentage-point intervals over the H/Q/E triangle, minimizing $T_j$ and $\mathcal E_j$ separately. For fixed $F$, both are linear in $\boldsymbol x$, so equal-cost conditions between ratios define straight region boundaries (Fig.~\ref{fig:k4_time_prefill}). Labels report the geometric fraction of the triangle where each ratio is optimal, not hardware area or application probability. Following grid lines parallel to the opposite sides gives the H/Q/E FLOP shares of a point, which sum to $100\%$.
 
-Both $T_j$ and $\mathcal E_j$ are linear in workload composition $\boldsymbol x$; equal candidate costs define region boundaries. We derive exact polygonal regions by pairwise comparisons and scan 5,151 compositions at one-percentage-point intervals. Fig.~\ref{fig:k4_time_prefill} shows the maximum-effective-throughput and minimum-energy regions. Table~\ref{tab:k4_regions} gives their area fractions when E uses MXFP4.
+H-, E-, and Q-heavy regions favor $1:2:4$, $1:2:8$, and $1:4:8$, respectively. For H/E mixtures with little Q work, $1:2:6$ balances E acceleration against lost H throughput with a smaller area increment. Latency benefits depend on each phase's $F_d/C_{j,d}$, rather than an individual FLOP share. Energy per FLOP, $P_{j,d}/C_{j,d}=p_{j,d}/(2fm_{j,d})$, is independent of core count, so the latency- and energy-optimal regions differ.
 
-BF16 represents H power, and MXFP4 measurements represent E power. NVFP4 and MXFP4 have the same peak throughput; we currently use MXFP4 power as a proxy for NVFP4. If $\rho$ is the NVFP4 fraction of E work, the E energy coefficient can later be replaced by $\varepsilon_{j,E}=(1-\rho)\varepsilon_{j,\mathrm{MX}}+\rho\varepsilon_{j,\mathrm{NV}}$. The current equal coefficients make the energy regions independent of encoding mix. This is a power approximation, not a claim of equal measured energy. Without a power cap, updating this coefficient changes only energy boundaries.
-
-\begin{figure}[!t]
-\centering
-\subfloat[Compute latency\label{fig:k4_time_panel}]{%
-  \includegraphics[width=0.40\columnwidth]{k4_n12_prefill_time.png}}\par\smallskip
-\subfloat[DP compute energy\label{fig:k4_energy_panel}]{%
-  \includegraphics[width=0.40\columnwidth]{k4_n12_prefill_energy.png}}
-\caption{Area-constrained ratio selection and prefill trajectories. Colors identify the ratio with (a) minimum compute latency and (b) minimum DP energy. H/Q/E are BF16/FP8/FP4 FLOP shares. Circles, squares and triangles denote V4-Flash, V4-Pro and V4.1-Flash. Dashed lines use W4A8 experts; solid lines use NVFP4 W4A4 experts. Arrows follow 1K, 4K, 16K, 64K, 256K, 512K and 1M contexts; filled markers denote 1M. Energy uses MXFP4 power for both FP4 encodings. Results are model-derived compute estimates.}
-\label{fig:k4_time_prefill}
-\label{fig:k4_energy_prefill}
-\end{figure}
-
-\begin{table}[!t]
-\centering
-\caption{Optimal-region fractions with MXFP4 as E. Energy fractions are unchanged by integer core deployment}
-\label{tab:k4_regions}
-\begingroup\footnotesize\setlength{\tabcolsep}{2pt}
-% BEGIN INLINE TABLE: tables/region_table.tex
-% Generated by scripts/reproduce.py.
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lrrr@{}}\toprule
-Ratio & Time (cont.) & Time (int.) & DP energy \\\midrule
-$1:2:4$ & 27.54\% & 33.15\% & 19.48\% \\
-$1:2:6$ & 6.66\% & 7.94\% & 2.84\% \\
-$1:2:8$ & 8.24\% & 6.63\% & 14.39\% \\
-$1:4:8$ & 57.56\% & 52.28\% & 63.28\% \\
-\bottomrule\end{tabular*}
-% END INLINE TABLE: tables/region_table.tex
-\endgroup
-\end{table}
-
-H-heavy workloads favor $1:2:4$, E-heavy workloads favor $1:2:8$, and high Q demand favors $1:4:8$. The intermediate $1:2:6$ ratio wins in part of the H/E mixture with limited Q work. With integer deployment, the four latency-optimal regions occupy 33.15\%, 7.94\%, 6.63\%, and 52.28\% of the simplex; the energy-optimal regions occupy 19.48\%, 2.84\%, 14.39\%, and 63.28\%. These are geometric fractions of the uniform workload simplex, not probabilities of real applications.
-
-The $1:2:6$ latency-optimal region grows from 6.66\% with continuous core allocation to 7.94\% with integer deployment. Its smaller area increment permits 34 cores, two more than $1:2:8$, preserving more H throughput. The latter benefits from its longer E reduction when E demand is sufficiently high. Energy boundaries depend instead on mode power per unit capacity, so latency and energy can favor different ratios at the same workload point. A ratio's value depends on incremental circuit cost and deployment granularity, not merely its position between other ratios.
-
-\subsection{Model Precision Demand and Ratio Selection}
+\subsection{DeepSeek Precision Demand and Ratio Selection}
 \label{sec:k4_prefill}
 
-Using official DeepSeek configurations, inference code, and technical reports~\cite{deepseekv4,deepseekv4flashsource,deepseekv4prosource,deepseekv41source}, we analyze text-only cold prefill for V4-Flash, V4-Pro, and V4.1-Flash at batch size 1 and contexts from 1K to 1M. The reference mapping assigns native MXFP4 indexer dot products to E, W4A8 routed experts and FP8 projections to Q, and BF16 attention and grouped output projections to H. Following published NVFP4 quantization configurations~\cite{nvidia2026v4flashnvfp4,nvidia2026v4pronvfp4,nvidia2026deepseeknvfp4}, a second mapping moves the three routed-expert GEMMs to NVFP4 W4A4 while leaving other computations unchanged. At a fixed context, this transfers work from Q to E without changing H.
+Using official configurations~\cite{deepseekv4,deepseekv4flashsource,deepseekv4prosource,deepseekv41source}, we count cold-prefill work for V4-Flash, V4-Pro, and V4.1-Flash at batch size 1 across seven contexts from 1K to 1M. GEMMs contribute $2MNK$ FLOPs; only active experts are counted, with sparse/compressed attention and V4.1 CED and index reuse included. BF16 attention and grouped output projections map to H; W4A8 expert computation and FP8 projections to Q; and MXFP4 indexer dot products to E. The NVFP4 W4A4 mapping moves only routed experts from FP8 to FP4. Each mapping contains 21 points and covers 97.11\%--99.37\% of GEMM work.
 
-GEMMs contribute $2MNK$ FLOPs; MoE counts only active experts. Attention and indexer work follow causal, window, compression, and top-$k$ constraints. V4.1 additionally includes CED encoder prefill, decoder-cache construction, finite-window replay, and cross-layer index reuse~\cite{deepseekv41source}. H/Q/E account for 97.11\%--99.37\% of counted GEMM FLOPs; the remainder is FP32. Both panels overlay context trajectories for the reference W4A8 and expert-W4A4 mappings, with 21 points per mapping.
-
-\begin{table}[!t]
-\centering
-\caption{Reference W4A8 prefill endpoints. H/Q/E shares are normalized over useful GEMM FLOPs. Speedup and DP energy reduction $\Delta E$ compare $1:4:8$ against $1:2:4$}
-\label{tab:k4_prefill_points}
-\begingroup\footnotesize\setlength{\tabcolsep}{4pt}
-% BEGIN INLINE TABLE: tables/prefill_compact_table.tex
-% Generated by scripts/reproduce.py.
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}llcrr@{}}\toprule
-Model & $S$ & $x_H/x_Q/x_E$ (\%) & Speedup & $\Delta E$ (\%) \\\midrule
-V4-Flash & 1K & 15.25/84.58/0.17 & 1.274 & 6.77 \\
-V4-Flash & 1M & 19.07/26.39/54.55 & 1.138 & 3.93 \\
-V4-Pro & 1K & 11.54/88.40/0.06 & 1.335 & 7.49 \\
-V4-Pro & 1M & 25.59/42.45/31.96 & 1.098 & 3.75 \\
-V4.1-Flash & 1K & 14.08/85.86/0.06 & 1.292 & 7.00 \\
-V4.1-Flash & 1M & 12.24/60.49/27.27 & 1.291 & 6.65 \\
-\bottomrule\end{tabular*}
-% END INLINE TABLE: tables/prefill_compact_table.tex
-\endgroup
-\end{table}
-
-\textbf{Reference W4A8 workloads benefit from FP8 expansion.} All three models are FP8-dominated at short contexts, and every sampled reference point selects $1:4:8$ for both objectives. V4-Flash's E fraction reaches 54.55\% at 1M, but Q still accounts for 26.39\%. The extra FP8 capacity offsets the loss of deployed FP4 capacity relative to $1:2:8$. A majority FP4 workload fraction is therefore insufficient by itself to change the preferred ratio.
-
-\textbf{Context scaling depends on model structure.} Under the reference mapping, V4-Pro's H fraction rises to 25.59\% at 1M, reducing the $1:4:8$ speedup from 1.335 to 1.098. CED and index reuse produce a different trajectory for V4.1-Flash: Q remains at 60.49\% and H falls to 12.24\% at 1M, retaining a 1.291 speedup and 6.65\% DP-energy reduction (Table~\ref{tab:k4_prefill_points}). The relative growth of high-precision attention, FP8 projections, and FP4 indexing jointly determines expansion benefits.
-
-\textbf{W4A4 experts can shift long-context workloads toward $1:2:8$.} After expert quantization, V4-Flash's E fraction rises from 50.52\% at 1K to 70.26\% at 1M, while Q falls to 10.68\%. Among sampled points and under the current power proxy, the energy optimum switches to $1:2:8$ at 512K, followed by the throughput optimum at 1M. V4-Pro and V4.1-Flash retain Q fractions of 18.46\% and 24.54\% at 1M and still select $1:4:8$. FP4 experts and context growth can jointly change the preferred ratio, but residual FP8 demand makes the transition model-dependent.
-
-\subsection{Scope and Resource-Constrained Applicability}
-
-The reported latency is compute service time under sufficient data supply and sequential precision phases using all cores. It excludes shape utilization, K tails, feedback dependencies, communication, and format conversion. Energy includes only DP activity and applies Qwen-based mode characterization to DeepSeek work. It is neither measured DeepSeek energy nor complete-chip energy. Fixed peripheral area constrains deployment but is not converted into peripheral power.
-
-Equal-bandwidth constraints can change the feasible array shape. For a square $m\times m$ array with approximately linear input size $w(k)=kb$, per-core input bandwidth is $2mkb\nu$. Holding this bandwidth fixed reduces allowable $m$ as $k$ grows, and the per-core peak $2m^2k\nu$ may decrease. Chip-level outcomes also depend on core count and bandwidth allocation; this observation does not imply that every expanded ratio is inferior to the baseline.
-
-A power cap similarly requires separating energy per operation from simultaneous activity. The $1:4:8$ Q mode has the highest per-DP power but lower energy per operation than the baseline; both affect sustainable throughput when active-core count is limited. A complete model also needs idle-core, accumulator-storage, peripheral, and data-supply power. Our regions therefore provide an area-constrained compute baseline. Selection under equal bandwidth or a power cap awaits calibration of these system costs.
+All W4A8 points favor $1:4:8$ for both latency and energy. With W4A4 experts, V4-Flash's energy optimum shifts to $1:2:8$ at 512K and its latency optimum at 1M; the other two models retain $1:4:8$ through 1M. At the V4-Flash 1M point, $1:2:8$ improves latency and estimated energy by 1.45\% and 2.03\%, respectively, relative to $1:4:8$, indicating limited gains near the boundary. Thus, $1:4:8$ is generally favored by the representative workloads evaluated here. If FP4 execution extends to attention and other operations as contexts grow longer, $1:2:8$ may become more attractive.
 % END REVIEW PAIR: 06_workload.tex
 
 % BEGIN REVIEW PAIR: 07_conclusion.tex
 \section{Conclusion}
 \label{sec:conclusion}
 
-DP-Puzzle separates multi-precision coverage from low-precision capacity expansion. Its baseline shares H/Q/E arithmetic through common decoding, segmented multiplication, hierarchical alignment, and fused output processing. Specialized E and QE components remove unnecessary high-precision resources and support internal K expansion or independent-output N composition. At matched peaks, the evaluated K compositions have lower area and low-precision active power but require wider input supply. N composition improves input reuse while increasing accumulator state and nearby output-port demand.
+This paper proposes a microarchitecture for shared multi-precision dot-product operations, decoupling multi-precision coverage from capacity expansion for low-precision computations. The baseline architecture reuses multi-precision compute paths through unified decoding, segmented multiplication, hierarchical alignment, and fused output stages. Dedicated low-precision optimization units further prune unnecessary high-precision resources, achieving a 3× improvement in energy efficiency compared to the Ten-Four~\cite{rout2026tenfourv2} multi-precision design, while maintaining competitive area efficiency. The architecture supports internal reduction expansion along the $K$ dimension and independent output combination along the $N$ dimension. At equivalent peak performance, the evaluated $K$-expansion scheme offers a smaller area footprint and lower active power consumption for low-precision operations, while exhibiting a more moderate growth in bandwidth requirements under typical Weight-Stationary (WS) dataflow and matrix-size conditions.
 
-Under a fixed area budget, ratio selection depends on precision-specific work, deployable core count, and energy per operation; all four ratios have distinct optimal regions. Reference W4A8 prefill demand from three DeepSeek models favors $1:4:8$, while W4A4 routed experts shift long-context V4-Flash toward $1:2:8$. These compute-model results show why precision labels or isolated peaks cannot determine a preferred ratio: circuit costs and execution precision must be evaluated together. Accounting for data supply, accumulator storage, and power caps is the next step toward system-level deployment conclusions.
+Furthermore, under a fixed-area constraint, this work evaluates the impact of dot-product units within the context of AI chip systems and real-world computational workloads. By identifying the optimal operating regimes for four distinct configuration ratios—and analyzing the deployment of three DeepSeek mixed-precision models—we determine that a $1:4:8$ ratio is well-suited for W4A8 expert-based deployments, while certain W4A4 long-context configurations favor a $1:2:8$ ratio (with diminishing returns near the boundaries). Our findings suggest that configuration ratios should be determined based on the workload distribution across precisions and the time spent during the post-deployment compute-evaluation phase; specifically, low-precision acceleration can compensate for reduced deployment density, and energy consumption should be evaluated independently. Neither weight bit-width nor peak performance alone is sufficient to dictate the optimal ratio. By exploring various configuration ratios within the dot-product microarchitecture—analyzing both $K$-expansion and $N$-combination approaches—this paper provides a framework for selecting and designing compute-ratio architectures for future AI chips, based on latency and energy-efficiency analysis across real-world workloads and their evolving usage scenarios.
 % END REVIEW PAIR: 07_conclusion.tex
 
 

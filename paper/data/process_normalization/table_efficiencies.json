@@ -33,7 +33,7 @@
   "inputs": [
     {
       "path": "paper/data/process_normalization/table_inputs.json",
-      "sha256": "68ea160f92d646181fb2150a8abf1bb9ead5428fe688e2559f130c069dc674c8"
+      "sha256": "89be1a05f17b3635dd20189476b459961b3b7773391b32c9eb0fd0110d35e287"
     },
     {
       "path": "paper/data/DP_area_power/latest6_power.csv",
@@ -49,7 +49,7 @@
       "work": "tenfour",
       "node_nm": 7,
       "metric": "area",
-      "format": "FP16/BF16",
+      "format": "BF16",
       "config": "Q8",
       "native": 5.25,
       "proxy12": 0.6376748504439917,
@@ -59,7 +59,7 @@
       "work": "tenfour",
       "node_nm": 7,
       "metric": "area",
-      "format": "FP16/BF16",
+      "format": "BF16",
       "config": "Q16",
       "native": 5.419354838709678,
       "proxy12": 0.658245006909927,
@@ -240,9 +240,9 @@
       "node_nm": 12,
       "metric": "area",
       "format": "BF16",
-      "config": "",
-      "native": 1.9795705652667595,
-      "proxy12": 1.9795705652667595,
+      "config": "1:2:4",
+      "native": 1.9795705652667597,
+      "proxy12": 1.9795705652667597,
       "efficiency_multiplier": 1.0
     },
     {
@@ -250,9 +250,9 @@
       "node_nm": 12,
       "metric": "area",
       "format": "MXFP8",
-      "config": "",
-      "native": 3.959141130533519,
-      "proxy12": 3.959141130533519,
+      "config": "1:2:4",
+      "native": 3.9591411305335193,
+      "proxy12": 3.9591411305335193,
       "efficiency_multiplier": 1.0
     },
     {
@@ -260,9 +260,129 @@
       "node_nm": 12,
       "metric": "area",
       "format": "MXFP4",
-      "config": "",
-      "native": 7.918282261067038,
-      "proxy12": 7.918282261067038,
+      "config": "1:2:4",
+      "native": 7.918282261067039,
+      "proxy12": 7.918282261067039,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "BF16",
+      "config": "1:2:6",
+      "native": 1.6964183035869902,
+      "proxy12": 1.6964183035869902,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP8",
+      "config": "1:2:6",
+      "native": 3.3928366071739804,
+      "proxy12": 3.3928366071739804,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP4",
+      "config": "1:2:6",
+      "native": 10.17850982152194,
+      "proxy12": 10.17850982152194,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "BF16",
+      "config": "1:2:8",
+      "native": 1.4817280307360179,
+      "proxy12": 1.4817280307360179,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP8",
+      "config": "1:2:8",
+      "native": 2.9634560614720358,
+      "proxy12": 2.9634560614720358,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP4",
+      "config": "1:2:8",
+      "native": 11.853824245888143,
+      "proxy12": 11.853824245888143,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "BF16",
+      "config": "1:4:8",
+      "native": 1.1768537313558765,
+      "proxy12": 1.1768537313558765,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP8",
+      "config": "1:4:8",
+      "native": 4.707414925423506,
+      "proxy12": 4.707414925423506,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP4",
+      "config": "1:4:8",
+      "native": 9.414829850847012,
+      "proxy12": 9.414829850847012,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP4",
+      "config": "0:0:4",
+      "native": 22.678402654051197,
+      "proxy12": 22.678402654051197,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP8",
+      "config": "0:2:4",
+      "native": 5.472323677597365,
+      "proxy12": 5.472323677597365,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "area",
+      "format": "MXFP4",
+      "config": "0:2:4",
+      "native": 10.94464735519473,
+      "proxy12": 10.94464735519473,
       "efficiency_multiplier": 1.0
     },
     {
@@ -270,7 +390,7 @@
       "node_nm": 12,
       "metric": "energy",
       "format": "BF16",
-      "config": "",
+      "config": "1:2:4",
       "native": 2.087646683693308,
       "proxy12": 2.087646683693308,
       "efficiency_multiplier": 1.0
@@ -280,7 +400,7 @@
       "node_nm": 12,
       "metric": "energy",
       "format": "MXFP8",
-      "config": "",
+      "config": "1:2:4",
       "native": 3.9995003370817552,
       "proxy12": 3.9995003370817552,
       "efficiency_multiplier": 1.0
@@ -290,9 +410,129 @@
       "node_nm": 12,
       "metric": "energy",
       "format": "MXFP4",
-      "config": "",
+      "config": "1:2:4",
       "native": 11.432109097998834,
       "proxy12": 11.432109097998834,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "BF16",
+      "config": "1:2:6",
+      "native": 2.0464152272702827,
+      "proxy12": 2.0464152272702827,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP8",
+      "config": "1:2:6",
+      "native": 3.9133084010957795,
+      "proxy12": 3.9133084010957795,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP4",
+      "config": "1:2:6",
+      "native": 13.317179670864999,
+      "proxy12": 13.317179670864999,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "BF16",
+      "config": "1:2:8",
+      "native": 2.0134360956188,
+      "proxy12": 2.0134360956188,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP8",
+      "config": "1:2:8",
+      "native": 3.8507956953905307,
+      "proxy12": 3.8507956953905307,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP4",
+      "config": "1:2:8",
+      "native": 14.549858228083007,
+      "proxy12": 14.549858228083007,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "BF16",
+      "config": "1:4:8",
+      "native": 2.032501678485315,
+      "proxy12": 2.032501678485315,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP8",
+      "config": "1:4:8",
+      "native": 4.446144165103868,
+      "proxy12": 4.446144165103868,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP4",
+      "config": "1:4:8",
+      "native": 12.449281028401117,
+      "proxy12": 12.449281028401117,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP4",
+      "config": "0:0:4",
+      "native": 18.191544949409174,
+      "proxy12": 18.191544949409174,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP8",
+      "config": "0:2:4",
+      "native": 4.712659424502272,
+      "proxy12": 4.712659424502272,
+      "efficiency_multiplier": 1.0
+    },
+    {
+      "work": "ours",
+      "node_nm": 12,
+      "metric": "energy",
+      "format": "MXFP4",
+      "config": "0:2:4",
+      "native": 12.527456473538747,
+      "proxy12": 12.527456473538747,
       "efficiency_multiplier": 1.0
     }
   ]

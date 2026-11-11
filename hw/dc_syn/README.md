@@ -1,5 +1,7 @@
 # DC 综合：面积、时序和层级查看
 
+最新六种 DP 的面积、时序、工作目录及历史数值入口：[实验记录索引](records/README.md)。
+
 输入为已通过 RTL 回归的 `hw/rtl/<export-id>/`，输出到 **`runs/dc_<RTL顶层名>_<月日时分>/`**，例如 `dc_dp_top_11050024`。时间采用 Asia/Shanghai（UTC+08），同顶层同分钟不覆盖。完整路径见 [paths.md](paths.md)，输入字段见 [input-contract.md](input-contract.md)。通用入口使用标准库；新版 DP 回归/门禁要求 Python 3.9+。
 
 默认启用 **clock gating**，保留模块层级和 PE 子树。实际面积/时序以同工艺、约束、门控和展开策略的工具报告为准；没有执行仿真或 DC 时不生成测量值。

@@ -37,12 +37,12 @@
       "energy": [],
       "area": [
         {
-          "format": "FP16/BF16",
+          "format": "BF16",
           "config": "Q8",
           "value": 5.25
         },
         {
-          "format": "FP16/BF16",
+          "format": "BF16",
           "config": "Q16",
           "value": 5.419354838709678
         },
