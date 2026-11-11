@@ -42,7 +42,7 @@ T1H2Q4E8 & T/H/Q/E 浮点模式每拍分别计算 1/2/4/8 对元素的乘积；�
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{baseline_arch.png}
+\includegraphics[width=\columnwidth]{baseline_arch_singlepage.pdf}
 \caption{缩放粒度驱动的 Lane--Group--DP 划分。HiF4 每 8 个元素共享一个二级微指数，对应一个 Lane 的 8 路 E 类乘积；NVFP4 每 16 个元素共享一个尺度，因此由两个 Lane 构成一个 Group。更大的量化块向多个 Group 广播同一尺度，保持原格式的缩放粒度。}
 \label{fig:dp_architecture}
 \end{figure}

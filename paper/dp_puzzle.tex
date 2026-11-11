@@ -174,7 +174,7 @@ T1H2Q4E8 & 1/2/4/8 element-pair products per cycle in mutually exclusive T/H/Q/E
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{baseline_arch.png}
+\includegraphics[width=\columnwidth]{baseline_arch_singlepage.pdf}
 \caption{Lane--Group--DP organization follows scaling granularity. A HiF4 second-level micro-exponent is shared by eight elements, matching the eight E products in a Lane. An NVFP4 scale is shared by 16 elements, so two Lanes form a Group. Larger quantization blocks broadcast the same scale to multiple Groups, preserving the format's scaling granularity.}
 \label{fig:dp_architecture}
 \end{figure}
@@ -366,8 +366,8 @@ Fig.~\ref{fig:six_dp_costs} compares area and power across the six DPs. Removing
 
 \begin{figure}[t]
 \centering
-\subfloat[Area\label{fig:six_dp_area}]{\includegraphics[width=0.94\columnwidth]{latest6_area.png}}\par
-\subfloat[Power\label{fig:six_dp_power}]{\includegraphics[width=0.94\columnwidth]{latest6_power.png}}
+\subfloat[Area\label{fig:six_dp_area}]{\includegraphics[width=0.94\columnwidth]{oldfig/latest6_area.png}}\par
+\subfloat[Power\label{fig:six_dp_power}]{\includegraphics[width=0.94\columnwidth]{oldfig/latest6_power.png}}
 \caption{Area and total power of the six DPs, normalized to baseline area and baseline BF16 power, respectively.}
 \label{fig:six_dp_costs}
 \end{figure}

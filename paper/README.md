@@ -22,6 +22,22 @@ make -C paper -f Makefile.en          # 上一轮英文：paper/build/dp_puzzle.
 
 ## 保存后预览 PDF
 
+当前中英文架构图均引用 `figures/baseline_arch_singlepage.pdf`。作者提供的 `figures/baseline_arch.pdf` 是 3×3 分页导出，直接插入只显示第一页；单页版本由同目录的 `baseline_arch_singlepage.tex` 拼合并裁剪空白，保留原图的矢量内容与嵌入字体，原 PDF 不变。旧 PNG/SVG 和六 DP 数据图位于 `figures/oldfig/`。
+
+### 加入矢量图
+
+2026-11-11 约定：**后续论文插图以 PDF 为主要插入格式**。数据图从绘图代码直接导出矢量 PDF，架构图由作者提供；SVG 保留为可编辑源文件，PNG 用于预览或已有位图素材。当前已有 PNG 不通过简单封装 PDF 冒充矢量图。
+
+推荐从绘图工具直接导出 **单页 PDF**，选择“裁剪到绘图内容”，避免按 A4 纸张分页；保留矢量线条、嵌入字体，或将文字转为路径。放入 `figures/` 后直接引用：
+
+```latex
+\includegraphics[width=\columnwidth]{figure_name.pdf}
+```
+
+也可以先用 Inkscape 将普通 SVG 转为 PDF；正文仍引用 PDF。SVG 和 PDF 不保证内部全是矢量：嵌入的 PNG/JPEG 转换后仍是位图。原绘图工具直接导出 PDF 通常能更可靠地保留文字；部分 SVG 的 HTML 标签（`foreignObject`）在其他转换器中可能显示不完整。
+
+直接在 LaTeX 中管理 SVG 可使用 `svg` 宏包的 `\includesvg`，但需另外安装 Inkscape 并允许编译时调用转换程序，见 [svg 宏包说明](https://ctan.org/pkg/svg)。当前采用直接插入 PDF 的方式，无需额外转换程序或 shell escape。
+
 **工作区范围：** 若 VS Code 打开的是上一级 `workspace/`，不会加载嵌套的 `DP-Puzzel/.vscode` 设置。推荐通过「文件 → 从文件打开工作区」打开 `paper/paper.code-workspace`；直接打开 `paper/` 也已配置。`main.tex` 首行的 `% !TeX program = latexmk` 让默认编译按钮使用本地 `.latexmkrc` 中的 XeLaTeX，而不采用插件默认的 `latexmk -pdf`。已有的错误不是字体缺失，而是 pdfLaTeX 不支持 `fontspec`。
 
 切换配置后可执行 `Developer: Reload Window`。若手动选过旧 recipe，执行 `LaTeX Workshop: Build with recipe`，选择 `DP-Puzzel (XeLaTeX)`；正确日志应出现 `Running 'xelatex ...'`。不要用 `-f` 忽略引擎错误。
