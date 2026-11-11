@@ -15,6 +15,9 @@ PROFILES = (
     ('0:0:4', 'dp_top_e64'),
     ('0:2:4', 'dp_top_q32e64'),
 )
+# Keep all measured profiles in the audit export; compare only the shared baseline
+# with prior work in the manuscript. The ratio candidates have their own figure.
+DISPLAY_PROFILES = PROFILES[:1]
 FORMATS = (('BF16', 'bf16'), ('MXFP8', 'mxfp8_e4m3'), ('MXFP4', 'mxfp4_e2m1'))
 UNSUPPORTED_MODES = {
     'dp_top_e64': {'bf16', 'mxfp8_e4m3'},
@@ -41,16 +44,12 @@ def replace_block(text, name, lines):
 
 def profile_cells(points):
     values = {(point['config'], point['format']): point['value'] for point in points}
-    best = {label: max(point['value'] for point in points if point['format'] == label)
-            for label, _ in FORMATS}
     cells = []
-    for index, (ratio, _) in enumerate(PROFILES):
+    for index, (ratio, _) in enumerate(DISPLAY_PROFILES):
         lines = []
         for label, _ in FORMATS:
             value = values.get((ratio, label))
             formatted = '---' if value is None else f'{value:.3f}'
-            if value == best[label]:
-                formatted = r'\textbf{' + formatted + '}'
             lines.append(label + ' & ' + formatted if index == 0 else formatted)
         macro = r'\Eff' if index == 0 else r'\Vals'
         cells.append(macro + '{' + r'\\'.join(lines) + '}')
@@ -101,7 +100,8 @@ def main():
         if metric=='energy': output.append(r'\midrule')
     table = ROOT/'paper/tables/related_ppa.tex'
     text = table.read_text()
-    text = replace_block(text, 'DP AREA CELLS', [r'\def\DPAreas{' + ' & '.join(profile_areas) + '}'])
+    shown_areas = [profile_areas[PROFILES.index(profile)] for profile in DISPLAY_PROFILES]
+    text = replace_block(text, 'DP AREA CELLS', [r'\def\DPAreas{' + ' & '.join(shown_areas) + '}'])
     table.write_text(replace_block(text, 'EFFICIENCY ROWS', output))
     with (HERE/'table_efficiencies.csv').open('w') as stream:
         writer = csv.DictWriter(stream,fieldnames=list(rows[0]),lineterminator='\n')

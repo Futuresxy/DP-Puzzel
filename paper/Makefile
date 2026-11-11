@@ -17,7 +17,7 @@ clean:
 
 # Editable area/power data; PNG figures only.
 cost-figures:
-	$(PYTHON) data/DP_area_power/plot_area_power.py
+	$(PYTHON) data/DP_area_power/plot_latest6_area_power.py --scope ratios
 
 dp-share-figures:
 	$(PYTHON) data/H16Q32E64_area/plot_area.py

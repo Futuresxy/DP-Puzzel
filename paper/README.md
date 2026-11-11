@@ -1,35 +1,24 @@
 # DAC 2027 论文
 
-## 英文主稿与中文逐章审核（2026-11-10）
+## 当前中文审核稿：DSE 主线（2026-11-11）
 
-[dp_puzzle.tex](dp_puzzle.tex) 是面向最终投稿的英文主稿，摘要、七章正文、图注、全部表格和 AI 使用说明均在这一个 TeX 文件中；不再通过 `input` 引入章节或表格。图片仍来自 `figures/`，文献仍使用 `references/references.bib`，因此单 TeX 正文不等于无需资源文件的投稿包。当前完整初稿尚需逐章审核与篇幅收敛，不能将成功编译视为已经满足最终投稿要求。
+[main.tex](main.tex) 是当前中文入口，按六章组织：引言、背景与动机、组合式点积微架构、硬件成本表征、面积约束 DSE、结论。第三章已并入 E/QE 专用 Group 与 DP 内增配；原有两种扩展方式的比较从正文撤下。主线是“可实现 DP → 同工况成本 → 整核部署 → 工作量组成 → 配比选择”。章节映射、证据边界和下一步实验见 [research_plan.md](research_plan.md)。
 
-[main.tex](main.tex) 与 `sections/*.tex` 保留为对应的中文讨论稿。后续先用中文确认内容取舍，再写好英文主稿中的对应部分，并将确定的英文表述同步翻译到中文章节。两边保留相同的章节顺序、标签、公式、表格数值、引用和图源；英文中的 `BEGIN REVIEW PAIR` 注释标明对应中文文件。不要用中文重新机械生成或覆盖已润色的英文主稿。
+本轮仅修改中文。英文单文件 [dp_puzzle.tex](dp_puzzle.tex) 保留上一轮七章版本，待用户确认后同步。当前中英文的章节、公式、表格和图源存在有意差异；`Makefile.en check` 会报告这些差异，不能当作已通过一致性检查。不得用旧英文内容覆盖本轮中文结构。
 
 ```bash
-make -C paper -f Makefile.en          # 英文：paper/build/dp_puzzle.pdf
-make -C paper -f Makefile.en watch    # 英文保存后持续编译
-make -C paper -f Makefile.en check    # 中英文结构、公式、表格及引用一致性
 make -C paper pdf                    # 中文：paper/build/main.pdf
+make -C paper watch                  # 中文保存后持续编译
+make -C paper -f Makefile.en          # 上一轮英文：paper/build/dp_puzzle.pdf
 ```
 
-在现有 LaTeX Workshop 工作区打开 `dp_puzzle.tex`，按 `Ctrl+Alt+B` 编译、`Ctrl+Alt+V` 打开英文 PDF；保存后自动刷新。打开 `main.tex` 则预览中文 PDF，两个输出互不覆盖。英文使用既有 XeLaTeX 配置，不依赖中文字体。
+硬件成本继续引用现有 N12、0.7 V、85°C、1 GHz 测量，未重新执行 EDA。四种配比面积及逐精度功耗图为 `figures/ratio4_{area,power}.png`，功耗按基线的相同精度归一化。生成数据与 hash 见 [data/DP_area_power/README.md](data/DP_area_power/README.md)。旧六 DP 图、测量数据和历史对比依赖保留。
 
-一致性检查只报告差异，不自动翻译或覆盖文件，也不代替语义与行文审核。更新 `tables/` 的生成数据后，需要同步英文主稿中标有 `BEGIN INLINE TABLE` 的表体，再重新检查。当前英文稿以现有中文内容为初始依据；后续以英文为主逐章定稿。
+当前负载来自固定配置和模型特定规则；新增通用提取流程、V3.2/R1 及两个实际专家量化版本的核验列为后续实验。正文中的专家 W4A4 是迁移场景，NVFP4 能耗暂用 MXFP4 活动功耗代理。`data/results` 是当前硬件结果；`data/expected` 保持历史工作量回归，不用于替换现行时间/能耗。
 
-当前完整英文初译已经保留，后续章节仍属待审工作稿。逐章推进顺序为：第三章微架构 → 第四章 K/N 扩展实现 → 第五章实验评估 → 第六章负载分析 → 第七章结论。每轮只处理当前讨论章节并同步中英文，不因初译已完成而将后续表述视为定稿。
+定点记号采用 `QI.F` / `UQI.F`，整数位数 I 不含符号位，位宽分别为 `1+I+F` / `I+F`；精度类别 Q 与定点 Q 格式由上下文区分。Lane 和 DP 的对齐窗口均为无符号幅值，基线分别为 28 和 39 位。论文正文不使用代码版本与 run ID。
 
-2026-11-11：按用户要求，以最新中文第三章至结论为依据同步英文主稿，使用项目 [academic-humanizer](../.skill/academic-humanizer/SKILL.md) 规范处理学术表达，保留信息量、论证顺序与结论强度。第三至第七章的章节层级、公式、表格数值、引用和图源已逐项核对；英文稿移除中文已删去的展开分析，更新输入/部分和驻留带宽模型与 DeepSeek 配比趋势。未来 FP4 attention 保持条件性展望，不表述为本轮验证结果。中文第四章仅删除已撤下面积分布图的失效图号，其余中文内容不变；摘要、前两章及图表数据不在本轮修改范围内。
-
-定点记号统一为 `SxPy` / `UxPy`：`x` 不含符号位，`y` 为小数位数，位宽分别为 `1+x+y` 与 `x+y`。`Lane_align` 和 `DP_align` 均表示无符号幅值移位窗口，基线分别为 28 和 39 位；恢复符号后的全局累加输入为 40 位。
-
-## 当前中文初稿（2026-11-10）
-
-正文按七章组织：引言、背景、共享 DP 微架构、低精度专用化与 K/N 扩展、硬件评估、负载配比建模、结论。[main.tex](main.tex) 是入口；第三章只描述基线，第五章报告电路证据，第六章讨论解析预测。正文不使用代码版本、模块路径或实验 run ID，来源映射放在 [研究路线](research_plan.md)、[相关工作核验](references/notes/dp_comparison.md) 和 [硬件更新说明](data/evidence/n12_current/README.md)。
-
-硬件输入已更新为当前 N12、0.7 V、85°C、1 GHz 的六 DP 测量批次。四种 K 配比的部署、时间、能耗、分区及 DeepSeek 轨迹已重算。DeepSeek 模型版本和工作量映射保持不变；`data/expected` 保留历史回归证据，旧硬件输入归档到 `data/evidence/n12_legacy/`。NVFP4 暂用 MXFP4 功耗代理，输入与结果 manifest 均明确标注；补入 NVFP4 功耗后重算能耗分区。
-
-当前保持 10 pt 中文工作稿，不通过缩小字体压缩篇幅。基线架构图使用作者现有 `baseline_arch.png`；K/N 架构图留占位，绘图内容见章节源码注释及 [研究路线](research_plan.md)，由作者补图。不自动生成架构图片。早期 22 nm 和 Select8 结果保留作为历史资料，不再被当前正文引用。
+架构图只使用作者现有图稿；需要补画的内容列在研究计划中。本轮仅用既有绘图代码和测量数据生成四配比数据图。中文保留 10 pt 工作稿排版，本轮编译为正文 6 页、参考文献 1 页；未发现未解析引用或溢出。英文尚未同步，需单独复核其最终篇幅。
 
 ## 保存后预览 PDF
 
@@ -56,7 +45,7 @@ cd paper
 python3 -m pip install -r requirements.txt  # 缺少依赖时执行
 make                    # 仅编译正文，输出 build/main.pdf
 make reproduce          # 重算部署、负载、三角分区、两张图和三张表
-make diagrams           # 重绘 DP 背景和 K/N 组织示意图
+# make diagrams         # 历史示意图入口；本轮不调用，架构图由作者维护
 make cost-figures       # 按可编辑 CSV 重绘 select8 面积/功耗和 H16Q32E64 面积占比
 make check              # 保持历史工作量不变，核验当前测量输入、部署与时间/能耗
 make test               # 临时目录内验证修改参数后的重算
@@ -142,7 +131,7 @@ make test
 
 ## 目录与结果
 
-- `sections/`：摘要及七章正文；微架构为 `03_architecture.tex`，扩展为 `04_expansion.tex`，硬件评估为 `05_evaluation.tex`，负载模型为 `06_workload.tex`。
+- `sections/`：摘要及六章正文；微架构与增配为 `03_architecture.tex`，成本表征为 `04_evaluation.tex`，DSE 为 `05_dse.tex`，结论为 `06_conclusion.tex`。
 - `references/references.bib`：文献和 BibTeX 格式控制条目；五项 DP 相关工作的比较条件另存于 notes。
 - `figures/`：正文插图；四张原有架构/格式图保留 PNG，其余提供绘图代码。
 - `tables/`：固定面积部署、MXFP4 区域占比及 prefill 端点三张表，由脚本生成。其余表格在章节内维护。

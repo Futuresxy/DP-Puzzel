@@ -1,5 +1,16 @@
 # DP 面积与功耗数据及绘图
 
+## 当前论文四配比视图（2026-11-11）
+
+中文 DSE 稿使用完整 H/Q/E 候选 1:2:4、1:2:6、1:2:8、1:4:8，输入仍为下面六 DP 批次的 CSV，不新增硬件测量。
+
+```bash
+python3 paper/data/DP_area_power/plot_latest6_area_power.py --scope ratios
+# 或 make -C paper cost-figures PYTHON=/path/to/python
+```
+
+输出 `figures/ratio4_area.png`、`ratio4_power.png` 及 `ratio4_plot_manifest.json`；派生数值保存到本目录 `ratio4_costs.csv`。面积相对基线，**功耗分别相对基线同精度**，不是旧图的统一 BF16 分母。所有柱均为实际支持且已测量的格式。无参数运行仍保留旧六设计绘图行为。
+
 ## 最新六种 DP：2026-11-10 v1.9 比较批次，N12 / 1GHz
 
 `latest6_area.csv` 保存六种架构的综合面积、组合/时序面积、工况、DC run 和冻结 RTL export ID。

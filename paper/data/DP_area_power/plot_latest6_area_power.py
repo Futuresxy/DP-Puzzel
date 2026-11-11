@@ -235,11 +235,76 @@ def draw(areas, groups, output, dpi):
                 figures=["latest6_area.png", "latest6_power.png"])
 
 
+def draw_ratios(areas, groups, output, dpi):
+    """Four full-DP candidates; normalize power to the same baseline mode."""
+    selected = [(a, g) for a, g in zip(areas, groups) if int(a["H"]) > 0]
+    require(len(selected) == 4, "Expected four H/Q/E ratio candidates")
+    area_ref = float(selected[0][0]["area_um2"])
+    power_ref = {r["format"]: float(r["total_mw"]) for r in selected[0][1]}
+    ratios = [a["ratio"] for a, _ in selected]
+    centers = np.arange(len(selected))
+    plt.rcParams.update({"font.family": "serif",
+        "font.serif": ["Times New Roman", "Liberation Serif", "DejaVu Serif"],
+        "font.size": 8, "axes.labelsize": 8, "axes.edgecolor": "#5D6770"})
+    rows = []
+    for area, group in selected:
+        row = dict(ratio=area["ratio"], area_um2=float(area["area_um2"]),
+                   area_ratio=float(area["area_um2"])/area_ref)
+        for point in group:
+            fmt = point["format"]
+            row[fmt + "_total_mw"] = float(point["total_mw"])
+            row[fmt + "_power_ratio"] = float(point["total_mw"])/power_ref[fmt]
+        rows.append(row)
+    write_csv(HERE / "ratio4_costs.csv", rows)
+
+    def axes(ax, ylabel):
+        ax.set_xticks(centers, ratios)
+        ax.set_xlabel("Throughput ratio (H:Q:E)", labelpad=3)
+        ax.set_ylabel(ylabel, labelpad=3)
+        ax.set_ylim(0, 2.12)
+        ax.yaxis.set_major_locator(MultipleLocator(.5))
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_axisbelow(True)
+        ax.grid(axis="y", color="#E3E7EB", linewidth=.5)
+        ax.axhline(1, color="#777777", linestyle="--", linewidth=.6)
+        ax.tick_params(axis="x", length=0, pad=3)
+
+    fig, ax = plt.subplots(figsize=(3.5, 1.45))
+    fig.subplots_adjust(left=.14, right=.99, bottom=.29, top=.97)
+    bars = ax.bar(centers, [r["area_ratio"] for r in rows], width=.45,
+                  color="#DFA0A6", edgecolor="#7A7A7A", linewidth=.45)
+    ax.bar_label(bars, fmt="%.2f", padding=2, fontsize=7)
+    axes(ax, "Normalized area")
+    save_figure(fig, output, "ratio4_area", dpi)
+
+    fig, ax = plt.subplots(figsize=(3.5, 1.65))
+    fig.subplots_adjust(left=.14, right=.99, bottom=.26, top=.83)
+    for i, (fmt, label) in enumerate(zip(FORMATS, ("BF16", "MXFP8", "MXFP4"))):
+        bars = ax.bar(centers + (i-1)*.24, [r[fmt+"_power_ratio"] for r in rows],
+                      width=.22, color=COLORS[fmt], edgecolor="#7A7A7A",
+                      linewidth=.45, label=label)
+        ax.bar_label(bars, fmt="%.2f", padding=2, fontsize=6.5, rotation=90)
+    axes(ax, "Normalized power")
+    ax.set_ylim(0, 2.35)
+    ax.legend(loc="lower center", bbox_to_anchor=(.5, 1.01), ncols=3,
+              frameon=False, fontsize=7, columnspacing=1, handletextpad=.35,
+              handlelength=1.2, borderaxespad=0)
+    save_figure(fig, output, "ratio4_power", dpi)
+    return dict(area_bars=4, power_bars=12, formats=list(FORMATS),
+                x_tick_labels=ratios, area_reference_um2=area_ref,
+                power_reference_total_mw_by_format=power_ref,
+                power_quantity="tool-reported total_mw, normalized per format",
+                boundary="Same measured inputs as latest6; no new hardware experiments",
+                dpi=dpi, figures=["ratio4_area.png", "ratio4_power.png"])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--refresh-data", action="store_true", help="Re-export the pinned current HW indexes")
     parser.add_argument("--output-dir", type=Path, default=PAPER / "figures")
     parser.add_argument("--dpi", type=int, default=400)
+    parser.add_argument("--scope", choices=("six", "ratios"), default="six",
+                        help="Keep six-design history or plot the four full-DP DSE candidates")
     args = parser.parse_args()
     if args.dpi <= 0:
         parser.error("--dpi must be positive")
@@ -247,7 +312,9 @@ def main():
         refresh_data()
     areas, groups = load_data()
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    manifest = draw(areas, groups, args.output_dir, args.dpi)
+    render = draw_ratios if args.scope == "ratios" else draw
+    stem = "ratio4" if args.scope == "ratios" else "latest6"
+    manifest = render(areas, groups, args.output_dir, args.dpi)
     manifest["runtime"] = dict(python=platform.python_version(), numpy=np.__version__,
                                matplotlib=matplotlib.__version__)
     manifest["inputs"] = [dict(file=p.name, sha256=digest(p)) for p in
@@ -255,8 +322,8 @@ def main():
     manifest["scripts"] = [dict(file=p.name, sha256=digest(p)) for p in
                            (Path(__file__), HERE / "plot_area_power.py")]
     manifest["outputs"] = [dict(file=name, sha256=digest(args.output_dir / name)) for name in manifest["figures"]]
-    (args.output_dir / "latest6_plot_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    print(f"Latest6: 6 area bars, 15 power bars; PNGs in {args.output_dir}")
+    (args.output_dir / f"{stem}_plot_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    print(f"{stem}: {manifest['area_bars']} area bars, {manifest['power_bars']} power bars; PNGs in {args.output_dir}")
 
 
 if __name__ == "__main__":

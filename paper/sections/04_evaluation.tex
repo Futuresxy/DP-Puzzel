@@ -1,0 +1,52 @@
+% !TeX root = ../main.tex
+\section{算力配比的硬件成本表征}
+\label{sec:evaluation}
+
+\subsection{实验方法}
+\label{sec:eval_setup}
+
+四种 DP 均使用 Synopsys Design Compiler，在 12\,nm、TT、0.7\,V、85$^\circ$C 下以 1\,GHz 综合，采用集成时钟门控，保持八级流水与 II=1，并满足时序和电气约束。面积包含组合逻辑、流水寄存器及门控单元。功耗输入来自 Qwen3-8B 首层 MLP 下投影~\cite{qwen3technicalreport}，分别编码为 BF16、MXFP8 E4M3 和 MXFP4 E2M1，作为 H/Q/E 的测量代表。VCS 门级仿真连续发出 1024 笔独立请求，取中间 512 拍生成 SAIF；Power Compiler 基于完整活动注释估计内部、切换及泄漏功耗~\cite{synopsysActivityPower}。以下结果均为综合后、CTS/布线前估计，不包含阵列存储与互连。
+
+\subsection{四种配比的面积与功耗}
+\label{sec:lowp_costs}
+
+图~\ref{fig:ratio4_costs} 给出面积及各精度总功耗相对基线的变化。$1:2:6$ 和 $1:2:8$ 分别将 E 算力提高 50\% 和 100\%，DP 面积仅增加 16.69\% 和 33.60\%，E 模式功耗增加 28.77\% 和 57.14\%。两者的 H/Q 模式功耗增幅均低于 4\%，表明共享后端与按模式激活能够限制增配资源对其他精度的影响。
+
+$1:4:8$ 将 Q/E 算力同时翻倍，面积增加 68.21\%；Q 和 E 模式功耗分别增加 79.91\% 和 83.66\%，H 模式仅增加 2.71\%。其 Q 模式总功耗达到 28.789\,mW，为四种候选的最高测量值。与 E 专用增配相比，QE Group 还需保留 Q 的指数比较、局部对齐及宽规约通路，因而具有更高成本。
+
+\begin{figure}[t]
+\centering
+\subfloat[面积倍率\label{fig:ratio4_area}]{\includegraphics[width=0.94\columnwidth]{ratio4_area.png}}\par
+\subfloat[各精度功耗倍率\label{fig:ratio4_power}]{\includegraphics[width=0.94\columnwidth]{ratio4_power.png}}
+\caption{四种配比的综合面积与总功耗。面积以 $1:2:4$ 为基准；功耗分别以基线的 BF16、MXFP8、MXFP4 功耗归一化，每种精度独立比较。}
+\label{fig:ratio4_costs}
+\end{figure}
+
+\textbf{观察一：算力、面积与功耗不按同一比例增长。} E 专用通路能以较小成本提高 E 吞吐，而同时提高 Q 吞吐需要更多对齐与规约资源。因此，配比 DSE 应使用各候选的面积和逐模式功耗，不能按峰值比例线性放大基线成本。
+
+\subsection{持续供数所需的带宽}
+\label{sec:ratio_bandwidth}
+
+在固定的 $m\times n$ 阵列中，增配 Group 增大低精度点积长度，但不增加每拍的输出数量。考虑 A 沿行、B 沿列广播，令 $V_{A,j,p}$、$V_{B,j,p}$ 为配比 $j$ 在精度 $p$ 下含尺度的单向量位宽，$R_A$、$R_B$ 为输入在本地缓冲中的时间复用次数。若每个输出的 $c$ 位部分和每 $\tau_C$ 次累加与上一级存储交换一次，则稳态平均接口带宽为
+\begin{equation}
+\begin{aligned}
+B_{\mathrm{in},j,p}&=f\left(\frac{mV_{A,j,p}}{R_A}+\frac{nV_{B,j,p}}{R_B}\right),\\
+B_{\mathrm{cd}}&=\frac{2fmnc}{\tau_C},\qquad
+B_{j,p}=B_{\mathrm{in},j,p}+B_{\mathrm{cd}}.
+\end{aligned}
+\label{eq:ratio_bandwidth}
+\end{equation}
+该模型计入行列间空间复用和缓冲内时间复用，省略填充、排空与边界浪费。设 $r_{j,p}=K_{j,p}/K_{0,p}$。当缩放块完整、向量位宽随点积长度等比例增长，且复用参数不变时，
+\begin{equation}
+\frac{B_{j,p}}{B_{0,p}}
+=1+(r_{j,p}-1)\frac{B_{\mathrm{in},0,p}}{B_{\mathrm{in},0,p}+B_{\mathrm{cd}}}.
+\label{eq:ratio_bandwidth_growth}
+\end{equation}
+因此，$1:2:6$ 的 E 输入带宽为基线的 1.5 倍，$1:2:8$ 的 E 以及 $1:4:8$ 的 Q/E 输入带宽为 2 倍；相同驻留条件下，输出交换带宽不变。总接口带宽增幅位于 1 与 $r_{j,p}$ 之间：输入流量占主导时接近 $r_{j,p}$，输出交换占比较高时较小。增加输入驻留复用可降低前者，提高部分和驻留次数则降低后者。这里比较的是维持峰值吞吐的每秒供数需求，不代表同一 GEMM 的总传输量按相同比例增加；实际可达吞吐还取决于缓冲容量、端口和调度。
+
+\subsection{与同类多精度单元比较}
+\label{sec:related_dp_evaluation}
+
+\input{tables/related_ppa.tex}
+
+表~\ref{tab:related_dp} 比较共享基线与已有设计。为近似统一工艺，采用 DeepScaleTool~\cite{sarangi2021deepscaletool} 将 7、22 和 28\,nm 的效率转换至以 14\,nm 代理的 12\,nm 参考，原生 12\,nm 结果保持不变。基线的 MXFP8 面效为 3.959\,TFLOP/s/mm$^2$，约为 Ten-Four 全格式 Q8/Q16 转换值的 3.01--3.10 倍；MXFP8 能效为 4.000\,TFLOP/s/W，约为 MXDOTP 的 1.97 倍。专用或格式较少的设计在部分指标上仍有优势，例如 MXDOTP 的 MXFP8 面效更高。各工作在实现阶段、累加精度及功耗活动条件上存在差异，工艺转换仅提供近似参照。该比较说明共享基线的成本水平，后续配比选择使用本文四种设计的同工况测量。
