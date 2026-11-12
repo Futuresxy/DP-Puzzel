@@ -1,5 +1,11 @@
 # 后续实施路线
 
+## 九配比与 DeepSeek GEMM DSE 任务（2026-11-12）
+
+本轮明确软件建模分为 [面积与部署](../ratio_dse/area_model/README.md)、[DeepSeek 计算与利用率](../ratio_dse/compute_model/README.md)、[芯片双视角 DSE](../ratio_dse/dse/README.md)。故事线与接口见 [ratio_dse 索引](../ratio_dse/README.md)。九种目标配比最终两项已由用户更正为 1:6:12、1:8:16，当前实验不因早先文字误写而变更。先内置 V4/V4.1 Attention/MoE GEMM；不扩展阵列 RTL。
+
+实施待决项：分析场景的阵列尺寸与广播/累加反馈合同；等每核输入带宽的模式集合、scale/packing 和复用；W4A8 到现用同格式 DP 的转换路径；目标 Global-KV BF16 映射与本地参考 ratio=2 FP32 分支的来源差异；SCALE-Sim 固定版本与广播/native-K 适配；idle/外围功耗与质量数据。未决只阻塞依赖它的指标，其余账本、面积、解析下界继续实施。质量先作为外部参数/约束，未知值不填零；具体质量预测/量化测量后续安排。本批只生成任务说明，模型尚未实施。
+
 ## 五种新增 DP 配比实施（2026-11-12）
 
 已实现 Q4 lane、Q8 group 和四组 Q 扩展的 T8H16Q64E64，以及四个基础组加 8/12 个 E16 组的 T8H16Q32E192/E256。Q 专用前端保持 S4 lane 出口、S5 group token 及顶层 L8/II=1，只支持四种 MXFP8/6；T/H/E/INT8 请求不启用新增 Q 组。

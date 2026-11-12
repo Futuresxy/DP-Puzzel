@@ -1,5 +1,7 @@
 # 模型组件与后续文件职责
 
+2026-11-12：首轮实施目录已确定为 [area_model](../area_model/README.md)、[compute_model](../compute_model/README.md)、[dse](../dse/README.md)，统一数据见 [合同](../docs/contracts.md)。下表是职责划分背景，不再要求在本 `src/` 目录创建同名重复实现。当前交付仍为任务规格，没有模型代码。
+
 当前只定义逻辑模块；没有代码。文件名是实施阶段的建议，语言与拆分方式可在接口稳定后确认。
 
 | 拟定组件/文件 | 职责 | 输入 → 输出 |
