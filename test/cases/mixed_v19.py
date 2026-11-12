@@ -45,6 +45,16 @@ def directed(profile, random_per_mode=12):
                                 [int(shift == 2) for shift in lane_shifts])
                     requests.append(make(mode, k, a=[7] * count, b=[7] * count,
                                          metadata=metadata))
+    if profile == 't8h16q64e64':
+        # Token-level special semantics: a NaN scale has a zero numerical
+        # placeholder, so +/-Inf sets invalid and suppresses both Inf flags.
+        for infinity_code in (0x7c, 0xfc):
+            for scale_a, scale_b in (([127, 255], [127, 127]),
+                                     ([127, 127], [127, 255]),
+                                     ([127, 255], [127, 255])):
+                requests.append(make('mxfp8_e5m2', 32,
+                                     a=[0] * 32 + [infinity_code] * 32,
+                                     b=[0x3c] * 64, sa=scale_a, sb=scale_b))
     if profile not in ('qe', 'q32e64'):
         requests = [poison_inactive(request, profile) if not extended(profile, request['a_datatype'])
                     else request for request in requests]

@@ -24,6 +24,8 @@
 module dp_top_mixed #(
   // 独立优化顶层启用：紧凑 QE 解包与扩展源浮点专用落位，基础组不变。
   parameter integer OPTIMIZE_QE = 0,
+  // Q-only extension is static and leaves every existing profile unchanged.
+  parameter integer EXT_Q_ONLY = 0,
   // 高精度基线并行度，混合顶层固定为 16。
   parameter integer K_FP16 = `DP_DEFAULT_K,
   // S3 局部幅值对齐窗口，改变时下游 lane/group 位宽同步推导。
@@ -97,7 +99,9 @@ module dp_top_mixed #(
   genvar group_index;
   // Extension request membership is pipelined independently of current input mode.
   wire extension_request;
-  assign extension_request = (in_a_datatype >= ((EXT_QE != 0) ? `DP_DT_MX8_E4M3 : `DP_DT_MXFP4)) & (in_a_datatype <= `DP_DT_HIF4);
+  assign extension_request = (EXT_Q_ONLY != 0) ?
+      ((in_a_datatype >= `DP_DT_MX8_E4M3) & (in_a_datatype <= `DP_DT_MX6_E2M3)) :
+      (in_a_datatype >= ((EXT_QE != 0) ? `DP_DT_MX8_E4M3 : `DP_DT_MXFP4)) & (in_a_datatype <= `DP_DT_HIF4);
 
 
   `include "dp_functions.vh"
@@ -230,6 +234,27 @@ module dp_top_mixed #(
             .in_e1_b          (in_hif4_e1_b[group_index*4+:4]),
             .in_e2_a          (in_hif4_e2_a[group_index*2+:2]),
             .in_e2_b          (in_hif4_e2_b[group_index*2+:2]),
+            .out_valid        (group_top_valid),
+            .out_negative     (group_align_negative),
+            .out_magnitude    (group_align_magnitude),
+            .out_anchor       (group_align_anchor),
+            .out_compare_exp  (group_align_compare_exp),
+            .out_z            (group_align_leading_zero_count),
+            .out_special      (group_align_special)
+        );
+      end else if (EXT_Q_ONLY != 0) begin : g_q
+        dp_group_q #(
+            .LOCAL_W (LOCAL_W),
+            .ANCHOR_W(ANCHOR_W)
+        ) u_group_unit (
+            .clock            (clock),
+            .rst_n            (rst_n),
+            .in_valid         (req_fire & extension_request),
+            .in_datatype      (in_a_datatype),
+            .in_a             (in_a[group_index*`DP_LANES*`DP_LANE_W+:`DP_LANES*`DP_LANE_W]),
+            .in_b             (in_b[group_index*`DP_LANES*`DP_LANE_W+:`DP_LANES*`DP_LANE_W]),
+            .in_scale_a       (in_scale_a[group_index*`DP_SCALE_W+:`DP_SCALE_W]),
+            .in_scale_b       (in_scale_b[group_index*`DP_SCALE_W+:`DP_SCALE_W]),
             .out_valid        (group_top_valid),
             .out_negative     (group_align_negative),
             .out_magnitude    (group_align_magnitude),

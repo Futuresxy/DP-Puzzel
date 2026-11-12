@@ -35,6 +35,8 @@ const char *name(Frontend frontend) {
   case Frontend::Multi: return "multi";
   case Frontend::E: return "e";
   case Frontend::QE: return "qe";
+  case Frontend::Q: return "q";
+  case Frontend::MixedQ64E64: return "t8h16q64e64";
   case Frontend::MixedE96: return "t8h16q32e96";
   case Frontend::MixedE128: return "t8h16q32e128";
   case Frontend::MixedQE128: return "t8h16q64e128";
@@ -42,6 +44,8 @@ const char *name(Frontend frontend) {
   throw std::invalid_argument("unknown frontend");
 }
 bool Config::extension_supports(DataType datatype) const {
+  if (frontend == Frontend::MixedQ64E64)
+    return datatype >= DataType::MXFP8_E4M3 && datatype <= DataType::MXFP6_E2M3;
   return datatype >= (frontend == Frontend::MixedQE128 ? DataType::MXFP8_E4M3
                                                       : DataType::MXFP4) &&
          datatype <= DataType::HIF4;
@@ -49,6 +53,7 @@ bool Config::extension_supports(DataType datatype) const {
 Frontend Config::group_frontend(unsigned group_index) const {
   if (!mixed()) return frontend;
   if (group_index < 4) return Frontend::Multi;
+  if (frontend == Frontend::MixedQ64E64) return Frontend::Q;
   return frontend == Frontend::MixedQE128 ? Frontend::QE : Frontend::E;
 }
 unsigned ceil_log2(unsigned element_count) {
@@ -60,8 +65,10 @@ unsigned ceil_log2(unsigned element_count) {
   return tree_levels;
 }
 void Config::validate() const {
-  if (static_cast<unsigned>(frontend) > static_cast<unsigned>(Frontend::MixedQE128))
+  if (static_cast<unsigned>(frontend) > static_cast<unsigned>(Frontend::MixedQ64E64))
     throw std::invalid_argument("unknown frontend");
+  if ((frontend == Frontend::Q || frontend == Frontend::MixedQ64E64) && !architecture_v19)
+    throw std::invalid_argument("Q-only profiles require architecture_v19=true");
   if (mixed() && (k_fp16 != 16 || post_scale_norm_extra_stage != 0))
     throw std::invalid_argument("mixed profiles require base K16 and L8");
   if (k_fp16 != 4 && k_fp16 != 8 && k_fp16 != 16)
@@ -106,6 +113,8 @@ bool tuple_legal(const Request &request) {
 bool tuple_legal(const Config &config, const Request &request) {
   return tuple_legal(request) &&
          (config.frontend == Frontend::Multi || config.mixed() ||
+          (config.frontend == Frontend::Q && request.a_type >= DataType::MXFP8_E4M3 &&
+           request.a_type <= DataType::MXFP6_E2M3) ||
           (config.frontend == Frontend::QE && request.a_type >= DataType::MXFP8_E4M3 &&
            request.a_type <= DataType::HIF4) ||
           (config.frontend == Frontend::E &&

@@ -138,3 +138,9 @@ python3.11 test/run_mixed_verilog.py --frontend t8h16q64e128_opt
 ## 六种现用架构与内部核心
 
 先读 [顶层架构总览](../spec/dp/dptop/top-architectures.md)。`top/common/dp_top_mixed.v`和`top/common/dp_top_lowp.v`是共用实现核心，`dp_top_e`是兼容参数化入口；六种现用配置包含原`dp_top`。E128扩展已恢复，未优化QE128包装仍退役，历史快照/测量保留。
+
+## Q 专用扩展 v1.10
+
+新增 [dp_lane_q](lane/dp_lane_q.v)、[dp_group_q](group/dp_group_q.v) 与 [dp_top_t8h16q64e64](top/dp_top_t8h16q64e64.v)，源清单为 `files_t8h16q64e64.f`。四个基础组加四个 Q8，Q 支持 MXFP8/6，E 容量保持64。Q-only 裁掉 E pair、HiF 元数据与 scale 尾数乘法；S4 lane、S5 token、L8/II=1 均保持现有合同。
+
+完整验证使用 `test/run_mixed_verilog.py --frontend t8h16q64e64`，先构建当前 CModel，再冻结指定源码。[新顶层冻结验证与门禁](../../test/results/q-only-v1.10-20261112.md)已通过，不能沿用 Q64E128 的测量。[规格](../spec/dp/dptop/t8h16q64e64.md)说明接口、参与屏蔽和验证范围。E192/E256 本轮仅分析，未加入 RTL 清单。

@@ -14,9 +14,11 @@ def reference(request,config,limited=False):
         profile = config.get('frontend', 'multi')
         datatype = request['a_datatype']
         active_k = config['k_fp16']
-        if profile in ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128', 't8h16q64e128_opt'):
+        if profile in ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128', 't8h16q64e128_opt', 't8h16q64e64'):
             extension_active = 7 <= datatype <= 9 or (
                 profile in ('t8h16q64e128', 't8h16q64e128_opt') and 3 <= datatype <= 6)
+            if profile == 't8h16q64e64':
+                extension_active = 3 <= datatype <= 6
             active_k = (24 if profile == 't8h16q32e96' else 32) if extension_active else 16
         config = config | dict(frontend='multi', k_fp16=active_k, legacy_multi=False)
     if not limited or config.get('frontend', 'multi') != 'multi' or config.get('legacy_multi', False):

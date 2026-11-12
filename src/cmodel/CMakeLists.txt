@@ -6,7 +6,7 @@ add_library(dp_cmodel
   lib/config.cpp lib/arithmetic.cpp lib/unpack.cpp lib/lane.cpp
   lib/group.cpp lib/lane/lane_e.cpp lib/group/group_e.cpp lib/top/backend.cpp
   lib/model.cpp lib/json_io.cpp lib/lane/lane_qe.cpp lib/group/group_qe.cpp
-  lib/top/mixed.cpp)
+  lib/top/mixed.cpp lib/lane/lane_q.cpp lib/group/group_q.cpp)
 target_include_directories(dp_cmodel PUBLIC include PRIVATE lib)
 target_link_libraries(dp_cmodel PUBLIC Boost::boost nlohmann_json::nlohmann_json)
 target_compile_features(dp_cmodel PUBLIC cxx_std_17)

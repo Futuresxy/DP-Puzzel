@@ -1,10 +1,10 @@
-> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.9.1；修改时间：2026-11-10 00:35:33 +0800；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
+> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.10；修改时间：2026-11-12 18:44:45 +0800；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
 
 # DP 规格导航
 
 **基础dp_top采用[v1.8](dptop/dp-top-v1.8.md)；三个混合顶层与Q32E64采用[v1.9](dptop/mixed-precision-expansion.md)，均已通过CModel/冻结RTL验证及本轮同工况DC/功耗验收。E64与dp_top_e保留原设计；六架构15个兼容点使用新采集SAIF。[完整结果](../../../hw/power/records/v19_design_report_20261110.md)与旧PPA分别保留。**
 
-当前多精度主实现为 T8H16Q32E64、L8、II=1，默认局部/全局窗口 28/40；每笔完成 scaled_dot(A,B)+C，无跨请求累加状态。当前设计族架构 v1.7，实现映射 v1.7.1；原顶层容量不变，新增三个固定配比的混合顶层。
+当前多精度主实现为 T8H16Q32E64、L8、II=1，默认局部/全局窗口 28/40；每笔完成 scaled_dot(A,B)+C，无跨请求累加状态。基础合同 v1.8、既有混合合同 v1.9；本轮新增 Q 专用扩展 v1.10，原顶层容量保持不变。
 
 ## 1. 按模块查找
 
@@ -89,3 +89,9 @@ CModel 和 QE/混合 Verilog 已实现；三个顶层分别通过完整 Verilato
 [混合顶层v1.9](dptop/mixed-precision-expansion.md)定义新的E/QE专用前端、LZD22/U31、active MAX和扩展CSA合并，CModel及冻结RTL已验证，见[test回执](../../../test/results/mixed-rtl-v1.9.md)。旧QE面积优化约66.53%增幅及其功能/PPA属于历史版本，见[旧功能记录](../../../test/results/qe-area-opt-v1.7.3.md)与[综合索引](../../../hw/dc_syn/records/README.md#历史记录)，不得作为新方案收益。
 
 扩展 QE 保留四种 MXFP8/6 与 MXFP4/NVFP4/HiF4，扩展 E 保留三种 E；只有基础四组支持 T/H/INT8。优先优化固定字段解包、分类/符号寄存和扩展源整数选择，默认窗口 28/40、L8/II=1、单次 C 与数值行为保持。未测的面积节省和功耗收益不写入实测结论。
+
+## 8. Q 专用扩展与更多 E 组
+
+[Q4 lane](lane/dp_lane_q.md) 与 [Q8 group](group/dp_group_q.md) 只支持四种 MXFP8/6；[T8H16Q64E64](dptop/t8h16q64e64.md) 在四个基础组上增加四个 Q 组，保持 S5 token、L8/II=1 和 E64 容量。Q 扩展仅在 Q 请求参与，独立建立功能回执，尚无新 PPA。
+
+[E192/E256 分析](dptop/e192-e256-expansion-analysis.md)讨论增加 8/12 个 E 组后的统一 Emax、并行移位、CSA 与流水切分；尚未实施，不能由现有测量宣称单周期时序达标。

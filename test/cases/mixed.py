@@ -16,6 +16,8 @@ def qe_extension(profile):
 
 
 def extended(profile, datatype):
+    if profile == 't8h16q64e64':
+        return 3 <= datatype <= 6
     return 7 <= datatype <= 9 or (qe_extension(profile) and 3 <= datatype <= 6)
 
 

@@ -1,4 +1,4 @@
-> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.9.1；修改时间：2026-11-10 00:35:33 +0800；对应代码：无运行时代码；实现与报告引用此处规格快照。
+> 功能：维护整体架构与文档版本时间线；范围：当前全部新版 spec 的版本索引和变更依据；版本：v1.10；修改时间：2026-11-12 18:46:20 +0800；对应代码：无运行时代码；实现与报告引用此处规格快照。
 
 # 版本记录与当前索引
 
@@ -6,12 +6,12 @@
 
 |版本|时间（+08:00）|核心合同|
 |---|---|---|
-|v1.8|2026-11-09|基础dp_top局部E融合、无偏scale、双指数、C不LZD、CSA后端；已验证；首次DC电容违例经独立后端修复通过，三种真实负载功耗已完成。|
-|v1.9|2026-11-09|三种混合扩展规格：E S3消费e2、LZD22/U31；QE专用解包与E旁路；扩展carry-save合并及唯一CPA。CModel及四种新RTL已验证，独立E64保持；五份新DC通过、六架构15点功耗与七类功能统计完成，见[完整交付](../../hw/power/records/v19_design_report_20261110.md)。|
+|v1.9|2026-11-09|E/QE 专用前端与三个混合顶层采用双指数 token、carry-save 合并和唯一 CPA；Q32E64 同步迁移。冻结 RTL、五份新 DC 和六架构 15 点功耗已完成，见[交付](../../hw/power/records/v19_design_report_20261110.md)。|
+|v1.10|2026-11-12|新增 Q4 lane / Q8 group，四个基础组加四个 Q 组形成 T8H16Q64E64；保持 S5 token、L8/II=1 和 E64 容量。[完整功能回执](../../test/results/q-only-v1.10-20261112.md)通过，尚无 PPA；E192/E256 仅完成流水方案分析。|
 
-v1.8 → v1.9：~~扩展预加CPA后再合并~~ → 两行carry-save选择后唯一CPA；~~E S4消费e2~~ → S3消费。基础dp_top保持v1.8；独立Q32E64已明确授权迁移v1.9，E64保持旧合同。旧实现/实验由Git和原回执追踪。
+v1.9 → v1.10：~~新增 Q 算力只能选择同时支持 E 的 QE 组~~ → 增加只支持四种 MXFP8/6 的 Q 组装配；T8H16Q64E64 扩展仅在 Q 请求参与，E 仍为 K64。原有六种架构不被替换：基础 dp_top 保持 [v1.8](dp/dptop/dp-top-v1.8.md)，既有混合与 Q32E64 保持 v1.9，独立 E64 保持原合同。
 
-确认入口：[混合顶层](dp/dptop/mixed-precision-expansion.md)、[E lane](dp/lane/dp_lane_E.md)、[QE lane](dp/lane/dp_lane_qe.md)、[E group](dp/group/dp_group_E.md)、[QE group](dp/group/dp_group_qe.md)。
+新合同：[Q lane](dp/lane/dp_lane_q.md)、[Q group](dp/group/dp_group_q.md)、[T8H16Q64E64](dp/dptop/t8h16q64e64.md)。[E192/E256 分析](dp/dptop/e192-e256-expansion-analysis.md)的 L9/L10 为待确认候选，版本号不代表增加流水已获批准。
 
 ## 2. 验证与实施边界
 
@@ -27,7 +27,7 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 
 | 文档 | 当前版本 | 功能 |
 | --- | --- | --- |
-| [README.md](README.md) | v1.8 | 汇总新版规格入口和生效范围 |
+| [README.md](README.md) | v1.10 | 汇总新版规格入口和生效范围 |
 | [00-system-scope.md](00-system-scope.md) | v1.5.8 | 定义系统边界和设计目标 |
 | [01-numerics.md](01-numerics.md) | v1.5.4 | 定义数值语义与保留精度 |
 | [03-interfaces.md](03-interfaces.md) | v1.5.4 | 汇总共用输入输出协议 |
@@ -35,20 +35,20 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 | [06-configuration.md](06-configuration.md) | v1.5.7 | 定义参数及其合法派生关系 |
 | [07-verification.md](07-verification.md) | v1.7.7 | 定义现用模型/RTL及未来实现的共用验收合同 |
 | [08-implementation-ppa.md](08-implementation-ppa.md) | v1.7.7 | 定义实现交付与 PPA 评价规则 |
-| [CHANGELOG.md](CHANGELOG.md) | v1.9.1 | 维护整体架构与文档版本时间线 |
+| [CHANGELOG.md](CHANGELOG.md) | v1.10 | 维护整体架构与文档版本时间线 |
 | [TEMPLATE.md](TEMPLATE.md) | v1.4.1 | 提供新规格的固定格式模板 |
 | [document-control.md](document-control.md) | v1.5.4 | 定义规格版本和历史修订规则 |
-| [dp/README.md](dp/README.md) | v1.9.1 | 按模块与共用合同组织 DP 规格 |
-| [dp/lane/README.md](dp/lane/README.md) | v1.9 | 定义 lane 规格目录与计算边界 |
+| [dp/README.md](dp/README.md) | v1.10 | 按模块与共用合同组织 DP 规格 |
+| [dp/lane/README.md](dp/lane/README.md) | v1.10 | 定义 lane 规格目录与计算边界 |
 | [dp/lane/dp_lane_E.md](dp/lane/dp_lane_E.md) | v1.9.1 | 讨论 E8 专用 lane 的定点规约及 HiF4 e2 融合 |
 | [dp/lane/multiplier-sharing.md](dp/lane/multiplier-sharing.md) | v1.8 | 定义尾数乘法器共享和模式路由 |
 | [dp/lane/shifter-sharing.md](dp/lane/shifter-sharing.md) | v1.8 | 定义固定物理移位器的 mux 复用 |
 | [dp/lane/unpack.md](dp/lane/unpack.md) | v1.7.1 | 定义固定 E/M/S 解包数值布局 |
-| [dp/group/README.md](dp/group/README.md) | v1.9 | 定义 group 规格目录与计算边界 |
+| [dp/group/README.md](dp/group/README.md) | v1.10 | 定义 group 规格目录与计算边界 |
 | [dp/group/dp_group_E.md](dp/group/dp_group_E.md) | v1.9.1 | 讨论 E16 定点组规约及兼容的 group 输出 |
 | [dp/group/scale.md](dp/group/scale.md) | v1.8 | 定义 scale 统一解包和 bias 处理 |
 | [dp/group/shared-align.md](dp/group/shared-align.md) | v1.8 | 定义分组共享对齐微架构 |
-| [dp/dptop/README.md](dp/dptop/README.md) | v1.9 | 定义 DP 顶层规格目录与后端边界 |
+| [dp/dptop/README.md](dp/dptop/README.md) | v1.10 | 定义 DP 顶层规格目录与后端边界 |
 | [dp/dptop/control.md](dp/dptop/control.md) | v1.6 | 定义 DP 逐请求控制与有效位推进 |
 | [dp/dptop/global-align.md](dp/dptop/global-align.md) | v1.9.1 | 定义 scale 后实际指数检测与合并对齐 |
 | [dp/dptop/independent-align.md](dp/dptop/independent-align.md) | v1.5.4 | 记录独立移位对齐对比方案 |
@@ -69,11 +69,15 @@ v1.6 的验证记录见 [规范化验证](../../test/results/dp-style-v1.6.md)�
 
 | 文档 | 固定版本 | 评审范围 |
 | --- | --- | --- |
-| [六种顶层总览](dp/dptop/top-architectures.md) | v1.9.1 | 对外入口、架构差异、共用核心及兼容入口 |
+| [七种顶层总览](dp/dptop/top-architectures.md) | v1.10 | 对外入口、架构差异、共用核心及兼容入口 |
 | [dp/draw.io/README.md](dp/draw.io/README.md) | v1.7.8 | 六种原生可编辑架构图、嵌套关系与图例 |
 | [混合顶层](dp/dptop/mixed-precision-expansion.md) | v1.9.1 | 三种现用扩展装配、输入布局、屏蔽、MAX/树、L8 与验证计划 |
 | [QE lane](dp/lane/dp_lane_qe.md) | v1.9.1 | Q4E8 的紧凑解包、窄乘法和原 Q/E 流水 |
 | [QE group](dp/group/dp_group_qe.md) | v1.9.1 | Q8E16 组和、无符号 scale 与兼容 S5 token |
+| [Q lane](dp/lane/dp_lane_q.md) | v1.10 | Q4 专用解包、乘法、局部对齐和 S4 出口 |
+| [Q group](dp/group/dp_group_q.md) | v1.10 | Q8、E8M0 scale 与兼容 S5 token |
+| [Q 专用扩展顶层](dp/dptop/t8h16q64e64.md) | v1.10 | T8H16Q64E64、Q-only 参与屏蔽与九源后端 |
+| [E192/E256 方案分析](dp/dptop/e192-e256-expansion-analysis.md) | v1.10（提案） | N13/N17 对齐、CSA 和 L8/L9/L10 候选，未实现 |
 
 CModel 验证见 test/results/mixed-cmodel-v1.7.md；RTL 验证和本轮 DC 使用各自的新快照与回执。
 

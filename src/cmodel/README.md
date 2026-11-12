@@ -86,3 +86,9 @@ S7 保留 carry-save 两行到 MUX 后，唯一最终 CPA；E96 直接用 4:2 �
 `lib/top/mixed.cpp` 每物理组保存自己的 S1–S5 状态；基础组调用 multi，扩展调用 E 或 QE。关闭组不解包其 payload，也不参与数值 MAX、特殊值和负零归约。`lib/top/backend.cpp` 在同一公共指数下逐源对齐，基础四组+C与扩展组分别求和再合并；高精度旁路扩展。
 
 运行 `python3.11 -m unittest discover -s test/tests -p test_mixed_frontend.py -v`，精度摘要写入 `test/runs/cmodel/mixed_summary.json`；固定数据与精确 golden 不覆盖。新架构接受上半区闲置端口的任意位模式，只校验当前参与组。Q/MX/HiF scale 广播仍按32/32/64元素块检查，含E96尾部部分块。
+
+## Q 专用扩展 v1.10
+
+新增 `q` 数值前端及 `t8h16q64e64` 混合 profile，配置为 [t8h16q64e64.json](../configs/dp/t8h16q64e64.json)。Q lane/group 只支持四种 MXFP8/6；混合顶层在四个基础组上增加四个 Q8，E 仍为 K64。新 profile 的 JSON 配置缺省选择 `architecture_v19=true`，显式 false 被拒绝；此字段表示继承当前数值骨架，不是新架构的版本名称。C++ 直接构造 Config 也须选择该合同。
+
+专项测试为 `python3.11 -m unittest discover -s test/tests -p test_q_only_frontend.py -v`；`test_mixed_v19.py` 覆盖新 profile 的原生数据、独立参考、参数和 carry-save，旧 `test_mixed_frontend.py` 继续只承担历史算术回放。

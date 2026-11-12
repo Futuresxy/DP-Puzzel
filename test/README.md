@@ -70,3 +70,15 @@ python3.11 test/run_lowp_verilog.py --frontend q32e64
 ```
 
 每支持格式961笔，另测27/40、28/40、32/64三个窗口的S5–S7断点和L8协议；独立快照、门禁回执见 [v1.7.4](results/lowp-tops-v1.7.4.md)。该入口不调用DC或功耗工具。
+
+## Q 专用扩展验证 v1.10
+
+`t8h16q64e64` 使用四种 Q64 原生语料及其余基础精度语料，11格式共10747笔；完整 RTL 回归另含27/40、28/40、32/64三个窗口的断点和周期检查。专项覆盖 Q→E 连续切换、失活扩展旧 NaN/Inf/大指数、负零、NaN scale×Inf 的 S5 标志、Q 乘积寄存保持和复位取消。
+
+```sh
+source /opt/rh/gcc-toolset-10/enable
+CCACHE_DISABLE=1 CXXFLAGS='-std=c++20 -fcoroutines' python3.11 test/run_mixed_verilog.py \
+  --frontend t8h16q64e64 --verilator /eda/verilator/v5.030/bin/verilator
+```
+
+本机工具环境如上，其他环境可用 `--verilator` 指定路径并配置支持 coroutine 的编译器。完整结果见 [本轮回执](results/q-only-v1.10-20261112.md)；功能通过不代表新顶层达到1GHz或1.41GHz。CModel新profile拒绝legacy合同，专项检查位于 `tests/test_q_only_frontend.py`。

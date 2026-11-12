@@ -44,7 +44,11 @@ def compile_tb(profile, local, glob):
     build.mkdir(parents=True,exist_ok=True)
     top='dp_top_'+profile
     flags=['--language','1364-2005']
-    defines=['-DDP_ARCH_V19'] + (['-DDP_QE_EXTENSION'] if 'q64' in profile else [])
+    defines=['-DDP_ARCH_V19']
+    if profile == 't8h16q64e64':
+        defines += ['-DDP_Q_ONLY_EXTENSION']
+    elif profile == 't8h16q64e128_opt':
+        defines += ['-DDP_QE_EXTENSION']
     shared.run([shared.VERILATOR,'--lint-only','-Wall','-Wno-UNUSEDSIGNAL','-Wno-UNUSEDPARAM',
                 '-Wno-VARHIDDEN',*flags,'--top-module',top,'-f',str(shared.SOURCE_LIST),
                 f'-GLOCAL_W={local}',f'-GGLOBAL_W={glob}'],build/'lint.log')
@@ -57,6 +61,31 @@ def compile_tb(profile, local, glob):
                 '-I'+str(ROOT/'test/rtl_tb'),'-f',str(shared.SOURCE_LIST),
                 str(ROOT/'test/rtl_tb/dp_mixed_tb.v')],build/'compile.log')
     return build/'Vdp_tb'
+
+
+def q_only_switching_requests(profile):
+    """Exercise Q extension state while consecutive E requests bypass it."""
+    requests=[]
+    # E4M3 NaN and E5M2 Inf must be masked on the next E request. The
+    # finite FP6 maxima also exercise extension exponent/scale state.
+    q_codes={'mxfp8_e4m3':0x7f, 'mxfp8_e5m2':0x7c,
+             'mxfp6_e3m2':0x1f, 'mxfp6_e2m3':0x1f}
+    for q_mode,code in q_codes.items():
+        q_request=expand(make(q_mode,a=[code]*32),profile)
+        # Only the upper four groups contribute, making lost Q work visible.
+        q_request['a']=format(int(q_request['a'],16)&~((1<<256)-1),'x')
+        for e_mode in shared.E_MODES:
+            e_nonzero=poison_inactive(make(e_mode),profile)
+            e_negative_zero=poison_inactive(
+                make(e_mode,a=[8]*64,c=0x80000000),profile)
+            requests.extend([dict(q_request),e_nonzero,dict(q_request),e_negative_zero])
+    # A finite Q extension with a large scale must not win the E request's
+    # global MAX, even when no special flag could otherwise hide the error.
+    q_large_scale=expand(make('mxfp8_e4m3',sa=[254],sb=[254]),profile)
+    q_large_scale['a']=format(int(q_large_scale['a'],16)&~((1<<256)-1),'x')
+    for e_mode in shared.E_MODES:
+        requests.extend([dict(q_large_scale),poison_inactive(make(e_mode),profile)])
+    return requests
 
 
 def main():
@@ -96,6 +125,7 @@ def main():
             low['a']='%x'%(int(low['a'],16)&~((1<<256)-1))
             requests.extend([low,poison_inactive(make('fp16'),args.frontend)])
     if args.frontend in shared.V19_PROFILES: requests += v19_directed(args.frontend)
+    if args.frontend == 't8h16q64e64': requests += q_only_switching_requests(args.frontend)
     for index,request in enumerate(requests): request.update(id=index,last=index%7==0)
     for k,local,glob in MIXED_CONFIGS:
         records.append(shared.campaign(f'mixed-k{k}-l{local}-g{glob}',k,local,glob,requests,

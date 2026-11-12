@@ -1,6 +1,6 @@
-> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.9；修改时间：2026-11-09 22:28:25 +0800；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
+> 功能：定义 lane 规格目录与计算边界；范围：多精度 T1H2Q4E8 的 S1–S4 及 E8 优化候选；版本：v1.10；修改时间：2026-11-12 18:44:45 +0800；对应代码：[dp_lane.v](../../../verilog/lane/dp_lane.v)、[dp_mantissa_bank.v](../../../verilog/lane/dp_mantissa_bank.v)、[CModel lane.cpp](../../../cmodel/lib/lane.cpp)、[E CModel lane/lane_e.cpp](../../../cmodel/lib/lane/lane_e.cpp)、[dp_lane_e.v](../../../verilog/lane/dp_lane_e.v)；Chisel 尚未实现。
 
-当前基础 `dp_top` 的新数值/流水边界统一见 [v1.8 合同](../dptop/dp-top-v1.8.md)；E/QE/混合顶层现有实现仍为旧版；专用文档已更新为已确认、待实现的v1.9合同，不作为新验证证据。
+当前基础 `dp_top` 的新数值/流水边界统一见 [v1.8 合同](../dptop/dp-top-v1.8.md)；三个既有混合顶层及 Q32E64 已完成 v1.9 实现与验证，独立 E64 保持原合同。新增 Q 专用扩展采用 v1.10，验证与 PPA 分别关联各自回执。
 
 # lane：解包、元素乘法与局部规约
 
@@ -47,3 +47,7 @@
 补充验证入口：`python3 test/run_precision_gating.py --export-id <已验证快照>`。它不取代 `test/run_verilog.py --phase all` 的 PPA 门禁。
 
 当前实现已通过全量/精度切换/四态验证及1GHz综合，实测结果见[精度寄存器门控功耗比较](../../../../hw/power/records/precision_register_gating_1108.md)。数值合同不变；测量结论只适用于记录的工况和负载。
+
+## 5. Q 专用 lane
+
+[dp_lane_q](dp_lane_q.md) 每拍处理四个 MXFP8/6 元素乘积，只保留 Q 的指数、四路乘法、局部 RTZ 对齐和 lane 树。输出保持 S4 时刻和现有 Q lane 数值接口，不含 E pair、HiF4 元数据或 T/H/INT8 数据通路。

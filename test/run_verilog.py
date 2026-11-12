@@ -31,7 +31,8 @@ VERILATOR='verilator'
 EXPORT=None
 SOURCE_LIST=None
 FRONTEND='multi'
-V19_PROFILES=('t8h16q32e96','t8h16q32e128','t8h16q64e128_opt','q32e64')
+# v1.10 Q-only expansion retains the v1.9 token and backend arithmetic.
+V19_PROFILES=('t8h16q32e96','t8h16q32e128','t8h16q64e128_opt','q32e64','t8h16q64e64')
 E_MODES=('mxfp4_e2m1','nvfp4','hif4')
 
 def run(cmd,log):

@@ -38,7 +38,8 @@ void advance(const Config &config, State &state, unsigned stage) {
       stage_unpack(config, state);
       break;
     case 2:
-      if (config.frontend == Frontend::QE) qe_frontend::stage_products(config, state);
+      if (config.frontend == Frontend::Q) q_frontend::stage_products(config, state);
+      else if (config.frontend == Frontend::QE) qe_frontend::stage_products(config, state);
       else stage_products(config, state);
       break;
     case 3:
@@ -51,7 +52,9 @@ void advance(const Config &config, State &state, unsigned stage) {
     return;
   }
   if (stage == 5) {
-    if (config.frontend == Frontend::QE)
+    if (config.frontend == Frontend::Q)
+      q_frontend::stage_group(config, state, config.post_scale_norm_extra_stage == 0);
+    else if (config.frontend == Frontend::QE)
       qe_frontend::stage_group(config, state, config.post_scale_norm_extra_stage == 0);
     else stage_group(config, state, config.post_scale_norm_extra_stage == 0);
     return;

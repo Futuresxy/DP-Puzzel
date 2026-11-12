@@ -18,7 +18,7 @@ enum class DataType {
 };
 enum class CType { FP32, INT32 };
 enum class ScaleType { NONE, E8M0, E4M3, E6M2 };
-enum class Frontend { Multi, E, QE, MixedE96, MixedE128, MixedQE128 };
+enum class Frontend { Multi, E, QE, MixedE96, MixedE128, MixedQE128, Q, MixedQ64E64 };
 const char *name(Frontend frontend);
 
 // Format/architecture constants are named here; adjustable windows are Config fields.
@@ -75,7 +75,7 @@ struct Config {
   void validate() const;
   bool mixed() const {
     return frontend == Frontend::MixedE96 || frontend == Frontend::MixedE128 ||
-           frontend == Frontend::MixedQE128;
+           frontend == Frontend::MixedQE128 || frontend == Frontend::MixedQ64E64;
   }
   unsigned groups() const {
     return mixed() ? (frontend == Frontend::MixedE96 ? 6 : 8) : k_fp16 / fp16_per_group;

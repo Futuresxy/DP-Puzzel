@@ -1,6 +1,6 @@
-> 功能：定义 DP 顶层规格目录与后端边界；范围：请求/分发、C、S6 全局对齐、S7 规约、S8 输出和 E64 接入；版本：v1.9；修改时间：2026-11-09 22:28:25 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_global_align.v](../../../verilog/top/common/dp_global_align.v)、[dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v)、[共用 CModel 后端](../../../cmodel/lib/top/backend.cpp)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)；Chisel 尚未实现。
+> 功能：定义 DP 顶层规格目录与后端边界；范围：请求/分发、C、S6 全局对齐、S7 规约、S8 输出和 E64 接入；版本：v1.10；修改时间：2026-11-12 18:44:45 +0800；对应代码：[dp_top.v](../../../verilog/top/dp_top.v)、[dp_global_align.v](../../../verilog/top/common/dp_global_align.v)、[dp_fp32_round.v](../../../verilog/arithmetic/dp_fp32_round.v)、[共用 CModel 后端](../../../cmodel/lib/top/backend.cpp)、[dp_top_e.v](../../../verilog/top/dp_top_e.v)；Chisel 尚未实现。
 
-当前基础 `dp_top` 的新数值/流水边界统一见 [v1.8 合同](dp-top-v1.8.md)；E/QE/混合顶层现有实现仍为旧版；专用文档已更新为已确认、待实现的v1.9合同，不作为新验证证据。
+当前基础 `dp_top` 的新数值/流水边界统一见 [v1.8 合同](dp-top-v1.8.md)；三个既有混合顶层及 Q32E64 已完成 v1.9 实现与验证，独立 E64 保持原合同。新增 Q 专用扩展采用 v1.10，验证与 PPA 分别关联各自回执。
 
 # dptop：接口、全局对齐与输出
 
@@ -49,3 +49,9 @@ E-only 接入口限制合法格式为 MXFP4/NVFP4/HiF4、C/D 为 FP32；HiF4 新
 ## 6. 四组低精度独立顶层
 
 [低精度顶层](low-precision-tops.md) 定义 dp_top_e64 与 dp_top_q32e64，共用五源后端，分别使用四个 E/QE group，保持 L8/II=1。
+
+## 7. Q 专用扩展与 E192/E256 分析
+
+[T8H16Q64E64](t8h16q64e64.md) 新增四个 Q8 group，只在 Q 请求参与；九源后端、S44、L8/II=1 保持既有混合骨架，E 仍只使用四个基础组。新增前端的功能验证与时序验收独立记录。
+
+[E192/E256 分析](e192-e256-expansion-analysis.md)覆盖 13/17 源全局对齐及 S44/S45 规约，区分保留 L8 和增加流水的候选；本轮未实现这两种顶层。

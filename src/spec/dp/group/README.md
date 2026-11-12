@@ -1,6 +1,6 @@
-> 功能：定义 group 规格目录与计算边界；范围：两个 lane、S2 公共指数、S5 组和/scale/LZD 及 E16 优化候选；版本：v1.9；修改时间：2026-11-09 22:28:25 +0800；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)、[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；Chisel 尚未实现。
+> 功能：定义 group 规格目录与计算边界；范围：两个 lane、S2 公共指数、S5 组和/scale/LZD 及 E16 优化候选；版本：v1.10；修改时间：2026-11-12 18:44:45 +0800；对应代码：[dp_group.v](../../../verilog/group/dp_group.v)、[dp_scale_multiply.v](../../../verilog/arithmetic/dp_scale_multiply.v)、[CModel group.cpp](../../../cmodel/lib/group.cpp)、[E CModel group/group_e.cpp](../../../cmodel/lib/group/group_e.cpp)、[dp_group_e.v](../../../verilog/group/dp_group_e.v)；Chisel 尚未实现。
 
-当前基础 `dp_top` 的新数值/流水边界统一见 [v1.8 合同](../dptop/dp-top-v1.8.md)；E/QE/混合顶层现有实现仍为旧版；专用文档已更新为已确认、待实现的v1.9合同，不作为新验证证据。
+当前基础 `dp_top` 的新数值/流水边界统一见 [v1.8 合同](../dptop/dp-top-v1.8.md)；三个既有混合顶层及 Q32E64 已完成 v1.9 实现与验证，独立 E64 保持原合同。新增 Q 专用扩展采用 v1.10，验证与 PPA 分别关联各自回执。
 
 # group：两 lane 协作、组和与 scale
 
@@ -34,3 +34,7 @@ lane 元素解包和乘法见 [lane](../lane/README.md)；量化块 scale 广播
 ## 4. QE 专用实现
 
 [dp_group_qe.md](dp_group_qe.md) 定义两条 Q4E8 lane 组成 Q8E16，保留公共指数及原 S5 组和/abs/scale/LZD，输出与多精度 Q/E 同坐标的 token，用于混合 T8H16Q64E128。与已有 E group 统一字段、时刻及数值不变量，允许 E-only HiF4 保持自己的坐标。v1.7.1 已实施 CModel 与 Verilog，保持 L8/II=1。
+
+## 5. Q 专用 group
+
+[dp_group_q](dp_group_q.md) 由两个 Q4 lane 组成 Q8，保留 Q 公共指数和 S5 组和/abs/LZD，输出兼容的幅值、符号、A_raw、compare_exp、特殊值与 valid。只消费 E8M0 scale 指数，不需要 NVFP4/HiF4 的尾数 scale 乘法；用于 [T8H16Q64E64](../dptop/t8h16q64e64.md)。

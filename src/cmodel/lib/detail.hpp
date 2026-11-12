@@ -108,6 +108,10 @@ void stage_total(const Config &, State &);
 void stage_output(const Config &, State &);
 void advance(const Config &, State &, unsigned stage);
 void stage_mixed_frontends(const Config &, State &, unsigned stage);
+namespace q_frontend {
+void stage_products(const Config &, State &);
+void stage_group(const Config &, State &, bool detect);
+}
 namespace qe_frontend {
 void stage_products(const Config &, State &);
 void stage_group(const Config &, State &, bool detect);

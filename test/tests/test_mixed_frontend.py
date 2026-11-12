@@ -11,7 +11,11 @@ from adapters.logical import read_logical_inputs
 from cases.common import random_request, make
 from reference.exact import DTYPES, ulp_distance, reference
 
-from cases.mixed import PROFILES, extended, corpus, poison_inactive, qe_extension
+from cases.mixed import PROFILES as ACTIVE_PROFILES, extended, corpus, poison_inactive, qe_extension
+
+# This suite replays the pre-v1.9 arithmetic contract. Q-only has no legacy
+# implementation; its active contract is covered by test_mixed_v19 and test_q_only_frontend.
+PROFILES = tuple(profile for profile in ACTIVE_PROFILES if profile != 't8h16q64e64')
 
 
 class MixedFrontend(unittest.TestCase):

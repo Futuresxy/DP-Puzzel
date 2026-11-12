@@ -40,7 +40,32 @@ for(lane_index=0;lane_index<2;lane_index=lane_index+1) begin: g_lane
   end
 end
 end else begin: g_extension
-`ifdef DP_QE_EXTENSION
+`ifdef DP_Q_ONLY_EXTENSION
+for(lane_index=0;lane_index<2;lane_index=lane_index+1) begin: g_lane
+  integer leaf_index;
+  always @(negedge clock) if(trace_fd) begin
+    if (dut.u_core.g_group[group_index].g_q.u_group_unit.g_lane[lane_index].u_lane.r3_valid) for(leaf_index=0;leaf_index<4;leaf_index=leaf_index+1)
+      $fdisplay(trace_fd,"%0d 3 frontend_leaf %0d %0d",pending[2],group_index*8+lane_index*4+leaf_index,
+        $signed(dut.u_core.g_group[group_index].g_q.u_group_unit.g_lane[lane_index].u_lane.r3_aligned_leaves[leaf_index*(LOCAL_W+1)+:LOCAL_W+1]));
+    if (dut.u_core.g_group[group_index].g_q.u_group_unit.g_lane[lane_index].u_lane.out_valid)
+      $fdisplay(trace_fd,"%0d 4 frontend_lane %0d %0d",pending[3],group_index*2+lane_index,
+        $signed(dut.u_core.g_group[group_index].g_q.u_group_unit.g_lane[lane_index].u_lane.out_sop));
+  end
+  genvar product_index;
+  for(product_index=0;product_index<4;product_index=product_index+1) begin: g_q_gating
+    reg [7:0] previous_product;
+    reg hold_product;
+    always @(posedge clock) begin
+      previous_product = dut.u_core.g_group[group_index].g_q.u_group_unit.g_lane[lane_index].u_lane.r2_product[product_index];
+      hold_product = ~(dut.u_core.rst_n & dut.u_core.g_group[group_index].g_q.u_group_unit.g_lane[lane_index].u_lane.r1_valid);
+      #1;
+      if(hold_product && dut.u_core.g_group[group_index].g_q.u_group_unit.g_lane[lane_index].u_lane.r2_product[product_index] !== previous_product) begin
+        $display("FAIL Q-only product gating hold"); $finish;
+      end
+    end
+  end
+end
+`elsif DP_QE_EXTENSION
 for(lane_index=0;lane_index<2;lane_index=lane_index+1) begin: g_lane
   integer leaf_index;
   always @(negedge clock) if(trace_fd) begin
