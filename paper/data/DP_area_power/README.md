@@ -1,5 +1,16 @@
 # DP 面积与功耗数据及绘图
 
+## 九种完整 DP 配比（2026-11-12）
+
+从 `paper/data/DP_area_power/dp_latest_area_power_20261112.csv` 绘制论文用矢量 PDF。该文件与仓库中的硬件汇总 CSV 内容一致，可用任一路径重绘。输入 SHA-256 为 `f8ca1f225055086db60a0b1a568ebb5c702c41259c198a4efb53adeb647d6006`。[硬件汇总 CSV](../../../hw/data/dp_latest_area_power_20261112.csv)
+
+```bash
+python3.11 paper/data/DP_area_power/plot_latest6_area_power.py \
+  --combined-csv paper/data/DP_area_power/dp_latest_area_power_20261112.csv
+```
+
+按 CSV 顺序绘制 9 种配置和 27 个实测功耗点，排除 `dp_top_e64` 和 `dp_top_q32e64`。面积以 `dp_top` 归一化。功耗柱显示工具报告的总功耗（mW），倍率以 `dp_top` 的 BF16 功耗为基准。[面积图](../../figures/dp_ratio_area.pdf) · [功耗图](../../figures/dp_ratio_power.pdf)
+
 ## 当前论文四配比视图（2026-11-11）
 
 中文 DSE 稿使用完整 H/Q/E 候选 1:2:4、1:2:6、1:2:8、1:4:8，输入仍为下面六 DP 批次的 CSV，不新增硬件测量。

@@ -37,9 +37,10 @@ def write_csv(path, rows):
         writer.writeheader()
         writer.writerows(rows)
 
-def save_figure(fig, output, stem, dpi):
-    fig.savefig(output / f"{stem}.png", dpi=dpi,
-                bbox_inches="tight", pad_inches=.04, facecolor="white")
+def save_figure(fig, output, stem, dpi, *, file_format="png"):
+    with matplotlib.rc_context({"pdf.fonttype": 42}):
+        fig.savefig(output / f"{stem}.{file_format}", dpi=dpi,
+                    bbox_inches="tight", pad_inches=.04, facecolor="white")
     plt.close(fig)
 
 def draw(rows, output, results, dpi):

@@ -1,4 +1,4 @@
-"""Export the current N12 six-DP records and plot area / workload power."""
+"""Plot N12 DP area and workload power from the six-DP or combined records."""
 
 import argparse
 import csv
@@ -154,6 +154,44 @@ def load_data():
     return [area_index[c[0]] for c in CONFIGS], groups
 
 
+def load_combined_data(path):
+    """Read one area and the three measured formats per full DP, in CSV order."""
+    points_by_top = {}
+    for row in read_csv(path):
+        top = row["top"]
+        if top in {"dp_top_e64", "dp_top_q32e64"}:
+            continue
+        points = points_by_top.setdefault(top, {})
+        fmt = row["format"]
+        require(fmt not in points, f"Duplicate power point: {top}/{fmt}")
+        points[fmt] = row
+
+    require("dp_top" in points_by_top, "Missing dp_top reference")
+    areas, groups, ratios = [], [], []
+    capacity_fields = ("h_native", "q_native", "e_native")
+    for top, points in points_by_top.items():
+        require(set(points) == set(FORMATS), f"Expected BF16, MXFP8 E4M3 and MXFP4 E2M1 for {top}")
+        group = [points[fmt] for fmt in FORMATS]
+        area_row = group[0]
+        capacities = tuple(int(area_row[field]) for field in capacity_fields)
+        area = float(area_row["area_um2"])
+        require(math.isfinite(area) and area > 0, f"Invalid area: {top}")
+        for row, capacity in zip(group, capacities):
+            point = f"{top}/{row['format']}"
+            require(row["status"] == "PASS", f"Measurement did not pass: {point}")
+            require(all(row[field] == area_row[field] for field in capacity_fields),
+                    f"Inconsistent throughput ratio: {point}")
+            require(int(row["native_k"]) == capacity > 0, f"Invalid native K: {point}")
+            require(float(row["area_um2"]) == area and row["export_id"] == area_row["export_id"],
+                    f"Inconsistent area or RTL export: {point}")
+            total = float(row["total_mw"])
+            require(math.isfinite(total) and total > 0, f"Invalid total power: {point}")
+        areas.append(area)
+        groups.append(group)
+        ratios.append(":".join(f"{capacity / 16:g}" for capacity in capacities))
+    return areas, groups, ratios
+
+
 def bracket(ax, x, height, ratio):
     x += .35
     ax.plot([x, x], [0, height], color="#777777", linewidth=.65, zorder=3)
@@ -177,7 +215,7 @@ def style_axes(ax, centers, maximum, ylabel, separators, labels=None):
         ax.axvline(x, color="#DDDDDD", linestyle="--", linewidth=.4, zorder=0)
 
 
-def draw_power(groups, output, dpi, ratios, stem, figure_width=9.2):
+def draw_power(groups, output, dpi, ratios, stem, figure_width=9.2, *, file_format="png"):
     """Original latest6 style: measured mW and one dp_top/BF16 ratio reference."""
     plt.rcParams.update({"font.family": "serif",
         "font.serif": ["Times New Roman", "Liberation Serif", "DejaVu Serif"],
@@ -208,7 +246,7 @@ def draw_power(groups, output, dpi, ratios, stem, figure_width=9.2):
                for fmt, label in zip(FORMATS, LABELS)]
     ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(.5, 1.01), ncols=3,
               frameon=False, fontsize=8, columnspacing=1.5, handletextpad=.4, handlelength=1.4)
-    save_figure(fig, output, stem, dpi)
+    save_figure(fig, output, stem, dpi, file_format=file_format)
     return dict(power_bars=sum(len(g) for g in groups), formats=list(FORMATS),
                 power_layout="ratio groups, widths proportional to supported precision count plus gap",
                 power_group_bars=[len(g) for g in groups], power_group_widths=widths.tolist(),
@@ -244,6 +282,29 @@ def draw(areas, groups, output, dpi):
                 dpi=dpi, figures=["latest6_area.png", "latest6_power.png"], **power_metadata)
 
 
+def draw_normalized_area(ratios, values, output, dpi, stem, *, file_format="png"):
+    centers = np.arange(len(ratios))
+    plt.rcParams.update({"font.family": "serif",
+        "font.serif": ["Times New Roman", "Liberation Serif", "DejaVu Serif"],
+        "font.size": 8, "axes.labelsize": 8, "axes.edgecolor": "#5D6770"})
+
+    fig, ax = plt.subplots(figsize=(3.5 * max(1, len(ratios) / 4), 1.45))
+    fig.subplots_adjust(left=.14, right=.99, bottom=.29, top=.97)
+    bars = ax.bar(centers, values, width=.45, color="#DFA0A6", edgecolor="#7A7A7A", linewidth=.45)
+    ax.bar_label(bars, fmt="%.2f", padding=2, fontsize=7)
+    ax.set_xticks(centers, ratios)
+    ax.set_xlabel("Throughput ratio (H:Q:E)", labelpad=3)
+    ax.set_ylabel("Normalized area", labelpad=3)
+    ax.set_ylim(0, max(2.12, max(values) * 1.12))
+    ax.yaxis.set_major_locator(MultipleLocator(.5))
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.set_axisbelow(True)
+    ax.grid(axis="y", color="#E3E7EB", linewidth=.5)
+    ax.axhline(1, color="#777777", linestyle="--", linewidth=.6)
+    ax.tick_params(axis="x", length=0, pad=3)
+    save_figure(fig, output, stem, dpi, file_format=file_format)
+
+
 def draw_ratios(areas, groups, output, dpi):
     """Four full-DP candidates; all power ratios use dp_top/BF16."""
     selected = [(a, g) for a, g in zip(areas, groups) if int(a["H"]) > 0]
@@ -251,10 +312,6 @@ def draw_ratios(areas, groups, output, dpi):
     area_ref = float(selected[0][0]["area_um2"])
     power_ref = float(next(r["total_mw"] for r in selected[0][1] if r["format"] == "bf16"))
     ratios = [a["ratio"] for a, _ in selected]
-    centers = np.arange(len(selected))
-    plt.rcParams.update({"font.family": "serif",
-        "font.serif": ["Times New Roman", "Liberation Serif", "DejaVu Serif"],
-        "font.size": 8, "axes.labelsize": 8, "axes.edgecolor": "#5D6770"})
     rows = []
     for area, group in selected:
         row = dict(ratio=area["ratio"], area_um2=float(area["area_um2"]),
@@ -265,26 +322,7 @@ def draw_ratios(areas, groups, output, dpi):
             row[fmt + "_power_ratio"] = float(point["total_mw"])/power_ref
         rows.append(row)
     write_csv(HERE / "ratio4_costs.csv", rows)
-
-    def axes(ax, ylabel):
-        ax.set_xticks(centers, ratios)
-        ax.set_xlabel("Throughput ratio (H:Q:E)", labelpad=3)
-        ax.set_ylabel(ylabel, labelpad=3)
-        ax.set_ylim(0, 2.12)
-        ax.yaxis.set_major_locator(MultipleLocator(.5))
-        ax.spines[["top", "right"]].set_visible(False)
-        ax.set_axisbelow(True)
-        ax.grid(axis="y", color="#E3E7EB", linewidth=.5)
-        ax.axhline(1, color="#777777", linestyle="--", linewidth=.6)
-        ax.tick_params(axis="x", length=0, pad=3)
-
-    fig, ax = plt.subplots(figsize=(3.5, 1.45))
-    fig.subplots_adjust(left=.14, right=.99, bottom=.29, top=.97)
-    bars = ax.bar(centers, [r["area_ratio"] for r in rows], width=.45,
-                  color="#DFA0A6", edgecolor="#7A7A7A", linewidth=.45)
-    ax.bar_label(bars, fmt="%.2f", padding=2, fontsize=7)
-    axes(ax, "Normalized area")
-    save_figure(fig, output, "ratio4_area", dpi)
+    draw_normalized_area(ratios, [row["area_ratio"] for row in rows], output, dpi, "ratio4_area")
 
     power_groups = [g for _, g in selected]
     # Keep the original bar/label/bracket spacing while removing two ratio groups.
@@ -297,18 +335,31 @@ def draw_ratios(areas, groups, output, dpi):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--refresh-data", action="store_true", help="Re-export the pinned current HW indexes")
+    inputs = parser.add_mutually_exclusive_group()
+    inputs.add_argument("--refresh-data", action="store_true", help="Re-export the pinned six-DP HW indexes")
+    inputs.add_argument("--combined-csv", type=Path,
+                        help="Plot full-DP ratios from a combined area and power CSV as PDFs")
     parser.add_argument("--output-dir", type=Path, default=PAPER / "figures")
     parser.add_argument("--dpi", type=int, default=400)
     parser.add_argument("--scope", choices=("six", "ratios"), default="six",
-                        help="Keep six-design history or plot the four full-DP DSE candidates")
+                        help="Use the six-design or four-ratio view of the legacy CSVs")
     args = parser.parse_args()
     if args.dpi <= 0:
         parser.error("--dpi must be positive")
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    if args.combined_csv:
+        areas, groups, ratios = load_combined_data(args.combined_csv)
+        area_ref = next(area for area, group in zip(areas, groups) if group[0]["top"] == "dp_top")
+        draw_normalized_area(ratios, [area / area_ref for area in areas], args.output_dir,
+                             args.dpi, "dp_ratio_area", file_format="pdf")
+        # Leave room between the absolute power labels and the neighboring ratio brackets.
+        power = draw_power(groups, args.output_dir, args.dpi, ratios, "dp_ratio_power",
+                           figure_width=2 * len(groups), file_format="pdf")
+        print(f"{len(areas)} area bars, {power['power_bars']} power bars; PDFs in {args.output_dir}")
+        return
     if args.refresh_data:
         refresh_data()
     areas, groups = load_data()
-    args.output_dir.mkdir(parents=True, exist_ok=True)
     render = draw_ratios if args.scope == "ratios" else draw
     stem = "ratio4" if args.scope == "ratios" else "latest6"
     manifest = render(areas, groups, args.output_dir, args.dpi)
