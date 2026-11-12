@@ -10,16 +10,14 @@
 
 硬件表征采用 N12 TT、0.7\,V、85$^\circ$C、1\,GHz 和集成时钟门控。面积来自 Design Compiler；功耗以 Qwen3-8B 首层 MLP 下投影数据~\cite{qwen3technicalreport}生成 BF16、MXFP8 E4M3 和 MXFP4 E2M1 活动，分别代表 H/Q/E。VCS 门级仿真发出 1024 笔独立请求，取中间 512 拍的原生 SAIF，由 Power Compiler 估计内部、切换和泄漏功耗~\cite{synopsysActivityPower}。成本边界为单 DP，属于综合后、CTS/布线前结果。E256 为满足时序展开部分组合对齐层级，其余 PVT、频率及 IO 约束保持一致；比较反映各候选达到约束后的实现成本。
 
-表~\ref{tab:ratio9_costs} 汇总九种候选。当前七种具有完整面积与三模式功耗，$1:6:12$ 已有通过的综合面积，其功耗及 $1:8:16$ 的成本尚待补齐。缺失点不参加依赖相应指标的排名。
+图~\ref{fig:ratio9_costs} 对比九种配比的单 DP 综合面积，以及 BF16、MXFP8 E4M3 和 MXFP4 E2M1 三种精度下的总功耗。
 
-\begin{table}[t]
+\begin{figure}[t]
 \centering
-\caption{九种候选的成本记录（2026-11-12 数据快照）。功耗单位 mW，$A_0$ 为 $1:2:4$ 面积；待补表示尚无本表采用的通过记录。}
-\label{tab:ratio9_costs}
-\begingroup\footnotesize\setlength{\tabcolsep}{3pt}
-\input{tables/ratio9_costs.tex}
-\endgroup
-\end{table}
+\includegraphics[width=\columnwidth]{dp_ratio_area_power.pdf}
+\caption{九种 H:Q:E 配比的单 DP 面积与总功耗。左侧为以 $1:2:4$ 归一化的综合面积，右侧为各精度的总功耗。基线标注绝对值，其余标注相对基线的倍率。功耗倍率按同一精度计算。}
+\label{fig:ratio9_costs}
+\end{figure}
 
 相对基线，$1:2:8$ 将 E 吞吐翻倍，面积与 E 模式功耗分别增加 33.60\% 和 57.14\%；$1:2:16$ 将 E 吞吐提高到四倍，面积和 E 模式功耗分别为 1.84 倍与 2.62 倍，其单位 MAC 能耗降低 34.40\%。与此同时，后者 H/Q 模式功耗增幅均低于 5\%。单独增配 Q 的 $1:4:4$ 将 Q 吞吐翻倍，面积增加 48.56\%，Q 模式功耗增加 68.16\%。这些结果说明专用化和后端共享能够分摊新增算力的成本，但不同精度的资源开销不同。
 

@@ -1,6 +1,6 @@
 # DP-Puzzle 芯片算力配比与模型精度 DSE
 
-面积与部署、DeepSeek GEMM 工作量与精度迁移已提供可运行的解析模型。两者可独立运行，也可通过 `deployment_id` 联用。多核调度、芯片功耗评价与双视角搜索由任务 C 接续。
+面积与部署、DeepSeek GEMM 工作量与精度迁移已提供可运行的解析模型。两者可独立运行，也可通过 `deployment_id` 联用。任务 C 已加入多核解析调度、DP 功耗代理与双视角搜索。首轮结果和验证边界见 [DeepSeek DSE 报告](results/summaries/deepseek-dse-20261113/README.md)。
 
 目标：以组合式 DP 的同工况硬件成本为依据，分析固定核心总面积与输入带宽条件下，DeepSeek V4/V4.1 的 Attention、MoE GEMM 负载与芯片算力配比的匹配关系。输出面积、计算功耗、GEMM 时间、利用率及派生能耗；支持固定硬件选择执行精度、固定负载选择硬件两种视角。模型质量代价先保留为外部参数与约束接口。
 
@@ -23,7 +23,7 @@ python3.11 -m unittest discover -s ratio_dse/tests -v
 | [共用接口](docs/contracts.md) | profile、部署、GEMM、利用率、质量和评价字段 | 三个任务共同遵守 |
 | [任务 A：面积与部署](area_model/README.md) | DP 成本到整核部署，等阵列与等输入带宽两种约束 | B 的硬件输入、C 的候选集合 |
 | [任务 B：计算与负载](compute_model/README.md) | DeepSeek GEMM 拆解、精度迁移、原生 K 利用率与周期 | C 的算子级评价 |
-| [任务 C：芯片模型与双向 DSE](dse/README.md) | 多核调度、计算功耗/能耗、质量约束和多目标搜索 | 可复算结果、论文图表数据 |
+| [任务 C：芯片模型与双向 DSE](dse/README.md) | 多核调度、DP 功耗/能耗代理、固定部署迁移与多目标搜索 | 可复算结果、论文图表数据 |
 
 面积和 GEMM 入口各自位于 `area_model/`、`compute_model/`。可复制的 JSON 在 `configs/`，回归在 `tests/`，运行目录默认写入 `results/`。任务 C 读取两者的 JSON 或 Python API。
 

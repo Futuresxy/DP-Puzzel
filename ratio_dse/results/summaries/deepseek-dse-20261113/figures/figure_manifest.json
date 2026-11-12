@@ -1,0 +1,37 @@
+{
+  "figure_sha256": {
+    "bandwidth_rank.pdf": "ed775874cc2cf295aaf2a46bdb3537c5812e605bec46c09eaa8c77609ed96bf0",
+    "power_energy_tradeoff.pdf": "1ed9fb8a7dcdfa06febebafaabb1170180e27c33f1d40934a31c9a3f00e7ad97",
+    "precision_migration.pdf": "c408d5a16353852c684f14bd137e7eb8b3c559f382a705ef18a0818432deabb3",
+    "worst_case_regret.pdf": "9242dc0720466baedd1cf54f0e15230f21a21b321ed5963186de6affbe903a55"
+  },
+  "matplotlib_version": "3.11.2",
+  "plot_script": "ratio_dse/dse/figures.py",
+  "plot_script_sha256": "8991502257c7c996f9f9f21877cba4997b99de51f266ebc297c1aa90bd774580",
+  "schema_version": 1,
+  "selection": {
+    "batch": 1,
+    "local_tb_s": 4,
+    "tokens": 2048,
+    "topology": "sm_4x16x4"
+  },
+  "source_outputs_sha256": {
+    "bandwidth_boundaries.csv": "b4de48829d0be372693607859f623a985c6b3e3d037b77f7073eff88a882ba54",
+    "candidate_evaluations.csv": "f6e7194d91464eb3d684d3e46db3cf8a2778220d2a14347a224ad9f5b1e868f3",
+    "excluded_work.csv": "f5a442f74630be22c9d94c22a4af8937f3a08d9ea23fae6f820961979d2c71a6",
+    "operator_breakdown.csv": "cc096ae7f56168055ad7c556c139d1b65f1a754f76260c883b6dcd898634f395",
+    "pareto.csv": "3141ecf7b404b95d92ce2c3f12116046f7d53cc42e0cc2f08b6d434671628a06",
+    "precision_migrations.csv": "e48dd592a4dc470e0fb3c212800f52f1ff19d1908c1888e8c427bdfd9cb597bd",
+    "robustness.csv": "55d506e9e29bb832e8c3f9840245fce7b32f2b48efc826a9dda5f3e4f3eefec4",
+    "selection_summary.csv": "dc0acd3b0446efd869abd5eeed2fb76c3a5c33be73da25d9cc93a1d17a5ceedf",
+    "study.json": "0d37754f3775205d36a4afce29a9c164fe08a1e6bfa42156b31731b22ad011f8",
+    "summary.md": "f319c08b749bc14143fffb47bd5401c5d02bc08953be7912b833261641b4682c",
+    "validation.json": "5bc08ae11e15e56c2f08e8ba1f45f0af1432caa2658cac5f0a27e39a7485eb03"
+  },
+  "study_manifest_sha256": "26749388a08900f070e96776da0b1d2b493233ad285c65c113030b022c1f9629",
+  "table_sha256": {
+    "anchor_evidence.csv": "5eabaf2051369b58548aa63e81300f98441fb6650f7b6f09c1558ed679f4391d",
+    "bandwidth_boundaries.csv": "dbc9cb48170e144666999a0bd8faad865a59b29ab8cab563477d7cd1a8c38e10",
+    "robustness.csv": "e09d0a2740c1a494abefc3b52d86f58d3d081418284c6984abd38825db3f1655"
+  }
+}

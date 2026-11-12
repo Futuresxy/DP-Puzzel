@@ -12,7 +12,7 @@
 
 中文稿第三章聚焦 baseline 的多精度复用，以 Group 装配、移位器数量和累加位宽公式概括九种配比；第四章依次介绍成本观察、面积部署与 GEMM 计算模型；第五章定义双视角 DSE，保留已完成四配比参考结果，并明确九配比、等带宽、利用率和质量实验的待补范围。中文引言与背景已于同日按下述主线更新；英文主稿与中文结论仍待同步，不把局部更新视为全文同步完成。
 
-九配比成本表由 `python3.11 scripts/build_ratio9_table.py` 从保留快照重建；选择证据和源 hash 在 [ratio9_costs_20261112.json](data/evidence/ratio9_costs_20261112.json)，LaTeX 为 `tables/ratio9_costs.tex`。显式使用 `--refresh-evidence` 才重新导入脚本所列源报告。此快照含七种完整 PPA、1:6:12 面积及待补点；不自动采用正在产生的新测量。E256 的组合层级策略差异在正文和源报告中保留。新模型任务见 [ratio_dse](../ratio_dse/README.md)，本次改稿没有运行新 DSE、SCALE-Sim、量化或 EDA。当前编译为七页正文加一页参考文献，篇幅压缩待全文统一后进行。
+第四章使用九配比面积与功耗合图，覆盖 9 种配置和 27 个功耗点。旧成本表及证据快照可用 `python3.11 scripts/build_ratio9_table.py` 重建，显式传入 `--refresh-evidence` 才重新导入源报告。E256 的组合层级策略差异在正文和源报告中保留。当前编译为七页正文加一页参考文献。[合图](figures/dp_ratio_area_power.pdf) · [绘图数据与命令](data/DP_area_power/README.md) · [旧成本表证据](data/evidence/ratio9_costs_20261112.json) · [新模型任务](../ratio_dse/README.md)
 
 
 ## 当前中文审核稿：DSE 主线（2026-11-11）
