@@ -13,7 +13,7 @@ bash ratio_dse/run_examples.sh
 python3.11 -m unittest discover -s ratio_dse/tests -v
 ```
 
-`run_examples.sh [new-output-directory]` prints the output root. It runs both area constraints, a V4 workload-only example, a V4.1 precision comparison, and a synthetic GEMM with complete array-local timing. Each run emits JSON, CSV and a manifest with input, source and output hashes. Use `python3.11 -m ratio_dse.area_model --help` and `python3.11 -m ratio_dse.compute_model --help` for individual runs.
+`run_examples.sh [new-output-directory]` prints the output root. It runs both area constraints, three 256-DP SM layouts, a V4 workload-only example, a V4.1 precision comparison, and a synthetic GEMM with complete array-local timing. Each run emits JSON, CSV and a manifest with input, source and output hashes. Use `python3.11 -m ratio_dse.area_model --help` and `python3.11 -m ratio_dse.compute_model --help` for individual runs.
 
 ## 阅读与任务分配
 

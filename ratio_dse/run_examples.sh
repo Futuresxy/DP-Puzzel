@@ -31,11 +31,11 @@ cd -- "$repo_root"
 area_config="ratio_dse/configs/area"
 compute_config="ratio_dse/configs/compute"
 
-for constraint in equal_array equal_input_bandwidth; do
+for scenario in equal_array equal_input_bandwidth sm_1x16x16 sm_4x16x4 sm_4x32x2; do
     "$python_bin" -m ratio_dse.area_model \
         --evidence "$area_config/dp_n12_20261112.lock.json" \
-        --scenario "$area_config/$constraint.json" \
-        --output "$output/area/$constraint"
+        --scenario "$area_config/$scenario.json" \
+        --output "$output/area/$scenario"
 done
 
 "$python_bin" -m ratio_dse.compute_model \

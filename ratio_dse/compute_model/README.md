@@ -24,6 +24,14 @@ V4.1 示例选择简化 prefill、batch 1、256 tokens。在第 0–19 层把 Gr
 
 [合成 GEMM](../configs/compute/synthetic_gemm.json) 可通过 `--workload` 导入，再用 [合成 MXFP8 计划](../configs/compute/synthetic_gemm_fp8.json) 对照 BF16。固定 16×4 基线阵列，输入 (M=17,N=5,K=33) 时，useful MAC 均为 2,805。BF16 与 MXFP8 分别发射 12,288 和 16,384 MAC 容量，阵列服务为 27 和 19 周期。在示例声明的本地端口、缓冲与预转换假设下，单阵列完成时间为 42 和 30 ns。两类示例及面积枚举均可用 [run_examples.sh](../run_examples.sh) 执行。
 
+## 接入新模型
+
+从 [最小 GEMM JSON](../configs/compute/synthetic_gemm.json) 复制结构，用 `--workload` 导入。文件根部提供 `schema_version: 1`、`workload_id` 和 `operators`。工作负载已按特定 batch、token 数和阶段展开时，可在 `metadata` 中注明模型版本、运行场景和来源。
+
+每个 GEMM 提供稳定的 `op_id`、阶段/层/算子标签、`shape`、`precision_label` 和 `dependencies`。常规线性层只需 M/N/K 与次数，MoE 提供逐专家 token 数，稀疏 Attention 为 QK/PV 分别给有效 key 长度或块位置。若执行精度有混合输入、块 scale 或转换，再用 `--plan` 指定实际格式和执行路径。只给账本即可统计用量，配上面积模型输出和数组配置才能评价周期。
+
+若希望用户只交模型配置与 batch/token 场景，由开发者编写一个 adapter，将这些输入展开为同一份 GEMM 账本。静态配置可提供层数和张量维度，路由、稀疏选择和缓存日程由 adapter 的具名假设或运行观测提供。
+
 ## Inputs
 
 | 文件或参数 | 粒度与要求 |

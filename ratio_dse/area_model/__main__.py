@@ -27,9 +27,12 @@ def run(args, command):
                + [{"profile_id": row["profile_id"], "format_id": row["format_id"],
                    "status": row["power_status"], "reason": row.get("power_reason")}
                   for row in mode_rows if row["power_status"] != "measured"])
+    base = next(row for row in rows if row["deployment_id"] == deployment["baseline_deployment_id"])
     summary = ("# DP deployments\n\n"
                f"Scenario `{scenario['scenario_id']}` yielded {sum(row['valid'] for row in rows)} "
-               f"valid deployments out of {len(rows)}. The baseline has {deployment['baseline_core_count']} cores.\n\n"
+               f"valid deployments out of {len(rows)}. The baseline has {deployment['baseline_core_count']} "
+               f"units of kind `{base['core_kind']}`, each with {base['subcores_per_core']} subcores, "
+               f"{base['tensorcores_per_subcore']} TensorCores per subcore, and {base['dp_per_core']} DP total.\n\n"
                "Each peak refers to a single mode occupying the declared resource pool. Area and peak "
                "are analytical estimates using single-DP synthesis evidence. The input budget refers to the "
                "local source of A/B data. DP power measurements use the activity window in each mode profile.\n")
@@ -42,7 +45,9 @@ def run(args, command):
                                                      "power_dynamic_w", "power_leakage_w", "power_total_w",
                                                      "power_status", "power_reason", "power_run_id"]),
                   "deployments.csv": (rows, ["deployment_id", "scenario_id", "profile_id", "ratio_label",
-                                              "m_array", "n_array", "arrays_per_core", "dp_per_core", "core_count",
+                                              "core_kind", "subcores_per_core", "tensorcores_per_subcore",
+                                              "m_array", "n_array", "arrays_per_core", "dp_per_tensorcore",
+                                              "dp_per_subcore", "dp_per_core", "core_count",
                                               "frequency_hz", "area_tensor_um2_per_core",
                                               "area_peripheral_um2_per_core", "area_core_um2", "area_pool_um2",
                                               "area_pool_mm2", "area_budget_um2", "unused_area_um2",

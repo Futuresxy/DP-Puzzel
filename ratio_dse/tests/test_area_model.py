@@ -61,6 +61,43 @@ class AreaModelTests(unittest.TestCase):
         self.assertIn("input_budget_exceeded:mxfp4_e2m1", big["reasons"])
         self.assertTrue(by_key["H16Q128E256", 4]["valid"])
 
+    def test_256_dp_sm_layouts_keep_array_shapes_and_sum_supply(self):
+        baselines = []
+        for name, subcores, m, n, bf16_input in [
+            ("sm_1x16x16", 1, 16, 16, 4_096_000_000_000),
+            ("sm_4x16x4", 4, 16, 4, 4_096_000_000_000),
+            ("sm_4x32x2", 4, 32, 2, 6_144_000_000_000),
+        ]:
+            with self.subTest(name=name):
+                result = enumerate_deployments(self.hardware, read_json(CONFIG / f"{name}.json"))
+                row = next(row for row in result["deployments"] if row["deployment_id"] == result["baseline_deployment_id"])
+                self.assertEqual(row["core_kind"], "sm")
+                self.assertEqual(row["subcores_per_core"], subcores)
+                self.assertEqual(row["tensorcores_per_subcore"], 1)
+                self.assertEqual(row["arrays_per_core"], subcores)
+                self.assertEqual((row["m_array"], row["n_array"]), (m, n))
+                self.assertEqual(row["dp_per_tensorcore"], m*n)
+                self.assertEqual(row["dp_per_subcore"], m*n)
+                self.assertEqual(row["dp_per_core"], 256)
+                self.assertEqual(row["core_count"], 36)
+                self.assertEqual(row["per_mode_peak_macs_s"]["bf16"], 147_456_000_000_000)
+                self.assertEqual(row["modes"]["bf16"]["input_bytes_s"], bf16_input)
+                baselines.append(row["area_budget_um2"])
+        self.assertEqual(len(set(baselines)), 1)
+
+    def test_aicore_baseline_parameters_and_conflicting_layout(self):
+        scenario = read_json(CONFIG / "sm_4x16x4.json") | {
+            "core_kind": "aicore", "baseline_cores": 8, "baseline_tensor_fraction": 0.5,
+        }
+        result = enumerate_deployments(self.hardware, scenario)
+        row = next(row for row in result["deployments"] if row["deployment_id"] == result["baseline_deployment_id"])
+        self.assertEqual(row["core_kind"], "aicore")
+        self.assertEqual(row["core_count"], 8)
+        self.assertEqual(row["area_peripheral_um2_per_core"], row["area_tensor_um2_per_core"])
+        self.assertEqual(row["area_budget_um2"], row["area_core_um2"] * 8)
+        with self.assertRaisesRegex(ValueError, "arrays_per_core must equal"):
+            enumerate_deployments(self.hardware, scenario | {"arrays_per_core": 1})
+
     def test_locked_evidence_rejects_modified_hash(self):
         lock = read_json(CONFIG / "dp_n12_20261112.lock.json")
         lock["sources"]["dc"][0]["sha256"] = "0" * 64

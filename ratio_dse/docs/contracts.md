@@ -16,8 +16,8 @@ JSON 为机器读取主格式，CSV 为长表导出。A/B 使用 `schema_version
 |---|---|---|
 | HardwareProfile | A | profile_id, ratio_label, top, export_id, verification_id, dc_run_id, area_um2, frequency_hz, pvt, timing/electrical status, included_components, evidence_paths/hashes, artifact_availability |
 | ModeProfile | A | profile_id, format_id, operand/scale/accumulator semantics, native_k, latency_cycles, ii_cycles, input layout, power_dynamic_w, power_leakage_w, power_total_w, power_run_id, activity_source, measured/proxy/missing status |
-| ArrayScenario | A | scenario_id, constraint_kind, baseline_profile, baseline_cores, baseline_tensor_fraction, arrays_per_core, legal_shapes, broadcast_model, input_budget_bytes_s, supported_format_set, peripheral_policy |
-| Deployment | A | deployment_id, profile_id, m_array, n_array, arrays_per_core, core_count, area_tensor/peripheral/core/pool, budget/unused_area, per_mode_peak_macs_s, input_demand_by_mode, excluded_components, validity |
+| ArrayScenario | A | scenario_id, constraint_kind, baseline_profile, baseline_cores, baseline_tensor_fraction, core_kind, subcores_per_core, tensorcores_per_subcore, legal_shapes, broadcast_model, input_budget_bytes_s, supported_format_set, peripheral_policy |
+| Deployment | A | deployment_id, profile_id, core_kind, subcores_per_core, tensorcores_per_subcore, m_array, n_array, arrays_per_core, dp_per_tensorcore/subcore/core, core_count, area_tensor/peripheral/core/pool, budget/unused_area, per_mode_peak_macs_s, input_demand_by_mode, excluded_components, validity |
 | GemmWorkload | B | workload_id, metadata, operators: op_id, stage, segment, layer_id, category, subcategory, shape, dependencies, precision_label, useful_macs |
 | OperatorEvaluation | B | workload_id, op_id, deployment_id, precision_plan_id, native_k, issue/RAW/drain cycles, useful/issued_macs, utilization, bytes_by_interface, conversion status/cost, calibration_status |
 | PrecisionPlan / QualityRecord | B/C | plan_id, selected_ops, mappings: storage/multiply/scale/accumulator formats, execution_path, dp_mode, conversion; records: metric, reference/candidate value, delta, max_degradation, dataset/protocol, model_revision, quantizer_revision, provenance, status |
@@ -28,6 +28,8 @@ JSON 为机器读取主格式，CSV 为长表导出。A/B 使用 `schema_version
 ## 面积与部署
 
 参考参数为 N0=36、alpha=0.30。基线 TensorCore 面积 AT0 包含该核心全部声明内阵列；外围 AO=AT0*(1/alpha-1)，总预算 Abud=N0*AT0/alpha。候选核心 ACj=AO+ATj，完整核心数 floor(Abud/ACj)，剩余面积显式报告。
+
+SM/AICore 是核心池部署的计数单位。每核心 TensorCore 数为 `subcores_per_core × tensorcores_per_subcore`，阵列形状始终描述一个 TensorCore。带宽按各 TensorCore 的广播需求求和，基线 TensorCore 面积占比采用核心内全部 TensorCore 的总面积。
 
 ATj 首轮可采用 DP 实测面积×实例数，并明确未包括的阵列互连/控制增量；有依据的额外阵列成本单列。整个结果是面积估计，不是整核综合测量。不得同时计入完整核心 profile 和它已包含的阵列。
 

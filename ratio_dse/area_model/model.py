@@ -112,6 +112,21 @@ def _shape(value):
     return tuple(integer("shape dimension", dim) for dim in value)
 
 
+def _core_layout(scenario):
+    kind = scenario.get("core_kind", "core")
+    require(kind in {"core", "sm", "aicore"}, "core_kind must be core, sm or aicore")
+    fields = {"subcores_per_core", "tensorcores_per_subcore"}
+    if fields.isdisjoint(scenario):
+        return kind, 1, integer("arrays_per_core", scenario["arrays_per_core"])
+    require(fields <= scenario.keys(), "specify both subcores_per_core and tensorcores_per_subcore")
+    subcores = integer("subcores_per_core", scenario["subcores_per_core"])
+    tensorcores = integer("tensorcores_per_subcore", scenario["tensorcores_per_subcore"])
+    if "arrays_per_core" in scenario:
+        require(integer("arrays_per_core", scenario["arrays_per_core"]) == subcores * tensorcores,
+                "arrays_per_core must equal subcores_per_core * tensorcores_per_subcore")
+    return kind, subcores, tensorcores
+
+
 def broadcast_vectors(shape, broadcast):
     """Unique A row and B column vector reads per array tile."""
     m, n = _shape(shape)
@@ -164,7 +179,8 @@ def enumerate_deployments(hardware, scenario):
     shapes = [_shape(shape) for shape in scenario["legal_shapes"]]
     require(len(set(shapes)) == len(shapes) and shape0 in shapes, "legal_shapes must be unique and include baseline")
     require(constraint != "equal_array" or shapes == [shape0], "equal_array requires only baseline_shape")
-    arrays = integer("arrays_per_core", scenario["arrays_per_core"])
+    core_kind, subcores, tensorcores = _core_layout(scenario)
+    arrays = subcores * tensorcores
     cores0 = integer("baseline_cores", scenario["baseline_cores"])
     alpha = Fraction(str(number("baseline_tensor_fraction", scenario["baseline_tensor_fraction"])))
     require(0 < alpha <= 1, "baseline_tensor_fraction must be in (0, 1]")
@@ -200,7 +216,9 @@ def enumerate_deployments(hardware, scenario):
                                                         "area_um2", "technology_id", "pvt", "status")}
         for shape in shapes:
             m, n = shape
-            dp_per_core = m * n * arrays
+            dp_per_tensorcore = m * n
+            dp_per_subcore = dp_per_tensorcore * tensorcores
+            dp_per_core = dp_per_subcore * subcores
             area = profile["area_um2"]
             tensor = None
             core = None
@@ -242,7 +260,9 @@ def enumerate_deployments(hardware, scenario):
             output.append({
                 "deployment_id": identity("deployment", [scenario, physical, capability, [m, n]]),
                 "scenario_id": scenario_id, "constraint_kind": constraint, "profile_id": profile["profile_id"],
-                "ratio_label": profile["ratio_label"], "m_array": m, "n_array": n, "arrays_per_core": arrays,
+                "ratio_label": profile["ratio_label"], "m_array": m, "n_array": n, "core_kind": core_kind,
+                "subcores_per_core": subcores, "tensorcores_per_subcore": tensorcores, "arrays_per_core": arrays,
+                "dp_per_tensorcore": dp_per_tensorcore, "dp_per_subcore": dp_per_subcore,
                 "dp_per_core": dp_per_core, "core_count": core_count, "frequency_hz": clock,
                 "area_tensor_um2_per_core": float(tensor) if tensor is not None else None,
                 "area_peripheral_um2_per_core": float(peripheral),
