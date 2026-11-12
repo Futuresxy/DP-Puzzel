@@ -1,0 +1,18 @@
+# DP-Puzzel defaults at the intended publication size.
+font.family: serif
+font.serif: Times New Roman, Liberation Serif, STIXGeneral
+font.size: 9
+mathtext.fontset: stix
+axes.labelsize: 9
+axes.titlesize: 9
+axes.linewidth: 0.65
+xtick.labelsize: 8
+ytick.labelsize: 8
+legend.fontsize: 8
+legend.frameon: False
+lines.linewidth: 1.1
+pdf.fonttype: 42
+pdf.use14corefonts: False
+savefig.format: pdf
+savefig.bbox: tight
+savefig.pad_inches: 0.04

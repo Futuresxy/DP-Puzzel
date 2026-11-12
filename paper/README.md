@@ -187,6 +187,6 @@ make test
 
 ## 图表排版约定
 
-图片使用单栏 `figure`，宽度不超过 `\columnwidth`。组合图用 `\subfloat` 编号及命名，图内不嵌入图片标题；模型、符号、颜色、子图含义和比较条件在图下 `caption` 说明。当前两张负载三角图上下排在同一栏，使用已有 PNG 和绘图代码。架构图保留作者素材与空缺图位，不自动绘制。
+新绘制和修改的论文图使用项目绘图规范。单栏 `figure` 宽度不超过 `\columnwidth`，图名和模型、符号、颜色、子图含义及比较条件写入 LaTeX 图注。合图可在面板中标 `(a)`、`(b)`，独立面板使用 `\subfloat` 编号。当前两张负载三角图上下排在同一栏，使用已有 PNG 和绘图代码。架构图保留作者素材与空缺图位。[论文绘图技能](../.skill/academic-figures/SKILL.md)
 
 相关工作比较使用原生 LaTeX 双表：`tables/related_features.tex` 是精度/功能勾选矩阵；`tables/related_ppa.tex` 按工作分列、按精度分行列出实现条件和效率。两表包含五项相关工作及本设计，采用跨栏表格保持文字可读性，不作为图片插入。数值来源与换算见 `references/notes/dp_comparison.md`。
