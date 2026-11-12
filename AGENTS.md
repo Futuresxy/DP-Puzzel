@@ -1,5 +1,13 @@
 # DAC 2027 工程开发约定
 
+## 五种新增配比与时序优先约定（2026-11-12）
+
+在既有 T8H16Q32E64 的四个基础组上，新增四个 Q-only 组形成 T8H16Q64E64；新增 8/12 个 E 组形成 T8H16Q32E192/E256；新增 8/12 个 QE 组形成完整 T8H16Q96E192/T8H16Q128E256。后两者保留 T8/H16/INT8 基础能力，不是纯 Q/E DP。五种 CModel、手写 Verilog、独立冻结与主目录严格门禁均通过，见 `test/results/five-expansions-final-v1.12-20261112.{md,json}`。E 扩展为 v1.11，QE 扩展为 v1.12，均保持 L8/II=1；8/12 扩展分别用 3/5 个 CSA4:2 压成两行，另一个4:2合并基础+C两行，双行MUX后唯一CPA。源码提交 `530d7da`。
+
+用户明确时序优先：后端优化仍无法满足时序时，允许增加一级流水，需同步规格、CModel、RTL和严格验收，保留 II=1。E256 原瓶颈为 S5→S6 的 MAX+移位；组合层展开后 N12 TT/0.7V/85°C、1GHz setup/hold/电气/VT 已全通过，无需增加流水。前三种扩展 DC 与九点真实负载功耗均通过，记录为 `hw/dc_syn/records/first_three_expansions_20261112`、`hw/power/records/first_three_expansions_20261112` 的 MD/JSON/CSV，PPA与导入提交 `b7d2a08`。T8H16Q96E192 已完成独立 DC 与三点功耗；T8H16Q128E256 经组合层展开与8个输入到S1的定点同相缓冲修复后，DC也已全通过，保持L8/II=1；五种DC入口为 `hw/dc_syn/records/five_expansions_20261112.{md,json,csv}`，五种15点功耗亦全部通过，见 `hw/power/records/five_expansions_20261112.{md,json,csv}`。用户要求的最新11种面积/30个实测精度点整合入口为 `hw/data/dp_latest_area_power_20261112.{md,csv}`；原六种取已保留测量，本轮五种新测，未重测旧六种。定点缓冲入口提交 `0ec0f2c`，54项流程测试通过；不手改网表，不放宽约束。
+
+low32/low48 的七种 Q/E 功能和功耗输入已复制入本项目，1011 个原文件及 SHA-256 见 `hw/power/workloads/petile_extended/`，原 sibling 数据未改；14套新增功能语料进入 `test/data/dp/`。本轮运行及其冻结源、原始验证、模型参考、数据、网表和SAIF属于当前报告依赖；下文“仅六份最终结果”是11月10日清理完成时状态，不授权删除本轮新增证据。源树后续验证不覆盖原 DC 绑定的历史回执；隔离执行目录也属于必要重放依赖。
+
 ## 最新产物清理与记录约定（2026-11-10）
 
 用户最新授权覆盖此前“全部旧功耗及依赖保留”的口径：仅保留当前六种 DP 的最终 DC、15 点功耗、精度验证和必要重放依赖，删除被替代历史运行大产物；历史 `hw/dc_syn/records/`、`hw/power/records/` 的 MD/JSON/CSV 数值与对比继续保留。当前查阅入口为这两个目录的 README.md；当前功耗重审计使用 `hw/power/plans/latest_six_retained.json`，不再依赖被清理的旧功耗批次。DC `runs/` 只保留六份最终结果。电气违例和 hold 违例的修复源及旧 `baseline_v18_reference_1109` 已删除。已完成测量的复核使用清理前的修复链回执和功耗批次内的原输入及 golden。现用 RTL 回执、E64 兼容回归、v1.9 CModel 参考和七类统计保留。清理明细见 `hw/dc_syn/maintenance/latest_six_artifacts_cleanup_20261110.json` 和 `hw/dc_syn/maintenance/final_six_dependency_retirement.json`。旧记录内“全部原始产物保留”描述是历史状态，以新入口的可用状态为准。 后续每次实验在对应 records/ 新增日期/版本明确的 MD 结果记录与 JSON/CSV，写明面积/时序或动态/静态/总功耗、run/export ID 和工况，并更新 README 的最新入口；旧数值不覆盖，清理时标记原始产物可用状态。

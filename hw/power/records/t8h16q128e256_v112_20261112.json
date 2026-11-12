@@ -1,0 +1,385 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "audited_utc": "2026-11-12T14:20:33.498395+00:00",
+  "scope": "post-synthesis zero-delay VCS native gate SAIF; pre-CTS/pre-route",
+  "condition": {
+    "technology": {
+      "schema_version": 1,
+      "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+      "process": "TSMC CLN12FFCLL",
+      "pvt": {
+        "corner": "TT",
+        "voltage_v": 0.7,
+        "temperature_c": 85
+      },
+      "target_libraries": [
+        "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"
+      ],
+      "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+      "operating_condition": "tt0p7v85c",
+      "wire_load_model": "ZeroWireload",
+      "area_unit": "um2",
+      "multi_vt": {
+        "base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c",
+        "max_lvt_percent": 20.0
+      },
+      "reference_dc_version": "X-2025.06",
+      "library_release": "120a (Liberty revision 120)",
+      "standard_cell_type": "BWP6T16P96CPD, 6-track standard cells",
+      "time_unit": "ns",
+      "capacitance_unit": "pF",
+      "area_unit_evidence": "Liberty area cross-checked against matching 120a LEF cell SIZE product (micrometres squared)",
+      "corner_basis": "Existing project N12 TT setup analysis profile; not worst-corner or multi-corner signoff"
+    },
+    "frequency_hz": 1000000000.0,
+    "duration_ns": 512,
+    "clock_slew_ns": 0.1,
+    "window": {
+      "name": "dp-qwen8b-middle512-v1",
+      "first_source_index": 256,
+      "end_source_index_exclusive": 768,
+      "cycles": 512,
+      "frequency_hz": 1000000000,
+      "duration_ns": 512,
+      "issue_policy": "1024 independent transactions, once each, II=1",
+      "boundary": "same clock phase before driving transactions 256 and 768",
+      "pipeline": "includes steady-state in-flight transactions; not output-ID filtering"
+    }
+  },
+  "vcs_versions": [
+    "X-2025.06-1_Full64"
+  ],
+  "power_compiler_versions": [
+    "X-2025.06"
+  ],
+  "campaigns": [
+    {
+      "directory": "hw/power/runs/power_t8h16q128e256_v112_11122214",
+      "plan_sha256": "55102215d42f50d0a314113fceb66651ead36442bd0b12a53703d8c14982ef2b",
+      "manifest_sha256": "60cfa513546a24f5fa209db1daccc7d783db9d0fa34d1188f20dec893101fd74"
+    }
+  ],
+  "results": [
+    {
+      "status": "PASS",
+      "top": "dp_top_t8h16q128e256",
+      "format": "bf16",
+      "logical_k": 16,
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_t8h16q128e256_11122210",
+      "export_id": "DP_verilog_t8h16q128e256_f8209095129aa89a",
+      "technology": {
+        "schema_version": 1,
+        "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+        "process": "TSMC CLN12FFCLL",
+        "pvt": {
+          "corner": "TT",
+          "voltage_v": 0.7,
+          "temperature_c": 85
+        },
+        "target_libraries": [
+          "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"
+        ],
+        "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "operating_condition": "tt0p7v85c",
+        "wire_load_model": "ZeroWireload",
+        "area_unit": "um2",
+        "multi_vt": {
+          "base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c",
+          "max_lvt_percent": 20.0
+        },
+        "reference_dc_version": "X-2025.06",
+        "library_release": "120a (Liberty revision 120)",
+        "standard_cell_type": "BWP6T16P96CPD, 6-track standard cells",
+        "time_unit": "ns",
+        "capacitance_unit": "pF",
+        "area_unit_evidence": "Liberty area cross-checked against matching 120a LEF cell SIZE product (micrometres squared)",
+        "corner_basis": "Existing project N12 TT setup analysis profile; not worst-corner or multi-corner signoff"
+      },
+      "frequency_hz": 1000000000.0,
+      "duration_ns": 512,
+      "area_um2": 46925.549827,
+      "internal_mw": 12.0005302429199,
+      "switching_mw": 3.8924081325531006,
+      "dynamic_mw": 15.892938375473003,
+      "static_mw": 0.39444278125000004,
+      "total_mw": 16.2874088287354,
+      "pj_per_mac": 1.0179630517959626,
+      "annotated_pins": 714428,
+      "annotation": {
+        "Nets": 225614,
+        "Ports": 2585,
+        "Pins": 714428
+      },
+      "clock_pins": 18789,
+      "inactive_clock_pins": 13305,
+      "saif_audit": {
+        "status": "PASS",
+        "duration_fs": 512000000.0,
+        "timescale_fs": 1.0,
+        "checked_power_pins": 717013,
+        "missing_power_pins": 0,
+        "power_pin_xz": 0,
+        "missing_examples": [],
+        "unknown_examples": [],
+        "scope": "dp_power_tb/dut",
+        "activity_format": "saif",
+        "capture": "vcs_native"
+      },
+      "alias_count": 714428,
+      "clock_slew_ns": 0.1,
+      "finished_utc": "2026-11-12T14:15:48.953252+00:00",
+      "artifacts_sha256": {
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/native.saif.gz": "d0c9e9963ce912767eee677f1e86e5b9baf71a5647cbece01868b305e8ffbd76",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/activity.saif.gz": "8875e1623e56b3228b7f9c54fee0e9c42cace9626d3fce55ee9dc754df4cb3e0",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/power.rpt": "3c199b47fb3e16785e06a9137b506f937b6b809518fad87b4c7a6636ed7892da",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/hierarchy_power.rpt": "6632264fc77202b3f99fff333388a392be406becec323c9cc913ae6e11b104a9",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/activity.rpt": "e1ffe07c8a2b9614ad86f1b03f06e5164caf5018be8505fd615d82eecc76adcd",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/pin_activity.rpt": "86c50899c5b36b7142cc61de19ee9c730f57398a5df55922885baea669e1c4dd",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/clock_activity.rpt": "a2eada4604c9aca50d8d2a6eb7181e9c2f6f4d01ad666d8497d4d28e6c932bf6",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/clock_transitions.rpt": "8d1b5bb381640e75500dd4073a0b2cde16397f1d5146d4cf472d37aa8e0ae809",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/saif_audit.json": "1223ca787f1d935124750f1ec7843d665d11ac15651bc46807d2c61b97ae7260",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/rtl/results.txt": "7226b76f7231431a088837343e7902de4314e2b2fde00e12bb79b59a53fd7329",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/gate/results.txt": "7226b76f7231431a088837343e7902de4314e2b2fde00e12bb79b59a53fd7329",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/rtl/simulation.log": "9b4e91c397e1267bd4d062217545521b796d610bcd3e818cc2734768ae2d2dc4",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/gate/simulation.log": "96c90ced22849d5c8d0842e29ea935bfd3697ead44f3bf5fb460930ed410c855"
+      },
+      "campaign": "hw/power/runs/power_t8h16q128e256_v112_11122214",
+      "audit_path": "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/power_audit.json",
+      "audit_sha256": "f7268f888570cd4c41418accf8fedc5a5b0dbe98cb64cb90b9d02758dad10a06",
+      "workload_receipt": "test/runs/power/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/verification.json",
+      "workload_receipt_sha256": "52c85d700c2786785f494dc5b566400073b4737484cc820dd505ac6380a1df34",
+      "original_verification_id": "20261112T122135109358Z",
+      "supporting_evidence_sha256": {
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/power_compiler.log": "ea6430882b8da47f0631f552032dda68449d833fedaa3594c961ccc94098928f",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/power.tcl": "210fa1af146bbd34eaf2430af9383efd2bab6bcfe44f5afa4410f214d839e929",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/config.tcl": "7c6bdc8423ed287e34f196a9c1d73269023fb83d87cf77b52b5a4e3088590514",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/point.json": "cb01eb0f4c454116c9a38741bbb0501815c75850f01f58ab98772e3c4c9105da",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/vectors.txt": "89774e066fb351317f0f66921d151594392e711ceb382c577f8103b331ad0664",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/expected.txt": "c47717d90a9d10074b1e27fe948a0f17eefc4c2535d91936eded9704cb1b5b97",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/tb.sv": "6fe8ec225ac95216399dd8a7da1edbb4d9593d85de8d702d442f9b71fbb76113",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/initialization.json": "0f08405784cf86612c1aac096ae66198f6dbb995e15e84d721653b321e2a9862",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/saif_aliases.json": "266c14adffb69ff7fb267b833d2e05f2858f8fe95d5e0d1a4411749851c297c6",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/gate/window.txt": "c7b1f1503d285545d2b1cb0b3dd45dc56a2a5b7a83ce75da6c8de01609ffa158",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/activity_missing.rpt": "2e385dc9aa7539b9f21a31daaa44aa0c9fb1b6d50f474a07d224366617fabb33",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__bf16/timing.rpt": "f72b9bd566c2bf2f9f1aaac899a6f89d0f2dbc98caced2a6ce59eff047cb3efb"
+      }
+    },
+    {
+      "status": "PASS",
+      "top": "dp_top_t8h16q128e256",
+      "format": "mxfp8_e4m3",
+      "logical_k": 128,
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_t8h16q128e256_11122210",
+      "export_id": "DP_verilog_t8h16q128e256_f8209095129aa89a",
+      "technology": {
+        "schema_version": 1,
+        "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+        "process": "TSMC CLN12FFCLL",
+        "pvt": {
+          "corner": "TT",
+          "voltage_v": 0.7,
+          "temperature_c": 85
+        },
+        "target_libraries": [
+          "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"
+        ],
+        "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "operating_condition": "tt0p7v85c",
+        "wire_load_model": "ZeroWireload",
+        "area_unit": "um2",
+        "multi_vt": {
+          "base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c",
+          "max_lvt_percent": 20.0
+        },
+        "reference_dc_version": "X-2025.06",
+        "library_release": "120a (Liberty revision 120)",
+        "standard_cell_type": "BWP6T16P96CPD, 6-track standard cells",
+        "time_unit": "ns",
+        "capacitance_unit": "pF",
+        "area_unit_evidence": "Liberty area cross-checked against matching 120a LEF cell SIZE product (micrometres squared)",
+        "corner_basis": "Existing project N12 TT setup analysis profile; not worst-corner or multi-corner signoff"
+      },
+      "frequency_hz": 1000000000.0,
+      "duration_ns": 512,
+      "area_um2": 46925.549827,
+      "internal_mw": 40.271110534668,
+      "switching_mw": 12.1840906143188,
+      "dynamic_mw": 52.455201148986795,
+      "static_mw": 0.3980706875,
+      "total_mw": 52.853084564209,
+      "pj_per_mac": 0.4129147231578828,
+      "annotated_pins": 714428,
+      "annotation": {
+        "Nets": 225614,
+        "Ports": 2585,
+        "Pins": 714428
+      },
+      "clock_pins": 18789,
+      "inactive_clock_pins": 1056,
+      "saif_audit": {
+        "status": "PASS",
+        "duration_fs": 512000000.0,
+        "timescale_fs": 1.0,
+        "checked_power_pins": 717013,
+        "missing_power_pins": 0,
+        "power_pin_xz": 0,
+        "missing_examples": [],
+        "unknown_examples": [],
+        "scope": "dp_power_tb/dut",
+        "activity_format": "saif",
+        "capture": "vcs_native"
+      },
+      "alias_count": 714428,
+      "clock_slew_ns": 0.1,
+      "finished_utc": "2026-11-12T14:18:11.321962+00:00",
+      "artifacts_sha256": {
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/native.saif.gz": "08f7d4243cacafcb35dae6e28c14a59cdb94df94a41d888a89e634e9617a3e27",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/activity.saif.gz": "a34da777c5e5bb2ce96b77d33208626c0e29d1f4786f4f4cd42b586023cdabce",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/power.rpt": "56edbe151fd9257555eb4d51547b9c52c120677464aa57eebb79b6f2b2b79aac",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/hierarchy_power.rpt": "bd43b30aee78b208860f568f1c553003a02ded1f916539eb4984554ed4d62716",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/activity.rpt": "e9b6543516cab68f9370beeceb65abe6b31e27cd66d49db059543c9117ed47f6",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/pin_activity.rpt": "fa5c11c9cd65ccfd1de0b13c040496e203c7d22e9c649744c7960a74d5312cbb",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/clock_activity.rpt": "a34163833b84d0d2f522591551598e3c6aa1da524f000a1d924372310a0e08a4",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/clock_transitions.rpt": "3a9ceec80c850d52b089f4724444ecc558eb595422c182096f5b91abf03aeae5",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/saif_audit.json": "1223ca787f1d935124750f1ec7843d665d11ac15651bc46807d2c61b97ae7260",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/rtl/results.txt": "64361547e3404b144f4c714064957e5fb142aaa6bada890f52b064c8ba293e57",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/gate/results.txt": "64361547e3404b144f4c714064957e5fb142aaa6bada890f52b064c8ba293e57",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/rtl/simulation.log": "9b4e91c397e1267bd4d062217545521b796d610bcd3e818cc2734768ae2d2dc4",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/gate/simulation.log": "eddcb5c976d3e4405a13a5774ddeb98f874a0079535b78fa1ca3084ca29a2606"
+      },
+      "campaign": "hw/power/runs/power_t8h16q128e256_v112_11122214",
+      "audit_path": "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/power_audit.json",
+      "audit_sha256": "3fffb88222c0fb52396bc45a6031be17f0faa9f0909d578dddde5ce2d3cdfb6f",
+      "workload_receipt": "test/runs/power/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/verification.json",
+      "workload_receipt_sha256": "fa5c368c8d2cf18e7cd65fd3443d6beb0f2f49561f23c342ed440872696ba1b9",
+      "original_verification_id": "20261112T122135109358Z",
+      "supporting_evidence_sha256": {
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/power_compiler.log": "fe1f1d99f62233a3f50c222fa3267dfed1032424d15484d41a9e5b7a256b28e9",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/power.tcl": "210fa1af146bbd34eaf2430af9383efd2bab6bcfe44f5afa4410f214d839e929",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/config.tcl": "6a83539514e8ff74aeb4c051b5f59ba4b0130cfe1181c4b93229666b4bac951e",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/point.json": "36b8a6eb79bd9facc2eac4ebf400754d28c89150565c774dfc11767d00d3e748",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/vectors.txt": "9cf0a3b13d61a34207fd03635fd277e4898c53b2febb009d22a7ffc24d7da75f",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/expected.txt": "5e6031b9b91fcdb114579fab5e2265d7b5a89fc2980f11ee1a9255b48a969ae9",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/tb.sv": "6fe8ec225ac95216399dd8a7da1edbb4d9593d85de8d702d442f9b71fbb76113",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/initialization.json": "0f08405784cf86612c1aac096ae66198f6dbb995e15e84d721653b321e2a9862",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/saif_aliases.json": "266c14adffb69ff7fb267b833d2e05f2858f8fe95d5e0d1a4411749851c297c6",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/gate/window.txt": "c7b1f1503d285545d2b1cb0b3dd45dc56a2a5b7a83ce75da6c8de01609ffa158",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/activity_missing.rpt": "90d90972f544109ebebede903ff29b0577e4a9f3fa9b56b92f1f04d673e59c2f",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp8_e4m3/timing.rpt": "1ccc432575b4a80444b8788a4b5ee0a5b585355d57b1175f1640697ee421cdbb"
+      }
+    },
+    {
+      "status": "PASS",
+      "top": "dp_top_t8h16q128e256",
+      "format": "mxfp4_e2m1",
+      "logical_k": 256,
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_t8h16q128e256_11122210",
+      "export_id": "DP_verilog_t8h16q128e256_f8209095129aa89a",
+      "technology": {
+        "schema_version": 1,
+        "technology_id": "n12-bwp6t-120a-base-lvt-tt-0p7v-85c",
+        "process": "TSMC CLN12FFCLL",
+        "pvt": {
+          "corner": "TT",
+          "voltage_v": 0.7,
+          "temperature_c": 85
+        },
+        "target_libraries": [
+          "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c"
+        ],
+        "operating_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+        "operating_condition": "tt0p7v85c",
+        "wire_load_model": "ZeroWireload",
+        "area_unit": "um2",
+        "multi_vt": {
+          "base_library": "tcbn12ffcllbwp6t16p96cpdtt0p7v85c",
+          "lvt_library": "tcbn12ffcllbwp6t16p96cpdlvttt0p7v85c",
+          "max_lvt_percent": 20.0
+        },
+        "reference_dc_version": "X-2025.06",
+        "library_release": "120a (Liberty revision 120)",
+        "standard_cell_type": "BWP6T16P96CPD, 6-track standard cells",
+        "time_unit": "ns",
+        "capacitance_unit": "pF",
+        "area_unit_evidence": "Liberty area cross-checked against matching 120a LEF cell SIZE product (micrometres squared)",
+        "corner_basis": "Existing project N12 TT setup analysis profile; not worst-corner or multi-corner signoff"
+      },
+      "frequency_hz": 1000000000.0,
+      "duration_ns": 512,
+      "area_um2": 46925.549827,
+      "internal_mw": 29.980447769165,
+      "switching_mw": 8.530200958252001,
+      "dynamic_mw": 38.510648727417,
+      "static_mw": 0.3951189375,
+      "total_mw": 38.9055099487305,
+      "pj_per_mac": 0.1519746482372285,
+      "annotated_pins": 714428,
+      "annotation": {
+        "Nets": 225614,
+        "Ports": 2585,
+        "Pins": 714428
+      },
+      "clock_pins": 18789,
+      "inactive_clock_pins": 4864,
+      "saif_audit": {
+        "status": "PASS",
+        "duration_fs": 512000000.0,
+        "timescale_fs": 1.0,
+        "checked_power_pins": 717013,
+        "missing_power_pins": 0,
+        "power_pin_xz": 0,
+        "missing_examples": [],
+        "unknown_examples": [],
+        "scope": "dp_power_tb/dut",
+        "activity_format": "saif",
+        "capture": "vcs_native"
+      },
+      "alias_count": 714428,
+      "clock_slew_ns": 0.1,
+      "finished_utc": "2026-11-12T14:20:11.823916+00:00",
+      "artifacts_sha256": {
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/native.saif.gz": "bfb6661b401201569e98a75fb94324f6b0688f6085b2b93fdf4cace67de27de3",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/activity.saif.gz": "1f992b3bcaf54ce9c3804f9fcb48e09703bd7cb5073b9aeec802d2da811a8bd8",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/power.rpt": "2fd0843c8499d1106bdb19d5ed04c2f7126b36d6c8aa9f846fb39404ddcf2e71",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/hierarchy_power.rpt": "bfed174959184da6857bbb303f17f741f6785a987a646db72bf647fdd27b144b",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/activity.rpt": "07d7e0825d3d55a731e4a556b790d45b08e46c28c98305676b57c21b98eabcb6",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/pin_activity.rpt": "3615b01c5046e1e2ec82654b789152050f103c89d3fa0999b24ebe187df5243b",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/clock_activity.rpt": "0bcfb76a52479d906bd9ccbbf701c5b58aeb8d14d6efe75400860d6e0aaf093f",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/clock_transitions.rpt": "4a561df4474f2a6b11edf769b36ee2be11dc5743f993a3c990e9dd205b71d278",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/saif_audit.json": "1223ca787f1d935124750f1ec7843d665d11ac15651bc46807d2c61b97ae7260",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/rtl/results.txt": "79ebcde459d1af3fd96be035ccf29208c7e7036c003533a40d7f7ab0d63168ca",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/gate/results.txt": "79ebcde459d1af3fd96be035ccf29208c7e7036c003533a40d7f7ab0d63168ca",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/rtl/simulation.log": "9b4e91c397e1267bd4d062217545521b796d610bcd3e818cc2734768ae2d2dc4",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/gate/simulation.log": "52466f3e8733738ac85083de4a489741ebaad4b3c7fcad3a9221ad7212a78dc8"
+      },
+      "campaign": "hw/power/runs/power_t8h16q128e256_v112_11122214",
+      "audit_path": "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/power_audit.json",
+      "audit_sha256": "c4701b17ce6f6a61dd756b6f8d8fbde9ad496f40bbfcbeb28de3a12ead16b5b0",
+      "workload_receipt": "test/runs/power/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/verification.json",
+      "workload_receipt_sha256": "06487ebac26377345c166a3b2191ecdc9ac9c6499e598c25da3d1c2993484523",
+      "original_verification_id": "20261112T122135109358Z",
+      "supporting_evidence_sha256": {
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/power_compiler.log": "08db18d6a6083f50610b22483d3b4e7a36dbfffce3d35c62412807aef4fa8ea7",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/power.tcl": "210fa1af146bbd34eaf2430af9383efd2bab6bcfe44f5afa4410f214d839e929",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/config.tcl": "31adb6e2ea8d3b65536a665b92541d1949c93f6a571a2ac5e978325bae78056f",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/point.json": "b166498573b3fbf8135c5d4a57632e382ddde98d856b58da2bc4e46c390513e9",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/vectors.txt": "b7261b8f583da80d1742bacc34e5fb95ecfde32f51c5d996853bc0cfd6cd78b4",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/expected.txt": "fa0adac7da22fe7a076dfdd65dc00c2cbfebae88e9ad77f2b7ff96aafefdb631",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/tb.sv": "6fe8ec225ac95216399dd8a7da1edbb4d9593d85de8d702d442f9b71fbb76113",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/initialization.json": "0f08405784cf86612c1aac096ae66198f6dbb995e15e84d721653b321e2a9862",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/saif_aliases.json": "266c14adffb69ff7fb267b833d2e05f2858f8fe95d5e0d1a4411749851c297c6",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/gate/window.txt": "c7b1f1503d285545d2b1cb0b3dd45dc56a2a5b7a83ce75da6c8de01609ffa158",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/activity_missing.rpt": "07b299457c3c2095a2314cbc806c33d24fd4c8e9499d2577fb84f6a3b7dacfae",
+        "hw/power/runs/power_t8h16q128e256_v112_11122214/dp_top_t8h16q128e256__mxfp4_e2m1/timing.rpt": "3a2ec0b79a96285715d25beac2106c712813e992e3d187f76b3ef6c193f30e19"
+      }
+    }
+  ]
+}

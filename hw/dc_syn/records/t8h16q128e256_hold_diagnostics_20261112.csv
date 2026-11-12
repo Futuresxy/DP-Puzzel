@@ -1,0 +1,3 @@
+run_id,area_um2,setup_slack_ps,hold_slack_ps,hold_violating_paths,lvt_percent,flow_pass
+dc_dp_top_t8h16q128e256_11122104,46913.126659,0.006914,-3.7130710000000002,12,13.12,False
+dc_dp_top_t8h16q128e256_11122146,46922.600707,0.002682,-3.2425219999999997,8,13.13,False

@@ -27,3 +27,7 @@ Q64E64当前源码export为`DP_verilog_t8h16q64e64_7547c127f790ac6d`；原DC/功
 - 回归命令：启用 GCC 10 并将 `VERILATOR` 指向 5.030 后，`CCACHE_DISABLE=1 CXXFLAGS="-std=c++20 -fcoroutines" python3.11 test/run_mixed_verilog.py --frontend PROFILE --verilator "$VERILATOR"`。
 - 软件命令：`python3.11 -m unittest discover -s test/tests -v`；对应替换目录为`hw/dc_syn/tests`与`hw/power/tests`；`bash -n scripts/dc_syn.sh`通过。
 - 只清理本次三份已结束build的1825个编译中间文件，释放1944842142字节；保留全部输入/结果/断点/回执及lint/compile日志，清理后五个严格门禁再次通过。
+
+## 后续 DC 流程验收
+
+上述45项DC流程测试对应本次功能验收时的版本。T8H16Q128E256后续增加可追溯的定点支路缓冲入口，RTL/流水未改；更新后的54项DC流程测试全部通过，原日志与源hash见 `hw/dc_syn/runs/dc_dp_top_t8h16q128e256_11122146/auxiliary/flow_software_validation/`。正式五种DC与15点功耗最终验收见 [DC汇总](../../hw/dc_syn/records/five_expansions_20261112.md)及[功耗汇总](../../hw/power/records/five_expansions_20261112.md)，不以软件测试或内存探测代替硬件测量。

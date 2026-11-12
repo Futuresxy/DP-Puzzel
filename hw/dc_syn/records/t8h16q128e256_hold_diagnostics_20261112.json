@@ -1,0 +1,245 @@
+{
+  "condition": "N12 TT 0.7V 85C 1GHz ICG L8 II1; post synthesis pre CTS/layout",
+  "rows": [
+    {
+      "run_id": "dc_dp_top_t8h16q128e256_11122104",
+      "top": "dp_top_t8h16q128e256",
+      "export_id": "DP_verilog_t8h16q128e256_f8209095129aa89a",
+      "flow_pass": false,
+      "synthesis_valid": true,
+      "area": {
+        "total_cell_area_um2": 46913.126659,
+        "combinational_area_um2": 34704.212448,
+        "sequential_area_um2": 12208.914212
+      },
+      "setup": {
+        "status": "PASS",
+        "wns_ns": 0.0,
+        "tns_ns": 0.0,
+        "violating_paths": 0,
+        "worst_reported_slack_ns": 6.914e-06
+      },
+      "hold": {
+        "status": "FAIL",
+        "wns_ns": -0.003713086,
+        "tns_ns": -0.044557035,
+        "violating_paths": 12,
+        "worst_reported_slack_ns": -0.003713071
+      },
+      "multi_vt": {
+        "max_cell_percent": 20.0,
+        "measured_nonblackbox_cell_percent": 13.12,
+        "measured_all_cell_percent": 13.09,
+        "status": "PASS"
+      },
+      "electrical_violations": [],
+      "stage_setup_paths": {
+        "S1": {
+          "startpoint": "in_a_datatype[1]",
+          "endpoint": "u_core/g_group_15__g_qe_u_group_unit/g_lane_1__u_lane/g_compact_unpack_u_lane_unpack/ff_s0_s1_all_negative_ff_storage_out_q_reg_0_",
+          "path_group": "clock",
+          "arrival_ns": 0.991111457,
+          "required_ns": 0.991627872,
+          "slack_ns": 0.000516415
+        },
+        "S2": {
+          "startpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_1__u_lane/ff_s0_s1_type_s1_ff_storage_out_q_reg_3_",
+          "endpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_1__u_lane/g_product_register_1__ff_s1_s2_product_upper_ff_storage_out_q_reg_13_",
+          "path_group": "clock",
+          "arrival_ns": 1.002421141,
+          "required_ns": 1.002429128,
+          "slack_ns": 7.987e-06
+        },
+        "S3": {
+          "startpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_1__u_lane/ff_s1_s2_type_s2_ff_storage_out_q_reg_1_",
+          "endpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_1__u_lane/g_leaf_register_0__ff_s2_s3_leaf_upper_ff_storage_out_q_reg_11_",
+          "path_group": "clock",
+          "arrival_ns": 1.003022671,
+          "required_ns": 1.003148675,
+          "slack_ns": 0.000126004
+        },
+        "S4": {
+          "startpoint": "u_core/g_group_4__g_qe_u_group_unit/g_lane_1__u_lane/ff_s2_s3_type_s3_ff_storage_out_q_reg_3_",
+          "endpoint": "u_core/g_group_4__g_qe_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_30_",
+          "path_group": "clock",
+          "arrival_ns": 1.001060128,
+          "required_ns": 1.001067042,
+          "slack_ns": 6.914e-06
+        },
+        "S5": {
+          "startpoint": "u_core/g_group_7__g_qe_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_15_",
+          "endpoint": "u_core/g_group_7__g_qe_u_group_unit/g_compare_register_ff_s4_s5_compare_exp_ff_storage_out_q_reg_6_",
+          "path_group": "clock",
+          "arrival_ns": 1.000454426,
+          "required_ns": 1.000467539,
+          "slack_ns": 1.3113e-05
+        },
+        "S6": {
+          "startpoint": "u_core/g_group_11__g_qe_u_group_unit/g_compare_register_ff_s4_s5_compare_exp_ff_storage_out_q_reg_5_",
+          "endpoint": "u_core/ff_s5_s6_extension_leaves_ff_storage_out_q_reg_276_",
+          "path_group": "clock",
+          "arrival_ns": 1.005003929,
+          "required_ns": 1.005061626,
+          "slack_ns": 5.7697e-05
+        },
+        "S7": {
+          "startpoint": "u_core/ff_s5_s6_extension_ff_storage_out_q_reg_0_",
+          "endpoint": "u_core/ff_s6_s7_sum_ff_storage_out_q_reg_44_",
+          "path_group": "clock",
+          "arrival_ns": 1.002713203,
+          "required_ns": 1.002740145,
+          "slack_ns": 2.6941e-05
+        },
+        "S8": {
+          "startpoint": "u_core/ff_s6_s7_c_datatype_ff_storage_out_q_reg_0_",
+          "endpoint": "u_core/ff_s7_s8_out_d_ff_storage_out_q_reg_29_",
+          "path_group": "clock",
+          "arrival_ns": 1.002212048,
+          "required_ns": 1.002243876,
+          "slack_ns": 3.1829e-05
+        }
+      },
+      "hierarchy": {
+        "keep_modules": [],
+        "expand_modules": [
+          "dp_lib_DFF*",
+          "dp_dff_*",
+          "dp_max_tree*",
+          "dp_mixed_global_align*",
+          "dp_bidir_shift*",
+          "dp_rtz_shift*",
+          "dp_lane_align*",
+          "dp_lzd*",
+          "dp_scale_multiply*",
+          "dp_exponent_add*",
+          "dp_fp32_round*"
+        ],
+        "expand_instances": [],
+        "expand_depth": 0
+      },
+      "finished_utc": "20261112T134632285298Z",
+      "retained_run_directory": "hw/power/runs/qe_expansion_source_1112/hw/dc_syn/runs/dc_dp_top_t8h16q128e256_11122104",
+      "selected_for_power": false
+    },
+    {
+      "run_id": "dc_dp_top_t8h16q128e256_11122146",
+      "top": "dp_top_t8h16q128e256",
+      "export_id": "DP_verilog_t8h16q128e256_f8209095129aa89a",
+      "flow_pass": false,
+      "synthesis_valid": true,
+      "area": {
+        "total_cell_area_um2": 46922.600707,
+        "combinational_area_um2": 34713.686495,
+        "sequential_area_um2": 12208.914212
+      },
+      "setup": {
+        "status": "PASS",
+        "wns_ns": 0.0,
+        "tns_ns": 0.0,
+        "violating_paths": 0,
+        "worst_reported_slack_ns": 2.682e-06
+      },
+      "hold": {
+        "status": "FAIL",
+        "wns_ns": -0.003242537,
+        "tns_ns": -0.025940299,
+        "violating_paths": 8,
+        "worst_reported_slack_ns": -0.003242522
+      },
+      "multi_vt": {
+        "max_cell_percent": 20.0,
+        "measured_nonblackbox_cell_percent": 13.13,
+        "measured_all_cell_percent": 13.11,
+        "status": "PASS"
+      },
+      "electrical_violations": [],
+      "stage_setup_paths": {
+        "S1": {
+          "startpoint": "in_a_datatype[1]",
+          "endpoint": "u_core/g_group_15__g_qe_u_group_unit/g_lane_1__u_lane/g_compact_unpack_u_lane_unpack/ff_s0_s1_all_negative_ff_storage_out_q_reg_0_",
+          "path_group": "clock",
+          "arrival_ns": 0.99162519,
+          "required_ns": 0.991627872,
+          "slack_ns": 2.682e-06
+        },
+        "S2": {
+          "startpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_1__u_lane/ff_s0_s1_type_s1_ff_storage_out_q_reg_3_",
+          "endpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_1__u_lane/g_product_register_1__ff_s1_s2_product_upper_ff_storage_out_q_reg_13_",
+          "path_group": "clock",
+          "arrival_ns": 1.002421141,
+          "required_ns": 1.002429128,
+          "slack_ns": 7.987e-06
+        },
+        "S3": {
+          "startpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_1__u_lane/ff_s1_s2_type_s2_ff_storage_out_q_reg_1_",
+          "endpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_1__u_lane/g_leaf_register_0__ff_s2_s3_leaf_upper_ff_storage_out_q_reg_11_",
+          "path_group": "clock",
+          "arrival_ns": 1.003022671,
+          "required_ns": 1.003148675,
+          "slack_ns": 0.000126004
+        },
+        "S4": {
+          "startpoint": "u_core/g_group_4__g_qe_u_group_unit/g_lane_1__u_lane/ff_s2_s3_type_s3_ff_storage_out_q_reg_3_",
+          "endpoint": "u_core/g_group_4__g_qe_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_30_",
+          "path_group": "clock",
+          "arrival_ns": 1.001060128,
+          "required_ns": 1.001067042,
+          "slack_ns": 6.914e-06
+        },
+        "S5": {
+          "startpoint": "u_core/g_group_7__g_qe_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_15_",
+          "endpoint": "u_core/g_group_7__g_qe_u_group_unit/g_compare_register_ff_s4_s5_compare_exp_ff_storage_out_q_reg_6_",
+          "path_group": "clock",
+          "arrival_ns": 1.000454426,
+          "required_ns": 1.000467539,
+          "slack_ns": 1.3113e-05
+        },
+        "S6": {
+          "startpoint": "u_core/g_group_11__g_qe_u_group_unit/g_compare_register_ff_s4_s5_compare_exp_ff_storage_out_q_reg_5_",
+          "endpoint": "u_core/ff_s5_s6_extension_leaves_ff_storage_out_q_reg_276_",
+          "path_group": "clock",
+          "arrival_ns": 1.005003929,
+          "required_ns": 1.005061626,
+          "slack_ns": 5.7697e-05
+        },
+        "S7": {
+          "startpoint": "u_core/ff_s5_s6_extension_ff_storage_out_q_reg_0_",
+          "endpoint": "u_core/ff_s6_s7_sum_ff_storage_out_q_reg_44_",
+          "path_group": "clock",
+          "arrival_ns": 1.002713203,
+          "required_ns": 1.002740145,
+          "slack_ns": 2.6941e-05
+        },
+        "S8": {
+          "startpoint": "u_core/ff_s6_s7_c_datatype_ff_storage_out_q_reg_0_",
+          "endpoint": "u_core/ff_s7_s8_out_d_ff_storage_out_q_reg_29_",
+          "path_group": "clock",
+          "arrival_ns": 1.002212048,
+          "required_ns": 1.002243876,
+          "slack_ns": 3.1829e-05
+        }
+      },
+      "hierarchy": {
+        "keep_modules": [],
+        "expand_modules": [
+          "dp_lib_DFF*",
+          "dp_dff_*",
+          "dp_max_tree*",
+          "dp_mixed_global_align*",
+          "dp_bidir_shift*",
+          "dp_rtz_shift*",
+          "dp_lane_align*",
+          "dp_lzd*",
+          "dp_scale_multiply*",
+          "dp_exponent_add*",
+          "dp_fp32_round*"
+        ],
+        "expand_instances": [],
+        "expand_depth": 0
+      },
+      "finished_utc": "20261112T135041632608Z",
+      "retained_run_directory": "hw/power/runs/qe_expansion_source_1112/hw/dc_syn/runs/dc_dp_top_t8h16q128e256_11122146",
+      "selected_for_power": false
+    }
+  ]
+}

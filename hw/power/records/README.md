@@ -4,6 +4,8 @@
 
 ## 2026-11-12 扩展批次
 
+[五种新增配比十五点完整汇总](five_expansions_20261112.md) · [JSON](five_expansions_20261112.json) · [CSV](five_expansions_20261112.csv)。全部通过真实负载 RTL/门级、原生SAIF与逐引脚审计；与原六种合并的[最新11种数据](../../data/dp_latest_area_power_20261112.md)及[CSV](../../data/dp_latest_area_power_20261112.csv)另存于 `hw/data/`。
+
 [前三种九点完整汇总](first_three_expansions_20261112.md) · [相对 v1.9 基线](first_three_vs_v19_baseline_20261112.md)。两者均保留 JSON/CSV，基线引用原测量而未重测。
 
 Q64E64 三点已全部通过：[动态/静态/总功耗](q64e64_20261112.md) · [CSV](q64e64_20261112.csv) · [JSON与来源](q64e64_20261112.json)。BF16 K16、MXFP8 E4M3 K64、MXFP4 K64 总功耗分别为 **15.943218 / 26.908993 / 11.682611 mW**。
@@ -12,7 +14,9 @@ E192 三点已全部通过：[动态/静态/总功耗](e192_qwen8b_20261112.md) 
 
 E256 三点已全部通过：[动态/静态/总功耗](e256_power_20261112.md) · [CSV](e256_power_20261112.csv) · [JSON与来源](e256_power_20261112.json)。BF16 K16、MXFP8 E4M3 K32、MXFP4 K256 总功耗分别为 **16.063122 / 16.635698 / 29.381828 mW**。
 
-T8H16Q96E192/T8H16Q128E256 在基础四组上增加 8/12 个 QE 组，功能已验证，独立 DC 正在执行；时序通过后再测真实负载功耗。更大 K 的输入已[导入本项目](../workloads/petile_extended/README.md)，不能把导入数据当作已测功耗。
+T8H16Q96E192 三点已全部通过：[动态/静态/总功耗](t8h16q96e192_v112_20261112.md) · [CSV](t8h16q96e192_v112_20261112.csv) · [JSON与来源](t8h16q96e192_v112_20261112.json)。BF16 K16、MXFP8 E4M3 K96、MXFP4 K192 总功耗分别为 **15.977377 / 41.350769 / 29.747044 mW**。
+
+T8H16Q128E256 三点已全部通过：[动态/静态/总功耗](t8h16q128e256_v112_20261112.md) · [CSV](t8h16q128e256_v112_20261112.csv) · [JSON与来源](t8h16q128e256_v112_20261112.json)。BF16 K16、MXFP8 E4M3 K128、MXFP4 K256 总功耗分别为 **16.287409 / 52.853085 / 38.905510 mW**。更大 K 的输入已[导入本项目](../workloads/petile_extended/README.md)，不能把导入数据当作已测功耗。
 
 ## 原六架构保留结果
 
