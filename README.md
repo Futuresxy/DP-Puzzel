@@ -1,6 +1,6 @@
 # DAC 2027 · 多精度张量计算算力配比 DSE
 
-**当前阶段：基础 DP v1.8、既有 E/QE 混合设计 v1.9，新增 Q 专用扩展 v1.10。** 原六架构的功能、N12 TT/1GHz DC 与真实负载功耗见[既有交付](hw/power/records/v19_design_report_20261110.md)。本轮增加 [Q4 lane / Q8 group 与 T8H16Q64E64](src/spec/dp/dptop/t8h16q64e64.md)，[CModel 与冻结 RTL 验证](test/results/q-only-v1.10-20261112.md)通过，尚无新 PPA。[E192/E256](src/spec/dp/dptop/e192-e256-expansion-analysis.md)已完成全局对齐与规约流水分析，尚未实现。当前维护 CModel 与纯 Verilog；SystemVerilog 冻结为历史参考，Chisel 与阵列尚未实施。
+**当前阶段：基础 DP v1.8、既有 E/QE 混合 v1.9、Q 专用扩展 v1.10，E192/E256 v1.11，以及 T8H16Q96E192/T8H16Q128E256 v1.12。** 原六架构的功能、N12 TT/1GHz DC 与真实负载功耗见[既有交付](hw/power/records/v19_design_report_20261110.md)。新增 [Q4 lane / Q8 group 与 T8H16Q64E64](src/spec/dp/dptop/t8h16q64e64.md)及 [E192/E256](src/spec/dp/dptop/e192-e256-expansion-analysis.md)已实现并通过冻结 RTL 数值与 L8/II=1 回归。[五种配比的最终功能验收](test/results/five-expansions-final-v1.12-20261112.md)已通过。新增 [8/12 组 QE 扩展](src/spec/dp/dptop/qe192-qe256-expansion.md)亦已通过冻结 RTL；Q64E64、E192、E256 已通过 1 GHz DC，前三种九点真实负载功耗已通过，QE 的 DC/功耗正在执行，结果分别进入 `hw/dc_syn/records/` 和 `hw/power/records/`。更大原生 K 的 Q/E 功能与功耗输入已[导入本项目](hw/power/workloads/petile_extended/README.md)。当前维护 CModel 与纯 Verilog；SystemVerilog 冻结为历史参考，Chisel 与阵列尚未实施。
 
 | 入口 | 内容 |
 | --- | --- |

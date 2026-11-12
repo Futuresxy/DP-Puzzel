@@ -7,6 +7,7 @@
 | 位置 | 内容 |
 | --- | --- |
 | `test/data/power/` | Qwen3-8B 原生K负载、CModel及数学参考 |
+| `hw/power/workloads/petile_extended/` | 新导入 Q96/Q128、E192/E256 原生功能/功耗输入与来源清单 |
 | `hw/rtl/<export-id>/` | 与原DC匹配的已验证冻结RTL |
 | `hw/dc_syn/runs/<run-id>/` | 原始DDC、网表、SDC及通过的时序证据 |
 | `hw/power/plans/` | 显式选择15个架构/格式点及所有输入hash |
@@ -45,6 +46,8 @@ python3.11 -m unittest discover -s hw/power/tests -v
 ```
 
 `--max-points 1` 可用于首点调通，状态为partial，不发布六架构报告。`--resume`只复用已完成且hash一致的点；遇到未完成点保留诊断，使用新run ID重试，不能覆盖失败证据。源码、工具/单元模型或计划变更时也使用新run ID。
+
+T8H16Q64E64、T8H16Q32E192/E256、T8H16Q96E192 和 T8H16Q128E256 的新批次使用 `prepare_expansion_plan.py` 冻结 CModel 并派生原生 K 的 expected，保留原输入、源 FP64 参考和独立数学参考。传入显式 DC run 后才生成功耗计划，要求 N12 TT/0.7V/85°C、1GHz、ICG 和原冻结验收均匹配。新顶层的物理 group 数由 `run_power.py` 显式映射，不能按当前精度 K 缩窄端口。完成的每种架构三精度结果使用 `report_expansion_power.py` 汇总，旧六架构报告不覆盖。
 
 使用固定计划中的最终网表，不再按目录时间选择“最新”。各点使用计划中明确指定的已验证快照；`scripts/rtl_gate.verify_power_input`核验原完整回归、冻结源码和本次工作负载重放，不修改旧manifest，也不放宽当前源码综合门禁。该负载下的RTL/网表比对不是全空间形式等价证明。
 

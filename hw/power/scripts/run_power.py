@@ -169,9 +169,23 @@ def prepare_vectors(point, work, groups):
     return len(all_requests)
 
 
+def physical_groups(top):
+    """Physical ports include dormant extension groups, independent of active K."""
+    groups = {
+        'dp_top': 4, 'dp_top_e': 4, 'dp_top_e64': 4, 'dp_top_q32e64': 4,
+        'dp_top_t8h16q32e96': 6, 'dp_top_t8h16q32e128': 8,
+        'dp_top_t8h16q64e128_opt': 8, 'dp_top_t8h16q64e64': 8,
+        'dp_top_t8h16q32e192': 12, 'dp_top_t8h16q32e256': 16,
+        'dp_top_t8h16q96e192': 12, 'dp_top_t8h16q128e256': 16,
+    }
+    if top not in groups:
+        raise ValueError('Unknown physical DP interface: ' + top)
+    return groups[top]
+
+
 def compile_design(campaign, work, point, gate, machine):
     top = point['top']
-    groups = 6 if top.endswith('e96') else 8 if top.endswith(('e128', 'e128_opt')) else 4
+    groups = physical_groups(top)
     template = (POWER / 'tb/dp_power_tb.sv.in').read_text()
     bench = template.replace('@TOP@', top).replace('@GROUPS@', str(groups))
     (work / 'tb.sv').write_text(bench)
