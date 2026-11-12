@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-12",
+  "scope": "DP only, post-synthesis, pre-CTS/pre-route",
+  "condition": {
+    "process": "N12",
+    "corner": "TT",
+    "voltage_v": 0.7,
+    "temperature_c": 85,
+    "frequency_hz": 1000000000,
+    "clock_gating": true
+  },
+  "sources": {
+    "paper/data/DP_area_power/ratio4_costs.csv": "0f56db27850316b75f1d1cd158db0dea3870865c2cef9d5a086989541c993cf4",
+    "hw/power/records/first_three_vs_v19_baseline_20261112.csv": "7d54d40f29d9c7f3cfbc720a7ffc2b7e00d75eb62c374201fb9944e15700e620",
+    "hw/dc_syn/records/t8h16q96e192_v112_20261112.json": "5fe7c55e1725040a520064b986ac07bf3d18da2191b93a2257f1d0443de697e2"
+  },
+  "selection_policy": "Explicit snapshot; missing measurements remain null. No automatic latest-run discovery.",
+  "limits": [
+    "Qwen3-8B activity, not DeepSeek power measurement",
+    "E256 expands combinational alignment hierarchy; source reports retain strategy differences",
+    "1:6:12 power and 1:8:16 costs pending in this selection"
+  ],
+  "records": [
+    {
+      "ratio": "1:2:4",
+      "area_um2": 16165.122154,
+      "power_total_mw": {
+        "bf16": 15.3282642364502,
+        "mxfp8_e4m3": 16.0019989013672,
+        "mxfp4_e2m1": 11.1965341567993
+      },
+      "sources": [
+        "paper/data/DP_area_power/ratio4_costs.csv"
+      ],
+      "status": "area_and_power",
+      "area_ratio": 1.0
+    },
+    {
+      "ratio": "1:2:6",
+      "area_um2": 18863.272067,
+      "power_total_mw": {
+        "bf16": 15.6371002197266,
+        "mxfp8_e4m3": 16.3544483184814,
+        "mxfp4_e2m1": 14.4174671173096
+      },
+      "sources": [
+        "paper/data/DP_area_power/ratio4_costs.csv"
+      ],
+      "status": "area_and_power",
+      "area_ratio": 1.1669118171391208
+    },
+    {
+      "ratio": "1:2:8",
+      "area_um2": 21596.40591,
+      "power_total_mw": {
+        "bf16": 15.893228530883801,
+        "mxfp8_e4m3": 16.6199417114258,
+        "mxfp4_e2m1": 17.594673156738303
+      },
+      "sources": [
+        "paper/data/DP_area_power/ratio4_costs.csv"
+      ],
+      "status": "area_and_power",
+      "area_ratio": 1.3359877954684092
+    },
+    {
+      "ratio": "1:4:4",
+      "area_um2": 24015.384704,
+      "power_total_mw": {
+        "bf16": 15.943218231201199,
+        "mxfp8_e4m3": 26.908992767334,
+        "mxfp4_e2m1": 11.6826114654541
+      },
+      "sources": [
+        "hw/power/records/first_three_vs_v19_baseline_20261112.csv"
+      ],
+      "status": "area_and_power",
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_t8h16q64e64_11121920",
+      "power_run": "hw/power/runs/power_q64e64_1112",
+      "area_ratio": 1.4856296460498741
+    },
+    {
+      "ratio": "1:4:8",
+      "area_um2": 27191.144615,
+      "power_total_mw": {
+        "bf16": 15.744144439697301,
+        "mxfp8_e4m3": 28.788990020752003,
+        "mxfp4_e2m1": 20.5634365081787
+      },
+      "sources": [
+        "paper/data/DP_area_power/ratio4_costs.csv"
+      ],
+      "status": "area_and_power",
+      "area_ratio": 1.68208717236768
+    },
+    {
+      "ratio": "1:2:12",
+      "area_um2": 26620.010691,
+      "power_total_mw": {
+        "bf16": 15.821221351623501,
+        "mxfp8_e4m3": 16.5497360229492,
+        "mxfp4_e2m1": 23.4630756378174
+      },
+      "sources": [
+        "hw/power/records/first_three_vs_v19_baseline_20261112.csv"
+      ],
+      "status": "area_and_power",
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_t8h16q32e192_11121924",
+      "power_run": "hw/power/runs/power_e192_1112",
+      "area_ratio": 1.6467559253434392
+    },
+    {
+      "ratio": "1:2:16",
+      "area_um2": 29692.809442,
+      "power_total_mw": {
+        "bf16": 16.0631217956543,
+        "mxfp8_e4m3": 16.6356983184814,
+        "mxfp4_e2m1": 29.3818283081055
+      },
+      "sources": [
+        "hw/power/records/first_three_vs_v19_baseline_20261112.csv"
+      ],
+      "status": "area_and_power",
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_t8h16q32e256_11122032",
+      "power_run": "hw/power/runs/power_t8h16q32e256_11122054",
+      "area_ratio": 1.8368441116080663
+    },
+    {
+      "ratio": "1:6:12",
+      "area_um2": 38234.345695,
+      "power_total_mw": {
+        "bf16": null,
+        "mxfp8_e4m3": null,
+        "mxfp4_e2m1": null
+      },
+      "sources": [
+        "hw/dc_syn/records/t8h16q96e192_v112_20261112.json"
+      ],
+      "status": "area_only",
+      "dc_run": "hw/dc_syn/runs/dc_dp_top_t8h16q96e192_11122038",
+      "verification_id": "20261112T122236879949Z",
+      "area_ratio": 2.3652370412517456
+    },
+    {
+      "ratio": "1:8:16",
+      "area_um2": null,
+      "power_total_mw": {
+        "bf16": null,
+        "mxfp8_e4m3": null,
+        "mxfp4_e2m1": null
+      },
+      "sources": [],
+      "status": "pending",
+      "area_ratio": null
+    }
+  ]
+}
