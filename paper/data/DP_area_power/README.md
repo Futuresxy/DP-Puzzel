@@ -9,7 +9,9 @@ python3.11 paper/data/DP_area_power/plot_latest6_area_power.py \
   --combined-csv paper/data/DP_area_power/dp_latest_area_power_20261112.csv
 ```
 
-按 CSV 顺序绘制 9 种配置和 27 个实测功耗点，排除 `dp_top_e64` 和 `dp_top_q32e64`。面积以 `dp_top` 归一化。功耗柱显示工具报告的总功耗（mW），倍率以 `dp_top` 的 BF16 功耗为基准。[面积图](../../figures/dp_ratio_area.pdf) · [功耗图](../../figures/dp_ratio_power.pdf)
+合图按 CSV 顺序绘制 9 种配置和 27 个实测功耗点，排除 `dp_top_e64` 和 `dp_top_q32e64`。每行共用一个 H:Q:E 配比标签，左侧柱长为归一化面积，右侧柱长为工具报告的总功耗（mW）。`1:2:4` 行标注原始面积（µm²）和三种精度的实测功耗（mW），其余行标注相对 `1:2:4` 的倍率，功耗按同精度比较。[面积与功耗合图](../../figures/dp_ratio_area_power.pdf)
+
+在上述命令末尾加 `--separate` 可重绘独立图。独立功耗图沿用 `dp_top` 的 BF16 功耗作为统一倍率基准。[独立面积图](../../figures/dp_ratio_area.pdf) · [独立功耗图](../../figures/dp_ratio_power.pdf)
 
 ## 当前论文四配比视图（2026-11-11）
 

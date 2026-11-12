@@ -12,6 +12,7 @@ from plot_area_power import (
     PAPER, Patch, MultipleLocator, matplotlib, np, plt,
     read_csv, save_figure,
 )
+from matplotlib.ticker import MaxNLocator
 
 HERE = Path(__file__).resolve().parent
 ROOT = PAPER.parent
@@ -305,6 +306,77 @@ def draw_normalized_area(ratios, values, output, dpi, stem, *, file_format="png"
     save_figure(fig, output, stem, dpi, file_format=file_format)
 
 
+def draw_area_power(ratios, areas, groups, reference_index, output, dpi):
+    """Place one area bar and three measured power bars on each ratio row."""
+    centers = np.arange(len(ratios))
+    area_ref = areas[reference_index]
+    area_ratios = np.asarray(areas) / area_ref
+    area_labels = [f"{value:.2f}×" for value in area_ratios]
+    area_labels[reference_index] = f"{area_ref:,.2f} µm²"
+    power = np.array([[float(row["total_mw"]) for row in group] for group in groups])
+    with plt.rc_context({
+        "font.family": "serif",
+        "font.serif": ["Times New Roman", "Liberation Serif", "DejaVu Serif"],
+        "font.size": 7,
+        "text.color": "#263340",
+        "axes.edgecolor": "#5D6770",
+        "axes.titlecolor": "#263340",
+        "xtick.color": "#263340",
+    }):
+        fig, (area_ax, ratio_ax, power_ax) = plt.subplots(
+            ncols=3, sharey=True, figsize=(3.45, .36 * len(ratios) + .55),
+            gridspec_kw={"width_ratios": (1.0, .46, 2.0), "wspace": .04},
+        )
+        fig.subplots_adjust(left=.03, right=.98, bottom=.102, top=.887)
+        area_ax.set_ylim(len(ratios) - .5, -.5)
+        area_ax.set_yticks([])
+        ratio_ax.set_axis_off()
+        for center, ratio in zip(centers, ratios):
+            ratio_ax.text(.5, center, ratio, transform=ratio_ax.get_yaxis_transform(),
+                          ha="center", va="center", fontsize=7)
+
+        for ax, title in ((area_ax, "Normalized area"), (ratio_ax, "H:Q:E"),
+                          (power_ax, "Total power (mW)")):
+            ax.set_title(title, fontsize=7.5, pad=4)
+            for separator in centers[:-1] + .5:
+                ax.axhline(separator, color="#E3E7EB", linewidth=.45, zorder=0)
+
+        for ax, inner_spine, tick_count in ((area_ax, "right", 5), (power_ax, "left", 7)):
+            ax.spines[:].set_visible(False)
+            ax.spines[["bottom", inner_spine]].set_visible(True)
+            ax.spines[["bottom", inner_spine]].set_linewidth(.5)
+            ax.xaxis.set_major_locator(MaxNLocator(nbins=tick_count, steps=[1, 2, 5, 10]))
+            ax.tick_params(axis="x", labelsize=6, length=2, width=.5, pad=2)
+            ax.set_axisbelow(True)
+            ax.grid(axis="x", color="#E3E7EB", linewidth=.45)
+
+        # Leave horizontal space for the values at the outer ends of the bars.
+        area_ax.set_xlim(max(area_ratios) * 1.42, 0)
+        area_ax.axvline(1, color="#777777", linestyle="--", linewidth=.55, zorder=3)
+        area_bars = area_ax.barh(centers, area_ratios, height=.5, color="#DFA0A6",
+                                 edgecolor="#7A7A7A", linewidth=.35, zorder=2)
+        area_ax.bar_label(area_bars, labels=area_labels, padding=2, fontsize=7)
+
+        power_ax.set_xlim(0, power.max() * 1.23)
+        for index, fmt in enumerate(FORMATS):
+            values = power[:, index]
+            power_ref = values[reference_index]
+            labels = [f"{value / power_ref:.2f}×" for value in values]
+            labels[reference_index] = f"{power_ref:.3f} mW"
+            bars = power_ax.barh(centers + .32 * (index - 1), values, height=.225,
+                                 color=COLORS[fmt], edgecolor="#7A7A7A", linewidth=.35, zorder=2)
+            power_ax.bar_label(bars, labels=labels, padding=2, fontsize=7)
+
+        handles = [Patch(facecolor=COLORS[fmt], edgecolor="#7A7A7A", linewidth=.35, label=label)
+                   for fmt, label in zip(FORMATS, LABELS)]
+        fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(.5, .987),
+                   ncols=3, frameon=False, fontsize=7, handlelength=1.25,
+                   handletextpad=.4, columnspacing=1.2, borderaxespad=0)
+        fig.text(.5, .014, f"× relative to {ratios[reference_index]} (same precision for power)",
+                 ha="center", va="bottom", fontsize=6.5)
+        save_figure(fig, output, "dp_ratio_area_power", dpi, file_format="pdf")
+
+
 def draw_ratios(areas, groups, output, dpi):
     """Four full-DP candidates; all power ratios use dp_top/BF16."""
     selected = [(a, g) for a, g in zip(areas, groups) if int(a["H"]) > 0]
@@ -338,7 +410,9 @@ def main():
     inputs = parser.add_mutually_exclusive_group()
     inputs.add_argument("--refresh-data", action="store_true", help="Re-export the pinned six-DP HW indexes")
     inputs.add_argument("--combined-csv", type=Path,
-                        help="Plot full-DP ratios from a combined area and power CSV as PDFs")
+                        help="Plot full-DP ratios from a combined area and power CSV as a PDF")
+    parser.add_argument("--separate", action="store_true",
+                        help="With --combined-csv, export separate area and power PDFs")
     parser.add_argument("--output-dir", type=Path, default=PAPER / "figures")
     parser.add_argument("--dpi", type=int, default=400)
     parser.add_argument("--scope", choices=("six", "ratios"), default="six",
@@ -346,16 +420,21 @@ def main():
     args = parser.parse_args()
     if args.dpi <= 0:
         parser.error("--dpi must be positive")
+    if args.separate and not args.combined_csv:
+        parser.error("--separate requires --combined-csv")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     if args.combined_csv:
         areas, groups, ratios = load_combined_data(args.combined_csv)
-        area_ref = next(area for area, group in zip(areas, groups) if group[0]["top"] == "dp_top")
-        draw_normalized_area(ratios, [area / area_ref for area in areas], args.output_dir,
-                             args.dpi, "dp_ratio_area", file_format="pdf")
-        # Leave room between the absolute power labels and the neighboring ratio brackets.
-        power = draw_power(groups, args.output_dir, args.dpi, ratios, "dp_ratio_power",
-                           figure_width=2 * len(groups), file_format="pdf")
-        print(f"{len(areas)} area bars, {power['power_bars']} power bars; PDFs in {args.output_dir}")
+        reference_index = next(index for index, group in enumerate(groups) if group[0]["top"] == "dp_top")
+        if args.separate:
+            area_ratios = [area / areas[reference_index] for area in areas]
+            draw_normalized_area(ratios, area_ratios, args.output_dir,
+                                 args.dpi, "dp_ratio_area", file_format="pdf")
+            draw_power(groups, args.output_dir, args.dpi, ratios, "dp_ratio_power",
+                       figure_width=2 * len(groups), file_format="pdf")
+        else:
+            draw_area_power(ratios, areas, groups, reference_index, args.output_dir, args.dpi)
+        print(f"{len(areas)} area bars, {sum(map(len, groups))} power bars; output in {args.output_dir}")
         return
     if args.refresh_data:
         refresh_data()
