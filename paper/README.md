@@ -1,5 +1,9 @@
 # DAC 2027 论文
 
+## 英文主稿同步（2026-11-13）
+
+[dp_puzzle.tex](dp_puzzle.tex) 已按当前中文稿同步摘要与六章正文，沿用其公式、图表和研究范围。英文稿使用 9 pt IEEE 双栏模板。运行 `make -C paper -f Makefile.en` 生成 `paper/build/dp_puzzle.pdf`，运行 `make -C paper -f Makefile.en check` 核对章节、源稿引用、公式和表格数据。英文摘要采用正文已有结果，区分九配比硬件表征与四配比负载参考。
+
 ## 中文引言与背景重组（2026-11-12）
 
 引言沿“低精度推理趋势 → 模型混合精度需求 → 算力配比问题 → 研究缺口 → DP-Puzzle 三项贡献”展开。工业界的具体规格只放背景，引言通过表引用引出配比多样性；九种候选的枚举仍在第三章。背景依次介绍 DP 型张量阵列、微缩放表达与点积、工业界配比、相关工作及研究边界。
@@ -24,7 +28,7 @@
 ```bash
 make -C paper pdf                    # 中文：paper/build/main.pdf
 make -C paper watch                  # 中文保存后持续编译
-make -C paper -f Makefile.en          # 上一轮英文：paper/build/dp_puzzle.pdf
+make -C paper -f Makefile.en          # 英文：paper/build/dp_puzzle.pdf
 ```
 
 硬件成本继续引用现有 N12、0.7 V、85°C、1 GHz 测量，未重新执行 EDA。四种配比面积及逐精度功耗图为 `figures/ratio4_{area,power}.png`，功耗柱高为实测 mW，所有倍率统一以 1:2:4 的 BF16 功耗为基线。生成数据与 hash 见 [data/DP_area_power/README.md](data/DP_area_power/README.md)。旧六 DP 图、测量数据和历史对比依赖保留。
