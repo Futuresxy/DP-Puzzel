@@ -195,6 +195,11 @@ def render_tcl(data):
     text += "set resize_inverters [list " + " ".join("[list " + " ".join(tcl_string(v) for v in row) + "]" for row in resizes) + "]\n"
     registers = data.get("design_rule_repair", {}).get("resize_registers", [])
     text += "set resize_registers [list " + " ".join("[list " + " ".join(tcl_string(v) for v in row) + "]" for row in registers) + "]\n"
+    buffers = data.get("design_rule_repair", {}).get("insert_hold_buffers", [])
+    buffer_keys = ("endpoint_pin", "expected_ref", "buffer_ref", "instance_name", "net_name")
+    text += "set insert_hold_buffers [list " + " ".join(
+        "[list " + " ".join(tcl_string(row[key]) for key in buffer_keys) + "]"
+        for row in buffers) + "]\n"
     for key, values in (("target_dbs", data["target_dbs"]),
                         ("target_library_names", data["technology"]["target_libraries"]),
                         ("rtl_sources", data["gate"]["sources"]), ("include_dirs", data["gate"]["include_dirs"]),
@@ -225,10 +230,30 @@ def prepare(args, data):
                     "Register sizing requires an upsized DFQD of the identical family/VT")
         if registers:
             data["design_rule_repair"]["resize_registers"] = registers
+        buffers = []
+        endpoints = set()
+        resized = {row[0] for row in resizes + registers}
+        for endpoint, expected, buffer_ref in getattr(args, "insert_hold_buffer", None) or []:
+            require(re.fullmatch(r"[A-Za-z0-9_]+(?:/[A-Za-z0-9_]+)*/D", endpoint) and
+                    re.fullmatch(r"DFQD[0-9]+[A-Za-z][A-Za-z0-9_]*", expected) and
+                    re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", buffer_ref),
+                    "Hold buffering requires an exact mapped DFQD D pin and named base-library buffer")
+            require(endpoint not in endpoints, "Duplicate hold-buffer endpoint")
+            require(endpoint.rsplit("/", 1)[0] not in resized,
+                    "Cannot resize and buffer the same register in one repair")
+            endpoints.add(endpoint)
+            tag = hashlib.sha256(endpoint.encode("utf-8")).hexdigest()[:16]
+            buffers.append(dict(endpoint_pin=endpoint, expected_ref=expected, buffer_ref=buffer_ref,
+                                instance_name="dp_hold_buffer_" + tag, net_name="dp_hold_net_" + tag))
+        if buffers:
+            require((data["technology"].get("multi_vt") or {}).get("base_library"),
+                    "Hold buffering requires an explicit base-library binding")
+            data["design_rule_repair"]["insert_hold_buffers"] = buffers
         verify_repair_source(data)
     else:
         require(not getattr(args, "resize_inverter", None), "Inverter sizing requires design-rule repair")
         require(not getattr(args, "resize_register", None), "Register sizing requires design-rule repair")
+        require(not getattr(args, "insert_hold_buffer", None), "Hold buffering requires design-rule repair")
     if getattr(args, "timing_repair_from", None):
         data["timing_repair"] = {"source_run": args.timing_repair_from, "setup_guardband_ns": 0.05}
         verify_repair_source(data)
@@ -385,6 +410,9 @@ def main():
             sub.add_argument("--hold-repair-from", help="Load this valid run's DDC and repair hold only, with identical inputs")
             sub.add_argument("--resize-register", action="append", nargs=3, metavar=("INSTANCE", "EXPECTED_REF", "TARGET_REF"), help="Upsize a same-family/VT base-library DFQD register; preserve CP/D/Q function")
             sub.add_argument("--resize-inverter", action="append", nargs=3, metavar=("INSTANCE", "EXPECTED_REF", "TARGET_REF"), help="Verified same-function base-library inverter drive sizing in a design-rule repair")
+            sub.add_argument("--insert-hold-buffer", action="append", nargs=3,
+                             metavar=("ENDPOINT_PIN", "EXPECTED_DFQD_REF", "BASE_BUFFER_REF"),
+                             help="Insert one verified identity buffer on an exact DFQD D-pin branch in a design-rule repair")
             sub.add_argument("--design-rule-repair-from", help="Repair electrical design rules then hold; accepts a verified original or single setup/hold repair")
             sub.add_argument("--timing-repair-from", help="Load a valid DDC; incremental setup optimization with temporary 50ps guardband, restore final budget")
     for name in ("run", "report", "clean"):

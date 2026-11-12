@@ -14,6 +14,7 @@ description: Run evidence-gated single-DP Design Compiler synthesis and inspect 
 5. 默认门控开启、保持层级、保留 DP 子树；显式传入参数和 Verilog language，时钟与同步 reset 正常计时。不可通过 false path/multicycle/case analysis 隐藏违例。
 6. 同时检查 link、未映射叶、check_design/check_timing、setup/hold、单位、库、门控、网表/SDC/DDC。退出码 0=完整且时序与 Vt 配额通过，2=无效，3=有效但时序或 Vt 配额失败，4=未知。
    若只剩 hold 违例，可在新 run 使用 `prepare --hold-repair-from SOURCE_RUN`；门禁/配置必须一致，临时增加 1 ps 修复裕量后恢复原始约束，复查全部报告。
+   自动 hold 修复仍有局部短路径时，先用源 DDC/SDC 的内存探测证明目标支路缓冲能同时满足全设计 min/max 和电气规则，再在新 `--design-rule-repair-from` 中使用 `--insert-hold-buffer ENDPOINT_PIN EXPECTED_DFQD_REF BASE_BUFFER_REF`。该入口校验同相库功能与精确连接并保留父链；不手改网表，不以探测代替正式验收。
 7. DP 每级报告 `timing_S1.rpt` 至 `timing_S8.rpt`，以 `register_stages.tsv` 复核寄存归属；检查 unclassified 和输出边界。读 startpoint/endpoint 及路径逻辑，不仅看 WNS。
 8. 首先保留基线测量，再提出等价组合优化或流水重新分配；每个改动版本重新 RTL 回归和综合。任何架构改变同步 spec、CModel、TB；不能从估算声称时序通过。
 

@@ -152,6 +152,18 @@ E64 同一已验证快照的实测 run dc_dp_top_e_11052354 已全部通过，�
 
 电气自动修复仍未解决的反相器负载可显式传入 `--resize-inverter <instance> <expected-ref> <target-ref>`，只允许用于电气修复。DC 校验当前实例引用、base 库两端口结构和输出函数一致后执行 size_cell，并保护该尺寸避免重新缩小。源 DDC、实例和两个引用名写入运行输入/精简记录，随后仍完整检查 setup/hold/电气规则/VT；不得用它替换不同逻辑或手改网表。
 
+
+### 定点输入支路 hold 修复
+
+自动 hold 修复后仍有已定位的短路径时，可先在源 DDC/SDC 的内存副本上探测同相缓冲，不写网表；同时检查目标端点和全设计 min/max 时序、电气规则。实际探测通过后，在新 `--design-rule-repair-from` 运行中为每个目标重复指定：
+
+```text
+--insert-hold-buffer <mapped-register>/D <expected-DFQD-reference> <base-buffer-reference>
+```
+
+该入口只接受精确 D 引脚，校验实际 base 库寄存器及 CP/D/Q 接口、缓冲器的单输入/单输出同相函数，拒绝重复端点和同寄存器的尺寸调整冲突。动作、确定性单元/net 名写入 resolved；DC 只拆分指定 D 支路，核对原网其他连接不变及新网仅含缓冲输出与目标 D，并保护新增缓冲。完整父链、RTL、时钟/IO预算和验收条件保持一致；最终网表、报告与功耗重新生成。探测通过不代替正式运行通过。
+
+
 ## 当前六架构结果入口
 
 查看 [最新面积/时序汇总](records/latest_six_dp.md) 和 [功耗输入catalog](records/latest_six_dp.json)。runs根目录只保留每种架构最新有效结果，修复来源保存在其provenance/repair_sources/并校验hash。历史记录的清理与Git回看方法见 [records说明](records/README.md)。

@@ -79,3 +79,5 @@ E-only 使用 `DP_verilog_e_<16 hex>`、top=dp_top_e 和 src/verilog/files_e.f�
 `prepare --timing-repair-from <run>` 只接受同一已验证RTL、工艺、最终约束及机器绑定的完整有效映射DDC，不接受失败工具/缺报告/忽略设置的run。修复使用临时增加50ps的setup uncertainty做最多两次增量优化，再恢复原始setup预算；hold修复临时增加1ps后同样恢复。源run、两种guardband与最终结果分别记录，不改变用户要求的最终1ns周期、IO延迟或uncertainty，不引入false/multicycle path或retiming。
 
 `design_rule_repair` 可引用原始有效映射或其一次 setup/hold 修复；完整核对父链、冻结 RTL 和约束。它执行电气设计规则修复后重新检查 hold，最终不放宽时钟/IO/uncertainty。报告的 flow_pass 还要求 max_capacitance/max_transition/max_fanout 无违规；setup/hold 状态单独保留，便于识别时序通过但电气规则失败。
+
+`design_rule_repair.insert_hold_buffers` 记录精确 endpoint_pin、expected_ref、buffer_ref 和确定性的实例/net 叶名称。仅允许 base 库同相单输入组合单元插在已映射 DFQD 的 D 支路；运行时验证库绑定、功能、局部层级和前后连接。源必须为原始有效映射或其一次 setup/hold 修复；不放宽 gate、预算或禁止重复修复链的规则。探测文件仅是修复依据，正式 DC 全部验收后才能作为功耗输入。

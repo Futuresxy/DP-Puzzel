@@ -121,6 +121,86 @@ if {$timing_repair} {
   }
   set_clock_uncertainty -setup $setup_uncertainty_ns [get_clocks $clock_port]
 }
+# BEGIN targeted hold buffer validation (also exercised by software fixtures).
+proc dp_insert_hold_buffer {row base_library} {
+  lassign $row endpoint expected buffer_ref instance_leaf net_leaf
+  set parent [file dirname [file dirname $endpoint]]
+  set instance_name $instance_leaf
+  set net_name $net_leaf
+  if {$parent ne "."} {
+    set instance_name "${parent}/${instance_leaf}"
+    set net_name "${parent}/${net_leaf}"
+  }
+  set pin [get_pins -quiet $endpoint]
+  if {[sizeof_collection $pin] != 1 || [get_object_name $pin] ne $endpoint} {
+    error "Hold buffer endpoint is not one exact pin: $endpoint"
+  }
+  set cell [get_cells -quiet -of_objects $pin]
+  if {[sizeof_collection $cell] != 1 || [get_attribute $cell ref_name] ne $expected ||
+      [get_object_name $cell] ne [file dirname $endpoint] || [file tail $endpoint] ne "D"} {
+    error "Hold buffer sequential endpoint mismatch: $endpoint"
+  }
+  set sequential [get_lib_cells -quiet -of_objects $cell]
+  if {[sizeof_collection $sequential] != 1 ||
+      [get_object_name $sequential] ne "${base_library}/${expected}" ||
+      ![get_attribute $sequential is_sequential]} {
+    error "Hold buffer endpoint must use the expected base-library register"
+  }
+  set register_pins [get_lib_pins -quiet ${base_library}/${expected}/*]
+  if {[sizeof_collection $register_pins] != 3 ||
+      [get_attribute [get_lib_pins ${base_library}/${expected}/D] direction] ne "in"} {
+    error "Hold buffer expects CP/D/Q-only DFQD"
+  }
+  foreach name {CP D Q} {
+    if {[sizeof_collection [get_lib_pins -quiet ${base_library}/${expected}/${name}]] != 1} {
+      error "Hold buffer register interface mismatch"
+    }
+  }
+  set buffer [get_lib_cells -quiet ${base_library}/${buffer_ref}]
+  if {[sizeof_collection $buffer] != 1 ||
+      [get_object_name $buffer] ne "${base_library}/${buffer_ref}" ||
+      [get_attribute $buffer is_sequential]} {
+    error "Hold buffer must be one base-library combinational cell"
+  }
+  set pins [get_lib_pins -quiet ${base_library}/${buffer_ref}/*]
+  set input [filter_collection $pins "direction == in"]
+  set output [filter_collection $pins "direction == out"]
+  if {[sizeof_collection $pins] != 2 || [sizeof_collection $input] != 1 ||
+      [sizeof_collection $output] != 1 ||
+      [get_attribute $output function] ne [file tail [get_object_name $input]]} {
+    error "Hold buffer must have exactly two pins and identity output function"
+  }
+  if {[sizeof_collection [get_cells -quiet $instance_name]] != 0 ||
+      [sizeof_collection [get_nets -quiet $net_name]] != 0} {
+    error "Hold buffer deterministic object name already exists"
+  }
+  set source [get_nets -quiet -of_objects $pin]
+  if {[sizeof_collection $source] != 1} { error "Hold buffer endpoint has no unique source net" }
+  set source_name [get_object_name $source]
+  set original [lsort [get_object_name [all_connected $source]]]
+  set target_index [lsearch -exact $original $endpoint]
+  if {$target_index < 0} { error "Hold buffer endpoint is absent from its source net" }
+  set others [lreplace $original $target_index $target_index]
+  insert_buffer -new_net_names $net_leaf -new_cell_names $instance_leaf $pin $buffer
+  # Reacquire collections after the netlist mutation and prove only this branch moved.
+  set added [get_cells -quiet $instance_name]
+  set added_input "${instance_name}/[file tail [get_object_name $input]]"
+  set added_output "${instance_name}/[file tail [get_object_name $output]]"
+  set target_net [get_nets -quiet -of_objects [get_pins -quiet $endpoint]]
+  set original_net [get_nets -quiet $source_name]
+  if {[sizeof_collection $added] != 1 || [get_object_name $added] ne $instance_name ||
+      [get_attribute $added ref_name] ne $buffer_ref ||
+      [sizeof_collection $target_net] != 1 || [get_object_name $target_net] ne $net_name ||
+      [sizeof_collection $original_net] != 1 || [get_object_name $original_net] ne $source_name ||
+      [lsort [get_object_name [all_connected $target_net]]] ne [lsort [list $endpoint $added_output]] ||
+      [lsort [get_object_name [all_connected $original_net]]] ne
+      [lsort [concat $others [list $added_input]]]} {
+    error "Hold buffer insertion changed unexpected connectivity: $endpoint"
+  }
+  set_dont_touch $added true
+  puts "DP_HOLD_BUFFER_INSERT $endpoint $expected ${base_library}/${buffer_ref} $instance_name $net_name $source_name $added_input $added_output"
+}
+# END targeted hold buffer validation.
 if {$design_rule_repair} {
   # Explicit mapped-cell sizing is provenance, never a hand-edited netlist.
   foreach row $resize_inverters {
@@ -172,6 +252,7 @@ if {$design_rule_repair} {
     size_cell $cell ${base_library}/${replacement}
     set_dont_touch $cell true
   }
+  foreach row $insert_hold_buffers { dp_insert_hold_buffer $row $base_library }
   compile -incremental_mapping -only_design_rule
 }
 if {$hold_fix} {
