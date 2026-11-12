@@ -1,8 +1,8 @@
-> 功能：七种 DP 架构相对基线的修改点和代码/spec导航；范围：七种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.10；修改时间：2026-11-12 18:45:46 +0800；对应代码：src/verilog/top/下八个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
+> 功能：十一种 DP 架构相对基线的修改点和代码/spec导航；范围：十一种架构入口、dp_top_e兼容入口与top/common复用模块；版本：v1.12；修改时间：2026-11-12 20:25:00 +0800；对应代码：src/verilog/top/下十二个顶层、src/verilog/top/common/下共用核心与对齐模块；CModel入口src/cmodel/lib/json_io.cpp。
 
-# 七种架构、八个顶层入口
+# 十一种架构、十二个顶层入口
 
-七种架构包括原 `dp_top` 和新增 Q 专用扩展 `dp_top_t8h16q64e64`，另保留 `dp_top_e` 参数化兼容入口，所以 `src/verilog/top/` 根目录共八个 `.v` 文件。`dp_top_t8h16q32e128` 与 `dp_top_t8h16q64e128_opt` 分别扩展 E 和 Q/E，**两者均保留**；未优化的 `dp_top_t8h16q64e128` 不作为现用入口。
+十一种架构包括原 `dp_top` 和新增 Q 专用扩展 `dp_top_t8h16q64e64`，另保留 `dp_top_e` 参数化兼容入口，所以 `src/verilog/top/` 根目录共十二个 `.v` 文件。`dp_top_t8h16q32e128` 与 `dp_top_t8h16q64e128_opt` 分别扩展 E 和 Q/E，**两者均保留**；未优化的 `dp_top_t8h16q64e128` 不作为现用入口。
 
 下文采用默认 LOCAL_W=28、GLOBAL_W=40。T=TF32；H=FP16/BF16；Q=MXFP8 E4M3/E5M2、MXFP6 E3M2/E2M3；E=MXFP4/NVFP4/HiF4。各模式容量是单笔请求的原生点积项数，不能同时相加。全部保持 L8/II=1，C在DP内部只累加一次。
 
@@ -19,13 +19,17 @@ src/verilog/top/
 ├── dp_top.v                      # 基线 T8H16Q32E64
 ├── dp_top_t8h16q32e96.v           # 基线 + 2个 E group
 ├── dp_top_t8h16q32e128.v          # 基线 + 4个 E group
+├── dp_top_t8h16q32e192.v          # 基线 + 8个 E group
+├── dp_top_t8h16q32e256.v          # 基线 + 12个 E group
+├── dp_top_t8h16q96e192.v         # 基线 + 8个紧凑 QE group
+├── dp_top_t8h16q128e256.v        # 基线 + 12个紧凑 QE group
 ├── dp_top_t8h16q64e128_opt.v      # 基线 + 4个紧凑 QE group
 ├── dp_top_t8h16q64e64.v          # 基线 + 4个 Q-only group
 ├── dp_top_e64.v                  # 4个 E group
 ├── dp_top_q32e64.v               # 4个紧凑 QE group
 ├── dp_top_e.v                    # 兼容：参数化 E16/E32/E64
 └── common/
-    ├── dp_top_mixed.v            # 四种混合扩展的实现核心
+    ├── dp_top_mixed.v            # 八种混合扩展的实现核心
     ├── dp_top_lowp.v             # 两种专用低精度DP的实现核心
     ├── dp_global_align.v         # 全参与源的全局对齐
     ├── dp_mixed_global_align.v   # 带基础/扩展参与屏蔽的全局对齐
@@ -34,7 +38,7 @@ src/verilog/top/
 
 filelist依然在 `src/verilog/files*.f`。仿真、导出和综合选根目录中的具体入口，其依赖由清单显式列出；common模块不另算一种容量架构。现有module名保持不变，改变的是文件归属路径。
 
-## 2. 七种架构相对 dp_top 的修改点
+## 2. 十一种架构相对 dp_top 的修改点
 
 | 顶层及源码 | S1–S5前端组成 | T/H/Q/E容量 | INT8 | S6物理源数（含C） | S7总宽 | A/B各宽 |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
@@ -43,12 +47,16 @@ filelist依然在 `src/verilog/files*.f`。仿真、导出和综合选根目录�
 | [dp_top_t8h16q32e128](../../../verilog/top/dp_top_t8h16q32e128.v) | 原4组＋4×dp_group_e | 8/16/32/128 | K32 | 9 | 44 | 512 |
 | [dp_top_t8h16q64e128_opt](../../../verilog/top/dp_top_t8h16q64e128_opt.v) | 原4组＋4×dp_group_qe(COMPACT_UNPACK=1) | 8/16/64/128 | K32 | 9 | 44 | 512 |
 | [dp_top_t8h16q64e64](../../../verilog/top/dp_top_t8h16q64e64.v) | 原4组＋4×dp_group_q | 8/16/64/64 | K32 | 9 | 44 | 512 |
+| [dp_top_t8h16q32e192](../../../verilog/top/dp_top_t8h16q32e192.v) | 原4组＋8×dp_group_e | 8/16/32/192 | K32 | 13 | 44 | 768 |
+| [dp_top_t8h16q32e256](../../../verilog/top/dp_top_t8h16q32e256.v) | 原4组＋12×dp_group_e | 8/16/32/256 | K32 | 17 | 45 | 1024 |
+| [dp_top_t8h16q96e192](../../../verilog/top/dp_top_t8h16q96e192.v) | 原4组＋8×dp_group_qe(COMPACT_UNPACK=1) | 8/16/96/192 | K32 | 13 | 44 | 768 |
+| [dp_top_t8h16q128e256](../../../verilog/top/dp_top_t8h16q128e256.v) | 原4组＋12×dp_group_qe(COMPACT_UNPACK=1) | 8/16/128/256 | K32 | 17 | 45 | 1024 |
 | [dp_top_e64](../../../verilog/top/dp_top_e64.v) | 4×dp_group_e，替换原多精度组 | —/—/—/64 | 不支持 | 5 | 43 | 256 |
 | [dp_top_q32e64](../../../verilog/top/dp_top_q32e64.v) | 4×dp_group_qe(COMPACT_UNPACK=1)，替换原多精度组 | —/—/32/64 | 不支持 | 5 | 43 | 256 |
 
 ### 原 dp_top：比较基线
 
-四个多精度group在S5输出token。S6通过dp_global_align对四个组结果和一份C做MAX、净移位、符号恢复；S7五项完整规约；S8做FP32编码或INT32回绕。原group/lane仍支持T/H/Q/E/INT8。原top还允许K_FP16=4/8/16，本表以默认K16比较；其他六种固定架构采用K16兼容规模索引。
+四个多精度group在S5输出token。S6通过dp_global_align对四个组结果和一份C做MAX、净移位、符号恢复；S7五项完整规约；S8做FP32编码或INT32回绕。原group/lane仍支持T/H/Q/E/INT8。原top还允许K_FP16=4/8/16，本表以默认K16比较；其他十种固定架构采用K16兼容规模索引。
 
 入口：[模块层级](module-hierarchy.md)、[逐级流水](pipeline.md)、[逐级S/I/F](../common/stage-formats.md)、[全局对齐](global-align.md)。
 
@@ -80,7 +88,7 @@ filelist依然在 `src/verilog/files*.f`。仿真、导出和综合选根目录�
 
 采用 EXT_GROUPS=4、EXT_Q_ONLY=1，仅 Q 请求启用扩展；T/H/E/INT8 的扩展 MAX、数值、特殊值、负零贡献分别屏蔽。S6 九源、S7 S44 carry-save 合并和唯一 CPA、S8 编码，保持 L8/II=1。E 容量为 64，不因物理输入扩宽而增加。
 
-入口：[v1.10 合同](t8h16q64e64.md)。[新功能回执](../../../../test/results/q-only-v1.10-20261112.md)已通过，与旧六架构 PPA 分开；尚无该顶层的面积、时序或功耗测量。E192/E256 尚未实现，见[后端扩展分析](e192-e256-expansion-analysis.md)。
+入口：[v1.10 合同](t8h16q64e64.md)。[新功能回执](../../../../test/results/q-only-v1.10-20261112.md)已通过，与旧六架构 PPA 分开；尚无该顶层的面积、时序或功耗测量。E192/E256 已接入独立包装、模型和测试，见[后端扩展合同](e192-e256-expansion-analysis.md)。
 
 ### dp_top_e64：四组全部使用 E 专用前端
 
@@ -104,7 +112,7 @@ filelist依然在 `src/verilog/files*.f`。仿真、导出和综合选根目录�
 
 | 模块及实际路径 | 职责 / 使用者 |
 | --- | --- |
-| [common/dp_top_mixed.v](../../../verilog/top/common/dp_top_mixed.v) | E96、E128、优化Q64E128、Q64E64四种固定包装的完整实现核心，包含group装配、C流水、带参与屏蔽的S6–S8 |
+| [common/dp_top_mixed.v](../../../verilog/top/common/dp_top_mixed.v) | E96、E128、优化Q64E128、Q64E64、E192、E256六种固定包装的完整实现核心，包含group装配、C流水、带参与屏蔽的S6–S8 |
 | [common/dp_top_lowp.v](../../../verilog/top/common/dp_top_lowp.v) | E64/Q32E64两种包装的完整实现核心，静态选择E/QE组，组织C与五源浮点后端 |
 | [common/dp_global_align.v](../../../verilog/top/common/dp_global_align.v) | 基线、兼容E、lowp核心使用的组合对齐模块；顶层持有S6寄存器 |
 | [common/dp_mixed_global_align.v](../../../verilog/top/common/dp_mixed_global_align.v) | mixed核心使用的组合对齐模块；处理基础/扩展MAX及逐源参与屏蔽，核心持有S6寄存器 |
@@ -112,7 +120,7 @@ filelist依然在 `src/verilog/files*.f`。仿真、导出和综合选根目录�
 
 带容量名称的六个固定top是薄包装，静态选择共用核心的配置；包装不增加流水。dp_top与dp_top_e自身是完整实现。dp_top_e64默认数值合同与dp_top_e的E64配置相同，但现有代码分别由lowp核心和旧参数化top组织，彼此没有实例化关系。
 
-代码复用表示共用定义，各实例仍是独立硬件。七种架构不会在运行时共享同一批乘法器。`mixed`表示基础组加扩展组，`lowp`表示只含低精度组，`e64`明确固定E64容量。
+代码复用表示共用定义，各实例仍是独立硬件。十一种架构不会在运行时共享同一批乘法器。`mixed`表示基础组加扩展组，`lowp`表示只含低精度组，`e64`明确固定E64容量。
 
 ```mermaid
 flowchart TD
@@ -135,6 +143,8 @@ flowchart TD
 | dp_top | files.f | test/run_verilog.py --implementation verilog --phase all |
 | dp_top_t8h16q32e96 | files_t8h16q32e96.f | test/run_mixed_verilog.py --frontend t8h16q32e96 |
 | dp_top_t8h16q32e128 | files_t8h16q32e128.f | test/run_mixed_verilog.py --frontend t8h16q32e128 |
+| dp_top_t8h16q32e192 | files_t8h16q32e192.f | test/run_mixed_verilog.py --frontend t8h16q32e192 |
+| dp_top_t8h16q32e256 | files_t8h16q32e256.f | test/run_mixed_verilog.py --frontend t8h16q32e256 |
 | dp_top_t8h16q64e128_opt | files_t8h16q64e128_opt.f | test/run_mixed_verilog.py --frontend t8h16q64e128_opt |
 | dp_top_t8h16q64e64 | files_t8h16q64e64.f | test/run_mixed_verilog.py --frontend t8h16q64e64 |
 | dp_top_e64 | files_e64.f | test/run_lowp_verilog.py --frontend e64 |
@@ -146,3 +156,7 @@ flowchart TD
 既有六架构的最新已测结果见 [v1.9 DC 索引](../../../../hw/dc_syn/records/v19_six_dp_20261110.md)与[功耗交付](../../../../hw/power/records/v19_design_report_20261110.md)。历史数值保留，原始大产物的可用状态以 DC/power records 的 README 和清理回执为准。
 
 Q 专用扩展独立导出、验证；不能继承 Q64E128 或原六架构的 PPA 结论。共享核心的默认关闭参数保留既有装配行为，回归范围及新快照以本轮验证记录为准。
+
+## QE192/QE256 扩展 v1.12
+
+[独立合同](qe192-qe256-expansion.md)规定新增 8/12 个 QE 组，Q/E 模式激活全部组，高精度仅激活基础四组；S6 单周期 MAX/移位，S7 扩展 3/5 个 CSA4:2，再与基础+C 两行合并，保持 L8/II=1。验证及 PPA 由各自冻结回执给出。

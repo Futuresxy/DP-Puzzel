@@ -18,7 +18,7 @@ import run_verilog as shared
 from adapters.cmodel import ROOT, evaluate
 from adapters.rtl import snapshot, record_validation
 from cases.common import make, random_request
-from cases.mixed import PROFILES, corpus, extended, poison_inactive
+from cases.mixed import PROFILES, corpus, extended, poison_inactive, groups_for_profile
 from dp_rtl_gate import MIXED_CONFIGS
 from reference.exact import DTYPES
 from cases.mixed_v19 import directed as v19_directed
@@ -29,7 +29,7 @@ def expand(request, profile):
     if not extended(profile, request['a_datatype']):
         return poison_inactive(request, profile)
     result=dict(request)
-    groups=6 if profile=='t8h16q32e96' else 8
+    groups=groups_for_profile(profile)
     for field,bits in [('a',64),('b',64),('a_scale',8),('b_scale',8),
                        ('a_e1',4),('b_e1',4),('a_e2',2),('b_e2',2)]:
         value=int(request[field],16)
@@ -47,14 +47,14 @@ def compile_tb(profile, local, glob):
     defines=['-DDP_ARCH_V19']
     if profile == 't8h16q64e64':
         defines += ['-DDP_Q_ONLY_EXTENSION']
-    elif profile == 't8h16q64e128_opt':
+    elif profile in ('t8h16q64e128_opt', 't8h16q96e192', 't8h16q128e256'):
         defines += ['-DDP_QE_EXTENSION']
     shared.run([shared.VERILATOR,'--lint-only','-Wall','-Wno-UNUSEDSIGNAL','-Wno-UNUSEDPARAM',
                 '-Wno-VARHIDDEN',*flags,'--top-module',top,'-f',str(shared.SOURCE_LIST),
                 f'-GLOCAL_W={local}',f'-GGLOBAL_W={glob}'],build/'lint.log')
     shared.run([shared.VERILATOR,'--binary','--timing','-j','4',*flags,
                 '-Wno-WIDTH','-Wno-TIMESCALEMOD','-Wno-INITIALDLY',*defines,
-                f'-DDP_MIXED_TOP={top}',f"-DDP_MIXED_GROUPS={6 if profile=='t8h16q32e96' else 8}",
+                f'-DDP_MIXED_TOP={top}',f"-DDP_MIXED_GROUPS={groups_for_profile(profile)}",
                 '--top-module','dp_tb','--Mdir',str(build),
                 f'-GLOCAL_W={local}',f'-GGLOBAL_W={glob}',
                 '-I'+str(shared.EXPORT/'src/src/verilog/parameter'),

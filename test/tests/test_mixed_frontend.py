@@ -15,7 +15,7 @@ from cases.mixed import PROFILES as ACTIVE_PROFILES, extended, corpus, poison_in
 
 # This suite replays the pre-v1.9 arithmetic contract. Q-only has no legacy
 # implementation; its active contract is covered by test_mixed_v19 and test_q_only_frontend.
-PROFILES = tuple(profile for profile in ACTIVE_PROFILES if profile != 't8h16q64e64')
+PROFILES = tuple(profile for profile in ACTIVE_PROFILES if profile not in ('t8h16q64e64', 't8h16q32e192', 't8h16q32e256', 't8h16q96e192', 't8h16q128e256'))
 
 
 class MixedFrontend(unittest.TestCase):

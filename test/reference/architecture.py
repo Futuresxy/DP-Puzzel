@@ -14,12 +14,13 @@ def reference(request,config,limited=False):
         profile = config.get('frontend', 'multi')
         datatype = request['a_datatype']
         active_k = config['k_fp16']
-        if profile in ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128', 't8h16q64e128_opt', 't8h16q64e64'):
+        if profile in ('t8h16q32e96', 't8h16q32e128', 't8h16q64e128', 't8h16q64e128_opt', 't8h16q64e64', 't8h16q32e192', 't8h16q32e256', 't8h16q96e192', 't8h16q128e256'):
             extension_active = 7 <= datatype <= 9 or (
-                profile in ('t8h16q64e128', 't8h16q64e128_opt') and 3 <= datatype <= 6)
+                profile in ('t8h16q64e128', 't8h16q64e128_opt', 't8h16q96e192', 't8h16q128e256') and 3 <= datatype <= 6)
             if profile == 't8h16q64e64':
                 extension_active = 3 <= datatype <= 6
-            active_k = (24 if profile == 't8h16q32e96' else 32) if extension_active else 16
+            native_k = {'t8h16q32e96': 24, 't8h16q32e192': 48, 't8h16q32e256': 64, 't8h16q96e192': 48, 't8h16q128e256': 64}.get(profile, 32)
+            active_k = native_k if extension_active else 16
         config = config | dict(frontend='multi', k_fp16=active_k, legacy_multi=False)
     if not limited or config.get('frontend', 'multi') != 'multi' or config.get('legacy_multi', False):
         return exact.reference(request, config, limited)

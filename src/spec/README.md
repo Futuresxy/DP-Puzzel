@@ -1,8 +1,8 @@
-> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.10；修改时间：2026-11-12 18:44:45 +0800；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
+> 功能：汇总新版规格入口和生效范围；范围：TensorCore、DP-Group、DP 及共用合同；版本：v1.12；修改时间：2026-11-12 20:25:00 +0800；对应代码：[CModel include/dp/model.hpp](../cmodel/include/dp/model.hpp)；分组主方案手写 RTL：[dp_top.v](../verilog/top/dp_top.v)；Chisel 尚未实现。
 
 # 多精度 DP / Cube 设计规范
 
-本规范定义一套由 CModel、Chisel 与独立手写 Verilog 共同遵循的硬件合同。**基础 dp_top 当前合同为 [v1.8](dp/dptop/dp-top-v1.8.md)，三个既有混合顶层与 Q32E64 采用 v1.9，独立 E64 保持原合同；新增 [Q 专用扩展](dp/dptop/t8h16q64e64.md)采用 v1.10；当前维护 DP CModel 与手写 Verilog；SystemVerilog 冻结为 T8H16Q32E64 历史参考，Chisel 与阵列尚未实现。**
+本规范定义一套由 CModel、Chisel 与独立手写 Verilog 共同遵循的硬件合同。**基础 dp_top 当前合同为 [v1.8](dp/dptop/dp-top-v1.8.md)，三个既有混合顶层与 Q32E64 采用 v1.9，独立 E64 保持原合同；新增 [Q 专用扩展](dp/dptop/t8h16q64e64.md)采用 v1.10，[E192/E256](dp/dptop/e192-e256-expansion-analysis.md)采用 v1.11；当前维护 DP CModel 与手写 Verilog；SystemVerilog 冻结为 T8H16Q32E64 历史参考，Chisel 与阵列尚未实现。**
 
 ## 1. 阅读路径
 
@@ -20,7 +20,7 @@
 | 讨论 E 类专用 DP | [E8 lane](dp/lane/dp_lane_E.md) · [E16 group 与 FP32 后端接入](dp/group/dp_group_E.md)（e2 定点融合、兼容 group 输出；E CModel / RTL 已实现并验证） |
 | 评审低精度算力扩展 | [混合 E96/E128/优化 Q64E128 顶层](dp/dptop/mixed-precision-expansion.md) · [QE lane](dp/lane/dp_lane_qe.md) · [QE group](dp/group/dp_group_qe.md)（v1.9，CModel/RTL已验证） |
 | Q 专用扩展 | [Q4 lane](dp/lane/dp_lane_q.md) · [Q8 group](dp/group/dp_group_q.md) · [T8H16Q64E64](dp/dptop/t8h16q64e64.md)，只增加 Q 容量 |
-| E192/E256 方案评审 | [组间对齐与规约流水分析](dp/dptop/e192-e256-expansion-analysis.md)，仅分析，尚未实施 |
+| E192/E256 扩展 | [同周期对齐与 CSA 规约合同](dp/dptop/e192-e256-expansion-analysis.md)，同周期全局移位、扩展支路 3/5 个 CSA4:2，L8/II=1 |
 | 低精度独立 DP | [四组 E64 / Q32E64](dp/dptop/low-precision-tops.md)，仅低精度前端，五源浮点后端 |
 | 准备 PPA | [参数](06-configuration.md) · [验证](07-verification.md) · [实现与 PPA](08-implementation-ppa.md) · [功能块统计](dp/implementation/resource-accounting.md) |
 
@@ -39,8 +39,10 @@
 
 验证与 PPA 结论需按实现快照分别引用；默认 LOCAL_W=28，对 Q 乘积局部窗口 P=26，其他模式依逐级 S/I/F 表解释；FP4 35 位 / HiF4 约 37 位目标的整体误差判据仍需继续评估。
 
-混合组扩展保持 T/H 容量，分别扩 E 到 K96/K128、Q 到 K64。物理源数为7/9，参与掩码逐请求保存，S7 宽度按物理源数自然增长；具体接口见混合顶层合同。
+混合组扩展保持 T/H 容量，分别扩 E 到 K96/K128/K192/K256、Q 到 K64。物理源数为7/9/13/17，参与掩码逐请求保存，S7 宽度按物理源数自然增长；具体接口见混合顶层合同。
 
 ## 3. 文档约定
 
 正文只呈现当前有效合同和明确标注的候选。仅相邻两个主要架构版本的**核心变更**保留删除线对照，非核心小修直接更新；完整历史由 Git 保存。见 [文档控制](document-control.md) 与 [版本记录](CHANGELOG.md)。
+
+新增 [QE192/QE256 v1.12](dp/dptop/qe192-qe256-expansion.md)：基础四组加 8/12 个 QE 组，形成 T8H16Q96E192 / T8H16Q128E256；同周期 MAX/移位及 CSA 规约，L8/II=1。

@@ -1,0 +1,25 @@
+{
+  "export_id": "DP_verilog_t8h16q32e192_b677d181f0a29c7f",
+  "rtl_fingerprint": "15dee0a11b638a955060cb714e588c5212968af3235d82233183b013f20181b2",
+  "checks": [
+    "PASS EXT=2 W=3 checked=8220 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8220000 (1ps)",
+    "PASS EXT=4 W=3 checked=8228 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8228000 (1ps)",
+    "PASS EXT=8 W=3 checked=8244 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8244000 (1ps)",
+    "PASS EXT=12 W=3 checked=8260 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8260000 (1ps)",
+    "PASS EXT=2 W=40 checked=8220 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8220000 (1ps)",
+    "PASS EXT=4 W=40 checked=8228 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8228000 (1ps)",
+    "PASS EXT=8 W=40 checked=8244 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8244000 (1ps)",
+    "PASS EXT=12 W=40 checked=8260 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8260000 (1ps)",
+    "PASS EXT=2 W=64 checked=8220 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8220000 (1ps)",
+    "PASS EXT=4 W=64 checked=8228 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8228000 (1ps)",
+    "PASS EXT=8 W=64 checked=8244 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8244000 (1ps)",
+    "PASS EXT=12 W=64 checked=8260 seed=192256\ntest/rtl_tb/dp_mixed_csa_tb.v:63: $finish called at 8260000 (1ps)"
+  ],
+  "bench_sha256": "88ce8b8bf3ffb0ba628e6b02aaf94031879c5711a5f10dbe091d42bc0ad2bc67",
+  "runner_sha256": "e9c2a6d2f5677dec30936ea8f2cb0098742beaa1ad0d25e7d20d403e791838a9",
+  "tool": "Icarus Verilog version 14.0 (devel) (35a809d)",
+  "original_receipt": {
+    "path": "test/runs/verilog/20261112T112212019154Z/auxiliary/published_csa_original.json",
+    "sha256": "11d2d4c72de65f5ede2b66193be01701e710760538e775d523eccd7bfe2dd4da"
+  }
+}

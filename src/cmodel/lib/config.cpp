@@ -39,6 +39,10 @@ const char *name(Frontend frontend) {
   case Frontend::MixedQ64E64: return "t8h16q64e64";
   case Frontend::MixedE96: return "t8h16q32e96";
   case Frontend::MixedE128: return "t8h16q32e128";
+  case Frontend::MixedE192: return "t8h16q32e192";
+  case Frontend::MixedE256: return "t8h16q32e256";
+  case Frontend::MixedQE192: return "t8h16q96e192";
+  case Frontend::MixedQE256: return "t8h16q128e256";
   case Frontend::MixedQE128: return "t8h16q64e128";
   }
   throw std::invalid_argument("unknown frontend");
@@ -46,7 +50,8 @@ const char *name(Frontend frontend) {
 bool Config::extension_supports(DataType datatype) const {
   if (frontend == Frontend::MixedQ64E64)
     return datatype >= DataType::MXFP8_E4M3 && datatype <= DataType::MXFP6_E2M3;
-  return datatype >= (frontend == Frontend::MixedQE128 ? DataType::MXFP8_E4M3
+  return datatype >= ((frontend == Frontend::MixedQE128 || frontend == Frontend::MixedQE192 ||
+                      frontend == Frontend::MixedQE256) ? DataType::MXFP8_E4M3
                                                       : DataType::MXFP4) &&
          datatype <= DataType::HIF4;
 }
@@ -54,7 +59,8 @@ Frontend Config::group_frontend(unsigned group_index) const {
   if (!mixed()) return frontend;
   if (group_index < 4) return Frontend::Multi;
   if (frontend == Frontend::MixedQ64E64) return Frontend::Q;
-  return frontend == Frontend::MixedQE128 ? Frontend::QE : Frontend::E;
+  return (frontend == Frontend::MixedQE128 || frontend == Frontend::MixedQE192 ||
+          frontend == Frontend::MixedQE256) ? Frontend::QE : Frontend::E;
 }
 unsigned ceil_log2(unsigned element_count) {
   if (!element_count)
@@ -65,10 +71,13 @@ unsigned ceil_log2(unsigned element_count) {
   return tree_levels;
 }
 void Config::validate() const {
-  if (static_cast<unsigned>(frontend) > static_cast<unsigned>(Frontend::MixedQ64E64))
+  if (static_cast<unsigned>(frontend) > static_cast<unsigned>(Frontend::MixedQE256))
     throw std::invalid_argument("unknown frontend");
   if ((frontend == Frontend::Q || frontend == Frontend::MixedQ64E64) && !architecture_v19)
     throw std::invalid_argument("Q-only profiles require architecture_v19=true");
+  if ((frontend == Frontend::MixedE192 || frontend == Frontend::MixedE256 ||
+       frontend == Frontend::MixedQE192 || frontend == Frontend::MixedQE256) && !architecture_v19)
+    throw std::invalid_argument("E192/E256 and QE192/QE256 profiles require architecture_v19=true");
   if (mixed() && (k_fp16 != 16 || post_scale_norm_extra_stage != 0))
     throw std::invalid_argument("mixed profiles require base K16 and L8");
   if (k_fp16 != 4 && k_fp16 != 8 && k_fp16 != 16)

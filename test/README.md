@@ -11,7 +11,7 @@
 
 共用激励、调度、检查规则及报告，按实现选择后端。现用 Verilog 对 CModel 的实现一致性与相对数学参考的精度分别验收；SV 已冻结为历史参考，不再作为新功能的同步维护对象。具体合同由 spec 定义。
 
-混合 DP 架构讨论新增 E96/E128、Q64 共9610笔[逻辑向量及数学 golden](data/README.md#逻辑-k-扩展数据-dp_logical_vectors_v1)。它们使用独立 `inputs.jsonl` schema，CModel/RTL 尚未接入，不混入下面的既有10747笔回归。数据校验入口为 `python3.11 -m unittest discover -s test/tests -p test_logical_vectors.py -v`。
+混合 DP 的 E96/E128/E192/E256、Q64/Q96/Q128 共23064笔[逻辑向量及数学 golden](data/README.md#逻辑-k-扩展数据-dp_logical_vectors_v1)。它们使用独立 `inputs.jsonl` schema，各profile按原生K选择对应语料，已接入 CModel/RTL；每profile完整语料仍为11格式10747笔。数据校验入口为 `python3.11 -m unittest discover -s test/tests -p test_logical_vectors.py -v`。
 
 生成结果放入 `test/runs/`（忽略提交）。CModel 和 RTL 各保留最近两次普通运行，重要证据与用户确认后标记保留。结果确认后按 [运行产物保留](../scripts/README.md#运行产物保留) 清理。设计 RTL 只读取 `hw/rtl/` 的显式导出，不在本目录复制另一份。DC 流程自身的校验测试位于 `hw/dc_syn/tests/`。
 
@@ -82,3 +82,11 @@ CCACHE_DISABLE=1 CXXFLAGS='-std=c++20 -fcoroutines' python3.11 test/run_mixed_ve
 ```
 
 本机工具环境如上，其他环境可用 `--verilator` 指定路径并配置支持 coroutine 的编译器。完整结果见 [本轮回执](results/q-only-v1.10-20261112.md)；功能通过不代表新顶层达到1GHz或1.41GHz。CModel新profile拒绝legacy合同，专项检查位于 `tests/test_q_only_frontend.py`。
+
+## E192/E256 验证 v1.11
+
+`test/run_mixed_verilog.py --frontend t8h16q32e192|t8h16q32e256` 各检查 11 格式10747笔原生数据，以及三窗口、S2–S7断点、门控、L8/II=1、气泡和复位。三种 E 格式采用新导入的 K192/K256 原生961条输入与独立数学golden，不拼接较小K。专用模型检查为 `tests/test_e_expansion.py`；冻结算术补充检查 `check_mixed_csa.py --export-id <id> --report <json>` 覆盖扩展2/4/8/12及叶宽3/40/64、失活毒化与正负增长位。[完整记录](results/e192-e256-v1.11-20261112.md)。
+
+## T8H16Q96E192/T8H16Q128E256 验证 v1.12
+
+`run_mixed_verilog.py --frontend t8h16q96e192|t8h16q128e256` 分别选择四种 Q96/Q128 与三种 E192/E256 原生数据，并执行三窗口断点、逐拍类型切换、失活组毒化、各 Q32 scale 边界、负零、气泡与复位取消检查。[冻结回执](results/qe-expansion-v1.12-20261112.md)保留原输入和完整来源。

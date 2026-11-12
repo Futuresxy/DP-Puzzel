@@ -1,0 +1,219 @@
+{
+  "schema": "dp_logical_vectors_v1",
+  "format": "hif4",
+  "datatype": 9,
+  "logical_k": 192,
+  "count": 961,
+  "dataset": "petile_low32_native_961",
+  "purpose": "native_functional_regression",
+  "source_logical_k": 192,
+  "extraction": "native",
+  "selected_element_range": [
+    0,
+    192
+  ],
+  "c_policy": "source C unchanged; add exactly once",
+  "group_elements": 16,
+  "group_count": 12,
+  "packed_widths": {
+    "a": 768,
+    "b": 768,
+    "c": 32,
+    "a_scale": 96,
+    "b_scale": 96,
+    "a_e1": 48,
+    "b_e1": 48,
+    "a_e2": 24,
+    "b_e2": 24
+  },
+  "segments": [
+    {
+      "name": "batch64_random",
+      "start": 0,
+      "count": 64,
+      "data_policy": "finite_gaussian_biased_raw_codes",
+      "scale_policy": "uniform_finite_non_nan_non_inf_scale_codes",
+      "c_policy": "clipped_gaussian_fp32",
+      "seed": 20268593,
+      "distribution": {
+        "c_sigma": 2.0,
+        "data_clip": [
+          -8.0,
+          8.0
+        ],
+        "data_sigma": 1.5,
+        "e4m3_scale_raw_range": [
+          "0x01",
+          "0x77"
+        ],
+        "e6m2_scale_raw_range": [
+          "0x00",
+          "0xfb"
+        ],
+        "e8m0_scale_raw_range": [
+          "0x00",
+          "0xfe"
+        ],
+        "inactive_group_data_policy": "zero_filled",
+        "kind": "gaussian_biased_raw_codes",
+        "mxfp4_cancel_corner_policy": "reject local two-PEGroup shared-scale sums that are exactly zero",
+        "scale_policy_detail": "uniform_finite_non_nan_non_inf_codes"
+      }
+    },
+    {
+      "name": "batch128_mixed_random",
+      "start": 64,
+      "count": 128,
+      "data_policy": "mixed_finite_raw_codes",
+      "scale_policy": "stratified_finite_scale_pairs",
+      "c_policy": "mixed_finite_fp32",
+      "seed": 20468593,
+      "distribution": {
+        "c_policy_detail": "mix zero, clipped gaussian finite FP32, and finite exponent-band FP32",
+        "cancellation_policy": "reject low-precision transactions when sum(abs(products))/abs(dot_plus_c) exceeds 32",
+        "data_sigma": 2.5,
+        "inactive_group_data_policy": "zero_filled",
+        "input_nonfinite_policy": "excluded",
+        "kind": "mixed_finite_raw_and_scale_codes",
+        "mxfp4_cancel_corner_policy": "reject local two-PEGroup shared-scale sums that are exactly zero",
+        "output_nonfinite_policy": "allowed_when_finite_inputs_overflow",
+        "raw_code_policy": "mix zero, gaussian-weighted typical finite codes, uniform finite codes, and small/large finite edge bands; FP8/FP6 default regression caps decoded finite magnitude at 4",
+        "scale_policy_detail": "E8M0 samples stratify the A/B product exponent across -80..80 and randomly split it across safe operand exponents -127..125; UE4M3 mixes zero, subnormal, near-unit, small, and large finite scales; MXFP4 reserves 1/64 transactions for a -80/+80 two-block delta",
+        "txn_count": 128
+      }
+    },
+    {
+      "name": "batch256_deepseek_ai_load",
+      "start": 192,
+      "count": 256,
+      "data_policy": "deepseek_r1_layer0_real_activation_weight_samples",
+      "scale_policy": "quantized_from_fp16_source_per_fixed_midgroup_scale_slots",
+      "c_policy": "deepseek_r1_matching_q_proj_bias",
+      "seed": 20260705,
+      "distribution": {
+        "bias_tensor": "model.layers.0.self_attn.q_proj.bias",
+        "c_source": "matching output-channel values from model.layers.0.self_attn.q_proj.bias",
+        "golden": "decode_quantized_raw_inputs_and_accumulate_dot_plus_c_once_to_fp32",
+        "kind": "ai_load_deepseek_r1_distill_qwen_1p5b_layer0_qproj",
+        "low_precision_source": "activation_fp16 and weight_fp16",
+        "raw_sample_file": "tests/data/petile_test_data/sources/ai/deepseek_r1_distill_qwen_1p5b/deepseek_r1_distill_qwen_1p5b_layer0_qproj_samples256.pt",
+        "raw_sample_sha256": "272d7628919817025e4e8f441bcab5c86b46848b7678a9539585c08ddd0a047d",
+        "scale_slots": "fixed four slots per MidGroup",
+        "source_model": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+        "source_revision": "ad9f0ae0864d7fbcd1cd905e3c6c5b069cc8b562"
+      }
+    },
+    {
+      "name": "batch512_ai_load",
+      "start": 448,
+      "count": 512,
+      "data_policy": "qwen3_layer0_real_activation_weight_samples",
+      "scale_policy": "quantized_from_fp16_source_per_fixed_midgroup_scale_slots",
+      "c_policy": "qwen3_activation_derived_fp32_c_addend",
+      "seed": 20260705,
+      "distribution": {
+        "bias_tensor": null,
+        "c_source": "activation-derived FP32 C addend; source q_proj has no bias tensor",
+        "golden": "decode_quantized_raw_inputs_and_accumulate_dot_plus_c_once_to_fp32",
+        "kind": "ai_load_qwen3_0p6b_layer0_qproj",
+        "low_precision_source": "activation_fp16 and weight_fp16",
+        "raw_sample_file": "tests/data/petile_test_data/sources/ai/qwen3_0p6b_layer0_qproj_samples512.pt",
+        "raw_sample_sha256": "fa28ec751670fae7befbaa916cccb7e473a87323f7020b0de4f8dcc0d0a7a173",
+        "scale_slots": "fixed four slots per MidGroup",
+        "source_model": "Qwen/Qwen3-0.6B",
+        "source_revision": "c1899de289a04d12100db370d81485cdf75e47ca"
+      }
+    },
+    {
+      "name": "ones",
+      "start": 960,
+      "count": 1,
+      "data_policy": "constant_one",
+      "scale_policy": "unit",
+      "c_policy": "fp32_one",
+      "seed": null,
+      "distribution": null
+    }
+  ],
+  "source_scale_indices_per_group": [
+    0,
+    0,
+    0,
+    0,
+    4,
+    4,
+    4,
+    4,
+    8,
+    8,
+    8,
+    8
+  ],
+  "source_ratio": "petile_full16_low32",
+  "source_repository": {
+    "name": "Quant_LLM_Chip_Codesign",
+    "git_head": "5a5037ad03b656ea975ef594d0aca4dc5ef96a39",
+    "content_identity": "per-file SHA-256"
+  },
+  "source_copy_directory": "hw/power/workloads/raw/petile_extended/functional/petile_full16_low32/hif4",
+  "source_copy_manifest": "hw/power/workloads/petile_extended/raw_import_manifest.json",
+  "source_copy_manifest_sha256": "15776f07f64f6828d33415a04aceacd09210df29d1dfbd71362d02a032361677",
+  "mathematical_reference": "Fraction exact dequantized dot+C; one FP32 RNE conversion",
+  "reference_sources": {
+    "hw/power/scripts/import_extended_petile.py": "110db717c164fb49cbe333d6997c8becf5ea4f7139cd92743b7aacb0ab8fc9d8",
+    "test/cases/import_petile_ratio.py": "8988feaa6fa6b4c7f3104e2fd8a41bcf5040ab04fb3bd108a1e31ed47e386769",
+    "test/reference/exact.py": "0a778dd2a901e0e9322e796635b2abe1a5c0bc9e77c989f7ce8274f14533bd96",
+    "test/reference/logical.py": "8216cdca313aa21a43def1ae20ee531ca4457762aa3499699a59fc93fa4aa240",
+    "test/adapters/logical.py": "814dfee3d78ec89349ec1c7fa3af08749bac57f84cbfea8b38ea7baf67da69c9"
+  },
+  "source_full_k_audits": [
+    {
+      "case": "batch64_random",
+      "count": 64,
+      "bit_exact": 64,
+      "max_ulp": 0,
+      "nonfinite_mismatches": 0,
+      "above_4": []
+    },
+    {
+      "case": "batch128_mixed_random",
+      "count": 128,
+      "bit_exact": 128,
+      "max_ulp": 0,
+      "nonfinite_mismatches": 0,
+      "above_4": []
+    },
+    {
+      "case": "batch256_deepseek_ai_load",
+      "count": 256,
+      "bit_exact": 256,
+      "max_ulp": 0,
+      "nonfinite_mismatches": 0,
+      "above_4": []
+    },
+    {
+      "case": "batch512_ai_load",
+      "count": 512,
+      "bit_exact": 512,
+      "max_ulp": 0,
+      "nonfinite_mismatches": 0,
+      "above_4": []
+    },
+    {
+      "case": "ones",
+      "count": 1,
+      "bit_exact": 1,
+      "max_ulp": 0,
+      "nonfinite_mismatches": 0,
+      "above_4": []
+    }
+  ],
+  "cmodel_status": "not_evaluated",
+  "rtl_status": "not_run_on_this_dataset",
+  "ppa_eligible": false,
+  "files_sha256": {
+    "inputs.jsonl": "e8a6bb3fb81eb7b194ca427aec3f1064beca4ea8c643224d44ea9dab7729c005",
+    "expected.jsonl": "c8f1d7df6c9844421f1e3230205d4d59ec7aca0479f3134559461247cb2e1d93",
+    "source_reference.jsonl": "6794b5ebddaf4e64bbf5505ae0ad282db41859c1e20fae5b80baa3a814f34fa2"
+  }
+}

@@ -92,3 +92,11 @@ S7 保留 carry-save 两行到 MUX 后，唯一最终 CPA；E96 直接用 4:2 �
 新增 `q` 数值前端及 `t8h16q64e64` 混合 profile，配置为 [t8h16q64e64.json](../configs/dp/t8h16q64e64.json)。Q lane/group 只支持四种 MXFP8/6；混合顶层在四个基础组上增加四个 Q8，E 仍为 K64。新 profile 的 JSON 配置缺省选择 `architecture_v19=true`，显式 false 被拒绝；此字段表示继承当前数值骨架，不是新架构的版本名称。C++ 直接构造 Config 也须选择该合同。
 
 专项测试为 `python3.11 -m unittest discover -s test/tests -p test_q_only_frontend.py -v`；`test_mixed_v19.py` 覆盖新 profile 的原生数据、独立参考、参数和 carry-save，旧 `test_mixed_frontend.py` 继续只承担历史算术回放。
+
+## E192/E256 v1.11
+
+新增 `t8h16q32e192` / `t8h16q32e256`，配置位于 `src/configs/dp/`，基础 K16，物理组数12/16，只有三种 E 格式启用扩展，L8/II=1。新profile默认 `architecture_v19=true` 并拒绝 legacy；后端按四叶块压缩，8/12扩展分别3/5个4:2，与基础+C合并后选择两行。`carry_save` trace 对应 RTL 连接，独立精确总和用于校验。[合同](../spec/dp/dptop/e192-e256-expansion-analysis.md)与[验证](../../test/results/e192-e256-v1.11-20261112.md)。
+
+## T8H16Q96E192/T8H16Q128E256 v1.12
+
+新增 `t8h16q96e192` / `t8h16q128e256`，四个基础组加 8/12 个 QE 组。Q 与 E 模式启用全部 12/16 组，其他模式仅启用基础组；Q 的 scale 每32元素共享，对应3/4块。复用 E192/E256 的全局对齐与 carry-save 后端，L8/II=1。[合同](../spec/dp/dptop/qe192-qe256-expansion.md)记录参与掩码、特殊值和位宽。

@@ -159,9 +159,19 @@ void stage_total(const Config &config, State &state) {
     if (extension_active && config.groups() == 6)
       selected_rows = compress_four(base_rows.first, base_rows.second,
                                     word(state.aligned[4]), word(state.aligned[5]));
-    else if (extension_active && config.groups() == 8) {
-      const auto extension_rows = compress_four(word(state.aligned[4]), word(state.aligned[5]),
-                                               word(state.aligned[6]), word(state.aligned[7]));
+    else if (extension_active) {
+      // Four-leaf blocks reduce in parallel. Eight extensions require three
+      // 4:2 units; twelve require five, before the shared base/extension merge.
+      std::vector<Rows> blocks;
+      for (unsigned group_index = 4; group_index < config.groups(); group_index += 4)
+        blocks.push_back(compress_four(word(state.aligned[group_index]),
+                                       word(state.aligned[group_index + 1]),
+                                       word(state.aligned[group_index + 2]),
+                                       word(state.aligned[group_index + 3])));
+      Rows extension_rows = blocks.front();
+      for (unsigned block_index = 1; block_index < blocks.size(); ++block_index)
+        extension_rows = compress_four(extension_rows.first, extension_rows.second,
+                                       blocks[block_index].first, blocks[block_index].second);
       selected_rows = compress_four(base_rows.first, base_rows.second,
                                     extension_rows.first, extension_rows.second);
     }

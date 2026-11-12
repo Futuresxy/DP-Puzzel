@@ -61,15 +61,17 @@ python3 test/run_cmodel.py --phase extensions --write-goldens
 
 ## 逻辑 K 扩展数据 dp_logical_vectors_v1
 
-这批数据用于待 review 的混合 DP 架构，保存实际逻辑维度和精确数学结果，不声明新 CModel/RTL 已实现。输入为 `inputs.jsonl`，不会被现用 `inputs.txt` 回归入口读入。不得将 E96/E128 映射成虚假的全精度 `K_FP16=24/32`；后续混合顶层适配器负责把逻辑 group 按具体 profile 映射到物理端口。
+这批数据保存混合 DP 的实际逻辑维度和精确数学结果。输入为 `inputs.jsonl`，由混合顶层适配器按 profile 原生 K 映射到物理端口，已接入 CModel 和 RTL 完整回归；每份冻结验收独立记录模型和数据 hash。基础 `K_FP16=16` 不因 Q/E 组数增加而改变。
 
 | 原始 ratio 目录 | 格式 | 目标目录 | 每种笔数 |
 | --- | --- | --- | --- |
 | petile_full16_fp48 | MXFP4 E2M1、NVFP4、HiF4 | `dp/<format>/K96/petile_fp48_native_961/` | 961 |
 | petile_full16_fp416 | MXFP4 E2M1、NVFP4、HiF4 | `dp/<format>/K128/petile_fp416_native_961/` | 961 |
 | petile_full16_low16 | MXFP8 E4M3/E5M2、MXFP6 E3M2/E2M3 | `dp/<format>/K64/petile_low16_native_961/` | 961 |
+| petile_full16_low32 | 四种 Q / 三种 E | `dp/<format>/K96或K192/petile_low32_native_961/` | 961 |
+| petile_full16_low48 | 四种 Q / 三种 E | `dp/<format>/K128或K256/petile_low48_native_961/` | 961 |
 
-共10套、9610笔，全部保留来源原生 K；本项目不截取、不使用 `petile_full16_fp432`。每套顺序为 batch64_random、batch128_mixed_random、batch256_deepseek_ai_load、batch512_ai_load、ones。原生 K96 的上游 metadata 记录其早期派生关系，本次读取的是用户指定 fp48 已有完整数据及重新计算的上游 golden；源 metadata 的 SHA-256 一并保留。
+共24套、23064笔，全部保留来源原生 K；本项目不截取、不使用 `petile_full16_fp432`。每套顺序为 batch64_random、batch128_mixed_random、batch256_deepseek_ai_load、batch512_ai_load、ones。原生 K96 的上游 metadata 记录其早期派生关系，本次读取的是用户指定 fp48 已有完整数据及重新计算的上游 golden；源 metadata 的 SHA-256 一并保留。
 
 `inputs.jsonl` 每行仍包含上面16个具名字段；id 从0连续编号，last 为 JSON 布尔且仅最后一笔为 true。所有 packed 字段使用定宽小写 hex，低索引元素位于低位。Q 格式每元素占8位（FP6左移2位），E 格式每元素4位。令 `G=logical_k/8`（Q）或 `logical_k/16`（E），则 A/B 各占 `64G` 位、scale 各 `8G` 位、e1 各 `4G` 位、e2 各 `2G` 位、C固定32位。非 HiF4 的 e1/e2 为全零。相同 datatype 的 A/B 配对，C 为 FP32。
 
@@ -77,9 +79,9 @@ python3 test/run_cmodel.py --phase extensions --write-goldens
 
 HiF4 e1 每4元素、e2 每8元素直接保留，C原位保留并只累加一次。NVFP4 scale 为正 E4M3 幅值，bit7不参与符号；导入检查来源未设置该位，独立参考亦按无符号合同处理。NaN/Inf、0×Inf、异号Inf及负零由独立格式语义处理，不能用机器浮点 NaN 比较替代数值分类。
 
-- `expected.jsonl` 保存 `exact_fp32_or_int32`（一次精确到FP32 RNE的8hex结果）和 `exact_value`（有限数分子/分母字符串、分类、符号、invalid）。`d=null`、`cmodel_result=null`、`cmodel_status="not_implemented"`，明确没有有限位宽 DUT 期望。
-- `source_reference.jsonl` 保存源段名/行号、原生K、上游FP64→FP32结果及重算的精确结果。源模型是 `fp64_dequant_dot_plus_c_v1`，不作为数学真值。8笔二次舍入差异见 [核验报告](../results/mixed-dp-data-20261107.md)。
-- `manifest.json` 保存独立 schema、逻辑K、逐字段位宽、数据段/种子、源仓库HEAD、相对源路径、全部源文件SHA-256、参考代码SHA-256及产物校验和。生成语料可能不在上游Git内，因此内容hash优先于HEAD；CModel/RTL均为未实现，PPA资格为false。
+- `expected.jsonl` 保存 `exact_fp32_or_int32`（一次精确到FP32 RNE的8hex结果）和 `exact_value`（有限数分子/分母字符串、分类、符号、invalid）。原始数学数据保留 `d=null` 和未派生的 CModel 状态（旧语料 `not_implemented`，本轮 `not_evaluated`），不代表当前硬件实现状态。有限位宽 DUT 期望由运行时冻结模型派生，另存于对应回归/功耗 run，不改写原数学参考。
+- `source_reference.jsonl` 保存源段名/行号、原生K、上游FP64→FP32结果及重算的精确结果。源模型是 `fp64_dequant_dot_plus_c_v1`，不作为数学真值。旧10套有8笔二次舍入差异，见 [核验报告](../results/mixed-dp-data-20261107.md)；本轮14套另有6笔1 ULP差异，24套共14笔，无非有限值不符，见 [导入摘要](../../hw/power/workloads/petile_extended/import_summary.json)。
+- `manifest.json` 保存独立 schema、逻辑K、逐字段位宽、数据段/种子、源仓库HEAD、相对源路径、全部源文件SHA-256、参考代码SHA-256及产物校验和。生成语料可能不在上游Git内，因此内容hash优先于HEAD；导入时未派生的模型/RTL状态和PPA资格保留原值；有效验收来自独立冻结回执，不能由数据manifest代替。
 
 从仓库根目录执行；来源只读，实际源目录由本机环境提供：
 
@@ -90,3 +92,5 @@ python3.11 -m unittest discover -s test/tests -p test_logical_vectors.py -v
 ```
 
 `--dest-root /tmp/dp-logical-replay` 可在独立目录重建同一批数据，逐文件比较校验和。重新生成仅允许覆盖 schema、format、K 相同的逻辑数据集；现用961基线及其 CModel 期望保持不变。
+
+本轮 low32/low48 的完整原始功能及功耗输入在项目内归档，来源、规范化及重建入口见 [扩展数据说明](../../hw/power/workloads/petile_extended/README.md)。上方 `import_petile_ratio.py` 仅重建原10套；新增14套使用该说明中的导入脚本。

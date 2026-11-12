@@ -1,0 +1,626 @@
+{
+  "schema_version": 1,
+  "version": "v1.12",
+  "status": "PASS",
+  "finished_utc": "2026-11-12T13:01:08.800664+00:00",
+  "scope": "five expansion profiles integrated into current main workspace; independent per-profile full RTL receipts and strict current-source gates",
+  "parameters": {
+    "K_FP16": 16,
+    "LOCAL_W": 28,
+    "GLOBAL_W": 40
+  },
+  "binary_sha256": "2ad7541c12aa4218833700599982b79f69e0c541964e3f6590c3cbe617cdc39c",
+  "handoff_sha256": "756cfe76fcd5975c6f96ca28665c1773a35e832c8a97d8dbde50e8f93b677bf6",
+  "software": {
+    "cmodel-tests": {
+      "tests": 52,
+      "seconds": 167.169,
+      "skipped": 0,
+      "status": "PASS",
+      "path": "test/runs/verilog/20261112T125705417567Z/auxiliary/final_five_v112/final-five-cmodel-tests.log",
+      "sha256": "eabcde8daf675b821a8a2e9a0a79f9ed156f351c0d2786d7a403a7ca23fb1b29"
+    },
+    "dcflow-tests": {
+      "tests": 45,
+      "seconds": 3.762,
+      "skipped": 0,
+      "status": "PASS",
+      "path": "test/runs/verilog/20261112T125705417567Z/auxiliary/final_five_v112/final-five-dcflow-tests.log",
+      "sha256": "e7f1c6e1f3faf8a552a462c173a60a815a229e475f68d32fbc61ffae28f8b064"
+    },
+    "powerflow-tests": {
+      "tests": 74,
+      "seconds": 0.096,
+      "skipped": 1,
+      "status": "PASS",
+      "path": "test/runs/verilog/20261112T125705417567Z/auxiliary/final_five_v112/final-five-powerflow-tests.log",
+      "sha256": "37fd11c96381f2ae2357623aa00c006b4378c16dea90a017933d13a3b35aa5d2"
+    }
+  },
+  "rtl": [
+    {
+      "profile": "t8h16q64e64",
+      "export_id": "DP_verilog_t8h16q64e64_7547c127f790ac6d",
+      "verification_id": "20261112T125705417567Z",
+      "receipt": "test/runs/verilog/20261112T125705417567Z/verification.json",
+      "receipt_sha256": "18f22d93718f42cb9da3d4751489abd5f97db279a742192db2f5e29c549ec1b8",
+      "rtl_fingerprint": "02d1058e781644da2440de1e6d9ed1a64d69e2182b2c2b755112cc295c56e191",
+      "current_source_gate": "PASS",
+      "origin": "new_main_root_full_regression",
+      "latency": 8,
+      "ii": 1,
+      "campaigns": 14,
+      "native_checked": 10747,
+      "cutpoints_checked": 1099635,
+      "simulator": {
+        "name": "verilator",
+        "version": "Verilator 5.030 2024-10-27 rev v5.030"
+      },
+      "stress": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "result": "PASS cycles=7440 accepted=6152 checked=5661 cancelled=491",
+          "cutpoints_checked": 366545
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=7440 accepted=6152 checked=5661 cancelled=491",
+          "cutpoints_checked": 366545
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=7440 accepted=6152 checked=5661 cancelled=491",
+          "cutpoints_checked": 366545
+        }
+      ],
+      "precision": [
+        {
+          "name": "tf32",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1
+        },
+        {
+          "name": "fp16",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "bf16",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "golden_exact": 961,
+          "math_exact": 959,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "nvfp4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "hif4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null
+        }
+      ],
+      "command_normalized": [
+        "python3.11",
+        "test/run_mixed_verilog.py",
+        "--frontend",
+        "t8h16q64e64",
+        "--verilator",
+        "verilator"
+      ],
+      "exact_command_source": "test/runs/verilog/20261112T125705417567Z/verification.json"
+    },
+    {
+      "profile": "t8h16q32e192",
+      "export_id": "DP_verilog_t8h16q32e192_b677d181f0a29c7f",
+      "verification_id": "20261112T125705419410Z",
+      "receipt": "test/runs/verilog/20261112T125705419410Z/verification.json",
+      "receipt_sha256": "31e8d228a52a01e4ba4bf7fccd38373919695b744a70046eb03cf6e3e19903d9",
+      "rtl_fingerprint": "15dee0a11b638a955060cb714e588c5212968af3235d82233183b013f20181b2",
+      "current_source_gate": "PASS",
+      "origin": "new_main_root_full_regression",
+      "latency": 8,
+      "ii": 1,
+      "campaigns": 14,
+      "native_checked": 10747,
+      "cutpoints_checked": 2967003,
+      "simulator": {
+        "name": "verilator",
+        "version": "Verilator 5.030 2024-10-27 rev v5.030"
+      },
+      "stress": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "result": "PASS cycles=7434 accepted=6148 checked=5657 cancelled=491",
+          "cutpoints_checked": 989001
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=7434 accepted=6148 checked=5657 cancelled=491",
+          "cutpoints_checked": 989001
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=7434 accepted=6148 checked=5657 cancelled=491",
+          "cutpoints_checked": 989001
+        }
+      ],
+      "precision": [
+        {
+          "name": "tf32",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1
+        },
+        {
+          "name": "fp16",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "bf16",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "nvfp4",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "hif4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null
+        }
+      ],
+      "command_normalized": [
+        "python3.11",
+        "test/run_mixed_verilog.py",
+        "--frontend",
+        "t8h16q32e192",
+        "--verilator",
+        "verilator"
+      ],
+      "exact_command_source": "test/runs/verilog/20261112T125705419410Z/verification.json"
+    },
+    {
+      "profile": "t8h16q32e256",
+      "export_id": "DP_verilog_t8h16q32e256_87332acf0b331629",
+      "verification_id": "20261112T125705422788Z",
+      "receipt": "test/runs/verilog/20261112T125705422788Z/verification.json",
+      "receipt_sha256": "64e8cf399fea7f4a3fae0ad3873ea5cae54ea3bef049b335ce8dcb8149386b44",
+      "rtl_fingerprint": "e7b47177954ecfac415451e46839bb75cb130e034dfc16c5276cc4dda2cc7386",
+      "current_source_gate": "PASS",
+      "origin": "new_main_root_full_regression",
+      "latency": 8,
+      "ii": 1,
+      "campaigns": 14,
+      "native_checked": 10747,
+      "cutpoints_checked": 3966411,
+      "simulator": {
+        "name": "verilator",
+        "version": "Verilator 5.030 2024-10-27 rev v5.030"
+      },
+      "stress": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "result": "PASS cycles=7449 accepted=6160 checked=5669 cancelled=491",
+          "cutpoints_checked": 1322137
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=7449 accepted=6160 checked=5669 cancelled=491",
+          "cutpoints_checked": 1322137
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=7449 accepted=6160 checked=5669 cancelled=491",
+          "cutpoints_checked": 1322137
+        }
+      ],
+      "precision": [
+        {
+          "name": "tf32",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1
+        },
+        {
+          "name": "fp16",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "bf16",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "nvfp4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "hif4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null
+        }
+      ],
+      "command_normalized": [
+        "python3.11",
+        "test/run_mixed_verilog.py",
+        "--frontend",
+        "t8h16q32e256",
+        "--verilator",
+        "verilator"
+      ],
+      "exact_command_source": "test/runs/verilog/20261112T125705422788Z/verification.json"
+    },
+    {
+      "profile": "t8h16q96e192",
+      "export_id": "DP_verilog_t8h16q96e192_1e63c2625d0dd101",
+      "verification_id": "20261112T122236879949Z",
+      "receipt": "test/runs/verilog/20261112T122236879949Z/verification.json",
+      "receipt_sha256": "491accd014d1efe649b9a7fd119ef02975c413bfd930ea53977f9bbdcc6ddd1e",
+      "rtl_fingerprint": "5f8c13633a249f64bab4dca924402ad4a87140b9613252657441c41c48d7e12d",
+      "current_source_gate": "PASS",
+      "origin": "byte_identical_isolated_full_regression_copied_then_strict_main_gate",
+      "latency": 8,
+      "ii": 1,
+      "campaigns": 14,
+      "native_checked": 10747,
+      "cutpoints_checked": 2819997,
+      "simulator": {
+        "name": "verilator",
+        "version": "Verilator 5.030 2024-10-27 rev v5.030"
+      },
+      "stress": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "result": "PASS cycles=7565 accepted=6256 checked=5759 cancelled=497",
+          "cutpoints_checked": 939999
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=7565 accepted=6256 checked=5759 cancelled=497",
+          "cutpoints_checked": 939999
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=7565 accepted=6256 checked=5759 cancelled=497",
+          "cutpoints_checked": 939999
+        }
+      ],
+      "precision": [
+        {
+          "name": "tf32",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1
+        },
+        {
+          "name": "fp16",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "bf16",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "golden_exact": 961,
+          "math_exact": 959,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "nvfp4",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "hif4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null
+        }
+      ],
+      "command_normalized": [
+        "python3.11",
+        "test/run_mixed_verilog.py",
+        "--frontend",
+        "t8h16q96e192",
+        "--verilator",
+        "verilator"
+      ],
+      "exact_command_source": "test/runs/verilog/20261112T122236879949Z/verification.json"
+    },
+    {
+      "profile": "t8h16q128e256",
+      "export_id": "DP_verilog_t8h16q128e256_f8209095129aa89a",
+      "verification_id": "20261112T122135109358Z",
+      "receipt": "test/runs/verilog/20261112T122135109358Z/verification.json",
+      "receipt_sha256": "b1ee87db36ffbc1015649ee4dfbc0199c04c7bad65f38ff26b03128c652fb4f9",
+      "rtl_fingerprint": "3e61203708f7c6a24af9512b25859b5086597a92dcd823d5ed7a15e90d876aa4",
+      "current_source_gate": "PASS",
+      "origin": "byte_identical_isolated_full_regression_copied_then_strict_main_gate",
+      "latency": 8,
+      "ii": 1,
+      "campaigns": 14,
+      "native_checked": 10747,
+      "cutpoints_checked": 3754053,
+      "simulator": {
+        "name": "verilator",
+        "version": "Verilator 5.030 2024-10-27 rev v5.030"
+      },
+      "stress": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "result": "PASS cycles=7612 accepted=6296 checked=5799 cancelled=497",
+          "cutpoints_checked": 1251351
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=7612 accepted=6296 checked=5799 cancelled=497",
+          "cutpoints_checked": 1251351
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=7612 accepted=6296 checked=5799 cancelled=497",
+          "cutpoints_checked": 1251351
+        }
+      ],
+      "precision": [
+        {
+          "name": "tf32",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1
+        },
+        {
+          "name": "fp16",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "bf16",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "nvfp4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "hif4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null
+        }
+      ],
+      "command_normalized": [
+        "python3.11",
+        "test/run_mixed_verilog.py",
+        "--frontend",
+        "t8h16q128e256",
+        "--verilator",
+        "verilator"
+      ],
+      "exact_command_source": "test/runs/verilog/20261112T122135109358Z/verification.json"
+    }
+  ],
+  "cleanup": {
+    "status": "completed",
+    "scope": "only three newly completed main-root RTL builds",
+    "runs": [
+      "20261112T125705417567Z",
+      "20261112T125705419410Z",
+      "20261112T125705422788Z"
+    ],
+    "removed_file_count": 1825,
+    "reclaimed_bytes": 1944842142,
+    "preserved": "all inputs/goldens/outputs/schedules/cutpoints/receipts; build lint.log and compile.log"
+  },
+  "auxiliary": "test/runs/verilog/20261112T125705417567Z/auxiliary/final_five_v112",
+  "notes": [
+    "QE receipts were copied without changing timestamps, numerical data, export payload or PASS state; strict current main-tree gate rechecked exact sources and inputs.",
+    "Current Q64E64 source export differs from original DC export DP_verilog_t8h16q64e64_044cfe1be3f22a8d because shared CSA expansion source evolved; original measured DC and workload evidence remains pinned to its original snapshot/receipt.",
+    "The other four profile DC inputs retain their exact export identities; historical DC acceptance uses its pinned original verification_id, not a newer manifest pointer.",
+    "This report proves numerical/cycle and software acceptance, not frequency or power. Separate DC/power reports retain their original bindings."
+  ]
+}

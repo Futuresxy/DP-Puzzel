@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
       } else if (arg == "--version") {
         std::cout << dp::Json({{"model", "dp-cmodel-2"},
                                {"architecture", "dp_top/v1.8; other frontends/v1.7"},
-                               {"frontends", dp::Json::array({"multi", "e", "qe", "t8h16q32e96", "t8h16q32e128", "t8h16q64e128"})},
+                               {"frontends", dp::Json::array({"multi", "e", "qe", "t8h16q32e96", "t8h16q32e128", "t8h16q32e192", "t8h16q32e256", "t8h16q64e128", "q", "t8h16q64e64", "t8h16q96e192", "t8h16q128e256"})},
                                {"boost", BOOST_LIB_VERSION},
                                {"json", NLOHMANN_JSON_VERSION_MAJOR * 10000 +
                                             NLOHMANN_JSON_VERSION_MINOR * 100 +

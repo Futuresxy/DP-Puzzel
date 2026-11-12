@@ -145,7 +145,7 @@ class LogicalVectors(unittest.TestCase):
 
     def test_corpus_hashes_shapes_and_exact_results(self):
         paths = sorted((TEST / 'data/dp').glob('*/K*/petile_*_961/manifest.json'))
-        self.assertEqual(len(paths), 10)
+        self.assertEqual(len(paths), 24)
         total = 0
         for path in paths:
             manifest = json.loads(path.read_text())
@@ -160,7 +160,9 @@ class LogicalVectors(unittest.TestCase):
                 self.assertEqual(manifest['extraction'], 'native')
                 self.assertNotIn('fp432', manifest['source_ratio'])
                 self.assertEqual([part['count'] for part in manifest['segments']], [64, 128, 256, 512, 1])
-                for filename, expected_hash in manifest['mathematical_reference_sources'].items():
+                reference_sources = manifest.get('mathematical_reference_sources', manifest.get('reference_sources'))
+                self.assertTrue(reference_sources)
+                for filename, expected_hash in reference_sources.items():
                     self.assertEqual(sha256(TEST.parent / filename), expected_hash)
                 self.assertEqual(sum(request['last'] for request in requests), 1)
                 self.assertTrue(requests[-1]['last'])
@@ -168,7 +170,8 @@ class LogicalVectors(unittest.TestCase):
                     self.assertEqual(golden['id'], request['id'])
                     self.assertIsNone(golden['d'])
                     self.assertIsNone(golden['cmodel_result'])
-                    self.assertEqual(golden['cmodel_status'], 'not_implemented')
+                    self.assertIn(manifest['cmodel_status'], ('not_implemented', 'not_evaluated'))
+                    self.assertEqual(golden['cmodel_status'], manifest['cmodel_status'])
                     result = exact_logical(request, logical_k)
                     self.assertEqual(f"{result['bits']:08x}", golden['exact_fp32_or_int32'])
                     exact = golden['exact_value']
@@ -179,7 +182,7 @@ class LogicalVectors(unittest.TestCase):
                         self.assertEqual(result['value'].value,
                                          Fraction(int(exact['numerator']), int(exact['denominator'])))
                 total += len(requests)
-        self.assertEqual(total, 9610)
+        self.assertEqual(total, 23064)
 
     def test_upstream_fp64_rounding_differences(self):
         # Independent distance-to-FP32 proof: do not call reference.fp32 here.
@@ -205,7 +208,7 @@ class LogicalVectors(unittest.TestCase):
                     self.assertEqual(Fraction.from_float(float(exact)), (nearest + other) / 2)
                     self.assertEqual(int(upstream_bits, 16) & 1, 0)
                     self.assertEqual(struct.pack('>f', float(exact)).hex(), upstream_bits)
-        self.assertEqual(mismatches, 8)
+        self.assertEqual(mismatches, 14)
 
     def test_existing_runners_still_see_only_original_inputs(self):
         paths = sorted((TEST / 'data/dp').glob('*/*/*/inputs.txt'))

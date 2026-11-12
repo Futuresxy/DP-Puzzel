@@ -1,5 +1,5 @@
 `include "dp_defs.vh"
-// Mixed HQE profiles: four multi groups plus two/four E or four QE groups.
+// Mixed HQE profiles: four multi groups plus 2/4/8/12 E or four QE/Q groups.
 // Atomic A/B/C input, per-request type, II=1, L=8, no output backpressure.
 // At edge n input is accepted into S1; S8 updates at n+7, observed before n+8.
 // Synchronous active-low reset cancels all valid tokens. Datapath holds in bubbles.
@@ -527,7 +527,7 @@ module dp_top_mixed #(
   wire signed [SUM_W-1:0] sum_d;
   wire signed [SUM_W-1:0] r7_sum;
   // [S7 carry-save规约] 基础4组+C与扩展2/4组保持两行，经双行MUX后唯一CPA。
-  // E96为S43，E128/Q64E128为S44；含符号增长位完整保留。
+  // E96为S43，E128/E192为S44，E256为S45；含符号增长位完整保留。
   dp_mixed_csa_sum #(
       .EXT_GROUPS(EXT_GROUPS),
       .W         (GLOBAL_W),
@@ -599,7 +599,7 @@ module dp_top_mixed #(
       $display("FAIL: %s", "mixed base K_FP16 must remain 16");
       $finish;
     end
-    if ((GROUPS != BASE_GROUPS+EXT_GROUPS) || (BASE_GROUPS != `DP_DEFAULT_K/`DP_GROUP_H) || (EXT_GROUPS != 2 && EXT_GROUPS != 4)) begin
+    if ((GROUPS != BASE_GROUPS+EXT_GROUPS) || (BASE_GROUPS != `DP_DEFAULT_K/`DP_GROUP_H) || (EXT_GROUPS != 2 && EXT_GROUPS != 4 && EXT_GROUPS != 8 && EXT_GROUPS != 12)) begin
       $display("FAIL: %s", "GROUPS is derived");
       $finish;
     end

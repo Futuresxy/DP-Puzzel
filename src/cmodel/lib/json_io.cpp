@@ -53,6 +53,10 @@ Config config_from_json(const Json &json_value) {
       else if (value == "t8h16q64e64") config.frontend = Frontend::MixedQ64E64;
       else if (value == "t8h16q32e96") config.frontend = Frontend::MixedE96;
       else if (value == "t8h16q32e128") config.frontend = Frontend::MixedE128;
+      else if (value == "t8h16q32e192") config.frontend = Frontend::MixedE192;
+      else if (value == "t8h16q32e256") config.frontend = Frontend::MixedE256;
+      else if (value == "t8h16q96e192") config.frontend = Frontend::MixedQE192;
+      else if (value == "t8h16q128e256") config.frontend = Frontend::MixedQE256;
       // RTL implementation alias: identical arithmetic and S2-S8 numeric boundaries.
       else if (value == "t8h16q64e128" || value == "t8h16q64e128_opt")
         config.frontend = Frontend::MixedQE128;
@@ -60,8 +64,10 @@ Config config_from_json(const Json &json_value) {
     } else
       throw std::invalid_argument("unknown configuration key: " + key);
   }
-  // Q-only is a new contract: it has no pre-v1.9 arithmetic to replay.
-  if ((config.frontend == Frontend::Q || config.frontend == Frontend::MixedQ64E64) &&
+  // Newly introduced profiles have no pre-v1.9 arithmetic to replay.
+  if ((config.frontend == Frontend::Q || config.frontend == Frontend::MixedQ64E64 ||
+       config.frontend == Frontend::MixedE192 || config.frontend == Frontend::MixedE256 ||
+       config.frontend == Frontend::MixedQE192 || config.frontend == Frontend::MixedQE256) &&
       !json_value.contains("architecture_v19"))
     config.architecture_v19 = true;
   config.validate();

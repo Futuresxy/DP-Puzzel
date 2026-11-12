@@ -94,7 +94,7 @@ RTL 单独执行 `-Wall` lint，位宽、锁存器、组合环类警告不豁免
 
 ## 当前边界
 
-当前两种前端只开放 L8；CModel 的 L9 探索未在 RTL 中开放。冻结 SV 的范围由其历史说明定义。未实现 Chisel、DP-Group、TensorCore/Cube、Q/QE、混合组或独立对齐方案。历史 27/40 的 N12 TT 在 1.41 GHz setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/README.md#历史记录)。E64 与当前 28/40 多精度单元的同工况测量见 [DC 对比](../../hw/dc_syn/records/README.md#历史记录)。尚无布局布线或真实活动功耗。
+当前两种前端只开放 L8；CModel 的 L9 探索未在 RTL 中开放。冻结 SV 的范围由其历史说明定义。未实现 Chisel、DP-Group、TensorCore/Cube；Q/QE、混合组和大 K 扩展见下文当前实现。历史 27/40 的 N12 TT 在 1.41 GHz setup 未达标；逐级证据与 1GHz 后续测量见 [时序分析](../../hw/dc_syn/records/README.md#历史记录)。E64 与当前 28/40 多精度单元的同工况测量见 [DC 对比](../../hw/dc_syn/records/README.md#历史记录)。尚无布局布线结果；真实负载功耗见 [当前测量入口](../../hw/power/records/README.md)。
 
 DC 接入使用 [统一门禁与流程](../../hw/dc_syn/README.md)。Verilog 的运行时 `lane_fraction` 已改为等价常量选择以兼容 DC；新快照重新完整回归，不继承旧 snapshot 的通过状态。
 
@@ -137,10 +137,18 @@ python3.11 test/run_mixed_verilog.py --frontend t8h16q64e128_opt
 
 ## 六种现用架构与内部核心
 
-先读 [顶层架构总览](../spec/dp/dptop/top-architectures.md)。`top/common/dp_top_mixed.v`和`top/common/dp_top_lowp.v`是共用实现核心，`dp_top_e`是兼容参数化入口；六种现用配置包含原`dp_top`。E128扩展已恢复，未优化QE128包装仍退役，历史快照/测量保留。
+先读 [顶层架构总览](../spec/dp/dptop/top-architectures.md)。`top/common/dp_top_mixed.v`和`top/common/dp_top_lowp.v`是共用实现核心，`dp_top_e`是兼容参数化入口；现用架构包含原`dp_top`、既有五种及本轮五种扩展。E128扩展已恢复，未优化QE128包装仍退役，历史快照/测量保留。
 
 ## Q 专用扩展 v1.10
 
 新增 [dp_lane_q](lane/dp_lane_q.v)、[dp_group_q](group/dp_group_q.v) 与 [dp_top_t8h16q64e64](top/dp_top_t8h16q64e64.v)，源清单为 `files_t8h16q64e64.f`。四个基础组加四个 Q8，Q 支持 MXFP8/6，E 容量保持64。Q-only 裁掉 E pair、HiF 元数据与 scale 尾数乘法；S4 lane、S5 token、L8/II=1 均保持现有合同。
 
-完整验证使用 `test/run_mixed_verilog.py --frontend t8h16q64e64`，先构建当前 CModel，再冻结指定源码。[新顶层冻结验证与门禁](../../test/results/q-only-v1.10-20261112.md)已通过，不能沿用 Q64E128 的测量。[规格](../spec/dp/dptop/t8h16q64e64.md)说明接口、参与屏蔽和验证范围。E192/E256 本轮仅分析，未加入 RTL 清单。
+完整验证使用 `test/run_mixed_verilog.py --frontend t8h16q64e64`，先构建当前 CModel，再冻结指定源码。[新顶层冻结验证与门禁](../../test/results/q-only-v1.10-20261112.md)已通过，不能沿用 Q64E128 的测量。[规格](../spec/dp/dptop/t8h16q64e64.md)说明接口、参与屏蔽和验证范围。E192/E256 现已接入独立 RTL 清单，见下节。
+
+## E192/E256 扩展 v1.11
+
+`top/dp_top_t8h16q32e192.v` / `files_t8h16q32e192.f`、`top/dp_top_t8h16q32e256.v` / `files_t8h16q32e256.f` 分别增加 8/12 个 E16 group。S6 保持统一 Emax 和同周期逐源移位；S7 的扩展支路分别由 3/5 个 CSA4:2 输出两行，再与基础+C两行合并，片选后唯一 CPA；L8/II=1，默认总和 S44/S45。[合同与接口](../spec/dp/dptop/e192-e256-expansion-analysis.md)、[冻结功能验证](../../test/results/e192-e256-v1.11-20261112.md)分别追踪实现和验收。
+
+## T8H16Q96E192/T8H16Q128E256 扩展 v1.12
+
+`top/dp_top_t8h16q96e192.v` / `files_t8h16q96e192.f`、`top/dp_top_t8h16q128e256.v` / `files_t8h16q128e256.f` 分别增加 8/12 个 QE8/16 group。Q/E 请求激活扩展 MAX 与规约，T/H/INT8 屏蔽扩展。沿用相同 S5 token、S6 同周期对齐与 S7 两行选择后唯一 CPA，L8/II=1。[规格](../spec/dp/dptop/qe192-qe256-expansion.md)。
