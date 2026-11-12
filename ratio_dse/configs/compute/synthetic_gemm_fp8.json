@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "name": "synthetic_prequantized_fp8",
+  "rules": [
+    {
+      "select": {"op_id": "example.projection"},
+      "source": "bf16",
+      "target": {
+        "format_id": "mxfp8_e4m3",
+        "weight_storage_format": "mxfp8_e4m3",
+        "activation_storage_format": "mxfp8_e4m3",
+        "execution_path": "synthetic_prequantized_inputs",
+        "conversion": {"kind": "offline"}
+      }
+    }
+  ]
+}

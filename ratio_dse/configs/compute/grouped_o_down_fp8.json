@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "name": "grouped_o_down_to_mxfp8",
+  "rules": [
+    {
+      "select": {"operator": "o_group", "layer_range": [0, 19]},
+      "source": "bf16",
+      "target": {
+        "format_id": "mxfp8_e4m3",
+        "weight_storage_format": "mxfp8_e4m3",
+        "activation_storage_format": "bf16",
+        "execution_path": "prequantized_weights_and_online_activation_conversion",
+        "conversion": {"kind": "online"}
+      }
+    }
+  ]
+}

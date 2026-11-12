@@ -1,8 +1,19 @@
 # DP-Puzzle 芯片算力配比与模型精度 DSE
 
-更新：2026-11-12（Asia/Shanghai）。当前交付为故事线、接口约定和三个实施任务，尚未实现下述模型或运行新 DSE。本轮不修改论文正文、RTL 或已有实验结果。
+面积与部署、DeepSeek GEMM 工作量与精度迁移已提供可运行的解析模型。两者可独立运行，也可通过 `deployment_id` 联用。多核调度、芯片功耗评价与双视角搜索由任务 C 接续。
 
 目标：以组合式 DP 的同工况硬件成本为依据，分析固定核心总面积与输入带宽条件下，DeepSeek V4/V4.1 的 Attention、MoE GEMM 负载与芯片算力配比的匹配关系。输出面积、计算功耗、GEMM 时间、利用率及派生能耗；支持固定硬件选择执行精度、固定负载选择硬件两种视角。模型质量代价先保留为外部参数与约束接口。
+
+## Quick start
+
+Run from the repository root with Python 3.11 or later. Both models use the Python standard library. The examples use committed evidence and model configs.
+
+```bash
+bash ratio_dse/run_examples.sh
+python3.11 -m unittest discover -s ratio_dse/tests -v
+```
+
+`run_examples.sh [new-output-directory]` prints the output root. It runs both area constraints, a V4 workload-only example, a V4.1 precision comparison, and a synthetic GEMM with complete array-local timing. Each run emits JSON, CSV and a manifest with input, source and output hashes. Use `python3.11 -m ratio_dse.area_model --help` and `python3.11 -m ratio_dse.compute_model --help` for individual runs.
 
 ## 阅读与任务分配
 
@@ -14,13 +25,13 @@
 | [任务 B：计算与负载](compute_model/README.md) | DeepSeek GEMM 拆解、精度迁移、原生 K 利用率与周期 | C 的算子级评价 |
 | [任务 C：芯片模型与双向 DSE](dse/README.md) | 多核调度、计算功耗/能耗、质量约束和多目标搜索 | 可复算结果、论文图表数据 |
 
-上述目录即后续代码所属目录；不另建相互重复的 `src/area` 或 `src/compute` 实现。`configs/`、`workloads/`、`tests/` 和 `results/` 继续共用。任务 A、B 在接口确定后可独立实施；任务 C 依赖两者的真实输出。可将各任务 README 的“执行指令”直接交给后续 Codex。任务分配不是本轮已启动的并行执行。
+面积和 GEMM 入口各自位于 `area_model/`、`compute_model/`。可复制的 JSON 在 `configs/`，回归在 `tests/`，运行目录默认写入 `results/`。任务 C 读取两者的 JSON 或 Python API。
 
 ## 当前确定的范围
 
 - 九种 H:Q:E 配比：**1:2:4、1:2:6、1:2:8、1:4:4、1:4:8、1:2:12、1:2:16、1:6:12、1:8:16**。用户已更正最后一项，禁止继续使用早先误写的 1:8:12。
 - H 以 BF16/FP16 吞吐归一化，Q/E 以 MXFP8/MXFP4 表示；底层逐格式保留能力，不将 TF32、MXFP6、NVFP4、HiF4 无条件合并成本。
-- 第一阶段只提供 DeepSeek V4/V4.1 系列 adapter，复用项目已有配置与公式；其他模型由开发者按 GEMM 接口适配。prefill 为首轮验收，decode 按独立阶段保留、后续验收，不混合汇总。
+- 内置 DeepSeek V4/V4.1 adapter，也支持导入规范化 GEMM 账本。prefill 为主要用例，decode 目前覆盖逐步账本和短场景回归。
 - 参考预算为 36 个基线核心、基线 TensorCore 面积占比 30%；均可配置。30% 只用于推导基线外围面积，不强制候选保持相同比例。
 - 等阵列规模、等每核本地存储到 TensorCore 输入带宽为两个独立场景。各场景中物理阵列配置固定，不能按运行精度临时改变阵列面积。
 - 评价对象为 GEMM 集合。非 GEMM 算子、通信和完整推理质量预测不在首轮实现内；被排除的 GEMM 另列覆盖率。

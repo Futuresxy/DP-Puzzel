@@ -1,5 +1,6 @@
-# 芯片与探索配置职责
+# 示例配置
 
-后续分别保存 ChipConfig 和 DesignScenario：多核心/阵列组织、存储共享关系、HBM、运行条件、增配或重设计场景、变量范围、baseline、预算和工作负载权重。
+- [area](area/) 含锁定的 N12 单 DP 证据清单，以及等阵列和等每核本地输入带宽场景。
+- [compute](compute/) 含 V4/V4.1 prefill 场景、单阵列接口假设、精度方案和可独立导入的合成 GEMM。
 
-物理实现与硬件成本引用 hw profile；不复制另一份测量数据。候选数量必须离散可实现，模式互斥必须明确。当前没有默认核心数、精度比例或频率。
+复制相应 JSON 并显式修改实验参数。每次运行的 manifest 保留所用输入和文件 hash。字段说明见 [面积模型](../area_model/README.md) 与 [GEMM 模型](../compute_model/README.md)。

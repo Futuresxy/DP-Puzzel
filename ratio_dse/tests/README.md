@@ -1,5 +1,10 @@
-# 模型验证与校准职责
+# 模型回归
 
-后续覆盖解析小例、容量/带宽极限、操作与字节守恒、尾 tile、零可用精度资源、多模式互斥、共享 HBM 争用、多核心 scaling、profile 边界重复计费、候选不可行性及 Pareto 正确性。
+从仓库根运行。
 
-用 hw 的 RTL 周期与真实负载功耗校准，并保留未参与拟合的验证 workload。测量和解析估计分开，不以能重复实现公式的测试替代独立证据。当前没有测试或校准结果。
+```bash
+python3.11 -m unittest discover -s ratio_dse/tests -v
+bash ratio_dse/run_examples.sh
+```
+
+回归覆盖锁定证据、九配比峰值、整数面积边界、广播和块 scale、独立手算 dense/grouped/ragged/expert 形状与反馈时序、V4/V4.1 工作量重放、短 decode、路由观测与固定部署精度迁移。样例运行覆盖两种面积场景、两代 DeepSeek 账本和可计算完整本地时间的合成 GEMM。阵列校准和芯片调度由后续证据与测试覆盖。

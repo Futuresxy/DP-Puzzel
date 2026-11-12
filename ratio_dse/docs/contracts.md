@@ -1,6 +1,6 @@
 # 三个模型的共用数据与边界合同
 
-版本：实施合同草案 v0.1；日期：2026-11-12（Asia/Shanghai）。JSON 为机器读取主格式，CSV 为长表导出。下面的字段是后续 schema 的最小要求，不代表本轮已生成数据或实现解析器。
+JSON 为机器读取主格式，CSV 为长表导出。A/B 使用 `schema_version: 1`。实际字段、输入样例和复算入口见 [面积模型](../area_model/README.md) 与 [GEMM 模型](../compute_model/README.md)。C 行为后续调度和联合评价合同。
 
 ## 通用约定
 
@@ -18,9 +18,9 @@
 | ModeProfile | A | profile_id, format_id, operand/scale/accumulator semantics, native_k, latency_cycles, ii_cycles, input layout, power_dynamic_w, power_leakage_w, power_total_w, power_run_id, activity_source, measured/proxy/missing status |
 | ArrayScenario | A | scenario_id, constraint_kind, baseline_profile, baseline_cores, baseline_tensor_fraction, arrays_per_core, legal_shapes, broadcast_model, input_budget_bytes_s, supported_format_set, peripheral_policy |
 | Deployment | A | deployment_id, profile_id, m_array, n_array, arrays_per_core, core_count, area_tensor/peripheral/core/pool, budget/unused_area, per_mode_peak_macs_s, input_demand_by_mode, excluded_components, validity |
-| GemmWorkload | B | workload_id, model_id/revision/config_hash, stage, context, batch, op_id, layer_id, category, subcategory, M/N/K or ragged descriptor, repetitions, dependencies, weight_storage_format, activation_storage_format, multiply_a/b_format, accumulator_format, dp_mode, execution_path, useful_macs, issued_macs, precision_basis |
-| OperatorEvaluation | B | workload_id/op_id, deployment/array_id, precision_plan_id, backend, native_k, cycles breakdown, useful/issued_macs, utilization, bytes_by_interface, conversion status/cost, assumptions, calibration_status |
-| PrecisionPlan / QualityRecord | B/C | plan_id, selected_ops, source/target formats, quality_metric, reference/candidate value, delta, threshold, dataset/protocol, model_revision, quantizer_revision, provenance, quality_status |
+| GemmWorkload | B | workload_id, metadata, operators: op_id, stage, segment, layer_id, category, subcategory, shape, dependencies, precision_label, useful_macs |
+| OperatorEvaluation | B | workload_id, op_id, deployment_id, precision_plan_id, native_k, issue/RAW/drain cycles, useful/issued_macs, utilization, bytes_by_interface, conversion status/cost, calibration_status |
+| PrecisionPlan / QualityRecord | B/C | plan_id, selected_ops, mappings: storage/multiply/scale/accumulator formats, execution_path, dp_mode, conversion; records: metric, reference/candidate value, delta, max_degradation, dataset/protocol, model_revision, quantizer_revision, provenance, status |
 | CandidateEvaluation | C | candidate_id, view, deployment_id, workload_id, precision_plan_id, area_mm2, core_count, peak_macs_s_by_mode, latency metrics, power/energy metrics, quality/hardware status, exclusions, baseline_id, speedup, Pareto membership and objective set |
 
 浮点族名不足以确定编码。具体格式未核验时，保留原标签并使 mode 未解析；显式代理可以运行敏感性分支，但必须带 `proxy_for`，不能冒充对应格式实测。
@@ -80,7 +80,7 @@ shape_utilization = useful_macs/issued_macs
 
 ## 多核、功耗与质量
 
-C 采用明确的输出 tile 到核心分配；首轮可使用顺序算子、独立 M/N tile 的确定性调度，K 段留在同核心。未使用核心计入容量和必要 idle/leakage。禁止直接将单核周期除以核心数；共享输入带宽若启用须显式分配。
+C 采用明确的输出 tile 到核心分配。B 的 `tile_services.json` 按同 K 发射次数聚合输出 tile，单阵列周期为自身边界指标。C 首轮可使用顺序算子、独立 M/N tile 的确定性调度，K 段留在同核心。未使用核心计入容量和必要 idle/leakage。共享输入带宽若启用须显式分配。
 
 DP 测量的活动来源不是 DeepSeek 实测；引用时标注 activity proxy。总功耗不能简单乘 utilization：动态、漏电、空闲和门控行为分开。若仅有 active 模式成本，可输出具名的 full-activity sensitivity，不得填补未知 idle 成本为零。外围/存储/互连能耗未知时，chip_total_energy_j 为 null，dp_compute_energy_j 保持其边界。平均功耗与能耗必须覆盖同一时间窗；没有瞬态数据则峰值功耗为 null。
 

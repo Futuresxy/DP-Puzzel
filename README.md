@@ -9,6 +9,7 @@
 | [手写 RTL](src/verilog/README.md) | 单 DP、参数化 Verilog；SV 仅作冻结的历史参考 |
 | [共用测试](test/README.md) | Packed 数据、独立参考及回归 |
 | [模型报告](test/results/cmodel-v1.4.md) / [RTL 报告](test/results/verilog-v1.4.md) | 精度、流水断点、周期协议与覆盖边界 |
+| [面积与 GEMM 解析模型](ratio_dse/README.md) | 单 DP 到芯片峰值、DeepSeek 工作量账本、单阵列精度迁移和可复算示例 |
 
 设计开发在 `src/`，功能验证在 `test/`，分析所用 RTL 快照、DC 与功耗在 [hw/](hw/README.md)。文档采用当前定义优先的排版，只有相邻两个主要版本的核心变更保留删除线；见 [维护规则](src/spec/document-control.md)。
 

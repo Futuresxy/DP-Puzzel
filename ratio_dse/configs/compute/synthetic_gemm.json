@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "workload_id": "synthetic-m17-n5-k33",
+  "metadata": {"source": "synthetic", "stage": "prefill"},
+  "operators": [
+    {
+      "op_id": "example.projection",
+      "stage": "prefill",
+      "segment": "example",
+      "layer_id": 0,
+      "operator": "projection",
+      "category": "attention_projection",
+      "subcategory": "synthetic",
+      "precision_label": "BF16",
+      "dependencies": [],
+      "shape": {"kind": "dense", "m": 17, "n": 5, "k": 33, "repetitions": 1}
+    }
+  ]
+}
