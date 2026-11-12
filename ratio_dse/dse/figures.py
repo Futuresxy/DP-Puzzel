@@ -9,7 +9,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 
-from ..common import digest, json_text, path_label, read_json, require
+from ..common import ROOT, digest, json_text, path_label, read_json, require
 
 MODELS = ("DeepSeek-V4-Flash", "DeepSeek-V4.1-Flash")
 PLANS = ("expert_fp8", "expert_fp4")
@@ -17,6 +17,8 @@ RATIOS = ("1:2:4", "1:2:6", "1:2:8", "1:4:4", "1:4:8", "1:2:12", "1:2:16", "1:6:
 TOPOLOGY = "sm_4x16x4"
 COLORS = ("#00717d", "#c04829", "#3e5b93", "#774b75")
 PLAN_LABELS = ("W4A8 via MXFP8", "Routed W4A4 via MXFP4")
+PAPER_WIDTH_IN = 7.16
+STYLE = ROOT / ".skill/academic-figures/assets/paper.mplstyle"
 
 
 def subset(rows, **fields):
@@ -40,7 +42,7 @@ def save(fig, output, name):
 
 
 def bandwidth_figure(rows, output):
-    fig, axes = plt.subplots(2, 2, figsize=(9.8, 6.2), sharex=True, sharey=True, layout="constrained")
+    fig, axes = plt.subplots(2, 2, figsize=(PAPER_WIDTH_IN, 5.5), sharex=True, sharey=True, layout="constrained")
     for i, model in enumerate(MODELS):
         for j, plan in enumerate(PLANS):
             ax = axes[i, j]
@@ -51,29 +53,33 @@ def bandwidth_figure(rows, output):
             best_e = [min(RATIOS, key=lambda r: float(index[r, bw]["dp_energy_j"])) for bw in budgets]
             relative = [[100 * (float(index[r, bw]["seconds"]) / float(index[best_t[k], bw]["seconds"]) - 1)
                          for k, bw in enumerate(budgets)] for r in RATIOS]
-            heat = ax.imshow(relative, aspect="auto", vmin=0, vmax=70, cmap="YlOrBr", interpolation="nearest")
+            heat = ax.pcolormesh([x - 0.5 for x in range(len(budgets) + 1)],
+                                 [y - 0.5 for y in range(len(RATIOS) + 1)], relative,
+                                 vmin=0, vmax=70, cmap="YlOrBr", rasterized=False)
             ax.scatter(range(len(budgets)), [RATIOS.index(r) for r in best_t],
                        marker="o", s=46, facecolor="none", edgecolor="#263c52", linewidth=1.35)
             ax.scatter(range(len(budgets)), [RATIOS.index(r) for r in best_e],
                        marker="+", s=32, color="#263c52", linewidth=1.2)
             ax.set_xticks(range(len(budgets)), [f"{bw:g}" for bw in budgets])
             ax.set_yticks(range(len(RATIOS)), RATIOS)
-            ax.set_title(f"{model.removeprefix('DeepSeek-')} · {PLAN_LABELS[j]}", fontsize=10)
-    fig.colorbar(heat, ax=axes, label="Latency above fastest (%)", extend="max", shrink=0.83)
-    fig.supxlabel("Local read bandwidth per SM (TB/s)   ○ fastest   + lowest DP energy", fontsize=10)
-    fig.supylabel("DP compute ratio (BF16:MXFP8:MXFP4)", fontsize=10)
+            ax.set_ylim(len(RATIOS) - .5, -.5)
+            ax.set_title(f"{model.removeprefix('DeepSeek-')} · {'W4A8' if j == 0 else 'W4A4'}")
+    scale = fig.colorbar(heat, ax=axes, label="Latency above fastest (%)", extend="max", shrink=0.83)
+    scale.solids.set_rasterized(False)
+    fig.supxlabel("Local read bandwidth per SM (TB/s)", fontsize=9)
+    fig.supylabel("DP compute ratio (BF16:MXFP8:MXFP4)", fontsize=9)
     save(fig, output, "bandwidth_rank.pdf")
 
 
 def power_figure(rows, output):
-    fig, axes = plt.subplots(1, 2, figsize=(10.1, 3.9), layout="constrained")
+    fig, axes = plt.subplots(1, 2, figsize=(PAPER_WIDTH_IN, 3.35), layout="constrained")
     ax, trade = axes
     for index, plan in enumerate(PLANS):
         items = anchor(rows, view="power_cap", model=MODELS[1], plan=plan)
         caps = sorted({int(row["cap_w"]) for row in items})
         winners = [min(subset(items, cap_w=cap), key=lambda row: float(row["seconds"])) for cap in caps]
-        ax.plot(caps, [1e3 * float(row["seconds"]) for row in winners], marker="o",
-                color=COLORS[index], linewidth=1.7, label=PLAN_LABELS[index])
+        ax.plot(caps, [1e3 * float(row["seconds"]) for row in winners], marker=("o", "s")[index],
+                linestyle=("-", "--")[index], color=COLORS[index], label=("W4A8", "W4A4")[index])
         previous = None
         for cap, row in zip(caps, winners):
             if previous != row["ratio"]:
@@ -81,8 +87,7 @@ def power_figure(rows, output):
                 ax.annotate(row["ratio"], (cap, 1e3 * float(row["seconds"])), xytext=offset,
                             textcoords="offset points", fontsize=8, color=COLORS[index])
             previous = row["ratio"]
-    ax.set(xlabel="DP power budget proxy at 1 GHz (W)", ylabel="Fastest modeled GEMM time (ms)",
-           title="V4.1 · concurrency limited by DP budget")
+    ax.set(xlabel="DP budget proxy (W)", ylabel="GEMM time (ms)", title="V4.1 · DP budget sweep")
     ax.margins(y=0.14)
     ax.legend(frameon=False, fontsize=8)
     ax.grid(alpha=0.24)
@@ -97,15 +102,15 @@ def power_figure(rows, output):
             trade.annotate(row["ratio"], (float(row["seconds"]) * 1e3, float(row["dp_energy_j"])),
                            xytext=labels[row["ratio"]], textcoords="offset points", fontsize=8)
     trade.margins(x=0.13, y=0.20)
-    trade.set(xlabel="Modeled GEMM time (ms)", ylabel="DP energy proxy (J)",
-              title="V4.1 · routed W4A4 at 4 TB/s per SM")
+    trade.set(xlabel="GEMM time (ms)", ylabel="DP energy proxy (J)", title="V4.1 · routed W4A4")
     trade.grid(alpha=0.24)
-    fig.colorbar(points, ax=trade, label="DP envelope (W)", shrink=0.8)
+    scale = fig.colorbar(points, ax=trade, label="DP envelope (W)", shrink=0.8)
+    scale.solids.set_rasterized(False)
     save(fig, output, "power_energy_tradeoff.pdf")
 
 
 def migration_figure(migrations, rows, output):
-    fig = plt.figure(figsize=(10.0, 4.2), layout="constrained")
+    fig = plt.figure(figsize=(PAPER_WIDTH_IN, 3.55), layout="constrained")
     grid = fig.add_gridspec(2, 2, height_ratios=(1, 0.13))
     axes = [fig.add_subplot(grid[0, column]) for column in range(2)]
     legend = fig.add_subplot(grid[1, :])
@@ -135,20 +140,20 @@ def migration_figure(migrations, rows, output):
     markers = [plt.Line2D([], [], color=color, marker="D", linestyle="none", markersize=5, label=label)
                for label, color in singles.values()]
     legend.legend(handles=markers, loc="center", ncol=2, frameon=False, fontsize=8)
-    fig.suptitle("Fixed 1:8:16 deployment · 4 TB/s per SM", fontsize=11)
     save(fig, output, "precision_migration.pdf")
 
 
 def robustness_figure(rows, output):
-    fig, axes = plt.subplots(1, 2, figsize=(9.4, 3.9), sharey=True, layout="constrained")
+    fig, axes = plt.subplots(1, 2, figsize=(PAPER_WIDTH_IN, 3.5), sharey=True, layout="constrained")
     for ax, plan, title in zip(axes, PLANS, PLAN_LABELS):
         cohort = {row["ratio"]: row for row in subset(rows, plan=plan)}
         lat = [100 * float(cohort[r]["max_latency_regret"]) for r in RATIOS]
         ene = [100 * float(cohort[r]["max_energy_regret"]) for r in RATIOS]
         loc = range(len(RATIOS))
         ax.barh([x - .19 for x in loc], lat, height=.35, color=COLORS[0], label="Latency")
-        ax.barh([x + .19 for x in loc], ene, height=.35, color=COLORS[1], label="DP energy")
-        ax.set(yticks=loc, yticklabels=RATIOS, xlim=(0, 77), title=title, xlabel="Worst regret over 30 paired cases (%)")
+        ax.barh([x + .19 for x in loc], ene, height=.35, color=COLORS[1],
+                edgecolor="#572d23", linewidth=.35, hatch="//", label="DP energy")
+        ax.set(yticks=loc, yticklabels=RATIOS, xlim=(0, 77), title=title, xlabel="Worst-case regret (%)")
         ax.grid(axis="x", alpha=.25)
     axes[0].invert_yaxis()
     axes[1].legend(frameon=False, fontsize=8)
@@ -156,6 +161,7 @@ def robustness_figure(rows, output):
 
 
 def run(run_dir, output):
+    plt.style.use(STYLE)
     matplotlib.rcParams.update({"font.size": 9, "pdf.fonttype": 42, "axes.spines.top": False,
                                 "axes.spines.right": False, "axes.titleweight": "bold",
                                 "axes.axisbelow": True})
@@ -186,6 +192,7 @@ def run(run_dir, output):
         writer.writerows(evidence)
     (output / "figure_manifest.json").write_text(json_text({
         "schema_version": 1, "plot_script": path_label(__file__), "plot_script_sha256": digest(__file__),
+        "plot_style": path_label(STYLE), "plot_style_sha256": digest(STYLE),
         "matplotlib_version": matplotlib.__version__,
         "study_manifest_sha256": digest(run_dir / "manifest.json"),
         "source_outputs_sha256": manifest["outputs_sha256"],

@@ -1,13 +1,15 @@
 {
   "figure_sha256": {
-    "bandwidth_rank.pdf": "ed775874cc2cf295aaf2a46bdb3537c5812e605bec46c09eaa8c77609ed96bf0",
-    "power_energy_tradeoff.pdf": "1ed9fb8a7dcdfa06febebafaabb1170180e27c33f1d40934a31c9a3f00e7ad97",
-    "precision_migration.pdf": "c408d5a16353852c684f14bd137e7eb8b3c559f382a705ef18a0818432deabb3",
-    "worst_case_regret.pdf": "9242dc0720466baedd1cf54f0e15230f21a21b321ed5963186de6affbe903a55"
+    "bandwidth_rank.pdf": "f893109ed6a157aae70320348c22360ea4897086827e3b5c8a401c5b1657f7c2",
+    "power_energy_tradeoff.pdf": "6dee14d036461399cdd0f9c691c445332149687c4c9f8b01f7fb6e30ccb38ea8",
+    "precision_migration.pdf": "d6b0f5559ae417beb705c0f7df087d0d3bb8f32ca1a03d80207b9c29327e328b",
+    "worst_case_regret.pdf": "19631c7777432adde81a31ab50bb00e32346889283924541000dd7b1a69c1e1d"
   },
   "matplotlib_version": "3.11.2",
   "plot_script": "ratio_dse/dse/figures.py",
-  "plot_script_sha256": "8991502257c7c996f9f9f21877cba4997b99de51f266ebc297c1aa90bd774580",
+  "plot_script_sha256": "d766a76a12c6052e40f60f0a02fdc391d5bf8845efcb293e60487ab5df7d2b9a",
+  "plot_style": ".skill/academic-figures/assets/paper.mplstyle",
+  "plot_style_sha256": "d72aad2a78880e7f548384bd45118a749bddfd540f6070b7260f0cf10380368f",
   "schema_version": 1,
   "selection": {
     "batch": 1,
@@ -28,7 +30,7 @@
     "summary.md": "f319c08b749bc14143fffb47bd5401c5d02bc08953be7912b833261641b4682c",
     "validation.json": "5bc08ae11e15e56c2f08e8ba1f45f0af1432caa2658cac5f0a27e39a7485eb03"
   },
-  "study_manifest_sha256": "26749388a08900f070e96776da0b1d2b493233ad285c65c113030b022c1f9629",
+  "study_manifest_sha256": "2578d4529418a65e46dec07f89c46e9e8bc3cbdfa3146a419c15494543c5a011",
   "table_sha256": {
     "anchor_evidence.csv": "5eabaf2051369b58548aa63e81300f98441fb6650f7b6f09c1558ed679f4391d",
     "bandwidth_boundaries.csv": "dbc9cb48170e144666999a0bd8faad865a59b29ab8cab563477d7cd1a8c38e10",
