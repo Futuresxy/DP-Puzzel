@@ -23,6 +23,18 @@ python3.11 -m ratio_dse.dse.figures \
 
 The [study config](../configs/dse/deepseek_study.json) names the evidence, topology and workload inputs and specifies the discrete bandwidth, context, batch and DP budget probes. The first topology is used for the full cross-workload, power-cap and migration sweeps. All listed topologies run at the anchor workload. The migration sweep compares the expert target, three Grouped O-down choices, a projection/shared-FFN move and a main-attention move. The supplied figure layouts select the documented 2,048-token, batch-1 anchor and the three named formats.
 
+## Precision migration × chip selection
+
+The cross-sweep evaluates all 24 existing precision plans on all nine profiles at the anchor and first topology. Each bandwidth/DP-budget cohort ranks profiles for a fixed plan and records the runner-up margin and minimum-energy profile. The [combined figure and interpretation](../results/summaries/deepseek-dse-20261113/migration_selection/README.md) show the useful MAC mix and six representative plans under the uncapped and 150 W cases.
+
+```bash
+python3.11 -m ratio_dse.dse.migration_selection --output ratio_dse/results/deepseek-migration-selection
+python3.11 -m ratio_dse.dse.migration_figure \
+  --run ratio_dse/results/deepseek-migration-selection \
+  --pdf paper/figures/dse_precision_selection.pdf \
+  --evidence ratio_dse/results/summaries/deepseek-dse-20261113/migration_selection
+```
+
 ## Paired comparisons
 
 | View | Fixed | Varied |

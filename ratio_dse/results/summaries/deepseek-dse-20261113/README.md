@@ -2,6 +2,8 @@
 
 **2026-11-13 · N12 DP evidence · analytical chip/GEMM results.** The study evaluated **2,196 candidates** from nine DP ratios, 27 physical profile/layout combinations and eight workload cases. The fixed-deployment sweep tested 24 precision plans per operating point and checked 414 paired migrations. The anchor uses batch 1 and 2,048-token prefill. V4-Flash uses the full prefill path and V4.1-Flash uses the simplified CED path. Their modeled scopes cover **97.16%** and **99.42%** of their respective ledger GEMM MACs. Compare changes within each workload. [Study config](../../../configs/dse/deepseek_study.json) · [Anchor data](figures/anchor_evidence.csv) · [Validation record](figures/validation.json)
 
+The [precision-plan × chip-ratio extension](migration_selection/README.md) evaluates all 24 plans on all nine profiles. A single figure pairs each plan's workload mix with the fastest ratio across bandwidth and DP-budget conditions.
+
 ## Power and energy
 
 Use power for feasibility at the relevant electrical or thermal averaging window and compare energy per fixed job among feasible candidates. Report latency independently. Energy is the integral of power over the job, and average power is that energy divided by the same window. A sustained budget can change the feasible schedule even when average job power is low. Commercial controllers may reduce clocks under power pressure. Here the model holds 1 GHz and limits concurrent arrays. [NVIDIA clock-event documentation](https://docs.nvidia.com/deploy/nvidia-smi/index.html#clocks-event-reasons)
