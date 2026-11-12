@@ -1,10 +1,13 @@
 PYTHON ?= python3
-.PHONY: all pdf watch reproduce diagrams cost-figures dp-share-figures check test clean
+.PHONY: all pdf watch reproduce petile17 diagrams cost-figures dp-share-figures check test clean
 all: pdf
 pdf:
 	latexmk -xelatex -interaction=nonstopmode -halt-on-error -file-line-error main.tex
 reproduce:
 	$(PYTHON) scripts/reproduce.py
+petile17:
+	$(PYTHON) scripts/reproduce_petile17_n12.py
+	$(PYTHON) scripts/precision_migration.py
 diagrams:
 	$(PYTHON) scripts/plot_tensor_dp_background.py
 	$(PYTHON) scripts/plot_kn_composition.py

@@ -1,4 +1,5 @@
 /build/
 __pycache__/
 *.pyc
-/data/results/
+/data/results/*
+!/data/results/petile17_n12/

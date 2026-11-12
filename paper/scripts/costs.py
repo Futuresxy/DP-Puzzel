@@ -15,8 +15,10 @@ def deploy(hw, alpha=.30, growth=0., baseline_cores=1, integer=False):
         n = baseline_cores*core0/a
         if integer:
             n = np.floor(n + 1e-12)
-        designs.append(dict(ratio=h["ratio"], area=a, count=n,
-                            capacity=n*h["capacity"], power=n*h["power"], total_power=None))
+        design = dict(ratio=h["ratio"], area=a, count=n, capacity=n*h["capacity"])
+        if "power" in h:
+            design["power"] = n*h["power"]
+        designs.append(dict(design, total_power=None))
     return designs
 
 def mapped_work(model, phase, context, profile, batch=1):

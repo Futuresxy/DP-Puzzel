@@ -13,6 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
+from matplotlib.patches import Patch
 from matplotlib.path import Path as PolygonPath
 import numpy as np
 from simplex import HEIGHT, xy
@@ -121,6 +122,66 @@ def draw_panel(ax, points, regions, objective, nv_points, models, ratios):
     ax.set_xlim(-.17, 1.17)
     ax.set_ylim(-.15, 1.005)
     ax.axis("off")
+
+
+def petile17_region_colors(regions):
+    colors = (
+        "#ded5e9", "#cab1d8", "#ecdcf1", "#a689bd", "#805b9d",
+        "#b4d9ca", "#f9dec4", "#f0c1a1", "#e4a2a3",
+        "#c1d8ef", "#b2c9e6", "#e2efd1", "#b9d8a0",
+        "#f0e1a9", "#f3ebc8", "#f1cbd1", "#d2e6c4",
+    )
+    return {r["index"]: colors[r["index"]] for r in regions if r["fraction"] > 1e-10}
+
+
+def style_petile17():
+    style()
+    plt.rcParams.update({
+        "pdf.fonttype": 42,
+        "font.serif": ["Times New Roman", "Liberation Serif", "DejaVu Serif"],
+    })
+
+
+def draw_petile17_regions(ax, regions, ratios, labels=True):
+    """Draw the legacy-area latency regions, including small regions for zoom views."""
+    colors = petile17_region_colors(regions)
+    for region in regions:
+        index = region["index"]
+        if index not in colors:
+            continue
+        vertices = xy(region["vertices_hqe"])
+        ax.fill(*vertices.T, facecolor=colors[index], edgecolor="#626c76", lw=.6, zorder=1)
+        if labels and region["fraction"] >= .06:
+            x_pos, y_pos = vertices.mean(axis=0)
+            ax.text(x_pos, y_pos, ratios[index], ha="center", va="center",
+                    fontsize=7.5, weight="bold", zorder=5)
+
+
+def draw_petile17_latency(points, nv_points, regions, models, ratios, output):
+    style_petile17()
+    fig = plt.figure(figsize=(7.4, 4.6))
+    ax = fig.add_axes([.02, .18, .73, .78])
+    draw_petile17_regions(ax, regions, ratios)
+    draw_axes(ax)
+    draw_trajectories(ax, points, nv_points, models)
+    ax.set(xlim=(-.17, 1.17), ylim=(-.14, 1.01), aspect="equal")
+    ax.axis("off")
+    colors = petile17_region_colors(regions)
+    legend = fig.add_axes([.69, .23, .29, .70])
+    legend.axis("off")
+    handles = [
+        Patch(facecolor=colors[r["index"]], edgecolor="#626c76", linewidth=.5,
+              label=f"{ratios[r['index']]}   {100*r['fraction']:.2f}%")
+        for r in regions if r["index"] in colors
+    ]
+    legend.legend(handles=handles, title="Minimum compute latency\nRatio and region share",
+                  loc="upper left", frameon=False, fontsize=8, title_fontsize=8.5,
+                  handlelength=1.15, labelspacing=.34)
+    draw_model_legend(fig.add_axes([.13, .035, .72, .11]), models, compact=True)
+    output.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output / "petile17_n12_prefill_time.pdf", bbox_inches="tight", pad_inches=.025,
+                metadata={"CreationDate": None})
+    save(fig, output, "petile17_n12_prefill_time")
 
 
 def draw_reading_example(ax):

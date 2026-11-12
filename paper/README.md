@@ -83,6 +83,10 @@ python3 scripts/plot_triangles.py  # 使用已安装 requirements.txt 的 Python
 
 脚本读取 `data/results/{regions.json,prefill_points.csv,nvfp4_prefill_points.csv}`，仅输出组合图及两个独立面板的 400 dpi PNG，字体与 `data/H16Q32E64_area/plot_area_comparison.py` 使用相同的衬线字体配置；输入哈希、实际字体和区域百分比记录于 `figures/k4_n12_prefill_plot_manifest.json`。完整 `reproduce.py` 使用同一绘图入口。NVFP4 能耗仍使用 MXFP4 活动功耗代理；读数示例不是模型负载点。
 
+### 旧 PETile 的 17 配比与 DeepSeek 精度迁移
+
+运行 `make petile17 PYTHON=python3.11` 可复算 [N12 等面积延迟三角图](figures/petile17_n12_prefill_time.pdf) 和 [渐进迁移的局部放大图](figures/petile17_precision_migration.pdf)。输入为 [旧 PETile 的 17 项 DC 面积](data/evidence/n12_legacy/README.md)。[实验记录](data/results/petile17_n12/README.md) 给出部署条件、两种专家映射的工作量，以及投影、共享专家和主注意力的四步迁移结果。
+
 ## 修改哪些数据
 
 | 文件 | 修改内容 |
