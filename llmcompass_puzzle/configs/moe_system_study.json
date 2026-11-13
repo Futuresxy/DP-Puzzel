@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "scope": "one_deepseek_moe_prefill_sublayer",
+  "models": [
+    "DeepSeek-V4-Flash",
+    "DeepSeek-V4.1-Flash"
+  ],
+  "tokens": [
+    256,
+    2048
+  ],
+  "plans": [
+    "w4a8",
+    "routed_mxfp4",
+    "routed_nvfp4"
+  ],
+  "fusion": [
+    true,
+    false
+  ],
+  "physical_sms": [
+    64,
+    96,
+    128
+  ],
+  "vector_scales": [
+    0.5,
+    1,
+    2
+  ],
+  "caps_w": [
+    null,
+    250
+  ],
+  "hbm_bundles": [
+    {
+      "id": "hbm4",
+      "physical_channels": 4,
+      "active_channels": 4,
+      "capacity_gb": 64
+    },
+    {
+      "id": "hbm5",
+      "physical_channels": 6,
+      "active_channels": 5,
+      "capacity_gb": 80
+    },
+    {
+      "id": "hbm8",
+      "physical_channels": 8,
+      "active_channels": 8,
+      "capacity_gb": 128
+    }
+  ],
+  "l2_bundles": [
+    {
+      "id": "l2_small",
+      "physical_mib": 12,
+      "enabled_mib": 10,
+      "bytes_cycle": 1280
+    },
+    {
+      "id": "l2_base",
+      "physical_mib": 48,
+      "enabled_mib": 40,
+      "bytes_cycle": 5120
+    }
+  ],
+  "settings": {
+    "devices": 8,
+    "extra_tensor_mm2_per_sm": 0,
+    "hbm_bytes_s_per_channel": 407800000000,
+    "usable_sram_kib": 144,
+    "link_bytes_s": 150000000000,
+    "link_latency_s": 2e-06,
+    "launch_s": 2e-06,
+    "active_fractions": [
+      1,
+      0.5,
+      0.25
+    ],
+    "bandwidth_fractions": [
+      1,
+      0.5
+    ],
+    "tiles": [
+      [
+        32,
+        128
+      ],
+      [
+        64,
+        128
+      ],
+      [
+        128,
+        128
+      ]
+    ],
+    "tile_k": 128,
+    "reserved_hbm_bytes": 8589934592,
+    "special_work_equivalent": 35,
+    "unpack_work_per_value": 2,
+    "quant_recipe": {
+      "kind": "block_local",
+      "status": "assumed_work_coefficients_not_kernel_measurement",
+      "vector_work_per_value": 4,
+      "special_work_per_block": 4,
+      "pack_work_per_word": 1
+    }
+  },
+  "power": {
+    "status": "illustrative_uncalibrated_system_scenario",
+    "boundary": "device_including_hbm",
+    "fixed_w": 20,
+    "idle_w_per_sm": 0.2,
+    "hbm_idle_w_per_channel": 4,
+    "l2_idle_w_per_mib": 0.1,
+    "vector_j_per_work": 2e-12,
+    "hbm_j_per_byte": 6e-11,
+    "l2_j_per_byte": 2e-12,
+    "link_j_per_byte": 2e-11,
+    "dp_activity_multiplier": 1.2,
+    "dp_mode_proxies": {
+      "nvfp4": "mxfp4_e2m1"
+    }
+  },
+  "quality_policy": "llmcompass_puzzle/configs/quality_policy.json",
+  "quality_records": null,
+  "notes": [
+    "System hardware costs use pinned LLMCompass; timing is the new analytical MoE adapter, not upstream SCALE-Sim accuracy.",
+    "Communication is a specified EP all-to-all deployment, not the replicated-input reference Python deployment.",
+    "Power coefficients other than DP are explicitly assumed scenarios; cap feasibility is conditional, not a physical guarantee.",
+    "Reserved HBM is a scenario allocation for other model state; full-model capacity not verified.",
+    "W4A8 is an optimized MX32 research baseline; the pinned V4 reference uses another activation-block contract."
+  ],
+  "numerical_recipes": {
+    "w4a8": {
+      "quantizer_revision": null,
+      "calibration_sha256": null,
+      "numerical_graph_sha256": null,
+      "scope": "routed_experts_only; remaining full-model operators unchanged",
+      "format": "w4a8"
+    },
+    "routed_mxfp4": {
+      "quantizer_revision": null,
+      "calibration_sha256": null,
+      "numerical_graph_sha256": null,
+      "scope": "routed_experts_only; remaining full-model operators unchanged",
+      "format": "routed_mxfp4"
+    },
+    "routed_nvfp4": {
+      "quantizer_revision": null,
+      "calibration_sha256": null,
+      "numerical_graph_sha256": null,
+      "scope": "routed_experts_only; remaining full-model operators unchanged",
+      "format": "routed_nvfp4"
+    }
+  },
+  "study_design": {
+    "main_question": "Does a changed Tensor precision ratio retain a latency benefit after both systems optimize resources under the same area and power budgets?",
+    "primary_case": {
+      "model": "DeepSeek-V4-Flash",
+      "tokens": 2048,
+      "fusion": true
+    },
+    "fixed_system": {
+      "physical_sms": 128,
+      "vector_scale": 1,
+      "hbm_id": "hbm5",
+      "l2_id": "l2_base"
+    },
+    "baseline_ratio": "1:2:4",
+    "questions": [
+      "ratio_only_at_fixed_resources",
+      "resource_reallocation_at_fixed_workload",
+      "precision_migration_at_fixed_hardware"
+    ],
+    "controls": "256-token and V4.1 cases test workload dependence; fusion is a paired quantization ablation; do not merge different caps into one ranking.",
+    "claim_boundary": "analytical one-MoE-sublayer costs; no full-model TTFT, measured quality or physical TDP guarantee"
+  }
+}

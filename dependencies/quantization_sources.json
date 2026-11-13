@@ -1,0 +1,71 @@
+{
+  "sources": [
+    {
+      "name": "DeepSeek-V4-Flash",
+      "revision": "60d8d70770c6776ff598c94bb586a859a38244f1",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "llmcompass_puzzle/upstream/quantization_sources/DeepSeek-V4-Flash/inference/model.py",
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/inference/model.py",
+          "sha256": "ce962f1face79d4f633d36436576214057a7e11443c9789935e1deb5c6cd1d71"
+        },
+        {
+          "path": "llmcompass_puzzle/upstream/quantization_sources/DeepSeek-V4-Flash/inference/kernel.py",
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/inference/kernel.py",
+          "sha256": "59b325083d7103975cba025bd0d60ea343bb82d8fff53088afb7c04bd380c0c2"
+        },
+        {
+          "path": "llmcompass_puzzle/upstream/quantization_sources/DeepSeek-V4-Flash/LICENSE",
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/resolve/60d8d70770c6776ff598c94bb586a859a38244f1/LICENSE",
+          "sha256": "f2c6c602815669d292889e5be8c802f2ed950653b77999b1584e8e6aed25d040"
+        }
+      ]
+    },
+    {
+      "name": "DeepSeek-V4.1-Flash",
+      "revision": "314113f8a7dadb388215396ba5fbee2c610a04d6",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "llmcompass_puzzle/upstream/quantization_sources/DeepSeek-V4.1-Flash/inference/model.py",
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/314113f8a7dadb388215396ba5fbee2c610a04d6/inference/model.py",
+          "sha256": "e5decd76fe70fd56ef2f10124d245c6f64fb6a0003cc9068a1d3182a168b8d2d"
+        },
+        {
+          "path": "llmcompass_puzzle/upstream/quantization_sources/DeepSeek-V4.1-Flash/inference/kernel.py",
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/314113f8a7dadb388215396ba5fbee2c610a04d6/inference/kernel.py",
+          "sha256": "1236c3507019ed176f5dba5e04bcea58867cf654818c6cf138ed4845398c2455"
+        },
+        {
+          "path": "llmcompass_puzzle/upstream/quantization_sources/DeepSeek-V4.1-Flash/LICENSE",
+          "url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/314113f8a7dadb388215396ba5fbee2c610a04d6/LICENSE",
+          "sha256": "f2c6c602815669d292889e5be8c802f2ed950653b77999b1584e8e6aed25d040"
+        }
+      ]
+    },
+    {
+      "name": "NVIDIA/Model-Optimizer",
+      "revision": "1318c296fca258880834d159c98bc01ff45f1776",
+      "license": "Apache-2.0 (see upstream LICENSE)",
+      "files": [
+        {
+          "path": "llmcompass_puzzle/upstream/quantization_sources/Model-Optimizer/examples/deepseek/README.md",
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/1318c296fca258880834d159c98bc01ff45f1776/examples/deepseek/README.md",
+          "sha256": "cbf4705ac9409d639fefb40ca2b3b20f4c45d7b7ff3e5fc2d342a91f2e25b7dd"
+        },
+        {
+          "path": "llmcompass_puzzle/upstream/quantization_sources/Model-Optimizer/examples/deepseek/deepseek_v4/quantize_to_nvfp4.py",
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/1318c296fca258880834d159c98bc01ff45f1776/examples/deepseek/deepseek_v4/quantize_to_nvfp4.py",
+          "sha256": "48125fa8b3583843589adc3a110a269c0fc88eee4f1bfc60f2ef10b0284963f2"
+        },
+        {
+          "path": "llmcompass_puzzle/upstream/quantization_sources/Model-Optimizer/LICENSE",
+          "url": "https://raw.githubusercontent.com/NVIDIA/Model-Optimizer/1318c296fca258880834d159c98bc01ff45f1776/LICENSE",
+          "sha256": "afdb91dcaa65662087bfa1a7fb5e327fd7a259d3cc52a3e8402be3704a7ff993"
+        }
+      ]
+    }
+  ],
+  "purpose": "Read-only W4A8/W4A4 code audit; sources are not imported or executed"
+}

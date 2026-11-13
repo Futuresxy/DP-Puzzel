@@ -1,0 +1,2 @@
+# Preserve the standard csv.writer CRLF bytes used by the artifact hashes.
+*.csv -text whitespace=cr-at-eol

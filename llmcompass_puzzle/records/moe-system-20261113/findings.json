@@ -1,0 +1,158 @@
+{
+  "scope": "analytical one-MoE-sublayer contrasts; quality unknown; power uncalibrated",
+  "fp4_peak_expansion_at_fixed_system": {
+    "from_candidate": "case-22d373bf9d4ba0a21ecf",
+    "to_candidate": "case-3da4da0143f6427fac1c",
+    "from_seconds": 0.00047110343828861656,
+    "to_seconds": 0.00047096071899037085,
+    "latency_reduction_fraction": 0.00030294684064324784
+  },
+  "baseline_resource_reallocation": {
+    "from_candidate": "case-22d373bf9d4ba0a21ecf",
+    "to_candidate": "case-0016bb76818afcce24af",
+    "from_seconds": 0.00047110343828861656,
+    "to_seconds": 0.0003717035469982868,
+    "latency_reduction_fraction": 0.21099377166810962
+  },
+  "ratio_change_after_both_systems_optimize": {
+    "from_candidate": "case-0016bb76818afcce24af",
+    "to_candidate": "case-ff200c5f15fcee23456c",
+    "from_seconds": 0.0003717035469982868,
+    "to_seconds": 0.00035307646463859406,
+    "latency_reduction_fraction": 0.05011273771831559
+  },
+  "combined_change_not_attributable_to_ratio_alone": {
+    "from_candidate": "case-22d373bf9d4ba0a21ecf",
+    "to_candidate": "case-ff200c5f15fcee23456c",
+    "from_seconds": 0.00047110343828861656,
+    "to_seconds": 0.00035307646463859406,
+    "latency_reduction_fraction": 0.2505330338466232
+  },
+  "remaining_fp8_shared_gemm": {
+    "from_candidate": "case-0016bb76818afcce24af",
+    "to_candidate": "case-ff200c5f15fcee23456c",
+    "total_saved_s": 1.8627082359692752e-05,
+    "shared_gemm_saved_s": 1.824038271604939e-05,
+    "shared_fraction_of_savings": 0.9792399240967473,
+    "routed_gemm_saved_s": 3.8669964364340084e-07,
+    "communication_fraction_after": 0.34565935585159063
+  },
+  "cost_only_winners_and_near_ties": [
+    {
+      "plan": "w4a8",
+      "cap_w": null,
+      "best_candidate": "case-3de88754f379938df418",
+      "best_ratio": "1:6:12",
+      "seconds": 0.00038746451896726626,
+      "design": {
+        "physical_sms": "96",
+        "enabled_sms": "81",
+        "vector_scale": "2",
+        "hbm_id": "hbm8",
+        "l2_id": "l2_base"
+      },
+      "ratios_within_one_percent_latency": [
+        "1:6:12"
+      ]
+    },
+    {
+      "plan": "routed_mxfp4",
+      "cap_w": null,
+      "best_candidate": "case-55fe31059d5346b28e40",
+      "best_ratio": "1:6:12",
+      "seconds": 0.00034330696973294096,
+      "design": {
+        "physical_sms": "96",
+        "enabled_sms": "81",
+        "vector_scale": "2",
+        "hbm_id": "hbm8",
+        "l2_id": "l2_base"
+      },
+      "ratios_within_one_percent_latency": [
+        "1:4:4",
+        "1:4:8",
+        "1:6:12"
+      ]
+    },
+    {
+      "plan": "routed_nvfp4",
+      "cap_w": null,
+      "best_candidate": "case-ff200c5f15fcee23456c",
+      "best_ratio": "1:6:12",
+      "seconds": 0.00035307646463859406,
+      "design": {
+        "physical_sms": "96",
+        "enabled_sms": "81",
+        "vector_scale": "2",
+        "hbm_id": "hbm8",
+        "l2_id": "l2_base"
+      },
+      "ratios_within_one_percent_latency": [
+        "1:4:4",
+        "1:4:8",
+        "1:6:12"
+      ]
+    },
+    {
+      "plan": "w4a8",
+      "cap_w": "250",
+      "best_candidate": "case-7680d2ce40216f1075fb",
+      "best_ratio": "1:4:4",
+      "seconds": 0.0006270915959549562,
+      "design": {
+        "physical_sms": "96",
+        "enabled_sms": "81",
+        "vector_scale": "2",
+        "hbm_id": "hbm4",
+        "l2_id": "l2_base"
+      },
+      "ratios_within_one_percent_latency": [
+        "1:4:4",
+        "1:4:8"
+      ]
+    },
+    {
+      "plan": "routed_mxfp4",
+      "cap_w": "250",
+      "best_candidate": "case-44dee706afb15330f606",
+      "best_ratio": "1:8:16",
+      "seconds": 0.0004335176221440695,
+      "design": {
+        "physical_sms": "96",
+        "enabled_sms": "81",
+        "vector_scale": "2",
+        "hbm_id": "hbm5",
+        "l2_id": "l2_base"
+      },
+      "ratios_within_one_percent_latency": [
+        "1:4:4",
+        "1:6:12",
+        "1:8:16"
+      ]
+    },
+    {
+      "plan": "routed_nvfp4",
+      "cap_w": "250",
+      "best_candidate": "case-5bfcf456bd5914362b32",
+      "best_ratio": "1:8:16",
+      "seconds": 0.0004479059687182879,
+      "design": {
+        "physical_sms": "96",
+        "enabled_sms": "81",
+        "vector_scale": "2",
+        "hbm_id": "hbm5",
+        "l2_id": "l2_base"
+      },
+      "ratios_within_one_percent_latency": [
+        "1:4:4",
+        "1:6:12",
+        "1:8:16"
+      ]
+    }
+  ],
+  "inputs_sha256": {
+    "primary_cells.csv": "ea78dc80d2f295ff008b19b185b2469a6154125b298e4565d9b9e38069459a8c",
+    "primary_operator_breakdown.csv": "afbc5ed3dbdb0ada27b5e4ebda7b0f41b25517bcb235f7ed27aaf9383bbb4b7e"
+  },
+  "script_sha256": "ac33c5c1dd22a6a9b3cbe83f8f0db8ebb7065dfc1a18d8c80bbee99c5b445be4"
+}

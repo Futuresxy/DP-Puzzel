@@ -1,0 +1,11 @@
+{
+  "input_sha256": "ea78dc80d2f295ff008b19b185b2469a6154125b298e4565d9b9e38069459a8c",
+  "script_sha256": "91bc9def9ad2ad322d9ceb5f9af812bc1a6702b0267f409b6a1d4fbe57f0b753",
+  "style_sha256": "d72aad2a78880e7f548384bd45118a749bddfd540f6070b7260f0cf10380368f",
+  "pdf_sha256": "1c0439509f84bc32f97299a8baf5106e8786f1578f3ad6578ef0d0c86467753c",
+  "matplotlib_version": "3.11.2",
+  "scope": "one MoE sublayer; uncalibrated power/quantization assumptions; quality unknown",
+  "min_ms": 0.34330696973294095,
+  "max_ms": 0.6993471013350772,
+  "missing": "area/capacity/power/mapping infeasible; see primary_cells.csv"
+}

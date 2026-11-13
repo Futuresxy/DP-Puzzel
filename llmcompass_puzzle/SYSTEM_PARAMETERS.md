@@ -1,6 +1,6 @@
 # 系统参数、量化开销与功率约束
 
-2026-11-13；基于固定版 LLMCompass 与 S1 面积接入。研究对象是 **给定预算下的模型推理系统**：DP 配比是输入，不继续把微架构作为主要搜索对象。本文定义后续联合 DSE 的参数与约束，并记录已实现的量化工作量/窗口功率准入接口。它们尚未与 DeepSeek 完整时序图连接，不构成已跑通的端到端 DSE。
+2026-11-13；基于固定版 LLMCompass 与 S1 面积接入。研究对象是 **给定预算下的模型推理系统**：DP 配比是输入，不继续把微架构作为主要搜索对象。本文定义联合 DSE 的参数与约束，并记录量化工作量/窗口功率准入接口。新增可执行 [MoE 系统阶段](MOE_STUDY.md) 采用显式功率情景和逐 kernel 保守包络；下文区间功率接口是独立能力，不能混称已完成校准。它们尚未与 DeepSeek 完整时序图连接，不构成已跑通的端到端 DSE。
 
 ## 1. 主搜索变量与固定边界
 
@@ -40,11 +40,11 @@
 现有 `build_gemm_plan()` 对路由专家baseline声明 **W4存储、FP8执行**，并且旧模型边界在展开之后。迁到W4A4时：
 
 - 已经是W4的权重HBM容量/字节不会再次减半；共享专家等原先FP8存储的权重需要单独判断。
-- 可以省掉原W4→FP8展开及其工作区/写回，增加或替换对应的激活转换。
+- 可以省掉原W4→FP8的片上展开及其局部工作区，增加或替换对应的激活转换。固定原始kernel没有默认的整份FP8权重HBM写回；旧模型边界不代表实际kernel实现。
 - 激活格式、元数据、tensor生存期以及L2/SM供数仍可能改变。
 - 能否缓存展开权重决定它是每次使用收费还是跨请求摊销，缓存占用必须同时扣容量。
 
-首版仅支持具名的block-local MX recipe，保留三个计数系数：每元素vector工作、每block特殊/归约工作、每32bit打包字的vector工作。它们是可校准的工作单位，不等价于保证存在的ISA指令数。不建完整量化算法搜索，不计离线训练/校准成本，不计PPL。若未来recipe要求rotation、迭代处理或全tensor扫描，必须另加路径，不能沿用这三个系数声称已经覆盖。
+首版仅支持具名的block-local MX recipe，保留三个计数系数：每元素vector工作、每block特殊/归约工作、每32bit打包字的vector工作。它们是可校准的工作单位，不等价于保证存在的ISA指令数。不建完整量化算法搜索，离线训练/校准成本不计入单次在线延迟。质量通过独立的完整方案实测门禁纳入，见 [质量接口](QUANTIZATION_AND_QUALITY.md)。若未来recipe要求rotation、迭代处理或全tensor扫描，必须另加路径，不能沿用这三个系数声称已经覆盖。
 
 对形状 `rows × K`，block大小G：
 
@@ -101,7 +101,7 @@ DP能量可从已有固定频率活动代理 `P_dynamic/f` 起步，但这不是
 
 [system_contract.py](system_contract.py) 提供：
 
-- `quantization_work(rows, columns, target_format, recipe, ...)`：返回工作量、payload/scale、可省producer写回、source读取、launch和最小block临时空间。仅BF16→MXFP8/MXFP4；未提供未经校准的时延。权重展开使用独立转换事件，不冒充这个量化操作。
+- `quantization_work(rows, columns, target_format, recipe, ...)`：返回工作量、payload/scale、可省producer写回、source读取、launch和最小block临时空间。支持BF16→MXFP8/MXFP4，以及固定per-tensor scale的NVFP4；未提供未经校准的时延。权重展开使用独立转换事件，不冒充这个量化操作。
 - `evaluate_power_windows(windows, profile, cap_w, boundary)`：输入明确窗口duration与事件计数、同一设计的J/event与base-W区间，输出逐窗口分项功率、总能量区间和准入状态。`required_event_keys`防止漏掉某个资源计数；不活跃也显式写0。该接口不自行生成时序、不模拟降频、不校准系数。
 
 [system_power_template.json](configs/system_power_template.json) 的未知功率全部为null，不能直接生成“满足400W”的结论。`system_audit` 中仅有明确标记的人工代数例子用于接口演示，没有把它们用于芯片候选排名。

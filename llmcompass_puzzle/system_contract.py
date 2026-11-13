@@ -23,10 +23,12 @@ def quantization_work(rows, columns, target_format, recipe, *, fused_producer=Fa
     calibrated together with the matching vector/special-function service rates.
     Fused output is still materialized; consumer/register fusion is not assumed.
     Only a one-pass block-local recipe is supported, not global current scaling.
+    NVFP4 assumes a calibrated, fixed per-tensor scale (4 metadata bytes), with
+    online group16 scales. A dynamic tensor-wide scale requires another model.
     """
     require(type(rows) is int and rows > 0 and type(columns) is int and columns > 0,
             "positive integer tensor dimensions required")
-    require(target_format in ("mxfp8_e4m3", "mxfp4_e2m1"), "unsupported block quantization target")
+    require(target_format in ("mxfp8_e4m3", "mxfp4_e2m1", "nvfp4"), "unsupported block quantization target")
     require(recipe["kind"] == "block_local", "only block-local quantization is modeled")
     require(not fused_producer or producer_allows_fusion, "fusion requires a legal producer edge")
     coefficients = {key: nonnegative(recipe[key], key) for key in
@@ -43,7 +45,8 @@ def quantization_work(rows, columns, target_format, recipe, *, fused_producer=Fa
                  + words * coefficients["pack_work_per_word"],
                  "special_work": blocks * coefficients["special_work_per_block"]},
         "source_read_bytes": 0 if fused_producer else source_bytes,
-        "output_payload_bytes": rows * payload, "output_scale_bytes": rows * metadata,
+        "output_payload_bytes": rows * payload,
+        "output_scale_bytes": rows * metadata + (4 if target_format == "nvfp4" else 0),
         "replaced_producer_write_bytes": source_bytes if fused_producer and not keep_high_precision_output else 0,
         "extra_launches": 0 if fused_producer else 1,
         "minimum_block_scratch_bytes": 2 * min(columns, spec["scale_block_elements"]),

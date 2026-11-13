@@ -2,9 +2,21 @@
 
 本目录是与 `ratio_dse/` **并行、独立**的研究主线，保留原模型和实验。以 prefill 为主、decode 为对照，研究在面积、存储和可用功率预算下，如何共同选择 Tensor 精度配比、vector、存储/带宽及模型精度迁移方案。
 
-**当前已完成 S1 接入验证**：真实调用固定版本 LLMCompass 成本模型，接入九种实测 DP 的工艺代理/面积替换；运行原始 A100 的 SCALE-Sim、GEMM mapper 与 Softmax CPU 仿真。尚未接入多精度 DP 时序及 DeepSeek 完整算子图，**本阶段没有端到端推理加速结论**。
+**已完成 S1 接入验证**：真实调用固定版本 LLMCompass 成本模型，接入九种实测 DP 的工艺代理/面积替换；运行原始 A100 的 SCALE-Sim、GEMM mapper 与 Softmax CPU 仿真。S1 验证的是上游标量时序，未包含 DeepSeek 完整算子图，**本阶段没有端到端推理加速结论**。
 
-后续已增加[系统参数与功率约束方案](SYSTEM_PARAMETERS.md)、可执行的量化工作量/窗口功率准入接口及[系统资源审计](records/system-audit-20261113/README.md)。这些接口尚未连接完整推理时序；非DP功率未知项不会被当作零功耗放行。
+另已增加[系统参数与功率约束方案](SYSTEM_PARAMETERS.md)、可执行的量化工作量/窗口功率准入接口及[系统资源审计](records/system-audit-20261113/README.md)。这些接口尚未连接完整推理时序；非DP功率未知项不会被当作零功耗放行。
+
+## 配比驱动的系统 DSE
+
+新增 [MoE 系统研究主线与完整输入输出](MOE_STUDY.md)：固定资源只改配比 → 同预算资源重分配 → 固定硬件选择精度迁移。提供单 MoE 子层解析时序、量化/本地展开、分层访存与 EP 通信、功率情景及双向选择；[首批受控结果与主图](records/moe-system-20261113/README.md) 已保留。这是完整 prefill 建模前的机制阶段，**不是 DeepSeek 端到端 TTFT**。
+
+[W4A8/W4A4 与质量接口](QUANTIZATION_AND_QUALITY.md) 区分原始参考 W4A8 与已公开的 routed-expert NVFP4 W4A4。质量阈值现已恢复为可配置约束；未匹配的文献和未知质量不能生成达标推荐。非 DP 功率和量化时间尚未校准，成本排名仅在声明假设下成立。
+
+```bash
+bash llmcompass_puzzle/run_system_dse.sh llmcompass_puzzle/runs/my-moe
+llmcompass_puzzle/.venv/bin/python -m llmcompass_puzzle.summarize_system \
+  --run llmcompass_puzzle/runs/my-moe --output llmcompass_puzzle/runs/my-moe-summary
+```
 
 ## 运行
 
