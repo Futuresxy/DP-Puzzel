@@ -1,0 +1,69 @@
+% !TeX root = ../main.tex
+\section{背景与相关工作}
+\label{sec:background}
+
+\subsection{基于点积单元的张量计算组织}
+\label{sec:tensor_organization}
+
+矩阵乘累加 $D=C+AB$ 的每个输出对应一条沿 $K$ 维归约的点积。基于点积单元（DP）的张量阵列沿 $M/N$ 维并行生成输出，DP 内则并行处理多个乘积，经对齐和归约后共享规格化与舍入后端~\cite{lutzFusedFP84Way2024}。Ten-Four 将此类单元组织为二维阵列并集成到 GPGPU Tensor Core，展示了从融合点积到矩阵计算的实现路径~\cite{rout2026tenfourv3}。本文用 TensorCore 指张量计算阵列这一组织层级，不预设某一商业芯片的内部电路。
+
+设一个 DP 在精度模式 $p$ 下，每次请求处理 $K_p$ 个乘积，启动间隔为 $\mathrm{II}_p$，则其峰值吞吐为 $K_p/\mathrm{II}_p$ MAC/cycle（1 MAC 计 2 OP）。$K_p$ 是原生点积长度，区别于完整 GEMM 的 $K$ 及软件指令规定的矩阵尺寸。完整 GEMM 需要分块映射到阵列，并沿 $K$ 维组织多次累加。扩大原生 $K_p$ 增加同一输出的归约并行度；增加 $M/N$ 方向 DP 数量则增加并行输出及其累加状态。两者的输入复用、尾块利用率和供数需求不同，峰值吞吐相同也未必具有相同成本。共享 DP 的不同精度模式互斥，不能将其峰值相加作为可同时使用的算力。
+
+\subsection{微缩放格式与点积定义}
+\label{sec:formats}
+
+BF16/FP16 以逐元素指数和有效数编码数值~\cite{burgess2019bfloat16}。微缩放格式将一组元素表示为 $x_{j,i}=X_jP_{j,i}$，其中 $X_j$ 是共享尺度，$P_{j,i}$ 是低位宽元素的解码值。OCP MXFP8/6/4 每 32 个元素共享一个 E8M0 尺度~\cite{ocpmx2023}；NVFP4 每 16 个 E2M1 元素共享一个 E4M3 尺度，并在张量层引入 FP32 缩放~\cite{nvidia2024nvfp4}；HiF4 每 64 个元素使用一个无符号 E6M2 基础尺度，并在每 8、4 个元素上分别配置一位微指数~\cite{hifloat4}。因此，同为 4 位的格式也可能需要不同的解包、尺度融合及数据传输逻辑。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fp_format.png}
+\caption{元素编码与组级缩放元数据~\cite{ocpmx2023,nvidia2024nvfp4,hifloat4}。字段标注为位宽，$g$ 为缩放组大小；NVFP4 的张量级 FP32 缩放未画出。}
+\label{fig:fpformats}
+\end{figure}
+
+对两路具有相同分组边界的输入，将 $L$ 项乘积划分为 $G=\lceil L/g\rceil$ 组，末组补零。依据 OCP MX 的组级点积语义，加入累加输入 $c$ 可得~\cite{ocpmx2023}
+\begin{equation}
+d=c+\sum_{j=0}^{G-1}X_j^{(A)}X_j^{(B)}
+\underbrace{\sum_{i=0}^{g-1}P_{j,i}^{(A)}P_{j,i}^{(B)}}_{q_j}.
+\label{eq:blockdot}
+\end{equation}
+其中 $q_j$ 是组内点积；HiF4 的局部微指数可计入 $P_{j,i}$，无组尺度的格式则令 $X_j^{(A)}=X_j^{(B)}=1$。NVFP4 的张量级缩放还需由完整算子单独处理，不能因式中仅列组尺度而省略。该定义允许先归约元素乘积，再融合尺度，为分层通路共享提供算术依据；实际内部位宽、舍入及运算顺序仍由实现确定。
+
+\subsection{工业界的算力配比选择}
+\label{sec:commercial_ratios}
+\label{sec:ratio_motivation}
+
+表~\ref{tab:vendor_ratios} 将公开规格统一到单芯片的稠密矩阵峰值。B200 与 B300 在 16、8 位峰值相同的情况下提高了 4 位峰值，MI455X 则同时提高低精度相对于 16 位的吞吐。这表明芯片的算力配比并不由元素位宽唯一决定。表中不同厂商的格式与执行语义仍有区别，数字用于说明配比选择的多样性，不用于跨芯片性能排名。
+
+\begin{table}[t]
+\centering
+\caption{代表性芯片的公开稠密矩阵峰值（PFLOP/s）。配比按 16 位归一化，规格末位舍入造成的偏差忽略。}
+\label{tab:vendor_ratios}
+\begingroup\footnotesize\setlength{\tabcolsep}{2pt}
+\begin{tabular*}{\columnwidth}{@{\extracolsep{\fill}}lrrrl@{}}\toprule
+芯片 & 16 位 & 8 位 & 4 位 & 配比 \\\midrule
+B200 SXM~\cite{nvidiahgx} & 2.250 & 4.500 & 9.000 & $1:2:4$ \\
+MI355X~\cite{amdmi355x} & 2.517 & 5.033 & 10.066 & $1:2:4$ \\
+Ascend 950PR~\cite{huawei950} & 0.432 & 0.865 & 1.730 & $1:2:4$ \\
+B300 SXM~\cite{nvidiahgx} & 2.250 & 4.500 & 13.500 & $1:2:6$ \\
+MI455X~\cite{amdmi455x} & 5.033 & 20.133 & 40.265 & $1:4:8$ \\
+Rubin GPU~\cite{nvidiaverarubin} & 4.000 & 17.500 & 35.000 & $1:4.375:8.75$ \\
+\bottomrule
+\end{tabular*}
+\par\smallskip
+\parbox{\columnwidth}{\raggedright B200/B300 由 HGX 八芯片规格换算；Rubin 采用单 GPU 的稠密训练规格，未混用稀疏推理峰值；950PR 取白皮书所列较高规格档。}
+\endgroup
+\end{table}
+
+厂商规格给出了最终设计点，却不能单独分离增加某类算力的面积和功耗代价，也不能说明该配比对其他模型或迁移场景是否合适。本文从 $1:2:4$ 基线出发，通过只增加 Q、只增加 E 或同时增加 Q/E 构造九种可比较实现（表~\ref{tab:ratio9_composition}）。其中较激进的配比用于扫描低精度工作量增长的条件，不视为商业产品预测。
+
+\subsection{低精度设计与软硬件协同的研究边界}
+\label{sec:datapath_sharing}
+
+\textbf{多精度算术与通路共享。} Ten-Four 共享浮点和整数点积后端，并支持 MX 缩放及按活动通道门控~\cite{rout2026tenfourv3}；TransDot 通过可重构算术资源实现跨精度点积~\cite{transdot2026}；MPICC 研究多精度 MAC 的内部表示与随机舍入~\cite{huangMPICCMultiplePrecisionInterCombined2025}。这些工作说明共享结构可以降低支持多种精度的成本。表~\ref{tab:related_features} 列出代表性实现的格式支持；格式可配置性与本文增配专用 Group 的配比可配置性是不同维度。
+
+\input{tables/related_features.tex}
+
+\textbf{格式、质量与硬件成本协同。} Crafton 等联合探索低精度数据格式与 MAC 架构的 Pareto 权衡~\cite{paretomac2025}。MX-Like 进一步以共享尺度、权重和激活格式为设计变量，通过专用数据通路模板及 NPU 集成，联合评估困惑度与硬件成本~\cite{zhao2026mxlike}。这类研究直接支持精度迁移需要质量约束的判断，但其主要变量是数值格式及对应实现，未系统分析固定格式集合的峰值配比如何改变整芯片部署与负载收益。
+
+\textbf{系统建模与本文定位。} Timeloop 分析循环映射和存储层次~\cite{timeloop2019}，LLMCompass 联结推理负载、硬件映射与面积成本~\cite{zhang2024llmcompass}。本文沿用从算子到硬件的建模思路，将可实现 DP 的多精度配比作为显式变量，连接同工况单元成本、预算内的核心数，以及精度相关的 GEMM 利用率。在上述代表性工作中，这一从\emph{配比实现到混合精度负载选择}的链条尚缺少系统量化。本文据此比较当前映射和受质量约束的迁移场景；外部量化研究可提供质量数据，但其结果不能未经验证直接转用于本文模型。

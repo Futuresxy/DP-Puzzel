@@ -1,0 +1,55 @@
+{
+  "baseline_ratio": "1:2:4",
+  "total_area_mm2": 810.476143908894,
+  "area_components_mm2": {
+    "tensor": 18.20771080511041,
+    "vector_alu": 55.66897126951648,
+    "register_file": 200.35998938155603,
+    "sm_sram": 65.0675297338403,
+    "sm_control": 169.48848182762202,
+    "core_interconnect": 58.88265835929387,
+    "global_buffer_area": 113.70604863787375,
+    "mem_phy_area": 62.699999999999996,
+    "mem_controller_area": 34.43881619937695,
+    "device_phy_area": 22.656,
+    "device_controller_area": 9.299937694704049
+  },
+  "area_component_percent": {
+    "tensor": 2.246544940520439,
+    "vector_alu": 6.868674875614138,
+    "register_file": 24.721269205436183,
+    "sm_sram": 8.028309065338089,
+    "sm_control": 20.912211062769334,
+    "core_interconnect": 7.265193281976836,
+    "global_buffer_area": 14.02953677198616,
+    "mem_phy_area": 7.736193158949801,
+    "mem_controller_area": 4.24920788331658,
+    "device_phy_area": 2.7953938151382247,
+    "device_controller_area": 1.1474659389542081
+  },
+  "memory_area_sensitivities": [
+    {
+      "scenario": "one_more_physical_HBM_channel",
+      "added_area_mm2": 16.189802699896063,
+      "scope": "area sensitivity only; active resources and timing unchanged"
+    },
+    {
+      "scenario": "double_physical_L2",
+      "added_area_mm2": 113.70604863787366,
+      "scope": "area sensitivity only; active resources and timing unchanged"
+    }
+  ],
+  "baseline_peak_hbm_balance_flop_per_byte": {
+    "tf32": 54.23835213339873,
+    "fp16": 108.47670426679746,
+    "bf16": 108.47670426679746,
+    "mxfp8_e4m3": 216.9534085335949,
+    "mxfp8_e5m2": 216.9534085335949,
+    "mxfp6_e3m2": 216.9534085335949,
+    "mxfp6_e2m3": 216.9534085335949,
+    "mxfp4_e2m1": 433.9068170671898,
+    "nvfp4": 433.9068170671898,
+    "hif4": 433.9068170671898,
+    "int8": 216.9534085335949
+  }
+}

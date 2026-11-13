@@ -1,0 +1,40 @@
+{
+  "scope": "figure-only redraw; integer-core latency and MXFP4-proxy energy",
+  "sources": {
+    "regions.json": "2c90a1d1d841ae5730015805f093acb3abfcc72b8dc44f89ac12296555345bc7",
+    "prefill_points.csv": "4e4c1269b090938f1ab6c15318eb165fce26d7314f45584e79f2f65781aa3f39",
+    "nvfp4_prefill_points.csv": "528b9bb658008e22c76d884de839bd463ea23918353a074ab7934b31b3f113d3"
+  },
+  "plot_script_sha256": "d59123467c85d99845272718f34ebbb716e03eb18052296456c297d7584bf0fe",
+  "region_percentages": {
+    "time": {
+      "1:2:4": 33.146953405017925,
+      "1:2:6": 7.937615034389226,
+      "1:2:8": 6.633906633906619,
+      "1:4:8": 52.28152492668623
+    },
+    "energy": {
+      "1:2:4": 19.48176172643597,
+      "1:2:6": 2.843401383262081,
+      "1:2:8": 14.390345295715768,
+      "1:4:8": 63.28449159458618
+    }
+  },
+  "reading_example_hqe": [
+    0.2,
+    0.3,
+    0.5
+  ],
+  "example_is_workload_measurement": false,
+  "font_family": "Nimbus Roman",
+  "layout": {
+    "reading_example": "upper_center",
+    "model_legend": "two_rows_three_models",
+    "region_label_background": false
+  },
+  "outputs": [
+    "k4_n12_prefill_time.png",
+    "k4_n12_prefill_energy.png",
+    "k4_n12_prefill_comparison.png"
+  ]
+}

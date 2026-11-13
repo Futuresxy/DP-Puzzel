@@ -10,7 +10,6 @@ target/
 .bsp/
 .metals/
 hw/out/
-hw/legacy/out/
 /src/cmodel/build/
 /src/chisel/out/
 /src/verilog/build/
@@ -18,7 +17,6 @@ hw/legacy/out/
 hw/.bloop/
 hw/project/project/
 hw/rtl/*/
-hw/test/runs/
 hw/dc_syn/runs/
 hw/power/runs/
 ratio_dse/results/*
@@ -88,7 +86,6 @@ htmlcov/
 /paper/submission/packages/
 
 # Large workload/EDA inputs and generated activities
-/hw/test/vectors/generated/
 /hw/power/activity/generated/
 /hw/power/workloads/raw/
 /ratio_dse/workloads/raw/

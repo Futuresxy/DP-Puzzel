@@ -1,0 +1,41 @@
+{
+  "figure_cells_sha256": "dab638e05b761fc20abc54ce0d8f0dc215c08330c0136a0ef1f1326c51526336",
+  "highlighted_bandwidth_tb_s": 4,
+  "local_read_bandwidth_tb_s": [
+    0.5,
+    1,
+    2,
+    4,
+    8,
+    16
+  ],
+  "matplotlib_version": "3.11.2",
+  "pdf": "paper/figures/dse_staged_precision_selection.pdf",
+  "pdf_sha256": "696ce81141124b3f86576270d3d885210a93667bebcdeb40b7106f5ce5e09763",
+  "plan_order": [
+    "baseline",
+    "step1",
+    "step2",
+    "step3"
+  ],
+  "plan_set": "staged",
+  "plot_script": "ratio_dse/dse/migration_figure.py",
+  "plot_script_sha256": "ba2c7551dd013f0adc99d020c8519731ec9c933c65e66df1148b503c15ef7f01",
+  "power_caps_w": [
+    null,
+    150
+  ],
+  "published_tables_sha256": {
+    "figure_cells.csv": "dab638e05b761fc20abc54ce0d8f0dc215c08330c0136a0ef1f1326c51526336",
+    "step_moves.csv": "1fd1286fb61a903fb3302dfc7e27b0f64a79a6e4130d650872002aca6096bec0"
+  },
+  "runner_up_marker_pct": 1,
+  "schema_version": 1,
+  "study_manifest_sha256": "5e8f5e6eba0af87ec13f0702c5f350e3a877aab26e1de215ae4fff9e03492a78",
+  "study_selections_sha256": "bbf1d02746d6a8536025b9ee62bec56b28d0e2d9469533386bfd3d5d69789cfe",
+  "style_sha256": "d72aad2a78880e7f548384bd45118a749bddfd540f6070b7260f0cf10380368f",
+  "workloads": [
+    "DeepSeek-V4-Flash",
+    "DeepSeek-V4.1-Flash"
+  ]
+}

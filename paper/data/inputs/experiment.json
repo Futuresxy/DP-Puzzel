@@ -1,0 +1,24 @@
+{
+  "baseline_cores": 36,
+  "tensor_area_fraction": 0.3,
+  "array_m": 16,
+  "array_n": 16,
+  "peripheral_growth": 0.0,
+  "contexts": [
+    1024,
+    4096,
+    16384,
+    65536,
+    262144,
+    524288,
+    1048576
+  ],
+  "batch": 1,
+  "simplex_divisions": 100,
+  "models": [
+    "DeepSeek-V4-Flash",
+    "DeepSeek-V4-Pro",
+    "DeepSeek-V4.1-Flash"
+  ],
+  "hardware": "hardware_n12.json"
+}

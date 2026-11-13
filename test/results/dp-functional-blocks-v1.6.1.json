@@ -1,0 +1,289 @@
+{
+  "baseline_commit": "33c8a77b0ae2cd5b6a3d1e3499f0ec7b197c92c5",
+  "branch": "feat/dp-verilog-v14",
+  "status": "passed",
+  "scope": "functional RTL refactor and comments; no PPA rerun",
+  "campaigns": {
+    "multi": {
+      "run_id": "20261106T045502464176Z",
+      "export_id": "DP_verilog_5a8854a2656d8cdc",
+      "source_fingerprint": "5a8854a2656d8cdcbfff46acf44299ddc76241cd7c8e1013d9f6f47f4dc162e9",
+      "summary_sha256": "f1c40544170fce7d642d18cbdf08879e901831d1a296c448ce7026ff08162b65",
+      "verification_sha256": "13c0a114b77cd23d92d3792b295ca3c82638bfe713a41a363e538758e60da06b",
+      "cutpoints_checked": 231654,
+      "scopes": [
+        {
+          "name": "bf16",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "fp16",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "hif4",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "int8",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=1053 accepted=1045 checked=1045 cancelled=0",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "nvfp4",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "tf32",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=1061 accepted=1053 checked=1053 cancelled=0",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "mixed-k4-l27-g40",
+          "k_fp16": 4,
+          "local_width": 27,
+          "global_width": 40,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+          "cutpoints_checked": 17405
+        },
+        {
+          "name": "mixed-k8-l27-g40",
+          "k_fp16": 8,
+          "local_width": 27,
+          "global_width": 40,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+          "cutpoints_checked": 33308
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+          "cutpoints_checked": 65114
+        },
+        {
+          "name": "mixed-k4-l28-g48",
+          "k_fp16": 4,
+          "local_width": 28,
+          "global_width": 48,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+          "cutpoints_checked": 17405
+        },
+        {
+          "name": "mixed-k8-l32-g64",
+          "k_fp16": 8,
+          "local_width": 32,
+          "global_width": 64,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+          "cutpoints_checked": 33308
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "k_fp16": 16,
+          "local_width": 32,
+          "global_width": 64,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+          "cutpoints_checked": 65114
+        }
+      ]
+    },
+    "e": {
+      "run_id": "20261106T045502462591Z",
+      "export_id": "DP_verilog_e_57dbc8108c448f61",
+      "source_fingerprint": "57dbc8108c448f61403b1cb246c86d21a1c2e6382e5455a9246d9af8273e56a9",
+      "summary_sha256": "6af2d700aacc5570ad95146e3e43178679d1faf85a09c600ee012a8e65cb1196",
+      "verification_sha256": "86f6bd2d010914a2442d73f92b7ebad2f6f529dae1de49cf4eb725be5ca3744c",
+      "cutpoints_checked": 1106924,
+      "scopes": [
+        {
+          "name": "hif4",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "nvfp4",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0
+        },
+        {
+          "name": "mixed-k4-l27-g40",
+          "k_fp16": 4,
+          "local_width": 27,
+          "global_width": 40,
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+          "cutpoints_checked": 7162
+        },
+        {
+          "name": "mixed-k8-l27-g40",
+          "k_fp16": 8,
+          "local_width": 27,
+          "global_width": 40,
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+          "cutpoints_checked": 13905
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+          "cutpoints_checked": 27391
+        },
+        {
+          "name": "mixed-k4-l28-g48",
+          "k_fp16": 4,
+          "local_width": 28,
+          "global_width": 48,
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+          "cutpoints_checked": 7162
+        },
+        {
+          "name": "mixed-k8-l32-g64",
+          "k_fp16": 8,
+          "local_width": 32,
+          "global_width": 64,
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+          "cutpoints_checked": 13905
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "k_fp16": 16,
+          "local_width": 32,
+          "global_width": 64,
+          "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+          "cutpoints_checked": 27391
+        },
+        {
+          "name": "directed-e",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "result": "PASS cycles=5296 accepted=5288 checked=5288 cancelled=0",
+          "golden_exact": 5288,
+          "math_exact": 5288,
+          "max_ulp": 0,
+          "cutpoints_checked": 1010008
+        }
+      ]
+    }
+  }
+}

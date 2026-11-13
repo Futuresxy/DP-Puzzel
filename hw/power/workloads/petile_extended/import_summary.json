@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/mxfp8_e4m3/K96/petile_low32_native_961",
+      "format": "mxfp8_e4m3",
+      "logical_k": 96,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 961,
+      "source_max_ulp": 0,
+      "manifest_sha256": "80a01cb01871026cab00b458ed5b6005821458cb84b336a8fc09ea3ed8256c4c"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/mxfp8_e5m2/K96/petile_low32_native_961",
+      "format": "mxfp8_e5m2",
+      "logical_k": 96,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 960,
+      "source_max_ulp": 1,
+      "manifest_sha256": "c1529c0e01f99f53e6c72f3f4eda3b1c3280db20da4226448291b583d9c8edc1"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/mxfp6_e3m2/K96/petile_low32_native_961",
+      "format": "mxfp6_e3m2",
+      "logical_k": 96,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 961,
+      "source_max_ulp": 0,
+      "manifest_sha256": "0f94a536b8110fe84783b75b950d827d2d07d665e8b41b4e17eb726fc9b87f8d"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/mxfp6_e2m3/K96/petile_low32_native_961",
+      "format": "mxfp6_e2m3",
+      "logical_k": 96,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 960,
+      "source_max_ulp": 1,
+      "manifest_sha256": "572da6faaca528a27257b47a61839584bd34428333a5b599720fd23799fdb123"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/mxfp4_e2m1/K192/petile_low32_native_961",
+      "format": "mxfp4_e2m1",
+      "logical_k": 192,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 960,
+      "source_max_ulp": 1,
+      "manifest_sha256": "78e006d5d7b83c1d7668db5f3f153ac05bc241d572071586423b261c213756cb"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/nvfp4/K192/petile_low32_native_961",
+      "format": "nvfp4",
+      "logical_k": 192,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 960,
+      "source_max_ulp": 1,
+      "manifest_sha256": "128f70164612b95fdfaecb3a76105036487f99a6ec655eb5ace5d183af149c7f"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/hif4/K192/petile_low32_native_961",
+      "format": "hif4",
+      "logical_k": 192,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 961,
+      "source_max_ulp": 0,
+      "manifest_sha256": "7de49ab7568e1e5d305142472ebee8b9997a0e5e4c56e4a9a4740413a86daba4"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/mxfp8_e4m3/K128/petile_low48_native_961",
+      "format": "mxfp8_e4m3",
+      "logical_k": 128,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 961,
+      "source_max_ulp": 0,
+      "manifest_sha256": "f0c3f4f57561a01ea40459110cd97423dda20a5da8bfbf3f22ce40091dba3df1"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/mxfp8_e5m2/K128/petile_low48_native_961",
+      "format": "mxfp8_e5m2",
+      "logical_k": 128,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 961,
+      "source_max_ulp": 0,
+      "manifest_sha256": "329d8666fef03a66a3215874b613de04d4860d3f4ef8dee17798fc41138c320e"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/mxfp6_e3m2/K128/petile_low48_native_961",
+      "format": "mxfp6_e3m2",
+      "logical_k": 128,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 960,
+      "source_max_ulp": 1,
+      "manifest_sha256": "fedbe3a7430cb140c44a1c28f0f27ccc2a9f93f5156179c838987e5ea43b7b18"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/mxfp6_e2m3/K128/petile_low48_native_961",
+      "format": "mxfp6_e2m3",
+      "logical_k": 128,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 960,
+      "source_max_ulp": 1,
+      "manifest_sha256": "4b514962f18d9d54cfc05690d84f0d03e76775933c9983217a2f7e677d0261c4"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/mxfp4_e2m1/K256/petile_low48_native_961",
+      "format": "mxfp4_e2m1",
+      "logical_k": 256,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 961,
+      "source_max_ulp": 0,
+      "manifest_sha256": "3f79380d9829fa0f978e6cece4a06869eb801bb60348551b3f2ed4b8861bc43c"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/nvfp4/K256/petile_low48_native_961",
+      "format": "nvfp4",
+      "logical_k": 256,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 961,
+      "source_max_ulp": 0,
+      "manifest_sha256": "a657b1639fd95e84632f90222d8188cb3d9b4b2171e7fb724a23d90f0b005331"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/functional/hif4/K256/petile_low48_native_961",
+      "format": "hif4",
+      "logical_k": 256,
+      "count": 961,
+      "purpose": "native_functional_regression",
+      "source_exact_count": 961,
+      "source_max_ulp": 0,
+      "manifest_sha256": "23636d3911b015cab1ddc5bd33d9effff7f35197e467aa3c28a711d3f6656b36"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/mxfp8_e4m3/K96/qwen3_8b_mlp_down_proj_1024",
+      "format": "mxfp8_e4m3",
+      "logical_k": 96,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "77a9696e20cd53b26b4c8996a2c9aa01bd279b9e41a7600f33e60473e1dc44ea"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/mxfp8_e5m2/K96/qwen3_8b_mlp_down_proj_1024",
+      "format": "mxfp8_e5m2",
+      "logical_k": 96,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "202f22d347e2565c62e7e124a4496b026993fc90dfab6453a6c3ff0bbb7b3ebb"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/mxfp6_e3m2/K96/qwen3_8b_mlp_down_proj_1024",
+      "format": "mxfp6_e3m2",
+      "logical_k": 96,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "7cd859f0b47990ed3c2158198d61eef0df54664b6d9a3d57c03df6a8c49a207f"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/mxfp6_e2m3/K96/qwen3_8b_mlp_down_proj_1024",
+      "format": "mxfp6_e2m3",
+      "logical_k": 96,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "97feb1fbd1c3977c2fc2f8922fff0e3fc152f37c4a7401f5ac440378971ee447"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/mxfp4_e2m1/K192/qwen3_8b_mlp_down_proj_1024",
+      "format": "mxfp4_e2m1",
+      "logical_k": 192,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "81774cc27f68b0b8159bf445878e42703db5d3066162258ad2975768d4382396"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/nvfp4/K192/qwen3_8b_mlp_down_proj_1024",
+      "format": "nvfp4",
+      "logical_k": 192,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "ad0ce7a8e618254f81df6ed45fa4863df53b55554ce763ea47b16b4b3a36e490"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/hif4/K192/qwen3_8b_mlp_down_proj_1024",
+      "format": "hif4",
+      "logical_k": 192,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "6a28c81a3c06126849546321845ca41adde7295d6f8880bba8553d0ae14fbb39"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/mxfp8_e4m3/K128/qwen3_8b_mlp_down_proj_1024",
+      "format": "mxfp8_e4m3",
+      "logical_k": 128,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "9cd5558064995cbc9bd2385e549d2babf9b895964bcdb3d8021f1367611f1e67"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/mxfp8_e5m2/K128/qwen3_8b_mlp_down_proj_1024",
+      "format": "mxfp8_e5m2",
+      "logical_k": 128,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "246e2ed97767fe6b17fd5619db5aedf2d5b57645ef90abe00eb325512b134630"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/mxfp6_e3m2/K128/qwen3_8b_mlp_down_proj_1024",
+      "format": "mxfp6_e3m2",
+      "logical_k": 128,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "91d3c7ed8cfff6b325d8c4f1b298192b87088d8b7cca5b1fcfd4313f7476ee67"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/mxfp6_e2m3/K128/qwen3_8b_mlp_down_proj_1024",
+      "format": "mxfp6_e2m3",
+      "logical_k": 128,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "54254ae808dda255a9370965f2b2af629af9ac2fa245911baa5f48c72b50c8c3"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/mxfp4_e2m1/K256/qwen3_8b_mlp_down_proj_1024",
+      "format": "mxfp4_e2m1",
+      "logical_k": 256,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "5929cb02663526919705e7a9db0677ba1f37f8fe2cbf029db274d6efc15ea17d"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/nvfp4/K256/qwen3_8b_mlp_down_proj_1024",
+      "format": "nvfp4",
+      "logical_k": 256,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "ecb28abbd825cfe36e61f3320f2985a352bf0c6d6c919da5556501fac0138613"
+    },
+    {
+      "directory": "hw/power/workloads/petile_extended/normalized/power/hif4/K256/qwen3_8b_mlp_down_proj_1024",
+      "format": "hif4",
+      "logical_k": 256,
+      "count": 1024,
+      "purpose": "workload_power",
+      "source_exact_count": 1024,
+      "source_max_ulp": 0,
+      "manifest_sha256": "dd852d3c0996c40ff2e08a7b2660b2634fa79a2aedeae0c0e72f4963071c1869"
+    }
+  ],
+  "total_transactions": 27790,
+  "raw_manifest_sha256": "15776f07f64f6828d33415a04aceacd09210df29d1dfbd71362d02a032361677",
+  "cmodel_evaluated": false,
+  "rtl_verified": false,
+  "power_measured": false
+}

@@ -1,0 +1,16 @@
+{
+  "area_budget_um2": 496592552.57088,
+  "candidate_evaluations": 6752,
+  "feasible_evaluations": 6752,
+  "hardware_to_migration_groups": 1688,
+  "invariants": [
+    "fixed_area_budget",
+    "useful_mac_conservation",
+    "dp_power_cap",
+    "buffer_capacity",
+    "timeline_accounting"
+  ],
+  "quality_policy": "out_of_scope",
+  "schema_version": 1,
+  "workload_to_hardware_groups": 288
+}

@@ -1,0 +1,2 @@
+top,capacity,run,export_id,verification_id,area_um2,setup_ps,hold_ps,icg,gated_registers,total_registers,S1_setup_ps,S2_setup_ps,S3_setup_ps,S4_setup_ps,S5_setup_ps,S6_setup_ps,S7_setup_ps,S8_setup_ps
+dp_top_t8h16q128e256,T8H16Q128E256,hw/dc_syn/runs/dc_dp_top_t8h16q128e256_11122210,DP_verilog_t8h16q128e256_f8209095129aa89a,20261112T122135109358Z,46925.549827,0.006914,1.0554640000000002,449,17652,17890,0.192404,0.007987,0.126004,0.006914,0.013113,0.057697,0.026941,0.031829

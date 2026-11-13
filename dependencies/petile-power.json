@@ -1,0 +1,25 @@
+{
+  "repository": "https://github.com/Futuresxy/Quant_LLM_Chip_Codesign",
+  "commit": "5a5037ad03b656ea975ef594d0aca4dc5ef96a39",
+  "license": "MIT",
+  "purpose": "Native SAIF parser/electrical aliases and Power Compiler unit parser only",
+  "directory": ".deps/petile-power/5a5037ad03b656ea975ef594d0aca4dc5ef96a39",
+  "files": {
+    "LICENSE": {
+      "upstream_path": "LICENSE",
+      "sha256": "3317de64db6711ed37490d2bf93c0b3af3f30e2485fd2870b35070a66e9322a0"
+    },
+    "saif_activity.py": {
+      "upstream_path": "HW/power_analysis/saif_activity.py",
+      "sha256": "1f734903d191c58494d18f71a48c8e215545ba2413825c1b92d8270346e2c30a"
+    },
+    "netlist_activity.py": {
+      "upstream_path": "HW/power_analysis/netlist_activity.py",
+      "sha256": "94eaea477dc4d6b2d4157d3ba16266264c73f4d3a1096037a52021f7afd663a6"
+    },
+    "power_report.py": {
+      "upstream_path": "HW/power_analysis/power_report.py",
+      "sha256": "d63af68857cb38fe916037281fcc19b45827bf6f9323f783cca96db8475e79b2"
+    }
+  }
+}

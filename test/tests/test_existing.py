@@ -9,7 +9,8 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from adapters.cmodel import DEFAULT_CONFIG, evaluate, invoke, read_inputs, write_inputs, ROOT
 from cases.common import make, random_request
 from cases.import_legacy import EXISTING
-from reference.exact import reference, error_bound_ok, FORMATS, DTYPES, unpack, power
+from reference.exact import error_bound_ok, FORMATS, DTYPES, unpack, power
+from reference.architecture import reference
 
 
 class ExistingModel(unittest.TestCase):
@@ -83,8 +84,9 @@ class ExistingModel(unittest.TestCase):
         for req,res in zip(requests,got):
             s5=res['trace'][4]['data']; s6=res['trace'][5]['data']
             for p in s5['scale_multiplier']:
-                self.assertEqual([p[x] for x in ('sop_signed_bits','coefficient_signed_bits','product_signed_bits','useful_signed_bits')],[15,9,24,23])
-                self.assertEqual(int(p['product']),int(p['sop'])*int(p['coefficient']))
+                self.assertEqual([p[x] for x in ('sop_magnitude_bits','coefficient_bits','product_bits')],[14,8,22])
+                self.assertGreaterEqual(int(p['sop_magnitude']),0)
+                self.assertEqual(int(p['product']),int(p['sop_magnitude'])*int(p['coefficient']))
             for t,control,y in zip(s5['groups']+[s5['c']],s6['controls'],s6['aligned_tc']):
                 if t['zero'] or any(t['special'].values()): continue
                 z,d,net=control['z'],control['d'],control['net']
@@ -93,6 +95,30 @@ class ExistingModel(unittest.TestCase):
                 self.assertEqual(abs(int(y)),(mag<<z)>>d)
                 seen.add((net>0)-(net<0))
         self.assertEqual(seen,{-1,0,1})
+
+    def test_unsigned_scale_boundaries(self):
+        c_negative_zero=0x80000000
+        nv=[15]*64
+        positive=[7]*64
+        max_nv_scale=[0x77]*4
+        hif_meta=([1]*16,[1]*16,[0]*8,[0]*8)
+        cases=[
+            (make('nvfp4',a=nv,b=positive,sa=max_nv_scale,sb=max_nv_scale,ident=0),9216,225,True),
+            (make('hif4',a=nv,b=positive,sa=[195],sb=[195],metadata=hif_meta,ident=1),3136,196,True),
+            (make('nvfp4',a=nv,b=positive,c=c_negative_zero,sa=[0]*4,ident=2),9216,0,True),
+            (make('nvfp4',a=[8]*64,b=positive,c=c_negative_zero,ident=3),0,64,True),
+            (make('nvfp4',a=([15]*8+[7]*8)*4,b=positive,c=c_negative_zero,ident=4),0,64,False),
+        ]
+        results=self.check_requests([r for r,_,_,_ in cases],trace=True)
+        for res,(_,magnitude,coefficient,negative) in zip(results,cases):
+            s5=res['trace'][4]['data']
+            for p,token in zip(s5['scale_multiplier'],s5['groups']):
+                self.assertEqual((int(p['sop_magnitude']),int(p['coefficient'])),(magnitude,coefficient))
+                self.assertEqual(int(p['product']),magnitude*coefficient)
+                self.assertEqual(int(token['m']),(magnitude*coefficient)<<(token['width']-22))
+                self.assertEqual(token['sign'],negative)
+            if magnitude*coefficient==0:
+                self.assertEqual(int(res['d'],16),c_negative_zero if negative else 0)
 
     def test_cycle_stream_reset_and_illegal_tuple(self):
         rng=random.Random(2027)

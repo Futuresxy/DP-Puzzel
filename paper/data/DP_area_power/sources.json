@@ -1,0 +1,34 @@
+{
+  "scope": "Current paper plot inputs; no new hardware measurements",
+  "sources": [
+    {
+      "path": "DAC2027/data/DP_area_power/selected8_area.csv",
+      "sha256": "ae86b458ecf6a33179aa5e48f90f5b2a0529c9ce66384d0eab48a71f121d2170"
+    },
+    {
+      "path": "DAC2027/data/DP_area_power/selected8_power.csv",
+      "sha256": "0a091d5cf073435ed078262e861fd668833188bd58a3b2df5c0df0eeb30b2bc9"
+    },
+    {
+      "path": "DAC2027/data/DP_area_power/plot_area_power.py",
+      "sha256": "7496de3e4b209e4223bc6da8c96f74bd57524beff4ff8b3b379a143cd8faee98"
+    }
+  ],
+  "input_fields": "Raw area and dynamic/static power; derived columns recomputed",
+  "default_pngs_identical_to_source": true,
+  "data_edit_replot_checked": true,
+  "migrated_files": [
+    {
+      "file": "plot_area_power.py",
+      "sha256": "84d5ef70d74863d4be29e7abde78b43062cba8da11cdd6cb4c58007ce7e78877"
+    },
+    {
+      "file": "selected8_area.csv",
+      "sha256": "e67c44780b78873c93de98908f28fe02d77a515b8f6571544f82bf1d8a95362c"
+    },
+    {
+      "file": "selected8_power.csv",
+      "sha256": "040490e03f2cd3ac87e96dcac285f667acb7f71a87e080cc00cda1ce44e0abc6"
+    }
+  ]
+}

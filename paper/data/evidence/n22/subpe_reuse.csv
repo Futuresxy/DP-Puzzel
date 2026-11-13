@@ -1,0 +1,3 @@
+case,label,combinational_um2,ff_um2,icg_um2,total_um2,ff_count,icg_count,multiplier_count,multiplier_widths,setup,hold,setup_margin_ps,hold_margin_ps
+shared,乘法器复用,752.1500000000038,362.6979999999995,16.17,1131.0180000000034,217,11,4,4x4;4x8;8x4;8x8,MET,MET,0.134,13.376000000000001
+independent,乘法器不复用,938.8400000000016,403.17199999999934,16.17,1358.182000000001,242,11,8,4x4;4x4;4x4;4x4;4x4;4x4;8x8;11x11,MET,MET,0.011,8.927

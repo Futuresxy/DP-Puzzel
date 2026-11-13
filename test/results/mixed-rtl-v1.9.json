@@ -1,0 +1,704 @@
+{
+  "schema": "dp_v19_rtl_validation_v1",
+  "generated_utc": "2026-11-09T15:55:23.782775+00:00",
+  "status": "passed",
+  "scope": "three mixed plus Q32E64 v1.9; baseline RTL unchanged; E64 compatibility only",
+  "latency": 8,
+  "ii": 1,
+  "records": [
+    {
+      "frontend": "multi",
+      "export_id": "DP_verilog_d7c8c865ebf856be",
+      "verification_id": "20261109T155135350091Z",
+      "verification_path": "test/runs/verilog/20261109T155135350091Z/verification.json",
+      "source_fingerprint": "d7c8c865ebf856beb92c8c9190fb099c723d33710ea60fa7a989b1ef5787d0fe",
+      "native_checked": 10747,
+      "native_max_ulp": 3,
+      "cutpoints_checked": 1095599,
+      "native_formats": [
+        {
+          "name": "bf16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "fp16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "hif4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "result": "PASS cycles=1053 accepted=1045 checked=1045 cancelled=0",
+          "math_exact": 1045,
+          "max_ulp": null
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "nvfp4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "tf32",
+          "result": "PASS cycles=1061 accepted=1053 checked=1053 cancelled=0",
+          "math_exact": 1040,
+          "max_ulp": 1
+        }
+      ],
+      "parameter_campaigns": [
+        {
+          "name": "mixed-k4-l27-g40",
+          "k_fp16": 4,
+          "local_width": 27,
+          "global_width": 40,
+          "cutpoints_checked": 18346,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "mixed-k8-l27-g40",
+          "k_fp16": 8,
+          "local_width": 27,
+          "global_width": 40,
+          "cutpoints_checked": 35180,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "cutpoints_checked": 68876,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "mixed-k4-l28-g48",
+          "k_fp16": 4,
+          "local_width": 28,
+          "global_width": 48,
+          "cutpoints_checked": 18344,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "mixed-k8-l32-g64",
+          "k_fp16": 8,
+          "local_width": 32,
+          "global_width": 64,
+          "cutpoints_checked": 35177,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "k_fp16": 16,
+          "local_width": 32,
+          "global_width": 64,
+          "cutpoints_checked": 68862,
+          "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41"
+        },
+        {
+          "name": "directed-v18",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "cutpoints_checked": 850814,
+          "result": "PASS cycles=5322 accepted=5314 checked=5314 cancelled=0"
+        }
+      ],
+      "status": "passed",
+      "role": "baseline_v1.8_revalidation"
+    },
+    {
+      "frontend": "t8h16q32e96",
+      "export_id": "DP_verilog_t8h16q32e96_8954fff85bd0a51a",
+      "verification_id": "20261109T154835040869Z",
+      "verification_path": "test/runs/verilog/20261109T154835040869Z/verification.json",
+      "source_fingerprint": "8954fff85bd0a51a9a9fe382fb3ff48af68185483bfc5b201315b1c87ef64364",
+      "native_checked": 10747,
+      "native_max_ulp": 3,
+      "cutpoints_checked": 1468989,
+      "native_formats": [
+        {
+          "name": "tf32",
+          "result": "PASS cycles=1061 accepted=1053 checked=1053 cancelled=0",
+          "math_exact": 1040,
+          "max_ulp": 1
+        },
+        {
+          "name": "fp16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "bf16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "nvfp4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "hif4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "result": "PASS cycles=1053 accepted=1045 checked=1045 cancelled=0",
+          "math_exact": 1045,
+          "max_ulp": null
+        }
+      ],
+      "parameter_campaigns": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "k_fp16": 16,
+          "local_width": 27,
+          "global_width": 40,
+          "cutpoints_checked": 489663,
+          "result": "PASS cycles=7377 accepted=6100 checked=5614 cancelled=486"
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "cutpoints_checked": 489663,
+          "result": "PASS cycles=7377 accepted=6100 checked=5614 cancelled=486"
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "k_fp16": 16,
+          "local_width": 32,
+          "global_width": 64,
+          "cutpoints_checked": 489663,
+          "result": "PASS cycles=7377 accepted=6100 checked=5614 cancelled=486"
+        }
+      ],
+      "status": "passed",
+      "role": "v1.9_implementation"
+    },
+    {
+      "frontend": "t8h16q32e128",
+      "export_id": "DP_verilog_t8h16q32e128_4a6980b07b36ba7d",
+      "verification_id": "20261109T154835046185Z",
+      "verification_path": "test/runs/verilog/20261109T154835046185Z/verification.json",
+      "source_fingerprint": "4a6980b07b36ba7d320db0e9fd259400774023d7ac5fd4220415404e9c87e523",
+      "native_checked": 10747,
+      "native_max_ulp": 3,
+      "cutpoints_checked": 1960329,
+      "native_formats": [
+        {
+          "name": "tf32",
+          "result": "PASS cycles=1061 accepted=1053 checked=1053 cancelled=0",
+          "math_exact": 1040,
+          "max_ulp": 1
+        },
+        {
+          "name": "fp16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "bf16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "nvfp4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "hif4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "result": "PASS cycles=1053 accepted=1045 checked=1045 cancelled=0",
+          "math_exact": 1045,
+          "max_ulp": null
+        }
+      ],
+      "parameter_campaigns": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "k_fp16": 16,
+          "local_width": 27,
+          "global_width": 40,
+          "cutpoints_checked": 653443,
+          "result": "PASS cycles=7377 accepted=6100 checked=5614 cancelled=486"
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "cutpoints_checked": 653443,
+          "result": "PASS cycles=7377 accepted=6100 checked=5614 cancelled=486"
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "k_fp16": 16,
+          "local_width": 32,
+          "global_width": 64,
+          "cutpoints_checked": 653443,
+          "result": "PASS cycles=7377 accepted=6100 checked=5614 cancelled=486"
+        }
+      ],
+      "status": "passed",
+      "role": "v1.9_implementation"
+    },
+    {
+      "frontend": "t8h16q64e128_opt",
+      "export_id": "DP_verilog_t8h16q64e128_opt_337f9288b9f6ee50",
+      "verification_id": "20261109T154835039049Z",
+      "verification_path": "test/runs/verilog/20261109T154835039049Z/verification.json",
+      "source_fingerprint": "337f9288b9f6ee50bec7c077f2cd80349628fa0891b625b71901eb61fa0100fc",
+      "native_checked": 10747,
+      "native_max_ulp": 3,
+      "cutpoints_checked": 1865409,
+      "native_formats": [
+        {
+          "name": "tf32",
+          "result": "PASS cycles=1061 accepted=1053 checked=1053 cancelled=0",
+          "math_exact": 1040,
+          "max_ulp": 1
+        },
+        {
+          "name": "fp16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "bf16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 959,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "nvfp4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "hif4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "result": "PASS cycles=1053 accepted=1045 checked=1045 cancelled=0",
+          "math_exact": 1045,
+          "max_ulp": null
+        }
+      ],
+      "parameter_campaigns": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "k_fp16": 16,
+          "local_width": 27,
+          "global_width": 40,
+          "cutpoints_checked": 621803,
+          "result": "PASS cycles=7386 accepted=6108 checked=5622 cancelled=486"
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "cutpoints_checked": 621803,
+          "result": "PASS cycles=7386 accepted=6108 checked=5622 cancelled=486"
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "k_fp16": 16,
+          "local_width": 32,
+          "global_width": 64,
+          "cutpoints_checked": 621803,
+          "result": "PASS cycles=7386 accepted=6108 checked=5622 cancelled=486"
+        }
+      ],
+      "status": "passed",
+      "role": "v1.9_implementation"
+    },
+    {
+      "frontend": "q32e64",
+      "export_id": "DP_verilog_q32e64_862eed2557d6dfb5",
+      "verification_id": "20261109T154835041784Z",
+      "verification_path": "test/runs/verilog/20261109T154835041784Z/verification.json",
+      "source_fingerprint": "862eed2557d6dfb58c1169d5e5b88355b87ae32f50b4d473aa8dd7ae5aa021d5",
+      "native_checked": 6727,
+      "native_max_ulp": 1,
+      "cutpoints_checked": 933528,
+      "native_formats": [
+        {
+          "name": "mxfp8_e4m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "nvfp4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "hif4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        }
+      ],
+      "parameter_campaigns": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "k_fp16": 16,
+          "local_width": 27,
+          "global_width": 40,
+          "cutpoints_checked": 311176,
+          "result": "PASS cycles=7050 accepted=5825 checked=5363 cancelled=462"
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "cutpoints_checked": 311176,
+          "result": "PASS cycles=7050 accepted=5825 checked=5363 cancelled=462"
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "k_fp16": 16,
+          "local_width": 32,
+          "global_width": 64,
+          "cutpoints_checked": 311176,
+          "result": "PASS cycles=7050 accepted=5825 checked=5363 cancelled=462"
+        }
+      ],
+      "status": "passed",
+      "role": "v1.9_implementation"
+    },
+    {
+      "frontend": "e64",
+      "export_id": "DP_verilog_e64_b41489680453ddf8",
+      "verification_id": "20261109T155019878067Z",
+      "verification_path": "test/runs/verilog/20261109T155019878067Z/verification.json",
+      "source_fingerprint": "b41489680453ddf8a1ab615b381114700fad3668be05eac6e29eead8e5f381d8",
+      "native_checked": 2883,
+      "native_max_ulp": 0,
+      "cutpoints_checked": 171759,
+      "native_formats": [
+        {
+          "name": "mxfp4_e2m1",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "nvfp4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "hif4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "math_exact": 961,
+          "max_ulp": 0
+        }
+      ],
+      "parameter_campaigns": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "k_fp16": 16,
+          "local_width": 27,
+          "global_width": 40,
+          "cutpoints_checked": 57253,
+          "result": "PASS cycles=6610 accepted=5458 checked=5025 cancelled=433"
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "k_fp16": 16,
+          "local_width": 28,
+          "global_width": 40,
+          "cutpoints_checked": 57253,
+          "result": "PASS cycles=6610 accepted=5458 checked=5025 cancelled=433"
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "k_fp16": 16,
+          "local_width": 32,
+          "global_width": 64,
+          "cutpoints_checked": 57253,
+          "result": "PASS cycles=6610 accepted=5458 checked=5025 cancelled=433"
+        }
+      ],
+      "status": "passed",
+      "role": "legacy_compatibility_only"
+    }
+  ],
+  "auxiliary_csa": {
+    "path": "test/runs/verilog/20261109T155145Z-v19-csa-boundaries/summary.json",
+    "checked": 12084,
+    "extension_groups": [
+      2,
+      4
+    ],
+    "widths": [
+      8,
+      40,
+      64
+    ],
+    "seed": 20271105,
+    "status": "passed"
+  },
+  "self_check": [
+    {
+      "item": "无魔鬼数字",
+      "result": "通过",
+      "detail": "新增计算宽度由参数/宏推导；4基础组、2/4扩展为明确架构合同。"
+    },
+    {
+      "item": "define只在.vh",
+      "result": "通过",
+      "detail": "生产RTL未新增宏定义；TB编译选择为验证专用。"
+    },
+    {
+      "item": "组合逻辑assign",
+      "result": "通过",
+      "detail": "新增MUX/坐标/符号转换均assign或组合算术模块。"
+    },
+    {
+      "item": "按位运算符",
+      "result": "通过",
+      "detail": "功能条件先归约后按位组合，initial参数检查除外。"
+    },
+    {
+      "item": "动态数组选择",
+      "result": "通过",
+      "detail": "generate固定索引、固定切片；无运行时多维索引。"
+    },
+    {
+      "item": "时序DFF实例",
+      "result": "通过",
+      "detail": "无新增功能always时序块。"
+    },
+    {
+      "item": "单变量声明及DFF两行",
+      "result": "通过",
+      "detail": "新增RTL逐个声明；DFF固定两行。"
+    },
+    {
+      "item": "寄存器类型",
+      "result": "通过",
+      "detail": "valid/membership同步低复位，payload无复位带使能。"
+    },
+    {
+      "item": "命名",
+      "result": "通过",
+      "detail": "新信号表达功能和阶段；旧E兼容探针保留既有命名。"
+    },
+    {
+      "item": "多位数据使能",
+      "result": "通过",
+      "detail": "v1.9寄存器按valid；扩展叶子按valid+precision。"
+    },
+    {
+      "item": "目录",
+      "result": "通过",
+      "detail": "共享CSA在arithmetic，顶层复用保持top/common。"
+    },
+    {
+      "item": "localparam纯别名",
+      "result": "通过",
+      "detail": "新增参数为推导值或明确坐标偏移。"
+    },
+    {
+      "item": "信号语义",
+      "result": "通过",
+      "detail": "A_raw/compare_exp、sum/carry、magnitude/sign分别定义。"
+    },
+    {
+      "item": "pack后无裸解包",
+      "result": "N/A",
+      "detail": "本轮未新增异构结构打包。"
+    },
+    {
+      "item": "bit-field宏",
+      "result": "通过",
+      "detail": "沿用DP字段宏；新索引只选择参数化同构算术槽。"
+    }
+  ],
+  "independent_review": "hw/power/runs/v19_reference_1109/rtl_boundary_review.json",
+  "limitations": [
+    "RTL passes are not timing/area/power evidence; use separate same-condition DC/SAIF/PC reports.",
+    "Gating assertions check QE exponent hold and extension S6 leaf hold, with numeric cross-mode checks; physical ICG mapping is checked by DC.",
+    "Historic power/DC runs and their inputs remain preserved."
+  ]
+}

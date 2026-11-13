@@ -1,37 +1,99 @@
-> 功能：汇总 DP 主方案与设计入口；范围：分组共享 DP、外部边界和后续独立对齐探索；版本：v1.4.1；修改时间：2026-11-04 22:08:44 +08:00；对应代码：[CModel include/dp/model.hpp](../../cmodel/include/dp/model.hpp)；Chisel/手写 Verilog 模块尚未实现。
+> 功能：按模块与共用合同组织 DP 规格；范围：lane、group、dptop、多精度主实现及 E 类优化候选；版本：v1.12；修改时间：2026-11-12 20:25:00 +0800；对应代码：[dp_top.v](../../verilog/top/dp_top.v)、[CModel model.hpp](../../cmodel/include/dp/model.hpp)；E 专用 CModel 与 [dp_top_e.v](../../verilog/top/dp_top_e.v) 已实现，Chisel 尚未实现。
 
-# 多精度 DP 设计
+# DP 规格导航
 
-当前实现分组共享计算方案。每笔完成 `scaled_dot(A,B)+C`，没有跨请求累加状态。默认容量为 **T8H16Q32E64**，所有格式共用八级寄存边界；CModel 已完成首批测试。
+**基础dp_top采用[v1.8](dptop/dp-top-v1.8.md)；三个混合顶层与Q32E64采用[v1.9](dptop/mixed-precision-expansion.md)，均已通过CModel/冻结RTL验证及本轮同工况DC/功耗验收。E64与dp_top_e保留原设计；六架构15个兼容点使用新采集SAIF。[完整结果](../../../hw/power/records/v19_design_report_20261110.md)与旧PPA分别保留。**
 
-## 1. 层级与术语
+当前多精度主实现为 T8H16Q32E64、L8、II=1，默认局部/全局窗口 28/40；每笔完成 scaled_dot(A,B)+C，无跨请求累加状态。基础合同 v1.8、既有混合合同 v1.9；新增 Q 专用扩展 v1.10 和 E192/E256 v1.11，原顶层容量保持不变。
 
-| 层级 | 容量 | 主要功能 |
+## 1. 按模块查找
+
+| 模块层级 | 容量与阶段 | 设计入口 | 内部计算设计 |
+| --- | --- | --- | --- |
+| lane | T1H2Q4E8；主实现 S1–S4 | [lane/README.md](lane/README.md) | 元素解包、尾数乘法共享、局部移位、lane 规约、E8 优化 |
+| group | T2H4Q8E16；两 lane 协作及 S5 | [group/README.md](group/README.md) | 公共指数、组和、符号/幅值、scale 乘法、LZD、E16 优化 |
+| dptop | G 个组+C；请求控制及 S5–S8 | [dptop/README.md](dptop/README.md) | 输入分发、C 解包、组间对齐、最终树、FP32/INT32 输出 |
+
+T=TF32，H=FP16/BF16，Q=MXFP8/6，E=MXFP4/NVFP4/HiF4；INT8 与 Q 同并行度。G=K_FP16/4，K4/K8/K16 对应 1/2/4 个基本组。三个层级分工于同一次八级计算，不是各串联八级。
+
+~~~text
+dp/
+├── README.md
+├── lane/
+│   ├── README.md
+│   ├── unpack.md
+│   ├── multiplier-sharing.md
+│   ├── shifter-sharing.md
+│   ├── dp_lane_E.md
+│   └── dp_lane_qe.md
+├── group/
+│   ├── README.md
+│   ├── shared-align.md
+│   ├── scale.md
+│   ├── dp_group_E.md
+│   └── dp_group_qe.md
+├── dptop/
+│   ├── README.md
+│   ├── module-hierarchy.md
+│   ├── interface.md
+│   ├── layout-and-scales.md
+│   ├── control.md
+│   ├── pipeline.md
+│   ├── global-align.md
+│   ├── independent-align.md
+│   └── mixed-precision-expansion.md
+├── common/             # 跨层数值合同
+├── implementation/     # 模型、RTL 验证与资源统计
+└── draw.io/            # 架构图源码
+~~~
+
+## 2. 跨层合同和实现验证
+
+| 分类 | 文档 | 维护边界 |
 | --- | --- | --- |
-| lane | T1H2Q4E8 | 解包、元素乘法、局部对齐与规约 |
-| 基本组 | T2H4Q8E16 | 两条 lane 共享指数基准、组和与 scale |
-| DP | G 个基本组；G=K_FP16/4 | 所有组与 C 对齐、累加、输出 |
+| 参数与定点推导 | [common/numeric-layout.md](common/numeric-layout.md) | 全部层级共用的位宽、符号表示和 anchor 公式 |
+| S1–S8 出口 | [common/stage-formats.md](common/stage-formats.md) | 多精度主实现的逐级 S/I/F 与指数范围 |
+| 特殊值和舍入 | [common/special-values.md](common/special-values.md) | NaN/Inf/零/非正规及 FP32 RNE |
+| CModel | [implementation/cmodel.md](implementation/cmodel.md) | 位精确与周期模型、参考和 trace |
+| Verilog | [implementation/verilog.md](implementation/verilog.md) | 现用 Verilog 映射、快照与验证门禁；SV 为冻结参考 |
+| 面积/功耗统计 | [implementation/resource-accounting.md](implementation/resource-accounting.md) | 逻辑块、寄存/mux、网表与活动统计归属 |
 
-T=TF32，H=FP16/BF16，Q=MXFP8/6，E=MXFP4/NVFP4/HiF4。INT8 与 Q 同并行度，C/D 解释为 INT32。K4/K8/K16 分别实例化 1/2/4 个基本组。
+跨层合同集中维护，不在 lane/group/dptop 重复定义同一套位宽公式。scale 运算由 group 拥有，S6 双向移位由 dptop 拥有；两者分别链接到共用数值坐标。
 
-## 2. 当前数据路径
+## 3. E 类优化方案入口
 
-S1 解包 A/B/scale → S2 尾数乘法与指数 MAX → S3 幅值 RTZ/E pair → S4 lane 树 → S5 组和/scale/abs/LZD 计数及 C 解包 → S6 一次双向对齐 → S7 总树 → S8 FP32 RNE 或 INT32 回绕。
+[E8 lane 优化](lane/dp_lane_E.md) 与 [E16 group / E64 接入](group/dp_group_E.md) 已纳入对应模块目录。用户已明确 HiF4 e2 在 lane 内融合、先求和后局部左移、删除组内元素指数对齐，以及保持多精度 group 输出 layout 和 S5 到达拍。用户已选择优先讨论 E64 的 S2 乘法/pair、S3 四项 lane 树、S4 group 合并/abs、S5 scale/LZD 切分，专用 CModel 与 RTL 已实现并通过测试；面积/时序见 [同工况 DC 对比](../../../hw/dc_syn/records/README.md#历史记录)。
 
-S5 保留未左移幅值、无偏原 anchor 和 z。S6 先求真实指数 MAX，再执行净位移 z−d。NVFP4/HiF4 共用 15×9 scale 乘法器，不再添加格式缩位 mux。
+E 专用候选通过兼容 token 接入既有 S6–S8；默认保留 40 位全局窗口。HiF4 融合 e2 后的定点坐标及 anchor/z 换算以专用 group 文档为准，不能套用多精度主实现的逐级字段值。
 
-## 3. 规范导航
+## 4. 当前实现边界
 
-| 内容 | 入口 |
-| --- | --- |
-| 层级与流水 | [模块边界](module-hierarchy.md) · [流水](pipeline.md) · [分组共享方案](shared-align.md) |
-| 数据与控制 | [接口](interface.md) · [容量/scale 布局](layout-and-scales.md) · [控制](control.md) |
-| 数值 | [解包](unpack.md) · [逐级格式](stage-formats.md) · [位宽推导](numeric-layout.md) · [特殊值](special-values.md) |
-| 资源 | [乘法共享](multiplier-sharing.md) · [移位共享](shifter-sharing.md) · [scale](scale.md) · [组间对齐](group-normalization-options.md) |
-| 实施 | [CModel](cmodel.md) · [功能统计](resource-accounting.md) · [独立对齐候选](independent-align.md) |
+主实现 S1 解包 → S2 元素乘法/指数 MAX → S3 局部对齐/E pair → S4 lane 树 → S5 组和/abs/无符号 scale/LZD 及 C 解包 → S6 一次双向对齐 → S7 总树 → S8 FP32 RNE 或 INT32 回绕。[八级架构图](draw.io/dp_arch.drawio)
 
-## 4. 当前边界
+A/B 同格式，合法请求可逐拍换型；last 只透传，无输出背压，全局复位取消在途请求。默认 L8，L9 为静态备用探索。独立整体对齐、Chisel 和阵列尚未实现；频率与功耗结论必须关联实际冻结输入与测量证据。
 
-A/B 首版同格式，合法请求可逐拍换型，last 只透传。无输出背压；输入缺失不暂停在途请求。默认 L8，备用 L9 静态配置只作探索。
+## 5. 不同 DP 类型的项目框架建议
 
-独立一次对齐、专用 Q/E/QE 增源、阵列和两套 RTL 尚未实现。功耗优先、1.41GHz 以及整体精度目标仍须后续证据支持。
+将多精度与 E 专用组织为同一设计族：共用基础库，lane/group 内区分 multi/e，dptop 复用后端并按静态 profile 装配。当前模块目录保持功能分层；变体增加后可在 lane/group 内分别建立 multi/e 子目录，共用数值合同与 scale/后端说明只维护一份，各类型文档记录自身的数据通路、S/I/F、周期和适用范围。
+
+建议的配置、能力矩阵及组合边界见 [模块层级第 9 节](dptop/module-hierarchy.md#9-dp-设计族的工程组织建议)，源码目标布局分别见 [RTL](implementation/verilog.md#6-分类型模块与组合配置建议) 与 [CModel](implementation/cmodel.md#7-与-rtl-对应的设计族组织建议)。CModel 已新增 lane/lane_e.cpp、group/group_e.cpp，抽取 top/backend.cpp，接入 src/configs/dp/e64.json；RTL 增加 dp_lane_e/dp_group_e/dp_top_e 和 files_e.f；原多精度顶层保留，三个固定混合 profile 已实现，未提供任意 group 装配接口。默认多精度请求和数值接口保持兼容。
+
+## 6. 混合组扩展：v1.7.1
+
+[混合顶层合同](dptop/mixed-precision-expansion.md) 定义保留四个多精度组后，新增 2/4 个 E 组形成 T8H16Q32E96/E128，或新增四个 [QE group](group/dp_group_qe.md) / [QE lane](lane/dp_lane_qe.md) 形成 T8H16Q64E128。后端按请求屏蔽扩展支的 MAX、移位、求和与特殊值，保持单次 C 和 L8/II=1。
+
+CModel 和 QE/混合 Verilog 已实现；三个顶层分别通过完整 Verilator 验证，保持 L8/II=1。同库同约束 N12 TT/1GHz 综合已完成，保持 L8/II=1，setup/hold/VT/电气规则均通过；面积、门控及各级时序见 [实测比较](../../../hw/dc_syn/records/README.md#历史记录)。
+
+## 7. 面积优化方案与证据边界
+
+[混合顶层v1.9](dptop/mixed-precision-expansion.md)定义新的E/QE专用前端、LZD22/U31、active MAX和扩展CSA合并，CModel及冻结RTL已验证，见[test回执](../../../test/results/mixed-rtl-v1.9.md)。旧QE面积优化约66.53%增幅及其功能/PPA属于历史版本，见[旧功能记录](../../../test/results/qe-area-opt-v1.7.3.md)与[综合索引](../../../hw/dc_syn/records/README.md#历史记录)，不得作为新方案收益。
+
+扩展 QE 保留四种 MXFP8/6 与 MXFP4/NVFP4/HiF4，扩展 E 保留三种 E；只有基础四组支持 T/H/INT8。优先优化固定字段解包、分类/符号寄存和扩展源整数选择，默认窗口 28/40、L8/II=1、单次 C 与数值行为保持。未测的面积节省和功耗收益不写入实测结论。
+
+## 8. Q 专用扩展与更多 E 组
+
+[Q4 lane](lane/dp_lane_q.md) 与 [Q8 group](group/dp_group_q.md) 只支持四种 MXFP8/6；[T8H16Q64E64](dptop/t8h16q64e64.md) 在四个基础组上增加四个 Q 组，保持 S5 token、L8/II=1 和 E64 容量。Q 扩展仅在 Q 请求参与，独立建立功能回执，尚无新 PPA。
+
+[E192/E256 合同](dptop/e192-e256-expansion-analysis.md)定义增加 8/12 个 E 组后的统一 Emax、同周期并行移位与 3/5 个 CSA4:2 扩展树；保持 L8/II=1，时序与功耗须独立验收。
+
+新增 [QE192/QE256 v1.12](dptop/qe192-qe256-expansion.md)：基础四组加 8/12 个 QE 组，形成 T8H16Q96E192 / T8H16Q128E256；同周期 MAX/移位及 CSA 规约，L8/II=1。

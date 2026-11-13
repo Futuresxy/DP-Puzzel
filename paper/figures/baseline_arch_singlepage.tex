@@ -1,0 +1,20 @@
+% Reassemble the author's nine-page diagrams.net export; no diagram is redrawn.
+% Source: baseline_arch.pdf, row-major 3 x 3 A4 tiles (594.96 x 841.92 bp).
+% Build from paper/: xelatex -output-directory=build figures/baseline_arch_singlepage.tex
+% Copy build/baseline_arch_singlepage.pdf here after inspecting the output.
+% The crop applies only to this export; prefer a cropped, single-page author PDF
+% for future revisions. It removes unused page space without rasterizing content.
+\documentclass{article}
+\usepackage[paperwidth=1900bp,paperheight=2700bp,margin=10bp]{geometry}
+\usepackage{graphicx}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\newcommand{\Tile}[1]{\includegraphics[page=#1,width=594.96bp,height=841.92bp]{figures/baseline_arch.pdf}}
+\begin{document}
+\special{pdf: put @thispage << /CropBox [30 704 1510 2680] >>}
+\noindent\vbox{\offinterlineskip
+\hbox{\Tile{1}\Tile{2}\Tile{3}}%
+\hbox{\Tile{4}\Tile{5}\Tile{6}}%
+\hbox{\Tile{7}\Tile{8}\Tile{9}}%
+}
+\end{document}

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "mode": "require_matching_measurements",
+  "requirements": [],
+  "notes": [
+    "Empty requirements means unknown, not unconstrained or passed.",
+    "Populate metric, unit, dataset/revision, protocol, full-model scope, direction, degradation_mode and max_degradation.",
+    "PPL may use relative degradation; accuracy may use absolute drop with an explicit fraction or percentage-point unit.",
+    "External literature is a prior unless the model revision, full numerical plan and evaluation protocol match exactly."
+  ]
+}

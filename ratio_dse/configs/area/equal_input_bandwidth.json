@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "scenario_id": "n12_baseline_local_input",
+  "constraint_kind": "equal_input_bandwidth",
+  "baseline_profile": "H16Q32E64",
+  "baseline_cores": 36,
+  "baseline_tensor_fraction": 0.3,
+  "peripheral_policy": "fixed_baseline",
+  "frequency_hz": 1000000000,
+  "arrays_per_core": 1,
+  "baseline_shape": [
+    16,
+    4
+  ],
+  "legal_shapes": [
+    [
+      4,
+      4
+    ],
+    [
+      8,
+      4
+    ],
+    [
+      12,
+      4
+    ],
+    [
+      16,
+      4
+    ]
+  ],
+  "array_extra_area_um2": 0,
+  "shape_basis": "src/spec/tensorcore/README.md; alternative shapes are analytical",
+  "broadcast_model": {
+    "group_shape": [
+      4,
+      4
+    ],
+    "share_a_across_column_groups": false,
+    "share_b_across_row_groups": false,
+    "a_temporal_reuse": 1,
+    "b_temporal_reuse": 1
+  },
+  "supported_format_set": [
+    "bf16",
+    "mxfp8_e4m3",
+    "mxfp4_e2m1"
+  ],
+  "input_budget_bytes_s": "derive_from_baseline"
+}

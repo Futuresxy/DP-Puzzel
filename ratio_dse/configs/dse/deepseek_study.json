@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "evidence": "ratio_dse/configs/area/dp_n12_20261112.lock.json",
+  "topologies": [
+    "ratio_dse/configs/area/sm_4x16x4.json",
+    "ratio_dse/configs/area/sm_1x16x16.json",
+    "ratio_dse/configs/area/sm_4x32x2.json"
+  ],
+  "workloads": [
+    "ratio_dse/configs/compute/v4_prefill.json",
+    "ratio_dse/configs/compute/v41_prefill.json"
+  ],
+  "lengths": [256, 2048, 8192],
+  "batches_at_anchor": [1, 4],
+  "anchor_length": 2048,
+  "anchor_batch": 1,
+  "local_read_tb_s_per_core": [0.5, 1, 2, 4, 8, 16],
+  "workload_sensitivity_tb_s": [1, 4, 16],
+  "migration_tb_s": [1, 4, 16],
+  "bandwidth_refinement_subdivisions": 8,
+  "anchor_local_tb_s": 4,
+  "power_caps_w": [100, 125, 150, 175, 200, 250, 300],
+  "migration_profiles": ["H16Q32E64", "H16Q64E128", "H16Q128E256"],
+  "contexts": 8,
+  "buffer_bytes_per_array": 65536,
+  "write_read_ratio": 1.0
+}

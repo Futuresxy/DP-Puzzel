@@ -1,6 +1,6 @@
 # 模型组件与后续文件职责
 
-当前只定义逻辑模块；没有代码。文件名是实施阶段的建议，语言与拆分方式可在接口稳定后确认。
+[area_model](../area_model/README.md) 与 [compute_model](../compute_model/README.md) 是可运行的实现入口。[dse](../dse/README.md) 定义多核调度与搜索任务。下表保留各组件的逻辑职责，共用数据见 [合同](../docs/contracts.md)。
 
 | 拟定组件/文件 | 职责 | 输入 → 输出 |
 | --- | --- | --- |

@@ -1,0 +1,48 @@
+{
+  "stage": "system_resource_audit",
+  "inference_simulated": false,
+  "inputs_sha256": {
+    "llmcompass_puzzle/configs/characterize.json": "7cb557cdcb9fa974f4c0ab525ccb02ef9a84b99f3d958183fc41657e684d99ca",
+    "ratio_dse/configs/area/dp_n12_20261112.lock.json": "9e868d55301d90268298c0d55ac7637fe024769e7a9941da7b18b936cffc1447",
+    "dependencies/llmcompass.json": "933c129a505e9d7619ce06e4b89faf0d7c04d191f0530109b7981721e9dd1d83",
+    "hw/dc_syn/records/v19_six_dp_20261110.json": "ef79fe0c64d8ca6803fa6d21f67c28fd1b73b02f0ad6870366854a88214c957a",
+    "hw/dc_syn/records/five_expansions_20261112.json": "556e0bd84b4b43122e06c2125155eea8dc8095648891b416bdf44b253354edf5",
+    "hw/power/records/v19_six_architectures_20261110.json": "a894ac00cee47a361ce4ee7c046ef9125f6c15e90dc6240c97ef5eab7e449f35",
+    "hw/power/records/five_expansions_20261112.json": "c024e7f9c45262078a017700a5045e6914dacdc0e16f5710d129f9d134a36b83",
+    "src/spec/dp/dptop/interface.md": "0fb1180a0a32271e1eec6255460997d9f633905d0f0896cf2a1da2be6f0f19de",
+    "src/spec/dp/dptop/layout-and-scales.md": "69f44c55a330258816edeb0a8002ceee919f27734549bec860de63f55a270b2e",
+    "src/spec/dp/dptop/mixed-precision-expansion.md": "0e6dfe0218ca7850c4b3c2aeb904aefd11a4759e8a03eeccbe81930eeed378c7",
+    "src/spec/dp/dptop/t8h16q64e64.md": "dcfc6e4a1edd682820c21aa7b6401b7445fb5d2326d53794ef04406a58f33cd6",
+    "src/spec/dp/dptop/e192-e256-expansion-analysis.md": "80be5caec6c8e13c0a3f9478adb4dc2434374c42cea128932dab1419626b6793",
+    "src/spec/dp/dptop/qe192-qe256-expansion.md": "a7466feed3cb9c633b5b12972d69b823e296a08597a6d0ce379ee996f78dfe3e"
+  },
+  "sources_sha256": {
+    "llmcompass_puzzle/__init__.py": "32fac9dea2dccb1bade624d183c48bce4d0e22925c604867a44efce4ae746aa4",
+    "llmcompass_puzzle/backend.py": "620c0fa67f9e0cc25f526200697a3c3ee59d04a52e5142be9984c136d8a5ae9b",
+    "llmcompass_puzzle/characterize.py": "677501a82e97e4d30d4a908f253ca084eb617a98f491b440ce978b50078e1ffb",
+    "llmcompass_puzzle/replay.py": "060d8d37d4571014c0fbefbd5c829d48e22e879137972481bb9f50707e8b4113",
+    "llmcompass_puzzle/setup.py": "4421b0d55d8d74a19608af4c399219fe428b3a63a28b3761840a9c6c48d63cbd",
+    "llmcompass_puzzle/system_contract.py": "f19377252a68fbb7aa18352e0c3d744b8da04ec40780e0dd448ed4950bd8cce0",
+    "llmcompass_puzzle/system_audit.py": "0ad76c39e2334729e68fdec6fa13d5f321faf546af2da8cb4522b1106e1eafde",
+    "llmcompass_puzzle/resource_figure.py": "f7b621e465d9d31086a36e0cf1c44e6ac3d87d795ced80b8a4c6f8dfeb47555a",
+    "ratio_dse/area_model/__init__.py": "76010941b5014d20c91bc7e12f7f4281825d89109e3103008be81ea622b8f671",
+    "ratio_dse/area_model/model.py": "bc5eedc7b081794654ed84fe755f0e9b6d6c46be3c9f8f6f543f7c0604f21455",
+    "ratio_dse/area_model/__main__.py": "89ad9d114acac722d8651df72977cb09689276ba260155d861574f3676c21cd4",
+    "ratio_dse/common.py": "cd9e457e2b421a323a11b2f9ae7960dc7539c5af8158d17aea2bd911ca68615f",
+    "ratio_dse/formats.py": "307ede100ac62301e2742ef9ee7a317acfacaaf27f15d3fbe5c2036e64133735"
+  },
+  "output_sha256": {
+    "area_fitted_resources.csv": "070cba1a323fcd02abae25eda0c4845d3941160897fb0a7e8bd7707d067070e4",
+    "resource_observations.json": "e4c9ae4bee8e387561820df152dd70195a7f0928fed0943451a2625e9c0bf063",
+    "contract_examples.json": "76c030642ca468d0d17e12eeaa5e37804214b79c4d6a5d6032349fef9bc34562"
+  },
+  "clock_hz": 1000000000,
+  "assumptions": [
+    "fixed shape, clock, SRAM, HBM and L2 except named area probes",
+    "physical SM groups of eight, at most 256; enabled fraction held at 108/128",
+    "vector issue, ALU counts and RF ports use S1 resource bundles",
+    "N12-to-7nm proxy and incremental Tensor area from executable S1 config",
+    "no calibrated full-system power; example power coefficients are synthetic",
+    "peak balance points are roofline diagnostics, not measured traffic or latency"
+  ]
+}

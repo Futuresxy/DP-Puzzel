@@ -1,0 +1,13 @@
+% Standalone caption; not inserted into the user's evaluation section.
+\caption{Analytical latency of one DeepSeek-V4-Flash-derived MoE prefill
+sublayer with 2048 tokens over eight expert-parallel devices and fused
+block quantization. Columns compare fixed system resources with resource
+optimization under the same 826.764~mm$^2$ modeled area budget; rows compare
+no power cap with an illustrative, uncalibrated 250~W device-power scenario.
+H:Q:E denotes BF16:FP8:FP4 capacity ratios. Only routed experts change
+execution precision; shared experts retain FP8. Gray cells are infeasible
+under the modeled constraints. Each optimized cell may select a different
+hardware configuration. All cells use the same latency color scale.
+These are conditional sublayer estimates, not full-model TTFT measurements
+or quality-qualified recommendations.}
+\label{fig:llmcompass-moe-ratio-system}

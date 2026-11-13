@@ -1,0 +1,1233 @@
+{
+  "power_data_policy": "All previous power runs/reports and their DC/export/verification dependencies retained per latest user instruction",
+  "schema_version": 1,
+  "created_utc": "2026-11-08T09:52:29.135550+00:00",
+  "authorization": "User requested obsolete tests/DC cleanup, then explicitly instructed preserving all prior power data for comparison. Keep current six and every old power point dependency; no power data deletion.",
+  "history_commit": "ba2693a943a07a13c9970e13e46eac84381a45f2",
+  "status": "applied",
+  "keep_dc": [
+    "hw/dc_syn/runs/dc_dp_top_11080044",
+    "hw/dc_syn/runs/dc_dp_top_11081432",
+    "hw/dc_syn/runs/dc_dp_top_e64_11080854",
+    "hw/dc_syn/runs/dc_dp_top_q32e64_11080855",
+    "hw/dc_syn/runs/dc_dp_top_q32e64_11081629",
+    "hw/dc_syn/runs/dc_dp_top_t8h16q32e128_11080056",
+    "hw/dc_syn/runs/dc_dp_top_t8h16q32e128_11081739",
+    "hw/dc_syn/runs/dc_dp_top_t8h16q32e96_11080048",
+    "hw/dc_syn/runs/dc_dp_top_t8h16q32e96_11081649",
+    "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11080804",
+    "hw/dc_syn/runs/dc_dp_top_t8h16q64e128_opt_11081717"
+  ],
+  "keep_exports": [
+    "hw/rtl/DP_verilog_094a23e8843f8ee1",
+    "hw/rtl/DP_verilog_a32ed7ef4b093ffa",
+    "hw/rtl/DP_verilog_e64_628e283760c4e830",
+    "hw/rtl/DP_verilog_q32e64_7600e600b2574f57",
+    "hw/rtl/DP_verilog_q32e64_8fc17d1108154f48",
+    "hw/rtl/DP_verilog_t8h16q32e128_5445bcfaea80f9e9",
+    "hw/rtl/DP_verilog_t8h16q32e128_703b37f461e5e9c5",
+    "hw/rtl/DP_verilog_t8h16q32e96_300dc85956eabde8",
+    "hw/rtl/DP_verilog_t8h16q32e96_e6ec3988d4a438c2",
+    "hw/rtl/DP_verilog_t8h16q64e128_opt_5b3970766ee38480",
+    "hw/rtl/DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69"
+  ],
+  "keep_rtl": [
+    "test/runs/verilog/20261107T155800980506Z",
+    "test/runs/verilog/20261107T155800988891Z",
+    "test/runs/verilog/20261107T155940228035Z",
+    "test/runs/verilog/20261107T233427568086Z",
+    "test/runs/verilog/20261108T004627771406Z",
+    "test/runs/verilog/20261108T004633001215Z",
+    "test/runs/verilog/20261108T063108307834Z",
+    "test/runs/verilog/20261108T063933216613Z",
+    "test/runs/verilog/20261108T082824929343Z",
+    "test/runs/verilog/20261108T082826078457Z",
+    "test/runs/verilog/20261108T084804171991Z",
+    "test/runs/verilog/20261108T084805338509Z",
+    "test/runs/verilog/precision_gating_20261108T063932Z",
+    "test/runs/verilog/precision_gating_20261108T082920Z",
+    "test/runs/verilog/precision_gating_four_state_1108",
+    "test/runs/verilog/qe_precision_gating_four_state_1108"
+  ],
+  "keep_power_points": [
+    "hw/power/runs/power_precision_gated_t8h16q32e128_1108/dp_top_t8h16q32e128__bf16",
+    "hw/power/runs/power_precision_gated_t8h16q32e128_1108/dp_top_t8h16q32e128__mxfp4_e2m1",
+    "hw/power/runs/power_precision_gated_t8h16q32e128_1108/dp_top_t8h16q32e128__mxfp8_e4m3",
+    "hw/power/runs/power_precision_gated_t8h16q32e96_1108/dp_top_t8h16q32e96__bf16",
+    "hw/power/runs/power_precision_gated_t8h16q32e96_1108/dp_top_t8h16q32e96__mxfp4_e2m1",
+    "hw/power/runs/power_precision_gated_t8h16q32e96_1108/dp_top_t8h16q32e96__mxfp8_e4m3",
+    "hw/power/runs/power_precision_gated_t8h16q64e128_opt_1108/dp_top_t8h16q64e128_opt__bf16",
+    "hw/power/runs/power_precision_gated_t8h16q64e128_opt_1108/dp_top_t8h16q64e128_opt__mxfp4_e2m1",
+    "hw/power/runs/power_precision_gated_t8h16q64e128_opt_1108/dp_top_t8h16q64e128_opt__mxfp8_e4m3",
+    "hw/power/runs/power_precision_register_gating_1108/dp_top__bf16",
+    "hw/power/runs/power_precision_register_gating_1108/dp_top__mxfp4_e2m1",
+    "hw/power/runs/power_precision_register_gating_1108/dp_top__mxfp8_e4m3",
+    "hw/power/runs/power_qe_precision_register_gating_1108/dp_top_q32e64__mxfp4_e2m1",
+    "hw/power/runs/power_qe_precision_register_gating_1108/dp_top_q32e64__mxfp8_e4m3",
+    "hw/power/runs/power_qwen8b_six_1108/dp_top_e64__mxfp4_e2m1"
+  ],
+  "retired_exports": [
+    {
+      "path": "hw/rtl/DP_verilog_36610621c85979e0",
+      "retirement_path": "hw/rtl/retired/DP_verilog_36610621c85979e0",
+      "manifest_sha256": "cb67d6d921111ece077dcd97039f30da13aa2bdafdc06c051561c3741c6f897a",
+      "export_id": "DP_verilog_36610621c85979e0",
+      "rtl_fingerprint": "fb3c893397da197a9810ec49d828136aecfc317c8bae732481f12a6441175c8c"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_a8f4e3c188cb6a23",
+      "retirement_path": "hw/rtl/retired/DP_verilog_a8f4e3c188cb6a23",
+      "manifest_sha256": "f4deca629787ae58838c980d6e3ce1cd875ed4661191246edec532ab127af1e2",
+      "export_id": "DP_verilog_a8f4e3c188cb6a23",
+      "rtl_fingerprint": "0441a719b127c1408d0ccaadf1e7a6b464c437880783038652b1b848fca19798"
+    },
+    {
+      "path": "hw/rtl/DP_systemverilog_e02b1a1dae2198f6",
+      "retirement_path": "hw/rtl/retired/DP_systemverilog_e02b1a1dae2198f6",
+      "manifest_sha256": "903c0502620c974a738928a67e581eea1016d0ac3c3f0b31b6833e2a92e31973",
+      "export_id": "DP_systemverilog_e02b1a1dae2198f6",
+      "rtl_fingerprint": null
+    },
+    {
+      "path": "hw/rtl/DP_verilog_3fa3420882896719",
+      "retirement_path": "hw/rtl/retired/DP_verilog_3fa3420882896719",
+      "manifest_sha256": "32994b0994603fc142d4b597818acb5b55487a3a00eb314f87b00431e2f6f6c0",
+      "export_id": "DP_verilog_3fa3420882896719",
+      "rtl_fingerprint": "e7e2b936f1946e3649e748a898927f7235fc830fb7bce975aa579f5240dded43"
+    },
+    {
+      "path": "hw/rtl/DP_systemverilog_07f403aa53bb9b91",
+      "retirement_path": "hw/rtl/retired/DP_systemverilog_07f403aa53bb9b91",
+      "manifest_sha256": "4ed915a3a3ef50a5d31f71a4d08e4b3257e8908216cf75de0bc52d833e8754ef",
+      "export_id": "DP_systemverilog_07f403aa53bb9b91",
+      "rtl_fingerprint": null
+    },
+    {
+      "path": "hw/rtl/DP_verilog_3abd7a28533a49f4",
+      "retirement_path": "hw/rtl/retired/DP_verilog_3abd7a28533a49f4",
+      "manifest_sha256": "65d1ea2aa55b6fd1e2cf43d5fcdf761d6d2ff7fd1c7488466ea5281bea1d6650",
+      "export_id": "DP_verilog_3abd7a28533a49f4",
+      "rtl_fingerprint": "1d9055c7d3b1763e045826c658600619001e40772300179bd0de37059ace89b7"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_a6ca8a3f65d6dea8",
+      "retirement_path": "hw/rtl/retired/DP_verilog_a6ca8a3f65d6dea8",
+      "manifest_sha256": "f80c43024e1588d8417655cad3c43b71de91e87e7d0df2acb22eb0b9af2de43e",
+      "export_id": "DP_verilog_a6ca8a3f65d6dea8",
+      "rtl_fingerprint": "4c110578ecef16be060bb7edfc0ca138a4b2699b34a890391d3fd3da087c28a9"
+    },
+    {
+      "path": "hw/rtl/DP_systemverilog_baf3d602c9322d86",
+      "retirement_path": "hw/rtl/retired/DP_systemverilog_baf3d602c9322d86",
+      "manifest_sha256": "63ee2e68096cc5ff9f8bc3c9f11c441a1547ac8f2618a5b81804eb3fb08b8724",
+      "export_id": "DP_systemverilog_baf3d602c9322d86",
+      "rtl_fingerprint": null
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_71a0a401e07edce5",
+      "retirement_path": "hw/rtl/retired/DP_verilog_e_71a0a401e07edce5",
+      "manifest_sha256": "41baaa83749c94f679d7409a52122c0cbc5a791f326489aa5a68a5b30eeed4bc",
+      "export_id": "DP_verilog_e_71a0a401e07edce5",
+      "rtl_fingerprint": "5124cdde9b114891ebe79e105517d35a6bc3a2e787d40a0dbd39a7a6aa270751"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_13931c818a591220",
+      "retirement_path": "hw/rtl/retired/DP_verilog_e_13931c818a591220",
+      "manifest_sha256": "c8ff021a8c6a93f8e9963a8ed1b06c8db841ba8f373220b86ade18ff254d1df9",
+      "export_id": "DP_verilog_e_13931c818a591220",
+      "rtl_fingerprint": "e5895caa0eae74022e03543eda149524e2d67c841a391e335bbbdb307e9e26d9"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_b9319d81543b5585",
+      "retirement_path": "hw/rtl/retired/DP_verilog_b9319d81543b5585",
+      "manifest_sha256": "afb7e66cbdf427bfec0e033f96d911a90cd90fe1fa7ed012733fa6ef7d0e06db",
+      "export_id": "DP_verilog_b9319d81543b5585",
+      "rtl_fingerprint": "e067cbdab844ae49b7a2ab3d97b740d01b7aa4feacffc6b4b15b43627da6f1a4"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_14972cce33547e6a",
+      "retirement_path": "hw/rtl/retired/DP_verilog_e_14972cce33547e6a",
+      "manifest_sha256": "88b023528f2cf633843a66bbcb46ba474da1928752237fce88e7b0e873872bbc",
+      "export_id": "DP_verilog_e_14972cce33547e6a",
+      "rtl_fingerprint": "9e8faf2bca475aba531774ccf76b3b0dcfe7d182e85e00fb234d04a80caa4fbf"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_33ff03ab987205f8",
+      "retirement_path": "hw/rtl/retired/DP_verilog_33ff03ab987205f8",
+      "manifest_sha256": "88480c7e8d64566e815bf5e18ccb97b7c3a5e85bcf7c7b8167e672963d96516e",
+      "export_id": "DP_verilog_33ff03ab987205f8",
+      "rtl_fingerprint": "5c95f68b6ab434c52c31e209f60d7e52f674f76c69c9fa28b2a39586bdfa4492"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_8957dfab2f819649",
+      "retirement_path": "hw/rtl/retired/DP_verilog_e_8957dfab2f819649",
+      "manifest_sha256": "a3cf05b3c35743edc8af472d88998cb52d33550648a6455ca466fdba512d0a84",
+      "export_id": "DP_verilog_e_8957dfab2f819649",
+      "rtl_fingerprint": "81dea2540da4d68a2e149f2de4e5a62652f37dac8834d4ddefed0c2aeb2f144d"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_5df626060cb70583",
+      "retirement_path": "hw/rtl/retired/DP_verilog_5df626060cb70583",
+      "manifest_sha256": "5387b6cbaef8497ef9086a000d5ac2664c688aca5448463508b630540d4b7188",
+      "export_id": "DP_verilog_5df626060cb70583",
+      "rtl_fingerprint": "56f4db3cc0a00f3811fd7a74259ffc72ea53ca231fb21188d085faa747c48587"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_5ad980d7db01c1c8",
+      "retirement_path": "hw/rtl/retired/DP_verilog_e_5ad980d7db01c1c8",
+      "manifest_sha256": "bc2e4de811a4b85ff8702f36a9aedf01e506a6941b89675193ae13409d3c53ae",
+      "export_id": "DP_verilog_e_5ad980d7db01c1c8",
+      "rtl_fingerprint": "54393000cbe177d2c9c78be64a2a539e7ca2d8ad6d98138967f03d61ff13537d"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_7e706da2d08e5386",
+      "retirement_path": "hw/rtl/retired/DP_verilog_7e706da2d08e5386",
+      "manifest_sha256": "ea0b3bf9c32771e6b2e45c87ec84bb821490289ad90ba7330af72d68735394c0",
+      "export_id": "DP_verilog_7e706da2d08e5386",
+      "rtl_fingerprint": "16257a2228cfe27a4e047b3910ba6bc83787d175561a8f3c7381ad42908a090d"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_e15e97bed4d92100",
+      "retirement_path": "hw/rtl/retired/DP_verilog_e_e15e97bed4d92100",
+      "manifest_sha256": "1098e082832d12f9f113e6c31841dceaa5c2ca7a6d4609a2dd7cff92dd0000f9",
+      "export_id": "DP_verilog_e_e15e97bed4d92100",
+      "rtl_fingerprint": "fac04d00529e14afa24443fad1931e0e64ba55fdd7492b52b85fa5fe591351ac"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_57dbc8108c448f61",
+      "retirement_path": "hw/rtl/retired/DP_verilog_e_57dbc8108c448f61",
+      "manifest_sha256": "5974de4eb89ae484873bc81466862dc8972ce0b714c71825aa9c060d69070018",
+      "export_id": "DP_verilog_e_57dbc8108c448f61",
+      "rtl_fingerprint": "dd8e87f1ec3ff8b10a99691acf0e74d28576ba15b67868b4fe079a85342653f9"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_5a8854a2656d8cdc",
+      "retirement_path": "hw/rtl/retired/DP_verilog_5a8854a2656d8cdc",
+      "manifest_sha256": "01464b2fff804d6f57fa1dc2dfcf4adb7bbdf33b500da20253ac92e129102057",
+      "export_id": "DP_verilog_5a8854a2656d8cdc",
+      "rtl_fingerprint": "cc6539beb14e25ca563f8c978725d7e7bc43ab3e4e5e86ed684f1087b8e74a39"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_c4e1650b50a3c3e2",
+      "retirement_path": "hw/rtl/retired/DP_verilog_c4e1650b50a3c3e2",
+      "manifest_sha256": "ce0f53f3e13fe15004ebf9b5f84c89106b22b43defd8da71b87301eb3c89aaa8",
+      "export_id": "DP_verilog_c4e1650b50a3c3e2",
+      "rtl_fingerprint": "2304f9051efde69af573f25f4c86ae60b8ee1dddad36d961d49c337f0272879a"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_bbffe20dbfa3a151",
+      "retirement_path": "hw/rtl/retired/DP_verilog_bbffe20dbfa3a151",
+      "manifest_sha256": "bbc3a24a1fd1074b1fb75baf078d71699175afd558f82981f17b5e8446220837",
+      "export_id": "DP_verilog_bbffe20dbfa3a151",
+      "rtl_fingerprint": "ae2c87e3e4cb5c7e2cc0c485c07d94639f142df748cf1c3505bdd44ea086fd74"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_bc58d9180cba1ac7",
+      "retirement_path": "hw/rtl/retired/DP_verilog_e_bc58d9180cba1ac7",
+      "manifest_sha256": "a700e55986f63771096ba32abe4a970ad8baa1d15604002d8d08e6becbe99639",
+      "export_id": "DP_verilog_e_bc58d9180cba1ac7",
+      "rtl_fingerprint": "606ff5c891594769284a9636df6e7475172db3e81b43afa6c0df636f267823d2"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_1822351f0798f2f3",
+      "retirement_path": "hw/rtl/retired/DP_verilog_1822351f0798f2f3",
+      "manifest_sha256": "23bfe456b27fb69db5e8f6e55e72b4d7ced9d3bf7f3943debbe8111b75803611",
+      "export_id": "DP_verilog_1822351f0798f2f3",
+      "rtl_fingerprint": "771509002cbb3678d78a1f18e8223bc5d353201c185345bdd9d2f6584d5e04e7"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_03719a42d3a4ea1a",
+      "retirement_path": "hw/rtl/retired/DP_verilog_t8h16q64e128_03719a42d3a4ea1a",
+      "manifest_sha256": "69dc468a5f37f2c07668941715605089bbc0594899d02de8b24f78404267138a",
+      "export_id": "DP_verilog_t8h16q64e128_03719a42d3a4ea1a",
+      "rtl_fingerprint": null
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_353c51b13a796504",
+      "retirement_path": "hw/rtl/retired/DP_verilog_t8h16q64e128_353c51b13a796504",
+      "manifest_sha256": "4cd32cb487add7745e30ae16d78a42b12be2bc678a520351cbfcbd82db3ef363",
+      "export_id": "DP_verilog_t8h16q64e128_353c51b13a796504",
+      "rtl_fingerprint": "a3ea2b5678b45013941835b9264207402a8057ab63b2b4d10299d90ceee8eb38"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e96_fa8317c9f49fc7d6",
+      "retirement_path": "hw/rtl/retired/DP_verilog_t8h16q32e96_fa8317c9f49fc7d6",
+      "manifest_sha256": "915da707a16348731cf7eaf986f904a5ca3046f1448597c5b0ed74b5d6559a8b",
+      "export_id": "DP_verilog_t8h16q32e96_fa8317c9f49fc7d6",
+      "rtl_fingerprint": "c4186ab8159c3ab83fae440c284e2f7ab8afb8166ff3ed44db4e21b0f5037d27"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e128_57afa6687b4a0110",
+      "retirement_path": "hw/rtl/retired/DP_verilog_t8h16q32e128_57afa6687b4a0110",
+      "manifest_sha256": "7a79753f12e700fec5f898591c028cc4a7555058b90e3929a4feff66c7bd197a",
+      "export_id": "DP_verilog_t8h16q32e128_57afa6687b4a0110",
+      "rtl_fingerprint": "5b091948497c0f5d9fcd7cd1d29923522b73e9b44b9d3a80e4ee73bfaa7b7ad8"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_f50f8fef9f741aaa",
+      "retirement_path": "hw/rtl/retired/DP_verilog_f50f8fef9f741aaa",
+      "manifest_sha256": "8160ab7336d629b5d80f4471d0e53e86f5e5b532806585f9865a97557d639848",
+      "export_id": "DP_verilog_f50f8fef9f741aaa",
+      "rtl_fingerprint": "5f5bba2598a13a758b16d280efc90878e0f31e0e199d2ac25f45d430a90a5249"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2",
+      "retirement_path": "hw/rtl/retired/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2",
+      "manifest_sha256": "22b1d484d6250b95d8e06b607e417d9c6945f03bf536507f4101b2ad1baf412f",
+      "export_id": "DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2",
+      "rtl_fingerprint": "c80aa69544ce309cb7324a1ed9a013c70420b9a19b2f64c9900ae35001d00972"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_c36605507c4d0709",
+      "retirement_path": "hw/rtl/retired/DP_verilog_e_c36605507c4d0709",
+      "manifest_sha256": "82f579dc332392e50f6f940612cbf56b72aa6b787383bb54c14481420cd6c8b8",
+      "export_id": "DP_verilog_e_c36605507c4d0709",
+      "rtl_fingerprint": "351ea6cfabc24f2050928e6ae80c40e064dcd7af21a8a81d16fc7e7c1f52c1ed"
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_f592ebd6af097577",
+      "retirement_path": "hw/rtl/retired/DP_verilog_t8h16q64e128_f592ebd6af097577",
+      "manifest_sha256": "a32d858919d4f84ac48c793e5b3a155ee5ad9db789f4d649164008e0ef6b7c5b",
+      "export_id": "DP_verilog_t8h16q64e128_f592ebd6af097577",
+      "rtl_fingerprint": "8da614b31dcc24decfd7038621b383b1743019d8846b3b752e21f4dec76b9752"
+    }
+  ],
+  "removed": [
+    {
+      "path": "hw/rtl/DP_systemverilog_07f403aa53bb9b91/files.f",
+      "bytes": 1125,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_systemverilog_07f403aa53bb9b91/src",
+      "bytes": 67570,
+      "files": 22,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_systemverilog_baf3d602c9322d86/files.f",
+      "bytes": 1125,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_systemverilog_baf3d602c9322d86/src",
+      "bytes": 70879,
+      "files": 22,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_systemverilog_e02b1a1dae2198f6/files.f",
+      "bytes": 1125,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_systemverilog_e02b1a1dae2198f6/src",
+      "bytes": 67748,
+      "files": 22,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_1822351f0798f2f3/files.f",
+      "bytes": 1308,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_1822351f0798f2f3/src",
+      "bytes": 155910,
+      "files": 34,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_33ff03ab987205f8/files.f",
+      "bytes": 1223,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_33ff03ab987205f8/src",
+      "bytes": 112675,
+      "files": 32,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_36610621c85979e0/files.f",
+      "bytes": 790,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_36610621c85979e0/src",
+      "bytes": 62236,
+      "files": 21,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_3abd7a28533a49f4/files.f",
+      "bytes": 790,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_3abd7a28533a49f4/src",
+      "bytes": 73804,
+      "files": 21,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_3fa3420882896719/files.f",
+      "bytes": 790,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_3fa3420882896719/src",
+      "bytes": 65437,
+      "files": 21,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_5a8854a2656d8cdc/files.f",
+      "bytes": 1260,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_5a8854a2656d8cdc/src",
+      "bytes": 128056,
+      "files": 33,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_5df626060cb70583/files.f",
+      "bytes": 1223,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_5df626060cb70583/src",
+      "bytes": 113598,
+      "files": 32,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_7e706da2d08e5386/files.f",
+      "bytes": 1223,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_7e706da2d08e5386/src",
+      "bytes": 114058,
+      "files": 32,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_a6ca8a3f65d6dea8/files.f",
+      "bytes": 790,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_a6ca8a3f65d6dea8/src",
+      "bytes": 77113,
+      "files": 21,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_a8f4e3c188cb6a23/files.f",
+      "bytes": 790,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_a8f4e3c188cb6a23/src",
+      "bytes": 65624,
+      "files": 21,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_b9319d81543b5585/files.f",
+      "bytes": 790,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_b9319d81543b5585/src",
+      "bytes": 77178,
+      "files": 21,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_bbffe20dbfa3a151/files.f",
+      "bytes": 1260,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_bbffe20dbfa3a151/src",
+      "bytes": 133604,
+      "files": 33,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_c4e1650b50a3c3e2/files.f",
+      "bytes": 1260,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_c4e1650b50a3c3e2/src",
+      "bytes": 133607,
+      "files": 33,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_13931c818a591220/files.f",
+      "bytes": 588,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_13931c818a591220/src",
+      "bytes": 46482,
+      "files": 16,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_14972cce33547e6a/files.f",
+      "bytes": 630,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_14972cce33547e6a/src",
+      "bytes": 47800,
+      "files": 17,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_57dbc8108c448f61/files.f",
+      "bytes": 1102,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_57dbc8108c448f61/src",
+      "bytes": 84660,
+      "files": 29,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_5ad980d7db01c1c8/files.f",
+      "bytes": 1063,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_5ad980d7db01c1c8/src",
+      "bytes": 73551,
+      "files": 28,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_71a0a401e07edce5/files.f",
+      "bytes": 588,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_71a0a401e07edce5/src",
+      "bytes": 45887,
+      "files": 16,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_8957dfab2f819649/files.f",
+      "bytes": 1063,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_8957dfab2f819649/src",
+      "bytes": 72585,
+      "files": 28,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_bc58d9180cba1ac7/files.f",
+      "bytes": 1102,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_bc58d9180cba1ac7/src",
+      "bytes": 83169,
+      "files": 29,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_c36605507c4d0709/files.f",
+      "bytes": 1102,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_c36605507c4d0709/src",
+      "bytes": 83206,
+      "files": 29,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_e15e97bed4d92100/files.f",
+      "bytes": 1063,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_e_e15e97bed4d92100/src",
+      "bytes": 73833,
+      "files": 28,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_f50f8fef9f741aaa/files.f",
+      "bytes": 1308,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_f50f8fef9f741aaa/src",
+      "bytes": 157088,
+      "files": 34,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e128_57afa6687b4a0110/files.f",
+      "bytes": 1661,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e128_57afa6687b4a0110/src",
+      "bytes": 245318,
+      "files": 43,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e96_fa8317c9f49fc7d6/files.f",
+      "bytes": 1660,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q32e96_fa8317c9f49fc7d6/src",
+      "bytes": 245273,
+      "files": 43,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_03719a42d3a4ea1a/files.f",
+      "bytes": 1661,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_03719a42d3a4ea1a/src",
+      "bytes": 234913,
+      "files": 43,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/files.f",
+      "bytes": 1661,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2/src",
+      "bytes": 245049,
+      "files": 43,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_353c51b13a796504/files.f",
+      "bytes": 1661,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_353c51b13a796504/src",
+      "bytes": 245318,
+      "files": 43,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_f592ebd6af097577/files.f",
+      "bytes": 1750,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "hw/rtl/DP_verilog_t8h16q64e128_f592ebd6af097577/src",
+      "bytes": 266968,
+      "files": 45,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/cmodel/20261105T090603591704Z",
+      "bytes": 2971419,
+      "files": 13,
+      "metadata_sha256": {
+        "test/runs/cmodel/20261105T090603591704Z/summary.json": "7129c71c9ef043ffca53bbf360d7cdfb8b66a45cfcbc680bf437e8dfc1ecb7e1"
+      }
+    },
+    {
+      "path": "test/runs/cmodel/20261105T090612319439Z",
+      "bytes": 798651,
+      "files": 5,
+      "metadata_sha256": {
+        "test/runs/cmodel/20261105T090612319439Z/summary.json": "1a4528477de0cc7776368110b8d33e2594936c67edbb056ef70be5eea794c700"
+      }
+    },
+    {
+      "path": "test/runs/cmodel/20261106T040841690334Z",
+      "bytes": 2971419,
+      "files": 13,
+      "metadata_sha256": {
+        "test/runs/cmodel/20261106T040841690334Z/summary.json": "265c1769e7d992cde9f5f0d276a17efeb5c39c9d9731155e30e8f67e6118e00c"
+      }
+    },
+    {
+      "path": "test/runs/cmodel/20261106T040842853186Z",
+      "bytes": 798651,
+      "files": 5,
+      "metadata_sha256": {
+        "test/runs/cmodel/20261106T040842853186Z/summary.json": "b88c0973ed960fb3b8cae2ad95f7737aa2eab9484c1fda6d79a0220cb79200bb"
+      }
+    },
+    {
+      "path": "test/runs/cmodel/all",
+      "bytes": 2971345,
+      "files": 13,
+      "metadata_sha256": {
+        "test/runs/cmodel/all/summary.json": "8c92adb931499fe813fce49bad19e88516b95acdf0724199ece9db67636aca84"
+      }
+    },
+    {
+      "path": "test/runs/cmodel/config.json",
+      "bytes": 141,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/cmodel/mixed_summary.json",
+      "bytes": 3516,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/cmodel/roundtrip.txt",
+      "bytes": 205,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/20261105T015109910264Z",
+      "bytes": 8436090,
+      "files": 47,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/20261105T020430291955Z",
+      "bytes": 1212386489,
+      "files": 805,
+      "metadata_sha256": {
+        "test/runs/verilog/20261105T020430291955Z/verification.json": "d3345524f1f0b545f2a6974053c8ab9e3880054ef6fa7094e92e71cc1fd965b5"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261105T022713127462Z-local28",
+      "bytes": 210266351,
+      "files": 195,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/20261105T031523917867Z",
+      "bytes": 1212044264,
+      "files": 821,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/20261105T031640468800Z",
+      "bytes": 2446585101,
+      "files": 1689,
+      "metadata_sha256": {
+        "test/runs/verilog/20261105T031640468800Z/verification.json": "0e0ebf001677af9f91c430ababa471a667a9904d3685683c46cc8b2c7e6ee1f3"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261105T033734459391Z",
+      "bytes": 2446968425,
+      "files": 1771,
+      "metadata_sha256": {
+        "test/runs/verilog/20261105T033734459391Z/verification.json": "d72f95715459747a9c571c162bc30426c9c0633bb906086c8479fd3a112835dc",
+        "test/runs/verilog/20261105T033734459391Z/unsigned-scale-directed/summary.json": "9f1bd978b059cfb004ed6da1f66d158e721013b6034f4674b5a89cdad1d832d5"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261105T035009107813Z",
+      "bytes": 1212630495,
+      "files": 841,
+      "metadata_sha256": {
+        "test/runs/verilog/20261105T035009107813Z/verification.json": "d44d4543eb059e89610e04f2dc0487b8b1743ea1b34377cbdab0760ad282e6f7"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261105T044549417424Z",
+      "bytes": 1212630520,
+      "files": 841,
+      "metadata_sha256": {
+        "test/runs/verilog/20261105T044549417424Z/verification.json": "e6e8bbbfd6adb1b6738e0c5124e61497800805326cab65fce806dde136432ace"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261105T052028233359Z",
+      "bytes": 2446927624,
+      "files": 1758,
+      "metadata_sha256": {
+        "test/runs/verilog/20261105T052028233359Z/verification.json": "50a58347287c884cfd9c47046bb8eb9eb0050db570d1656b9be1b1a3a448983b"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261105T091503158605Z",
+      "bytes": 1212630617,
+      "files": 841,
+      "metadata_sha256": {
+        "test/runs/verilog/20261105T091503158605Z/verification.json": "14e5ca7775e8ced524358f27b3d7d81bd7d2cca85172f67eda7671858e2fc30c"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261105T125607458482Z",
+      "bytes": 599536912,
+      "files": 362,
+      "metadata_sha256": {
+        "test/runs/verilog/20261105T125607458482Z/verification.json": "5ad6f1b07516f2995ec05efe0b7f5fdd4cd913da205130954910c10399d1dfc2"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261105T125823661794Z",
+      "bytes": 599537059,
+      "files": 363,
+      "metadata_sha256": {
+        "test/runs/verilog/20261105T125823661794Z/verification.json": "5408bd77fd14af6957ef4c8eec1d289f7bbb422e3738ddcf8a390731b6a9754e"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261105T125839391222Z",
+      "bytes": 1212632928,
+      "files": 848,
+      "metadata_sha256": {
+        "test/runs/verilog/20261105T125839391222Z/verification.json": "4b9d6649007e2109f9d6543bb13e809511a353d9cbf5050b9304510975ba76a2"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T013520561338Z",
+      "bytes": 600208027,
+      "files": 362,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T013520561338Z/verification.json": "a3db6eaf295a0b5d6f8b305190461b0200b77e4ee6fbc6857909433be8d94ad9"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T040647769996Z",
+      "bytes": 1213150385,
+      "files": 772,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T040647769996Z/verification.json": "cc37ed5bd9580fdda7fb4ef641b33f8df4ba4bb6b301b81ec1e1344fb65e1f5a"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T040648910519Z",
+      "bytes": 226966613,
+      "files": 309,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T040648910519Z/verification.json": "4697c019f407d126f8c5275e6eb9221f98f278d399b552b131341372ab6b439a"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T041014442735Z",
+      "bytes": 1213151528,
+      "files": 772,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T041014442735Z/verification.json": "82717aee967b9b25945098f0b736f3c2240ed15353526d6e6dba60fc643ef11b"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T041015631010Z",
+      "bytes": 226967898,
+      "files": 309,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T041015631010Z/verification.json": "0dd41f55eaa3b34193f1a4cd9db8323905251f38957156c1060d0fb428fe98ae"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T041321972556Z",
+      "bytes": 226970304,
+      "files": 309,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T041321972556Z/verification.json": "10919e245c96424131c6a1aaee0d5a7ee3a549edb806dc1eb1722f35a573e631"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T041413762570Z",
+      "bytes": 1213715780,
+      "files": 781,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T041413762570Z/verification.json": "df9bfb7af34434cda245bbd686ea0dd80de84ad3e985f78b50221d34531bdc38"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T045502462591Z",
+      "bytes": 22122023,
+      "files": 75,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T045502462591Z/verification.json": "86f6bd2d010914a2442d73f92b7ebad2f6f529dae1de49cf4eb725be5ca3744c"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T045502464176Z",
+      "bytes": 6656908,
+      "files": 100,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T045502464176Z/verification.json": "13c0a114b77cd23d92d3792b295ca3c82638bfe713a41a363e538758e60da06b"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T070152924322Z",
+      "bytes": 6656908,
+      "files": 100,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T070152924322Z/verification.json": "aab7baa8561cdb98e118b870aea37d37ea2eabf7adb773e3c7d0be1be442cc29"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T070422038543Z",
+      "bytes": 6656908,
+      "files": 100,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T070422038543Z/verification.json": "643ebd74d548d594cc829bf8c4c1d252eb717771f083ed80478a15cc19f73ea6"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T074807256233Z",
+      "bytes": 22122062,
+      "files": 75,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T074807256233Z/verification.json": "fb9ccad30daf6235727d0e9441e0eaa166df0ac5491a8a87eca005093e960421"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261106T074807268573Z",
+      "bytes": 6692177,
+      "files": 105,
+      "metadata_sha256": {
+        "test/runs/verilog/20261106T074807268573Z/verification.json": "a508711ae539ca27c8d3610eb6ca9216fdb05379f541ea085e56eb65df745c06"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261107T154422534266Z",
+      "bytes": 660557347,
+      "files": 735,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/20261107T154737823639Z",
+      "bytes": 660683286,
+      "files": 737,
+      "metadata_sha256": {
+        "test/runs/verilog/20261107T154737823639Z/verification.json": "9e116e330b5be3ffc56249d69b4eeb5297ecab0cc2484bce035d6425a861f055"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261107T154747514723Z",
+      "bytes": 637998394,
+      "files": 577,
+      "metadata_sha256": {
+        "test/runs/verilog/20261107T154747514723Z/verification.json": "fa92802f5320aee0a846f7ccbe26464fe0e6125e9b12be11bca3943dc379bafb"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261107T154902678237Z",
+      "bytes": 644569292,
+      "files": 578,
+      "metadata_sha256": {
+        "test/runs/verilog/20261107T154902678237Z/verification.json": "ab0f0af9d61e79dde084932cd31e762af177cc66f066e1b7f3a47230331d7aa4"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261107T154902696925Z",
+      "bytes": 1200006702,
+      "files": 778,
+      "metadata_sha256": {
+        "test/runs/verilog/20261107T154902696925Z/verification.json": "461b2666038df91a9cfe1deefa2576bfc4b47afc7ea83341b6ee62eaddebbe19"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261107T155035760189Z",
+      "bytes": 227021359,
+      "files": 309,
+      "metadata_sha256": {
+        "test/runs/verilog/20261107T155035760189Z/verification.json": "a4d86b6372e1a004dc388c7c38c6234b5298aa35f6fa5aff48576721a18beca1"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261107T155749808687Z",
+      "bytes": 660683371,
+      "files": 737,
+      "metadata_sha256": {
+        "test/runs/verilog/20261107T155749808687Z/verification.json": "4f649397ca87892343b47e5b1c963cc8b6fac261cc0c38160e9740c3c84f92a9"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261107T155926305533Z",
+      "bytes": 227020758,
+      "files": 309,
+      "metadata_sha256": {
+        "test/runs/verilog/20261107T155926305533Z/verification.json": "cb4383fbb7cc38d69432eb48982d608b4788169b35f9f2347326f11f9c2aab05"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261107T233427565517Z",
+      "bytes": 660880395,
+      "files": 737,
+      "metadata_sha256": {
+        "test/runs/verilog/20261107T233427565517Z/verification.json": "84a3514500b7d7186c8e0f5cb8a75813ad960b984c49379e9191615e44a912ef"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261108T062753684613Z",
+      "bytes": 6722109,
+      "files": 101,
+      "metadata_sha256": {
+        "test/runs/verilog/20261108T062753684613Z/verification.json": "884d50e513c0ad68d5d76d152fc93eb3ef77fffc7159200fab6be6107fdf38c3"
+      }
+    },
+    {
+      "path": "test/runs/verilog/20261108T062935062685Z",
+      "bytes": 6722145,
+      "files": 101,
+      "metadata_sha256": {
+        "test/runs/verilog/20261108T062935062685Z/verification.json": "6a29824da05bba460001e59e2e6ca9daa5c206f1652db3f2e6f77dbab8e66b49"
+      }
+    },
+    {
+      "path": "test/runs/verilog/DP_systemverilog_07f403aa53bb9b91.f",
+      "bytes": 2469,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_systemverilog_baf3d602c9322d86.f",
+      "bytes": 2469,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_systemverilog_e02b1a1dae2198f6.f",
+      "bytes": 2469,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_1822351f0798f2f3.f",
+      "bytes": 3222,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_33ff03ab987205f8.f",
+      "bytes": 3021,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_36610621c85979e0.f",
+      "bytes": 1950,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_3abd7a28533a49f4.f",
+      "bytes": 1950,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_3fa3420882896719.f",
+      "bytes": 1950,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_5a8854a2656d8cdc.f",
+      "bytes": 3116,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_5df626060cb70583.f",
+      "bytes": 3021,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_7e706da2d08e5386.f",
+      "bytes": 3021,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_a6ca8a3f65d6dea8.f",
+      "bytes": 1950,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_a8f4e3c188cb6a23.f",
+      "bytes": 1950,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_b9319d81543b5585.f",
+      "bytes": 1950,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_bbffe20dbfa3a151.f",
+      "bytes": 3116,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_c4e1650b50a3c3e2.f",
+      "bytes": 3116,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e_13931c818a591220.f",
+      "bytes": 1488,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e_14972cce33547e6a.f",
+      "bytes": 1590,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e_57dbc8108c448f61.f",
+      "bytes": 2782,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e_5ad980d7db01c1c8.f",
+      "bytes": 2683,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e_71a0a401e07edce5.f",
+      "bytes": 1488,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e_8957dfab2f819649.f",
+      "bytes": 2683,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e_bc58d9180cba1ac7.f",
+      "bytes": 2782,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e_c36605507c4d0709.f",
+      "bytes": 2782,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_e_e15e97bed4d92100.f",
+      "bytes": 2683,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_f50f8fef9f741aaa.f",
+      "bytes": 3222,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q32e128_57afa6687b4a0110.f",
+      "bytes": 4643,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q32e96_fa8317c9f49fc7d6.f",
+      "bytes": 4600,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q64e128_03719a42d3a4ea1a.f",
+      "bytes": 4643,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2.f",
+      "bytes": 4643,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q64e128_353c51b13a796504.f",
+      "bytes": 4643,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/DP_verilog_t8h16q64e128_f592ebd6af097577.f",
+      "bytes": 4874,
+      "files": 1,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/precision_gating_20261108T062933Z",
+      "bytes": 209949263,
+      "files": 155,
+      "metadata_sha256": {}
+    },
+    {
+      "path": "test/runs/verilog/precision_gating_20261108T063107Z",
+      "bytes": 64487499,
+      "files": 85,
+      "metadata_sha256": {}
+    }
+  ],
+  "removed_bytes": 26906967364
+}

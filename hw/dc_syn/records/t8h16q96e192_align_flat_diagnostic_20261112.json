@@ -1,0 +1,131 @@
+{
+  "run_id": "dc_dp_top_t8h16q96e192_11122104",
+  "top": "dp_top_t8h16q96e192",
+  "export_id": "DP_verilog_t8h16q96e192_1e63c2625d0dd101",
+  "status": "measured",
+  "synthesis_valid": true,
+  "flow_pass": false,
+  "setup": {
+    "status": "PASS",
+    "wns_ns": 0.0,
+    "tns_ns": 0.0,
+    "violating_paths": 0,
+    "worst_reported_slack_ns": 2.146e-06
+  },
+  "hold": {
+    "status": "FAIL",
+    "wns_ns": -0.004871964,
+    "tns_ns": -0.132618815,
+    "violating_paths": 37,
+    "worst_reported_slack_ns": -0.004871964
+  },
+  "area": {
+    "total_cell_area_um2": 36152.230084,
+    "combinational_area_um2": 26825.306476,
+    "sequential_area_um2": 9326.923608
+  },
+  "electrical_violations": [],
+  "multi_vt": {
+    "max_cell_percent": 20.0,
+    "measured_nonblackbox_cell_percent": 10.65,
+    "measured_all_cell_percent": 10.63,
+    "status": "PASS"
+  },
+  "critical_setup_path": {
+    "startpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_10_",
+    "endpoint": "u_core/g_group_3__g_base_u_group_unit/g_compare_register_ff_s4_s5_compare_exp_ff_storage_out_q_reg_9_",
+    "path_group": "clock",
+    "arrival_ns": 1.004772782,
+    "required_ns": 1.004774928,
+    "slack_ns": 2.146e-06
+  },
+  "stage_setup_paths": {
+    "S1": {
+      "startpoint": "in_a_datatype[1]",
+      "endpoint": "u_core/g_group_8__g_qe_u_group_unit/g_lane_1__u_lane/g_compact_unpack_u_lane_unpack/ff_s0_s1_all_negative_ff_storage_out_q_reg_0_",
+      "path_group": "clock",
+      "arrival_ns": 0.991093278,
+      "required_ns": 0.99160403,
+      "slack_ns": 0.000510752
+    },
+    "S2": {
+      "startpoint": "u_core/g_group_1__g_base_u_group_unit/g_lane_0__u_lane/ff_s0_s1_valid_ff_storage_out_q_reg_0_",
+      "endpoint": "u_core/g_group_1__g_base_u_group_unit/g_lane_0__u_lane/g_product_register_1__ff_s1_s2_product_upper_ff_storage_out_q_reg_10_",
+      "path_group": "clock",
+      "arrival_ns": 1.005025744,
+      "required_ns": 1.005075455,
+      "slack_ns": 4.971e-05
+    },
+    "S3": {
+      "startpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_1__u_lane/ff_s1_s2_type_s2_ff_storage_out_q_reg_2_",
+      "endpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_1__u_lane/g_leaf_register_1__ff_s2_s3_leaf_upper_ff_storage_out_q_reg_11_",
+      "path_group": "clock",
+      "arrival_ns": 1.002681494,
+      "required_ns": 1.002753377,
+      "slack_ns": 7.1883e-05
+    },
+    "S4": {
+      "startpoint": "u_core/g_group_7__g_qe_u_group_unit/g_lane_0__u_lane/ff_s2_s3_type_s3_ff_storage_out_q_reg_0_",
+      "endpoint": "u_core/g_group_7__g_qe_u_group_unit/g_lane_0__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_29_",
+      "path_group": "clock",
+      "arrival_ns": 1.002063394,
+      "required_ns": 1.002081156,
+      "slack_ns": 1.7762e-05
+    },
+    "S5": {
+      "startpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_10_",
+      "endpoint": "u_core/g_group_3__g_base_u_group_unit/g_compare_register_ff_s4_s5_compare_exp_ff_storage_out_q_reg_9_",
+      "path_group": "clock",
+      "arrival_ns": 1.004772782,
+      "required_ns": 1.004774928,
+      "slack_ns": 2.146e-06
+    },
+    "S6": {
+      "startpoint": "u_core/g_group_8__g_qe_u_group_unit/ff_s4_s5_out_magnitude_ff_storage_out_q_reg_13_",
+      "endpoint": "u_core/ff_s5_s6_extension_leaves_ff_storage_out_q_reg_173_",
+      "path_group": "clock",
+      "arrival_ns": 1.002301216,
+      "required_ns": 1.0023489,
+      "slack_ns": 4.7684e-05
+    },
+    "S7": {
+      "startpoint": "u_core/ff_s5_s6_extension_ff_storage_out_q_reg_0_",
+      "endpoint": "u_core/ff_s6_s7_sum_ff_storage_out_q_reg_43_",
+      "path_group": "clock",
+      "arrival_ns": 1.00264585,
+      "required_ns": 1.002664447,
+      "slack_ns": 1.8597e-05
+    },
+    "S8": {
+      "startpoint": "u_core/ff_s6_s7_c_datatype_ff_storage_out_q_reg_0_",
+      "endpoint": "u_core/ff_s7_s8_out_d_ff_storage_out_q_reg_25_",
+      "path_group": "clock",
+      "arrival_ns": 1.003973007,
+      "required_ns": 1.004182816,
+      "slack_ns": 0.000209808
+    }
+  },
+  "clock_period_ns": 1.0,
+  "hierarchy": {
+    "keep_modules": [],
+    "expand_modules": [
+      "dp_lib_DFF*",
+      "dp_dff_*",
+      "dp_max_tree*",
+      "dp_mixed_global_align*",
+      "dp_bidir_shift*",
+      "dp_rtz_shift*",
+      "dp_lane_align*",
+      "dp_lzd*",
+      "dp_scale_multiply*",
+      "dp_exponent_add*",
+      "dp_fp32_round*"
+    ],
+    "expand_instances": [],
+    "expand_depth": 0
+  },
+  "finished_utc": "20261112T132716600430Z",
+  "selected_for_power": false,
+  "reason": "Primary same-RTL run already passes every gate; this optional lower-area hierarchy comparison fails hold and is retained as diagnostic. No further repair requested.",
+  "retained_run_directory": "hw/power/runs/qe_expansion_source_1112/hw/dc_syn/runs/dc_dp_top_t8h16q96e192_11122104"
+}

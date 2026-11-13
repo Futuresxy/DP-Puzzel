@@ -1,0 +1,122 @@
+{
+  "run_id": "dc_dp_top_t8h16q128e256_11122038",
+  "top": "dp_top_t8h16q128e256",
+  "export_id": "DP_verilog_t8h16q128e256_f8209095129aa89a",
+  "status": "measured",
+  "synthesis_valid": true,
+  "flow_pass": false,
+  "setup": {
+    "status": "FAIL",
+    "wns_ns": -0.0618186,
+    "tns_ns": -70.740737915,
+    "violating_paths": 1814,
+    "worst_reported_slack_ns": -0.0618186
+  },
+  "hold": {
+    "status": "PASS",
+    "wns_ns": 0.0,
+    "tns_ns": 0.0,
+    "violating_paths": 0,
+    "worst_reported_slack_ns": 8.3804e-05
+  },
+  "area": {
+    "total_cell_area_um2": 50482.999581,
+    "combinational_area_um2": 37909.094872,
+    "sequential_area_um2": 12573.904709
+  },
+  "electrical_violations": [],
+  "multi_vt": {
+    "max_cell_percent": 20.0,
+    "measured_nonblackbox_cell_percent": 19.15,
+    "measured_all_cell_percent": 19.11,
+    "status": "PASS"
+  },
+  "critical_setup_path": {
+    "startpoint": "u_core/g_group_15__g_qe_u_group_unit/ff_s4_s5_out_magnitude_ff_storage_out_q_reg_18_",
+    "endpoint": "u_core/ff_s5_s6_extension_leaves_ff_storage_out_q_reg_225_",
+    "path_group": "clock",
+    "arrival_ns": 1.066745758,
+    "required_ns": 1.004927158,
+    "slack_ns": -0.0618186
+  },
+  "stage_setup_paths": {
+    "S1": {
+      "startpoint": "in_a_datatype[0]",
+      "endpoint": "u_core/g_group_4__g_qe_u_group_unit/g_lane_1__u_lane/g_compact_unpack_u_lane_unpack/ff_s0_s1_all_negative_ff_storage_out_q_reg_0_",
+      "path_group": "clock",
+      "arrival_ns": 0.993181288,
+      "required_ns": 0.992606699,
+      "slack_ns": -0.000574589
+    },
+    "S2": {
+      "startpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_0__u_lane/ff_s0_s1_type_s1_ff_storage_out_q_reg_3_",
+      "endpoint": "u_core/g_group_3__g_base_u_group_unit/g_lane_0__u_lane/ff_s1_s2_anchor_s2_ff_storage_out_q_reg_1_",
+      "path_group": "clock",
+      "arrival_ns": 1.058180809,
+      "required_ns": 1.003963947,
+      "slack_ns": -0.054216862
+    },
+    "S3": {
+      "startpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_1__u_lane/ff_s1_s2_type_s2_ff_storage_out_q_reg_0_",
+      "endpoint": "u_core/g_group_0__g_base_u_group_unit/g_lane_1__u_lane/g_leaf_register_3__ff_s2_s3_leaf_upper_ff_storage_out_q_reg_11_",
+      "path_group": "clock",
+      "arrival_ns": 1.035946369,
+      "required_ns": 1.002649546,
+      "slack_ns": -0.033296824
+    },
+    "S4": {
+      "startpoint": "u_core/g_group_2__g_base_u_group_unit/g_lane_1__u_lane/ff_s2_s3_type_s3_ff_storage_out_q_reg_2_",
+      "endpoint": "u_core/g_group_2__g_base_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_30_",
+      "path_group": "clock",
+      "arrival_ns": 1.053781033,
+      "required_ns": 1.003373146,
+      "slack_ns": -0.050407887
+    },
+    "S5": {
+      "startpoint": "u_core/g_group_14__g_qe_u_group_unit/g_lane_1__u_lane/ff_s3_s4_out_sop_ff_storage_out_q_reg_0_",
+      "endpoint": "u_core/g_group_14__g_qe_u_group_unit/g_compare_register_ff_s4_s5_compare_exp_ff_storage_out_q_reg_8_",
+      "path_group": "clock",
+      "arrival_ns": 1.059361219,
+      "required_ns": 1.003693581,
+      "slack_ns": -0.055667639
+    },
+    "S6": {
+      "startpoint": "u_core/g_group_15__g_qe_u_group_unit/ff_s4_s5_out_magnitude_ff_storage_out_q_reg_18_",
+      "endpoint": "u_core/ff_s5_s6_extension_leaves_ff_storage_out_q_reg_225_",
+      "path_group": "clock",
+      "arrival_ns": 1.066745758,
+      "required_ns": 1.004927158,
+      "slack_ns": -0.0618186
+    },
+    "S7": {
+      "startpoint": "u_core/ff_s5_s6_extension_ff_storage_out_q_reg_0_",
+      "endpoint": "u_core/ff_s6_s7_sum_ff_storage_out_q_reg_44_",
+      "path_group": "clock",
+      "arrival_ns": 1.051667333,
+      "required_ns": 1.003075838,
+      "slack_ns": -0.048591495
+    },
+    "S8": {
+      "startpoint": "u_core/ff_s6_s7_c_datatype_ff_storage_out_q_reg_0_",
+      "endpoint": "u_core/ff_s7_s8_out_d_ff_storage_out_q_reg_21_",
+      "path_group": "clock",
+      "arrival_ns": 1.05734098,
+      "required_ns": 1.004416943,
+      "slack_ns": -0.052924037
+    }
+  },
+  "clock_period_ns": 1.0,
+  "hierarchy": {
+    "keep_modules": [],
+    "expand_modules": [
+      "dp_lib_DFF*",
+      "dp_dff_*"
+    ],
+    "expand_instances": [],
+    "expand_depth": 0
+  },
+  "finished_utc": "20261112T133251476574Z",
+  "selected_for_power": false,
+  "reason": "Standard DFF-expanded two-incremental strategy fails 1GHz setup; independent same-budget alignment-flat run continues. No power measured on this failed candidate.",
+  "retained_run_directory": "hw/power/runs/qe_expansion_source_1112/hw/dc_syn/runs/dc_dp_top_t8h16q128e256_11122038"
+}

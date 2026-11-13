@@ -1,0 +1,155 @@
+`timescale 1fs/1fs
+// Fixed mapped top; same stimulus and pre-edge L8 scoreboard for RTL and gates.
+module dp_power_tb;
+  localparam integer GROUPS = @GROUPS@;
+  localparam integer CAPACITY = 2048;
+  reg clock = 0;
+  always #500000 clock = ~clock;
+  reg rst_n = 0;
+  reg in_a_valid = 0;
+  reg in_b_valid = 0;
+  reg in_c_valid = 0;
+  wire out_a_ready;
+  wire out_b_ready;
+  wire out_c_ready;
+  reg [GROUPS*64-1:0] in_a = 0;
+  reg [GROUPS*64-1:0] in_b = 0;
+  reg [31:0] in_c = 0;
+  reg [3:0] in_a_datatype = 0;
+  reg [3:0] in_b_datatype = 0;
+  reg in_c_datatype = 0;
+  reg [GROUPS*8-1:0] in_scale_a = 0;
+  reg [GROUPS*8-1:0] in_scale_b = 0;
+  reg [1:0] in_scale_a_datatype = 0;
+  reg [1:0] in_scale_b_datatype = 0;
+  reg [GROUPS*4-1:0] in_hif4_e1_a = 0;
+  reg [GROUPS*4-1:0] in_hif4_e1_b = 0;
+  reg [GROUPS*2-1:0] in_hif4_e2_a = 0;
+  reg [GROUPS*2-1:0] in_hif4_e2_b = 0;
+  reg in_last = 0;
+  wire out_valid;
+  wire [31:0] out_d;
+  wire out_d_datatype;
+  wire out_last;
+  @TOP@ dut (.*);
+
+  reg [GROUPS*64-1:0] operand_a [0:CAPACITY-1];
+  reg [GROUPS*64-1:0] operand_b [0:CAPACITY-1];
+  reg [31:0] operand_c [0:CAPACITY-1];
+  reg [GROUPS*8-1:0] scale_a [0:CAPACITY-1];
+  reg [GROUPS*8-1:0] scale_b [0:CAPACITY-1];
+  reg [GROUPS*4-1:0] e1_a [0:CAPACITY-1];
+  reg [GROUPS*4-1:0] e1_b [0:CAPACITY-1];
+  reg [GROUPS*2-1:0] e2_a [0:CAPACITY-1];
+  reg [GROUPS*2-1:0] e2_b [0:CAPACITY-1];
+  integer data_type [0:CAPACITY-1];
+  integer c_type [0:CAPACITY-1];
+  integer scale_type [0:CAPACITY-1];
+  integer last_value [0:CAPACITY-1];
+  reg [31:0] expected [0:CAPACITY-1];
+  integer expected_type [0:CAPACITY-1];
+  integer expected_last [0:CAPACITY-1];
+  integer pending [0:7];
+  integer input_file;
+  integer expected_file;
+  integer output_file;
+  integer window_file;
+  integer count;
+  integer init_count;
+  integer index;
+  integer cycle;
+  integer slot;
+  integer current;
+  integer parsed;
+  integer accepted = 0;
+  integer checked = 0;
+  time start_fs;
+  time end_fs;
+
+  task drive(input integer row);
+    begin
+      in_a = operand_a[row];
+      in_b = operand_b[row];
+      in_c = operand_c[row];
+      in_a_datatype = data_type[row];
+      in_b_datatype = data_type[row];
+      in_c_datatype = c_type[row];
+      in_scale_a = scale_a[row];
+      in_scale_b = scale_b[row];
+      in_scale_a_datatype = scale_type[row];
+      in_scale_b_datatype = scale_type[row];
+      in_hif4_e1_a = e1_a[row];
+      in_hif4_e1_b = e1_b[row];
+      in_hif4_e2_a = e2_a[row];
+      in_hif4_e2_b = e2_b[row];
+      in_last = last_value[row];
+    end
+  endtask
+
+  initial begin
+    input_file = $fopen("../vectors.txt", "r");
+    expected_file = $fopen("../expected.txt", "r");
+    output_file = $fopen("results.txt", "w");
+    if (!input_file || !expected_file || !output_file) $fatal(1, "FAIL file open");
+    parsed = $fscanf(input_file, "%d %d\n", count, init_count);
+    if (parsed != 2 || count != init_count + 1024 || count > CAPACITY) $fatal(1, "FAIL count");
+    for (index=0; index<count; index=index+1) begin
+      parsed = $fscanf(input_file, "%d %d %d %d %h %h %h %h %h %h %h %h %h\n",
+        data_type[index], c_type[index], scale_type[index], last_value[index],
+        operand_a[index], operand_b[index], operand_c[index], scale_a[index], scale_b[index],
+        e1_a[index], e2_a[index], e1_b[index], e2_b[index]);
+      if (parsed != 13) $fatal(1, "FAIL input row %0d", index);
+      parsed = $fscanf(expected_file, "%h %d %d\n", expected[index], expected_type[index], expected_last[index]);
+      if (parsed != 3) $fatal(1, "FAIL expected row");
+    end
+    for (slot=0; slot<8; slot=slot+1) pending[slot] = -1;
+    repeat (3) @(posedge clock);
+    for (cycle=0; cycle<count+9; cycle=cycle+1) begin
+      @(negedge clock);
+      rst_n = 1;
+      if (cycle == init_count+256) begin
+        start_fs = $time;
+`ifdef POWER_NATIVE_SAIF
+        $set_gate_level_monitoring("on");
+        $set_toggle_region(dut);
+        $toggle_start();
+`endif
+      end
+      if (cycle == init_count+768) begin
+        end_fs = $time;
+        if (end_fs-start_fs != 512000000) $fatal(1, "FAIL measurement duration");
+`ifdef POWER_NATIVE_SAIF
+        $toggle_stop();
+        $toggle_report("activity.saif", 1.0e-15, "dp_power_tb.dut");
+        window_file = $fopen("window.txt", "w");
+        $fdisplay(window_file, "start_fs=%0d\nend_fs=%0d", start_fs, end_fs);
+        $fclose(window_file);
+        $display("POWER_SAIF_PASS duration_fs=%0d", end_fs-start_fs);
+`endif
+      end
+      in_a_valid = cycle < count;
+      in_b_valid = cycle < count;
+      in_c_valid = cycle < count;
+      if (cycle < count) drive(cycle);
+      @(posedge clock);
+      if ({out_a_ready,out_b_ready,out_c_ready} !== {3{cycle<count}}) $fatal(1, "FAIL handshake %0d", cycle);
+      current = pending[7];
+      if (out_valid !== (current >= 0)) $fatal(1, "FAIL latency/valid cycle=%0d", cycle);
+      if (current >= 0) begin
+        if (out_d !== expected[current] || out_d_datatype !== (expected_type[current] != 0) ||
+            out_last !== (expected_last[current] != 0))
+          $fatal(1, "FAIL result cycle=%0d row=%0d got=%h expected=%h", cycle,current,out_d,expected[current]);
+        $fdisplay(output_file, "%0d %08h %0d %0d", current,out_d,out_d_datatype,out_last);
+        checked = checked+1;
+        if (checked == init_count) $display("POWER_INIT_PASS checked=%0d", init_count);
+      end
+      for (slot=7; slot>0; slot=slot-1) pending[slot] = pending[slot-1];
+      pending[0] = cycle < count ? cycle : -1;
+      if (cycle < count) accepted = accepted+1;
+    end
+    if (accepted != count || checked != count) $fatal(1, "FAIL incomplete replay");
+    $fclose(output_file);
+    $display("POWER_SIM_PASS accepted=%0d checked=%0d workload=1024 latency=8",accepted,checked);
+    $finish;
+  end
+endmodule

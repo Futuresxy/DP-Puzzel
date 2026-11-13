@@ -1,0 +1,37 @@
+{
+  "status": "analytical_uncalibrated",
+  "scope": "cold prefill, useful GEMM service time at fixed whole-core area",
+  "stages": [
+    "W4A4 routed experts",
+    "Q/O projections + shared experts to FP4",
+    "Main SWA/CSA to FP8",
+    "Main SWA/CSA to FP4"
+  ],
+  "compact_table_context": 1048576,
+  "points": 84,
+  "evaluations": 1428,
+  "zoom_markers": "Open markers show earlier context samples. Filled markers and arrows show the longest context.",
+  "attention_scope": {
+    "V4": "all local SWA and r=4 CSA main QK/PV, excluding r=128 HCA global QK/PV",
+    "V4.1": "local SWA and all CSA2 global main QK/PV in existing CED schedule"
+  },
+  "attention_sources": [
+    "https://arxiv.org/html/2606.19348v1#S4.SS2.SSS1",
+    "https://arxiv.org/html/2609.19969v1"
+  ],
+  "assumption": "Only the stated multiply precision changes; FLOPs, shapes, model schedule and excluded FP32 work are conserved.",
+  "limits": "Hypothetical precision eligibility; quality, conversion, utilization, memory, power and whole-model latency are not evaluated.",
+  "inputs": {
+    "data/results/petile17_n12/deployment.json": "dfa6b0eb19b88938baa626f071a4f6d3bf86112be88cceb91a9d77c10a2ed637",
+    "scripts/precision_migration.py": "8cdd9017737bb585c47d4966bbd9b2a2304a8e72829122fd7c73ecc4a46d9b5f",
+    "scripts/costs.py": "93b7c27de1537335921ba91f31314b43425c4cda2717885616bbfef04b4158a9",
+    "scripts/workloads.py": "6301d4882dc0623de2c1cc4bd07baa7a9a8dba4e6860cfbebc2c05f1641416b2",
+    "scripts/deepseek_v41.py": "ad6257b601b0b89a56a1570caf243ae7d13d1a2e85b0d9ae7d54af2e5563d031",
+    "scripts/plot_triangles.py": "63545cff7fdca982cc1efc6336810a0509c6d0e33e708df365ff7a6e473bd77e",
+    "scripts/simplex.py": "ddfc0fd3cdb65da6a4a3c2968c79060e53867a55c90e98831fd67622869d6c35",
+    "scripts/import_petile17_n12.py": "46e8e991c21d2cf00618e307343d433609d755b514e72300d845a941860ad347",
+    "data/inputs/models/DeepSeek-V4-Flash/inference/config.json": "6cc6f816ca73a8d38750194e330398e4f6955b4b45f674f7d29c96da14ccb733",
+    "data/inputs/models/DeepSeek-V4-Pro/inference/config.json": "a6aded1806a2dbacbbab89bae2380d0422a6d0dcc55c946b421c7f5e06ef6094",
+    "data/inputs/models/DeepSeek-V4.1-Flash/inference/config.json": "2e84f45cf1dac8c7fcbb200e96667d4b913275690668ed496f24c7747207a809"
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "lane_clock_gating_mxfp4": {
+    "S1": {
+      "total": 1320,
+      "inactive": 480
+    },
+    "S2": {
+      "total": 1504,
+      "inactive": 696
+    },
+    "S4": {
+      "total": 368,
+      "inactive": 0
+    },
+    "S3": {
+      "total": 1080,
+      "inactive": 544
+    }
+  },
+  "schema_version": 1,
+  "status": "PASS",
+  "created_utc": "2026-11-08T06:51:24.222650+00:00",
+  "baseline_run": "hw/power/runs/power_qwen8b_six_1108",
+  "optimized_run": "hw/power/runs/power_precision_register_gating_1108",
+  "condition": "N12 TT 0.7V 85C, 1GHz, L8/II1; same Qwen3 inputs and 512ns native gate SAIF window; pre-CTS zero-delay",
+  "validation": "All original frozen RTL/GLS output and activity audits pass; referenced artifact hashes rechecked",
+  "rows": [
+    {
+      "format": "bf16",
+      "baseline": {
+        "dynamic_mw": 16.392505645752,
+        "static_mw": 0.16443418750000002,
+        "total_mw": 16.5569381713867,
+        "internal_mw": 12.6855163574219,
+        "switching_mw": 3.7069892883301,
+        "area_um2": 16929.312873,
+        "clock_pins": 5792,
+        "inactive_clock_pins": 0
+      },
+      "optimized": {
+        "dynamic_mw": 15.4734811782837,
+        "static_mw": 0.199029421875,
+        "total_mw": 15.672550201416,
+        "internal_mw": 11.7700099945068,
+        "switching_mw": 3.7034711837769,
+        "area_um2": 17782.087803,
+        "clock_pins": 5680,
+        "inactive_clock_pins": 544
+      },
+      "dynamic_reduction_percent": 5.606369687031087,
+      "total_reduction_percent": 5.341494670186542,
+      "baseline_audit": "hw/power/runs/power_qwen8b_six_1108/dp_top__bf16/power_audit.json",
+      "optimized_audit": "hw/power/runs/power_precision_register_gating_1108/dp_top__bf16/power_audit.json",
+      "optimized_audit_sha256": "91a284aca8e8c849b0aa988d0b04e0129d531838c4ad71d8b626bb824298b9e2"
+    },
+    {
+      "format": "mxfp8_e4m3",
+      "baseline": {
+        "dynamic_mw": 16.8042645454407,
+        "static_mw": 0.16551609375,
+        "total_mw": 16.9698143005371,
+        "internal_mw": 12.9095621109009,
+        "switching_mw": 3.8947024345398,
+        "area_um2": 16929.312873,
+        "clock_pins": 5792,
+        "inactive_clock_pins": 0
+      },
+      "optimized": {
+        "dynamic_mw": 16.4133784770965,
+        "static_mw": 0.200998515625,
+        "total_mw": 16.614387512207,
+        "internal_mw": 12.4487266540527,
+        "switching_mw": 3.9646518230438,
+        "area_um2": 17782.087803,
+        "clock_pins": 5680,
+        "inactive_clock_pins": 264
+      },
+      "dynamic_reduction_percent": 2.3261123227809044,
+      "total_reduction_percent": 2.094464806953422,
+      "baseline_audit": "hw/power/runs/power_qwen8b_six_1108/dp_top__mxfp8_e4m3/power_audit.json",
+      "optimized_audit": "hw/power/runs/power_precision_register_gating_1108/dp_top__mxfp8_e4m3/power_audit.json",
+      "optimized_audit_sha256": "5ef68611e031b8ba98922e80f232e0de7a51451ccc8c1b2c98a058bbcca18e0e"
+    },
+    {
+      "format": "mxfp4_e2m1",
+      "baseline": {
+        "dynamic_mw": 15.3792419433594,
+        "static_mw": 0.163211328125,
+        "total_mw": 15.542458534240701,
+        "internal_mw": 12.192071914672901,
+        "switching_mw": 3.1871700286865,
+        "area_um2": 16929.312873,
+        "clock_pins": 5792,
+        "inactive_clock_pins": 0
+      },
+      "optimized": {
+        "dynamic_mw": 12.3086156845093,
+        "static_mw": 0.19772257812500002,
+        "total_mw": 12.506404876709,
+        "internal_mw": 9.3500375747681,
+        "switching_mw": 2.9585781097412,
+        "area_um2": 17782.087803,
+        "clock_pins": 5680,
+        "inactive_clock_pins": 1768
+      },
+      "dynamic_reduction_percent": 19.966044296324792,
+      "total_reduction_percent": 19.53393442127026,
+      "baseline_audit": "hw/power/runs/power_qwen8b_six_1108/dp_top__mxfp4_e2m1/power_audit.json",
+      "optimized_audit": "hw/power/runs/power_precision_register_gating_1108/dp_top__mxfp4_e2m1/power_audit.json",
+      "optimized_audit_sha256": "70e6e1c89e7e46f911f95d0ed63e65554cabb08838f66a757ddfc6e5ac869e77"
+    }
+  ]
+}

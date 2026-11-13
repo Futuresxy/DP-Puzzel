@@ -1,0 +1,25 @@
+{
+  "stage": "S1_upstream_reference_replay",
+  "upstream_commit": "2e015fd2ee750e6cad8d7152df52551e5b41ef20",
+  "adapter": "eager torch import becomes optional in matmul and softmax; CPU timing logic unchanged",
+  "source_lock_sha256": "933c129a505e9d7619ce06e4b89faf0d7c04d191f0530109b7981721e9dd1d83",
+  "adapter_sha256": "620c0fa67f9e0cc25f526200697a3c3ee59d04a52e5142be9984c136d8a5ae9b",
+  "replay_source_sha256": "060d8d37d4571014c0fbefbd5c829d48e22e879137972481bb9f50707e8b4113",
+  "support_sources_sha256": {
+    "llmcompass_puzzle/characterize.py": "677501a82e97e4d30d4a908f253ca084eb617a98f491b440ce978b50078e1ffb",
+    "ratio_dse/common.py": "cd9e457e2b421a323a11b2f9ae7960dc7539c5af8158d17aea2bd911ca68615f"
+  },
+  "packages": {
+    "numpy": "1.26.4",
+    "pandas": "2.2.3",
+    "scalesim": "2.0.2"
+  },
+  "output_sha256": "bf0dc7613d72f9485d376344caf93a75923a9592c1f7cd2b2dccf80e7dc71a4a",
+  "gpu_measurements": false,
+  "vector_output_sha256": "ffb90bee6d39c3a1660cc64eba3d61bdd2455353fcfb1572cea077e361dd8e80",
+  "physical_model": "original scalar systolic A100 model; not DP replacement or DeepSeek inference",
+  "clock_hz": 1410000000.0,
+  "active_sms": 108,
+  "hbm_bytes_s": 2039000000000.0,
+  "l2_bytes_cycle": 5120
+}

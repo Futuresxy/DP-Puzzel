@@ -1,0 +1,124 @@
+% !TeX root = ../main.tex
+\section{硬件成本与系统负载建模}
+\label{sec:evaluation}
+
+本节从候选 DP 的面积和逐模式功耗出发，建立面积约束下的部署模型与逐 GEMM 计算模型。前者决定芯片拥有多少计算资源，后者描述这些资源在不同精度与矩阵形状下的利用情况。两者共同为第~\ref{sec:workload} 节的联合 DSE 提供输入。
+
+\subsection{九种配比的成本与增配代价}
+\label{sec:eval_setup}
+\label{sec:lowp_costs}
+
+硬件表征采用 N12 TT、0.7\,V、85$^\circ$C、1\,GHz 和集成时钟门控。面积来自 Design Compiler；功耗以 Qwen3-8B 首层 MLP 下投影数据~\cite{qwen3technicalreport}生成 BF16、MXFP8 E4M3 和 MXFP4 E2M1 活动，分别代表 H/Q/E。VCS 门级仿真发出 1024 笔独立请求，取中间 512 拍的原生 SAIF，由 Power Compiler 估计内部、切换和泄漏功耗~\cite{synopsysActivityPower}。成本边界为单 DP，属于综合后、CTS/布线前结果。E256 为满足时序展开部分组合对齐层级，其余 PVT、频率及 IO 约束保持一致；比较反映各候选达到约束后的实现成本。
+
+图~\ref{fig:ratio9_costs} 对比九种配比的单 DP 综合面积，以及 BF16、MXFP8 E4M3 和 MXFP4 E2M1 三种精度下的总功耗。
+
+\begin{figure}[t]
+\centering
+% 倍率解释由图注承载，裁去源图坐标轴下方的说明。
+\includegraphics[width=\columnwidth,trim=0 12bp 0 0,clip]{dp_ratio_area_power.pdf}
+\caption{九种 H:Q:E 配比的单 DP 面积与总功耗。左侧为以 $1:2:4$ 归一化的综合面积，右侧为各精度的总功耗。基线标注绝对值，其余标注相对基线的倍率。功耗倍率按同一精度计算。}
+\label{fig:ratio9_costs}
+\end{figure}
+
+相对基线，$1:2:8$ 将 E 吞吐翻倍，面积与 E 模式功耗分别增加 33.60\% 和 57.14\%；$1:2:16$ 将 E 吞吐提高到四倍，面积和 E 模式功耗分别为 1.84 倍与 2.62 倍，其单位 MAC 能耗降低 34.40\%。与此同时，后者 H/Q 模式功耗增幅均低于 5\%。单独增配 Q 的 $1:4:4$ 将 Q 吞吐翻倍，面积增加 48.56\%，Q 模式功耗增加 68.16\%。这些结果说明专用化和后端共享能够分摊新增算力的成本，但不同精度的资源开销不同。
+
+\textbf{Insight 1：算力增长可以快于面积和功耗增长，但单位计算能耗改善并不消除活动功耗压力。} E 专用化使四倍吞吐对应的面积增长低于一倍，然而 E 模式总功耗仍从 11.20\,mW 增至 29.38\,mW。失活模式门控限制了其他模式的增量，目标模式运行时仍需驱动新增乘法、尺度处理、对齐和规约资源。因此，增配后的优化应继续针对目标精度的活动通路；具体瓶颈需由该模式的功能功耗分解确定，不能仅凭面积或峰值算力判断。
+
+\subsection{从 DP 面积到芯片绝对算力}
+\label{sec:k4_area}
+
+令候选 $j$ 的 DP 面积为 $a_j$，每核含 $q$ 个 $m_j\times n_j$ 阵列。首轮以
+\begin{equation}
+A_{T,j}=q m_j n_j a_j
+\label{eq:tensor_area_model}
+\end{equation}
+估计 TensorCore 计算部分面积，阵列互连与控制的额外成本作为待校准项。选择基线 $0$，令其 TensorCore 占整核面积比例为 $\alpha$、参考核心数为 $N_0$，则
+\begin{equation}
+A_{C,0}=\frac{A_{T,0}}{\alpha},\quad
+A_O=A_{C,0}-A_{T,0},\quad
+A_{\mathrm{bud}}=N_0A_{C,0}.
+\label{eq:k4_area_definition}
+\end{equation}
+参考场景取 $N_0=36$、$\alpha=0.30$，两者均为可扫描参数。保持每核外围面积 $A_O$ 不变，候选部署为
+\begin{equation}
+N_j=\left\lfloor\frac{A_{\mathrm{bud}}}{A_O+A_{T,j}}\right\rfloor.
+\label{eq:core_area_budget}
+\end{equation}
+$\alpha$ 仅用于定义基线，候选无需保持相同 TensorCore 面积占比。该预算描述等效核心池，不对应某款商业芯片的实测面积。
+
+对精度 $p$，以 $K_{j,p}$ 和 $I_{j,p}$ 表示原生点积长度和启动间隔，则全芯片模式峰值为
+\begin{equation}
+C_{j,p}=\frac{2f q m_jn_j N_jK_{j,p}}{I_{j,p}}.
+\label{eq:k4_capacity_power}
+\end{equation}
+其中小写 $n_j$ 表示阵列列数，大写 $N_j$ 表示核心数。各模式互斥使用共享资源，峰值不能同时相加。
+
+\subsection{等阵列规模与等输入带宽}
+\label{sec:ratio_bandwidth}
+
+\textbf{等阵列规模}固定各候选的 $m_j,n_j,q$，比较 DP 增配对面积、核心数量和供数需求的影响。\textbf{等输入带宽}固定每核本地存储至 TensorCore 的输入预算，在合法阵列尺寸中枚举部署，并对全部声明支持的模式检查供数条件。同一候选的物理阵列不随运行精度改变。
+
+作为带宽模型的一个明确场景，若 A 沿行、B 沿列广播，向量含尺度的位宽为 $V_{A,j,p},V_{B,j,p}$，本地时间复用次数为 $R_A,R_B$，则持续发射所需的每核输入带宽为
+\begin{equation}
+B_{\mathrm{in},j,p}=\frac{qf}{8I_{j,p}}
+\left(\frac{m_jV_{A,j,p}}{R_A}+\frac{n_jV_{B,j,p}}{R_B}\right).
+\label{eq:ratio_bandwidth}
+\end{equation}
+单位为 byte/s。组内广播、分组布局或非整尺度块需要按实际唯一向量份数修正，不能直接套用整阵列广播。C/D 的交换流量由部分和驻留与累加次数另行计算，输入端预算也不等同于 HBM 带宽。该条件下的供数可行性为
+\begin{equation}
+\max_{p\in\mathcal P}B_{\mathrm{in},j,p}\le B_{\mathrm{budget}},
+\label{eq:input_budget}
+\end{equation}
+其中 $\mathcal P$ 是固定的模式集合。等阵列分支显式报告带宽增长；等带宽分支考察受限供数是否改变较优配比。
+
+\subsection{DeepSeek 的 GEMM 与执行精度模型}
+\label{sec:workload_extraction}
+
+负载模型先覆盖 DeepSeek V4/V4.1 系列的 Attention 与 MoE，按四类汇总：注意力 QK/PV、注意力投影、共享专家或 Dense FFN、路由专家。Indexer 作为 Attention 子类独立保留。模型输入为配置、batch、上下文、执行阶段及算子精度；底层记录每个 GEMM 的尺寸、重复次数、层和依赖，其他模型可通过相同接口适配。
+
+\begin{table}[t]
+\centering
+\caption{V4.1 目标执行映射。FP8/FP4 的具体编码、尺度和转换路径需在硬件映射时确定。}
+\label{tab:deepseek_execution_map}
+\footnotesize
+\begin{tabular}{@{}p{0.70\columnwidth}p{0.23\columnwidth}@{}}\toprule
+主要 GEMM & 执行标签 \\\midrule
+Main SWA/CSA QK、PV；Grouped O-down；Global-KV projection & BF16 \\
+Q-down/up/O-up；SWA-KV projection；Shared Expert gate/up/down；Index Q projection & FP8 \\
+Routed Expert gate/up/down & W4A8 \\
+Full Indexer QK & FP4 \\
+\bottomrule\end{tabular}
+\end{table}
+
+表~\ref{tab:deepseek_execution_map} 定义本轮目标映射。已保留的参考实现映射单独重放，例如现有 V4.1 脚本在部分压缩分支以 FP32 处理 Global-KV projection；目标映射与参考账本不能直接互换。W4A8 保留 FP4 权重存储和 FP8 激活信息，并独立确定实际乘法及转换路径。现用 DP 的 A/B 采用同格式输入，因此 W4A8 不能自动获得原生 FP4 吞吐。
+
+对 dense 算子 $o$，有用计算量为 $F_o=2M_oN_oK_or_o$，其中 $r_o$ 为未计入尺寸的重复次数。稀疏注意力按实际可见 key 或块集合展开 QK/PV，区分有效计算和块填充；路由专家按每专家 token 分布保留 GEMM，不能将不同权重的专家合并为一个大矩阵。V4.1 的缓存复用与 CED 重放分别记账。FP32 等未覆盖 GEMM 保留排除量与覆盖率，非 GEMM 不计入本节执行时间。
+
+\subsection{精度相关利用率与周期}
+\label{sec:compute_model}
+
+硬件形状为 $(m_j,n_j,K_{j,p})$，负载形状为 $(M_o,N_o,K_o)$。在不跨任务打包、按完整 tile 发射的 dense 情形，几何利用率为
+\begin{equation}
+U_{o,j,p}^{\mathrm{shape}}=
+\frac{M_oN_oK_o}
+{\lceil M_o/m_j\rceil m_j\,
+ \lceil N_o/n_j\rceil n_j\,
+ \lceil K_o/K_{j,p}\rceil K_{j,p}}.
+\label{eq:shape_utilization}
+\end{equation}
+精度改变原生 K，因此相同矩阵可以具有不同 K 尾部浪费。稀疏、分组及专家 GEMM 使用各自 tile 账本，不能以全局稀疏率简单缩放 dense 周期。
+
+周期模型拟在 tile 发射基础上计入流水填充/排空、同输出累加依赖、供数停顿和必要转换。算子在给定资源上的有效利用率定义为有用 MAC 除以该窗口内的峰值 MAC 容量；它同时反映形状与时间损失，不能再与同源的几何利用率重复相乘。多核执行由输出 tile 调度得到完成时间，不直接将单核周期除以核心数。
+
+LLMCompass 的矩阵乘法模型结合形状查表、解析路径与 SCALE-Sim 调用；SCALE-Sim 可输出周期、停顿及利用率。\footnote{参考实现：\url{https://github.com/PrincetonUniversity/LLMCompass}；\url{https://github.com/scalesim-project/SCALE-Sim}。} 本项目拟借鉴这一分层方式，但广播 DP 的原生 K 规约与标量 MAC 脉动阵列不同，需要单独适配数据流、尾部和反馈，不能将模拟周期直接除以原生 K。当前已具备静态工作量与理想计算时间分析；上述逐算子周期后端和等带宽部署仍待实现及校准。
+
+\subsection{精度迁移与质量约束接口}
+\label{sec:quality_model}
+
+令 $\pi(o)$ 指定算子的执行精度。迁移保留矩阵形状时，有用 FLOP 总量不变，但精度归属、发射容量、数据量及执行代价可以变化。完整方案的质量代价通过外部评价输入：
+\begin{equation}
+\Delta\mathrm{PPL}(\pi)\le\epsilon_{\mathrm{PPL}},\qquad
+\Delta\mathrm{Acc}_{\mathrm{drop}}(\pi)\le\epsilon_{\mathrm{Acc}}.
+\label{eq:quality_constraint}
+\end{equation}
+指标按任务选择，记录模型、量化方法和评价数据集，不预设各算子损失可加。该接口为待接入能力；质量未知的迁移仅用于条件性硬件收益分析，不视为零损失，也不进入质量已验证的推荐集合。

@@ -1,0 +1,290 @@
+{
+  "baseline_commit": "a9b4c22",
+  "cmodel_checkpoint": "2aa89c4",
+  "latency": 8,
+  "ii": 1,
+  "default_parameters": {
+    "K_FP16": 16,
+    "LOCAL_W": 28,
+    "GLOBAL_W": 40
+  },
+  "unpack_equivalence": {
+    "checks": 319488,
+    "seed": "71e0cafe",
+    "status": "passed"
+  },
+  "cmodel_tests": 5,
+  "dc_flow_tests": 40,
+  "records": {
+    "optimized": {
+      "run_id": "20261107T233427568086Z",
+      "export_id": "DP_verilog_t8h16q64e128_opt_e2fd4e3328a69a69",
+      "rtl_fingerprint": "dfa6ab77cb9a96f48507a10b10ac7e4807c76f3f02972d9fe774975329dd301f",
+      "status": "passed",
+      "cutpoints_checked": 315339,
+      "scopes": [
+        {
+          "name": "tf32",
+          "result": "PASS cycles=1061 accepted=1053 checked=1053 cancelled=0",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "62bcb225fdcf9e75612375b2fb0bbc72db850e0af7fc05dc11483f2b922a0e23"
+        },
+        {
+          "name": "fp16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "1feb5e77f989fdb29e30827550f2850a98a2b31a8b28f0a35e464335d36f4489"
+        },
+        {
+          "name": "bf16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3,
+          "cutpoints_checked": 0,
+          "output_sha256": "6c29383006cb8be9d893a08742a9993f3010d1b66567d617fa51a1946c8822d9"
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 959,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "95cef6b8ed70922da4a739aeaeb93263b6d102bd2582be8ee8d98fe9958c662e"
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "9b41343220c8d14fb825f6eeaf18fa5c961f7d5f272422caee872e45db57f355"
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "830f77dcadc23291aedbefce1b9ec5639f6cb4f6bc38b3d8ff9f0e9ef91eb69e"
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "179e62e3a8878bd2e862f319dfa4c1b86cf13efa49408d4c16912e6083e76a9b"
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0,
+          "output_sha256": "297f4516e1afdb8046d7d3a2ee1decd92ecbce143bf6f6f52755645d041c8417"
+        },
+        {
+          "name": "nvfp4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0,
+          "output_sha256": "814b9d50d4d13846d788ee96f2833ab90905bd82de1ad2cf80adc96c4704e06e"
+        },
+        {
+          "name": "hif4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0,
+          "output_sha256": "27278368677c13165695f714bf999ba41eb6c636bd58060a67e70fc649643c8e"
+        },
+        {
+          "name": "int8",
+          "result": "PASS cycles=1053 accepted=1045 checked=1045 cancelled=0",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null,
+          "cutpoints_checked": 0,
+          "output_sha256": "0f07b5ef7afa767a8bf5a1782254b402578479c9682d6f645feaec3012dea6c9"
+        },
+        {
+          "name": "mixed-k16-l27-g40",
+          "result": "PASS cycles=7063 accepted=5841 checked=5377 cancelled=464",
+          "golden_exact": null,
+          "math_exact": null,
+          "max_ulp": null,
+          "cutpoints_checked": 105113,
+          "output_sha256": "a1a17f89c47cca07225a15219cef2039f22bb970d7a46a6f106e25daef8bc346"
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=7063 accepted=5841 checked=5377 cancelled=464",
+          "golden_exact": null,
+          "math_exact": null,
+          "max_ulp": null,
+          "cutpoints_checked": 105113,
+          "output_sha256": "4acf634ee8b0c9302ce9c260b82c9426c342fae7d64c6a72e221faebde28aa58"
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=7063 accepted=5841 checked=5377 cancelled=464",
+          "golden_exact": null,
+          "math_exact": null,
+          "max_ulp": null,
+          "cutpoints_checked": 105113,
+          "output_sha256": "4acf634ee8b0c9302ce9c260b82c9426c342fae7d64c6a72e221faebde28aa58"
+        }
+      ]
+    },
+    "reference": {
+      "run_id": "20261107T233427565517Z",
+      "export_id": "DP_verilog_t8h16q64e128_f592ebd6af097577",
+      "rtl_fingerprint": "8da614b31dcc24decfd7038621b383b1743019d8846b3b752e21f4dec76b9752",
+      "status": "passed",
+      "cutpoints_checked": 315339,
+      "scopes": [
+        {
+          "name": "tf32",
+          "result": "PASS cycles=1061 accepted=1053 checked=1053 cancelled=0",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "62bcb225fdcf9e75612375b2fb0bbc72db850e0af7fc05dc11483f2b922a0e23"
+        },
+        {
+          "name": "fp16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "1feb5e77f989fdb29e30827550f2850a98a2b31a8b28f0a35e464335d36f4489"
+        },
+        {
+          "name": "bf16",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3,
+          "cutpoints_checked": 0,
+          "output_sha256": "6c29383006cb8be9d893a08742a9993f3010d1b66567d617fa51a1946c8822d9"
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 959,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "95cef6b8ed70922da4a739aeaeb93263b6d102bd2582be8ee8d98fe9958c662e"
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "9b41343220c8d14fb825f6eeaf18fa5c961f7d5f272422caee872e45db57f355"
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "830f77dcadc23291aedbefce1b9ec5639f6cb4f6bc38b3d8ff9f0e9ef91eb69e"
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1,
+          "cutpoints_checked": 0,
+          "output_sha256": "179e62e3a8878bd2e862f319dfa4c1b86cf13efa49408d4c16912e6083e76a9b"
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0,
+          "output_sha256": "297f4516e1afdb8046d7d3a2ee1decd92ecbce143bf6f6f52755645d041c8417"
+        },
+        {
+          "name": "nvfp4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0,
+          "output_sha256": "814b9d50d4d13846d788ee96f2833ab90905bd82de1ad2cf80adc96c4704e06e"
+        },
+        {
+          "name": "hif4",
+          "result": "PASS cycles=969 accepted=961 checked=961 cancelled=0",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0,
+          "cutpoints_checked": 0,
+          "output_sha256": "27278368677c13165695f714bf999ba41eb6c636bd58060a67e70fc649643c8e"
+        },
+        {
+          "name": "int8",
+          "result": "PASS cycles=1053 accepted=1045 checked=1045 cancelled=0",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null,
+          "cutpoints_checked": 0,
+          "output_sha256": "0f07b5ef7afa767a8bf5a1782254b402578479c9682d6f645feaec3012dea6c9"
+        },
+        {
+          "name": "mixed-k16-l27-g40",
+          "result": "PASS cycles=7063 accepted=5841 checked=5377 cancelled=464",
+          "golden_exact": null,
+          "math_exact": null,
+          "max_ulp": null,
+          "cutpoints_checked": 105113,
+          "output_sha256": "a1a17f89c47cca07225a15219cef2039f22bb970d7a46a6f106e25daef8bc346"
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=7063 accepted=5841 checked=5377 cancelled=464",
+          "golden_exact": null,
+          "math_exact": null,
+          "max_ulp": null,
+          "cutpoints_checked": 105113,
+          "output_sha256": "4acf634ee8b0c9302ce9c260b82c9426c342fae7d64c6a72e221faebde28aa58"
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=7063 accepted=5841 checked=5377 cancelled=464",
+          "golden_exact": null,
+          "math_exact": null,
+          "max_ulp": null,
+          "cutpoints_checked": 105113,
+          "output_sha256": "4acf634ee8b0c9302ce9c260b82c9426c342fae7d64c6a72e221faebde28aa58"
+        }
+      ]
+    }
+  }
+}

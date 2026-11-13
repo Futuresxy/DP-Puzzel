@@ -54,8 +54,8 @@ flowchart TD
 
 | 部分 | 接收 | 处理 | 交付 |
 | --- | --- | --- | --- |
-| hw/spec | 格式来源、微架构问题、目标约束 | 定义精度与周期语义 | 模块/单核规格、验收矩阵 |
-| hw/chisel_src + configs | 已明确规格和参数 | 单阵列/单核实现 | 源码与可复现参数 |
+| src/spec | 格式来源、微架构问题、目标约束 | 定义精度与周期语义 | 模块/单核规格、验收矩阵 |
+| src/chisel、src/verilog、src/cmodel | 已明确规格和参数 | 单阵列/单核实现 | 源码与可复现参数 |
 | hw/rtl + test | 设计、独立参考、测试/负载向量 | 导出及最终 RTL 验证 | 同一份 RTL、module 映射、验证证据 |
 | hw/dc_syn | 通过门禁的 RTL、库和约束 | 挂载 EDA 中综合 | 面积/时序、netlist 和来源 |
 | hw/power | 同源硬件、真实负载活动、工况 | 活动回放及功耗测量 | 功耗分解、覆盖率、窗口、active/idle 数据 |
@@ -81,6 +81,6 @@ L2、NoC、SIMT、控制器、HBM PHY 等按实验声明为显式模型、固定
 - 块缩放格式的位宽不等于有效存储成本或算术吞吐，转换、缩放与累加实现都需要证据。
 - 本项目不自动假设所有 GEMM 都可改成最低精度；精度可行性由负载规范或外部质量验证提供。
 
-本文描述目标系统架构。当前hw实现 [五族六种PE](../hw/spec/six-pe-design.md)：SubPE_X → PEGroup_X → PE_X_gN → K_PE/MN_PE。HQE/QE/E保留原分级复用，H/Q专用16/32路一次全局对齐；六种PE统一S11输出坐标，K/MN公共C/D总18级，四个对齐参数显式传递。完整RTL格式/scale精度回归、PPA与ratio_dse尚未完成；有限定向坐标/valid检查不能替代最终验收。
+本文描述目标系统架构。历史实现 [五族六种PE](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/six-pe-design.md)：SubPE_X → PEGroup_X → PE_X_gN → K_PE/MN_PE。HQE/QE/E保留原分级复用，H/Q专用16/32路一次全局对齐；六种PE统一S11输出坐标，K/MN公共C/D总18级，四个对齐参数显式传递。完整RTL格式/scale精度回归、PPA与ratio_dse尚未完成；有限定向坐标/valid检查不能替代最终验收。
 
-阵列方向已确定为 2×2 group 组内广播、组间脉动，物理规模参数化；M8N32 是逻辑指令块。L0 与状态机的 [调研讨论稿](../hw/spec/array_ref/array-design-discussion.md) 区分已实现传输层、外部公开机制和本项目设计建议，审核前不进入阵列实现。
+阵列方向已确定为 2×2 group 组内广播、组间脉动，物理规模参数化；M8N32 是逻辑指令块。L0 与状态机的 [调研讨论稿](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/array-design-discussion.md) 区分已实现传输层、外部公开机制和本项目设计建议，审核前不进入阵列实现。

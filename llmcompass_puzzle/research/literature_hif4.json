@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-11-13",
+  "evidence_status": "literature_prior",
+  "project_reproduced": false,
+  "quality_gate_eligible": false,
+  "target_model_quality_status": "unknown",
+  "format_check": {
+    "format_id": "hif4",
+    "payload_encoding": "S1P2",
+    "not_equivalent_to": "E2M1",
+    "block_elements": 64,
+    "payload_bits": 256,
+    "scale_format": "E6M2",
+    "scale_bits": 8,
+    "auxiliary_bit_periods": [4, 8],
+    "auxiliary_bits_per_block": 24,
+    "effective_bits_per_value": 4.5,
+    "project_layout_matches": true,
+    "numerical_implementation_equivalence_verified": false,
+    "source_id": "hifloat_inference"
+  },
+  "sources": [
+    {
+      "id": "hifloat_inference",
+      "title": "HiFloat4 Format for Language Model Inference",
+      "publisher": "Global Computing Consortium / HiFloat",
+      "url": "https://hifloat.gccorg.com/docs/en/hifloat4/white_paper/hifloat4_format_for_language_model_inference.html",
+      "locations": ["HiFloat4 format definition", "Experiments on DeepSeek-V3.1 and LongCat", "Table 5"]
+    },
+    {
+      "id": "m2xfp_asplos26",
+      "title": "M2XFP: A Metadata-Augmented Microscaling Data Format for Efficient Low-bit Quantization",
+      "publisher": "ASPLOS 2026 author manuscript",
+      "url": "https://chenzhangsjtu.github.io/files/2026-ASPLOS-M2XFP.pdf",
+      "locations": ["Section 6.1", "Table 3", "Table 4", "Table 6", "Table 8"],
+      "note": "M2XFP is distinct from HiFloat4."
+    }
+  ],
+  "records": [
+    {
+      "id": "deepseek_v31_hif4_inference_table5",
+      "evidence_status": "literature_prior",
+      "source_id": "hifloat_inference",
+      "table": "5",
+      "model": "DeepSeek-V3.1",
+      "parameters": "671B",
+      "checkpoint_revision": null,
+      "phase": "inference_PTQ",
+      "quantized_scope": ["MLA_linear", "MoE_linear excluding gating network", "FFN_linear"],
+      "quantized_tensors": ["weights", "activations"],
+      "platform": "64 Ascend 910B NPUs across 8 nodes",
+      "runtime": "vLLM",
+      "evaluation_framework": "AISBench",
+      "benchmark_mean_members": ["ARC-C", "ARC-E", "BoolQ", "HellaSwag", "PIQA", "WinoGrande", "GSM8K", "MMLU", "Math500", "CMMLU"],
+      "metric_unit": "percent",
+      "higher_is_better": true,
+      "results": [
+        {"recipe": "BF16", "mean": 85.44, "MMLU": 84.86, "Math500": 75.00},
+        {"recipe": "NVFP4 direct-cast", "mean": 84.81, "MMLU": 84.31, "Math500": 74.00},
+        {"recipe": "NVFP4 plus per-tensor scaling", "mean": 85.24, "MMLU": 84.72, "Math500": 78.20},
+        {"recipe": "HiF4 direct-cast", "mean": 86.42, "MMLU": 84.77, "Math500": 80.20}
+      ],
+      "perplexity": null,
+      "limitations": ["Not DeepSeek-V4 or V4.1", "Not the project's selective migration policy", "Mean improvement does not guarantee per-task non-regression", "No same-protocol MXFP8 results in this table"]
+    },
+    {
+      "id": "m2xfp_wikitext_ppl_tables3_6",
+      "evidence_status": "literature_prior",
+      "source_id": "m2xfp_asplos26",
+      "tables": ["3", "6"],
+      "phase": "inference_quantization",
+      "evaluation_framework": "PyTorch numerical simulation / lm-evaluation-harness",
+      "dataset": "WikiText v2",
+      "metric": "perplexity",
+      "higher_is_better": false,
+      "formats": {"MXFP4": {"group_size": 32}, "NVFP4": {"group_size": 16}},
+      "results": [
+        {"model": "LLaMA2-7B", "FP16": 5.47, "MXFP4": 7.15, "NVFP4": 5.81},
+        {"model": "LLaMA3-8B", "FP16": 6.14, "MXFP4": 8.30, "NVFP4": 7.18}
+      ],
+      "limitations": ["FP16 baseline is not BF16", "Not DeepSeek", "Tables 3 and 6 report different format comparisons under the paper's evaluation", "Do not compare to another paper without matching tokenizer, context, sample selection and stride"]
+    },
+    {
+      "id": "m2xfp_deepseek_distill_table4",
+      "evidence_status": "literature_prior",
+      "source_id": "m2xfp_asplos26",
+      "table": "4",
+      "phase": "inference_quantization",
+      "metric": "five_task_mean_accuracy",
+      "metric_unit": "percent",
+      "higher_is_better": true,
+      "benchmarks": ["AIME-90", "MATH-500", "GSM8K", "GPQA", "LiveCodeBench"],
+      "results": [
+        {"model": "DeepSeek-R1-Distill-Qwen-1.5B", "FP16": 49.03, "MXFP4": 36.91, "drop_percentage_points": 12.12},
+        {"model": "DeepSeek-R1-Distill-Qwen-7B", "FP16": 63.30, "MXFP4": 56.00, "drop_percentage_points": 7.30}
+      ],
+      "limitations": ["Distilled dense Qwen models, not full DeepSeek MoE", "No NVFP4 or HiF4 row in this table", "Not a target V4/V4.1 quality constraint"]
+    }
+  ]
+}

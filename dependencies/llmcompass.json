@@ -1,0 +1,53 @@
+{
+  "name": "LLMCompass",
+  "url": "https://github.com/PrincetonUniversity/LLMCompass.git",
+  "commit": "2e015fd2ee750e6cad8d7152df52551e5b41ef20",
+  "license": "BSD-3-Clause",
+  "directory": "llmcompass_puzzle/upstream/LLMCompass",
+  "purpose": "Parallel A100-derived system DSE for DP precision ratio, vector, memory and workload migration",
+  "submodules": [
+    {
+      "path": "cost_model/supply_chain",
+      "url": "https://github.com/PrincetonUniversity/ttm-cas.git",
+      "commit": "d98ac0586faaf63f8f4eac94aa7cd50f37421c1f",
+      "license": "BSD-3-Clause"
+    }
+  ],
+  "upstream_source_sha256": {
+    "LICENSE": "fc6d95c0d7e137e183a8341b453a7959f1f670558acf0a57c03de83a329ac32f",
+    "configs/GA100.json": "53a1274a0e4854729376cdb41d38f53eb8c58fa2b87d9185c3e85b6c876e901b",
+    "hardware_model/compute_module.py": "4f3ca9d14be5b1d58c9aa7e6557ec0de5d3d944d4d91ae9ac4539e162f0eeea3",
+    "hardware_model/io_module.py": "fa1c37da2590c9b36a2198a60935cf6091d9d2deeb4f59937785ae465c1c5862",
+    "hardware_model/memory_module.py": "1505cf985a4f2da2e09aff3400edb6b05a2dfdb70be08eff822a885eebf88871",
+    "software_model/matmul.py": "5e2d7db2385483f1e4bacb8764ebf59cc77f7db6fc9513321433766e0f0e63f6",
+    "software_model/utils.py": "dce51ba9b08698530a91702b628d1961839a2796454cc2923d574dd39fa8fec9",
+    "software_model/transformer.py": "cc3c316b7421fe1a4089880e1c542a5f832034f2ae32ec8633cf967d9da51c47",
+    "software_model/softmax.py": "ad280bb885f519fc23973422a08ec14c223f94bab06b80238abe8dc09aff76db",
+    "software_model/layernorm.py": "acff948744dbc75653caa9b3a6618bc4e078647ff93b3988f187e91a1bbcaf6a",
+    "software_model/gelu.py": "0d0404a7bb1942b5f21f172f3fadc606f4a566c0e370e201b5c8dce1a0f29320",
+    "software_model/communication_primitives.py": "55b4a46c3696bb8b4af44bf555b9e0495efd5d6dc7905a43027477e0de285cf0",
+    "cost_model/cost_model.py": "8081123b0d317330bee36cda58eed597652b9c64251e0142f674277b5139bf54",
+    "design_space_exploration/dse.py": "a08b12af03b6392e998fad219501ffb3f814fe97d0a8cd7df3351f891932b71c",
+    "utils.py": "d8a95b68377756003a84d7df9e5925f0ec7e2acbd5d670731ae64b84bb340d45",
+    "hardware_model/device.py": "4c0e1dc778c2788130005f6e153c221c65db6011064ed2440b54a5208fc1a621",
+    "hardware_model/interconnect.py": "e7217bda6f9ce2f4c9968f8d37e5f8365b1fdd07ff707ac87aba7b78ccbb4912",
+    "hardware_model/system.py": "480936e430a3bc4fa03fa6d199a9087309652ce9dd00b09203fc4d5517322bc7",
+    "hardware_model/__init__.py": "19b8828677f157ba76c31bbd610fcef9b8a98d0b7c7480da8dc18ace51e56594",
+    "software_model/operators.py": "ec9bcf61780e45e2d9f56ac8766456229d2f3f10962e7c2c8074de5f671fb35c",
+    "cost_model/supply_chain/supply_chain_model.py": "aeadb276bf7f5411b2083f1e23e25edc59c7a2323554774f59f3e2c46dc3215f",
+    "cost_model/supply_chain/LICENSE.txt": "774daf0736a404f4fca624bb29da586e2a2fdcab548ce042a08fd60c886403c2"
+  },
+  "cpu_runtime_packages": {
+    "numpy": "1.26.4",
+    "pandas": "2.2.3",
+    "scalesim": "2.0.2",
+    "absl-py": "2.5.1",
+    "configparser": "7.3.0",
+    "tqdm": "4.70.1",
+    "python-dateutil": "4.0.0",
+    "pytz": "2026.6",
+    "tzdata": "2026.6"
+  },
+  "sparse_checkout": true,
+  "upstream_runtime_import_edit": "Only eager torch imports in matmul.py and softmax.py are made optional in memory; CPU timing logic unchanged."
+}

@@ -1,0 +1,8 @@
+{
+  "cases_checked": 2196,
+  "fixed_deployment_migrations_checked": 414,
+  "hardware_accuracy": "uncalibrated",
+  "schedule_pairs_checked": 108,
+  "schema_version": 1,
+  "status": "passed_analytical_invariants"
+}

@@ -1,0 +1,336 @@
+{
+  "gated": {
+    "groups": {
+      "other_combinational": {
+        "cells": 2753,
+        "dynamic_mw": 0.06523058100000005,
+        "static_mw": 0.002114166447999975
+      },
+      "ICG_and_driven_clocks": {
+        "cells": 120,
+        "dynamic_mw": 0.6065007999999998,
+        "static_mw": 0.00011881679999999978
+      },
+      "S1_registers": {
+        "cells": 1320,
+        "dynamic_mw": 1.6414934189999986,
+        "static_mw": 0.003614346699999973
+      },
+      "S2_registers": {
+        "cells": 1504,
+        "dynamic_mw": 1.4466214257999994,
+        "static_mw": 0.004252744399999986
+      },
+      "S3_registers": {
+        "cells": 1080,
+        "dynamic_mw": 1.0010165202999977,
+        "static_mw": 0.0012681373000000013
+      },
+      "S4_registers": {
+        "cells": 368,
+        "dynamic_mw": 0.6722703094000005,
+        "static_mw": 0.0038305950000000148
+      },
+      "exponent_add_combinational": {
+        "cells": 2138,
+        "dynamic_mw": 0.0,
+        "static_mw": 0.009067994400000001
+      },
+      "exponent_max_combinational": {
+        "cells": 2715,
+        "dynamic_mw": 0.1637718983000004,
+        "static_mw": 0.011059809435999862
+      },
+      "lane_tree_combinational": {
+        "cells": 6976,
+        "dynamic_mw": 0.3674280759999998,
+        "static_mw": 0.0020297209999999917
+      },
+      "unpack_combinational": {
+        "cells": 16487,
+        "dynamic_mw": 0.6941689254479294,
+        "static_mw": 0.007471168096000095
+      },
+      "local_alignment_combinational": {
+        "cells": 19863,
+        "dynamic_mw": 1.7634045645276635,
+        "static_mw": 0.055389271647999616
+      },
+      "multiplier_combinational": {
+        "cells": 10618,
+        "dynamic_mw": 0.4887617292923007,
+        "static_mw": 0.026293355199999837
+      }
+    },
+    "register_fields": {
+      "S1_type_s1": {
+        "cells": 32,
+        "dynamic_mw": 0.06168799999999999
+      },
+      "S1_valid": {
+        "cells": 8,
+        "dynamic_mw": 0.01428
+      },
+      "S2_active": {
+        "cells": 64,
+        "dynamic_mw": 0.13331322999999998
+      },
+      "S2_all_negative_s2": {
+        "cells": 8,
+        "dynamic_mw": 0.012398890300000001
+      },
+      "S2_anchor_s2": {
+        "cells": 72,
+        "dynamic_mw": 0.1145170000000001
+      },
+      "S2_exponents": {
+        "cells": 336,
+        "dynamic_mw": 0.0
+      },
+      "S2_hif4_exponent": {
+        "cells": 16,
+        "dynamic_mw": 0.024704
+      },
+      "S2_negative": {
+        "cells": 64,
+        "dynamic_mw": 0.14586189
+      },
+      "S2_special_s2": {
+        "cells": 32,
+        "dynamic_mw": 0.049407999999999966
+      },
+      "S2_type_s2": {
+        "cells": 32,
+        "dynamic_mw": 0.060225000000000015
+      },
+      "S2_valid": {
+        "cells": 8,
+        "dynamic_mw": 0.012464000000000001
+      },
+      "S3_all_negative_s3": {
+        "cells": 8,
+        "dynamic_mw": 0.0123998903
+      },
+      "S3_anchor_s3": {
+        "cells": 72,
+        "dynamic_mw": 0.11116800000000006
+      },
+      "S3_special_s3": {
+        "cells": 32,
+        "dynamic_mw": 0.049407999999999966
+      },
+      "S3_type_s3": {
+        "cells": 32,
+        "dynamic_mw": 0.04974399999999997
+      },
+      "S3_valid": {
+        "cells": 8,
+        "dynamic_mw": 0.012464000000000001
+      },
+      "S4_out_all_negative": {
+        "cells": 8,
+        "dynamic_mw": 0.0123994794
+      },
+      "S4_out_anchor": {
+        "cells": 72,
+        "dynamic_mw": 0.11116800000000006
+      },
+      "S4_out_sop": {
+        "cells": 248,
+        "dynamic_mw": 0.4868308299999996
+      },
+      "S4_special_s4": {
+        "cells": 32,
+        "dynamic_mw": 0.049407999999999966
+      },
+      "S4_valid": {
+        "cells": 8,
+        "dynamic_mw": 0.012464000000000001
+      },
+      "S3_leaf_lower": {
+        "cells": 544,
+        "dynamic_mw": 0.0
+      },
+      "S3_leaf_upper": {
+        "cells": 384,
+        "dynamic_mw": 0.7658326299999995
+      },
+      "S2_product_low": {
+        "cells": 512,
+        "dynamic_mw": 0.8937294155000002
+      },
+      "S2_product_upper": {
+        "cells": 360,
+        "dynamic_mw": 0.0
+      },
+      "S1_mantissas": {
+        "cells": 512,
+        "dynamic_mw": 0.9975382589999993
+      },
+      "S1_signs": {
+        "cells": 128,
+        "dynamic_mw": 0.2663550399999999
+      },
+      "S1_signaling": {
+        "cells": 96,
+        "dynamic_mw": 0.0
+      },
+      "S1_class_high": {
+        "cells": 96,
+        "dynamic_mw": 0.0
+      },
+      "S1_class_low": {
+        "cells": 128,
+        "dynamic_mw": 0.25222412000000005
+      },
+      "S1_exponent_low": {
+        "cells": 32,
+        "dynamic_mw": 0.049407999999999966
+      },
+      "S1_exponent_upper": {
+        "cells": 288,
+        "dynamic_mw": 0.0
+      }
+    },
+    "hierarchy": {
+      "outside_groups": 1.9850076948518423,
+      "group_only": 1.4130620063309998,
+      "lanes": 8.910668249068072
+    }
+  },
+  "e64": {
+    "groups": {
+      "other_combinational": {
+        "cells": 1608,
+        "dynamic_mw": 0.26168865869999974,
+        "static_mw": 0.000554275847999998
+      },
+      "ICG_and_driven_clocks": {
+        "cells": 24,
+        "dynamic_mw": 0.24922399999999995,
+        "static_mw": 2.404560000000001e-05
+      },
+      "S1_registers": {
+        "cells": 664,
+        "dynamic_mw": 1.3005348599999993,
+        "static_mw": 0.0008186394000000007
+      },
+      "S2_registers": {
+        "cells": 352,
+        "dynamic_mw": 0.7407692902999993,
+        "static_mw": 0.0004456244999999994
+      },
+      "S3_registers": {
+        "cells": 128,
+        "dynamic_mw": 0.26684595900000013,
+        "static_mw": 0.00045152609999999987
+      },
+      "pair_sum_combinational": {
+        "cells": 736,
+        "dynamic_mw": 0.1894719120000002,
+        "static_mw": 0.000438118800000003
+      },
+      "multiplier_combinational": {
+        "cells": 2624,
+        "dynamic_mw": 0.17018398331899992,
+        "static_mw": 0.0008918724000000026
+      },
+      "lane_coordinate_shift": {
+        "cells": 320,
+        "dynamic_mw": 0.035491141999999996,
+        "static_mw": 9.16936000000001e-05
+      },
+      "lane_tree_combinational": {
+        "cells": 440,
+        "dynamic_mw": 0.19870935999999997,
+        "static_mw": 0.000320489100000001
+      },
+      "unpack_combinational": {
+        "cells": 2016,
+        "dynamic_mw": 0.23647321889999962,
+        "static_mw": 0.002666597300000014
+      }
+    },
+    "register_fields": {
+      "S1_a_mantissa_s1": {
+        "cells": 256,
+        "dynamic_mw": 0.47755343
+      },
+      "S1_a_sign_s1": {
+        "cells": 64,
+        "dynamic_mw": 0.12832796999999996
+      },
+      "S1_b_mantissa_s1": {
+        "cells": 256,
+        "dynamic_mw": 0.5204300100000003
+      },
+      "S1_b_sign_s1": {
+        "cells": 64,
+        "dynamic_mw": 0.13694344999999997
+      },
+      "S1_shift_s1": {
+        "cells": 16,
+        "dynamic_mw": 0.024816
+      },
+      "S1_valid": {
+        "cells": 8,
+        "dynamic_mw": 0.012464000000000001
+      },
+      "S2_all_negative_s2": {
+        "cells": 8,
+        "dynamic_mw": 0.012398890300000001
+      },
+      "S2_pairs_s2": {
+        "cells": 320,
+        "dynamic_mw": 0.6910904000000001
+      },
+      "S2_shift_s2": {
+        "cells": 16,
+        "dynamic_mw": 0.024816
+      },
+      "S2_valid": {
+        "cells": 8,
+        "dynamic_mw": 0.012464000000000001
+      },
+      "S3_all_negative_s3": {
+        "cells": 8,
+        "dynamic_mw": 0.012399459
+      },
+      "S3_shift_s3": {
+        "cells": 16,
+        "dynamic_mw": 0.02837599999999999
+      },
+      "S3_sop_s3": {
+        "cells": 96,
+        "dynamic_mw": 0.21360650000000003
+      },
+      "S3_valid": {
+        "cells": 8,
+        "dynamic_mw": 0.012464000000000001
+      }
+    },
+    "hierarchy": {
+      "outside_groups": 1.9602102792044043,
+      "group_only": 1.3701905748219951,
+      "lanes": 3.6493923842190004
+    }
+  },
+  "method": {
+    "condition": "N12 TT 0.7V 85C 1GHz; original MXFP4 K64 Qwen3 native gate SAIF, 512ns",
+    "scope": "Read original DDC and SAIF only; no RTL/netlist/synthesis changes",
+    "accounting": "Register internal power includes clock-pin energy; ICG and driven clock nets separate. Per-cell report columns rounded. S4 E registers belong to group, shared S4 lane registers belong to lane.",
+    "gated_point": "hw/power/runs/power_precision_register_gating_1108/dp_top__mxfp4_e2m1",
+    "e64_point": "hw/power/runs/power_qwen8b_six_1108/dp_top_e64__mxfp4_e2m1",
+    "diagnostics": "hw/power/runs/lane_compare_gated_e64_1108"
+  },
+  "files_sha256": {
+    "hw/power/runs/lane_compare_gated_e64_1108/gated/diagnose.tcl": "8788a40fd370c6b3e47b8605d9268e54798fb221334d44713631ce5d3c0c5c1d",
+    "hw/power/runs/lane_compare_gated_e64_1108/gated/source.json": "fde53b7c3733b3d0ae6201d1b31a08cda69678c3e1f53482c822889331753e4f",
+    "hw/power/runs/lane_compare_gated_e64_1108/gated/all_cell_net_power.rpt": "b26ab9364a2ec7651fa7e6aff9f444f47eac668d297e5fb537f04c9628a276a3",
+    "hw/power/runs/lane_compare_gated_e64_1108/gated/cell_kinds.tsv": "6771d6a4f7e98a015f3ad218f5b68dd1d645541413d15ce46d1b59a933553719",
+    "hw/power/runs/lane_compare_gated_e64_1108/e64/diagnose.tcl": "95733627afe1ffa2a0fc1bb23e2a2e98b6d43ff52ff52563f4366b9099c7b793",
+    "hw/power/runs/lane_compare_gated_e64_1108/e64/source.json": "46e9c77579738ee577e4dafa7dfffbc52dfc978f13d17ecf3af63f6f8a4f66bc",
+    "hw/power/runs/lane_compare_gated_e64_1108/e64/all_cell_net_power.rpt": "4776399256b3a71858d58dc7eec819f2e62f85cfc0b1dd90a40dac91c8b8462d",
+    "hw/power/runs/lane_compare_gated_e64_1108/e64/cell_kinds.tsv": "f01ef9f5ac4cdc05299baae347fac539dcd370a88e5af8b83253e3102947b801"
+  }
+}

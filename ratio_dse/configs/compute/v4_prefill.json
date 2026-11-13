@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "model_id": "DeepSeek-V4-Flash",
+  "stage": "prefill",
+  "schedule": "full",
+  "variant": "reference",
+  "batch": 1,
+  "past_tokens": 0,
+  "query_tokens": 256,
+  "routing_policy": "balanced"
+}

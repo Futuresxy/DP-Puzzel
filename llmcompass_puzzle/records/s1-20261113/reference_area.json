@@ -1,0 +1,26 @@
+{
+  "total_mm2": 826.76355498007,
+  "compute_mm2": 583.9627524481152,
+  "io_mm2": 242.80080253195476,
+  "core": {
+    "total_core_area": 4.102188235068917,
+    "control_area": 1.324128764278297,
+    "alu_area": 0.4349138380430975,
+    "sa_area": 0.26949313965848837,
+    "regfile_area": 1.5653124170434065,
+    "local_buffer_area": 0.5083400760456274
+  },
+  "compute_parts": {
+    "total_area": 583.9627524481152,
+    "cores_area": 525.0800940888214,
+    "crossbar_area": 58.88265835929387
+  },
+  "io_parts": {
+    "total_die_area": 242.80080253195476,
+    "global_buffer_area": 113.70604863787375,
+    "mem_phy_area": 62.699999999999996,
+    "mem_controller_area": 34.43881619937695,
+    "device_phy_area": 22.656,
+    "device_controller_area": 9.299937694704049
+  }
+}

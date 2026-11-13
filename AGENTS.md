@@ -1,41 +1,70 @@
 # DAC 2027 工程开发约定
 
+## 五种新增配比与时序优先约定（2026-11-12）
+
+在既有 T8H16Q32E64 的四个基础组上，新增四个 Q-only 组形成 T8H16Q64E64；新增 8/12 个 E 组形成 T8H16Q32E192/E256；新增 8/12 个 QE 组形成完整 T8H16Q96E192/T8H16Q128E256。后两者保留 T8/H16/INT8 基础能力，不是纯 Q/E DP。五种 CModel、手写 Verilog、独立冻结与主目录严格门禁均通过，见 `test/results/five-expansions-final-v1.12-20261112.{md,json}`。E 扩展为 v1.11，QE 扩展为 v1.12，均保持 L8/II=1；8/12 扩展分别用 3/5 个 CSA4:2 压成两行，另一个4:2合并基础+C两行，双行MUX后唯一CPA。源码提交 `530d7da`。
+
+用户明确时序优先：后端优化仍无法满足时序时，允许增加一级流水，需同步规格、CModel、RTL和严格验收，保留 II=1。E256 原瓶颈为 S5→S6 的 MAX+移位；组合层展开后 N12 TT/0.7V/85°C、1GHz setup/hold/电气/VT 已全通过，无需增加流水。前三种扩展 DC 与九点真实负载功耗均通过，记录为 `hw/dc_syn/records/first_three_expansions_20261112`、`hw/power/records/first_three_expansions_20261112` 的 MD/JSON/CSV，PPA与导入提交 `b7d2a08`。T8H16Q96E192 已完成独立 DC 与三点功耗；T8H16Q128E256 经组合层展开与8个输入到S1的定点同相缓冲修复后，DC也已全通过，保持L8/II=1；五种DC入口为 `hw/dc_syn/records/five_expansions_20261112.{md,json,csv}`，五种15点功耗亦全部通过，见 `hw/power/records/five_expansions_20261112.{md,json,csv}`。用户要求的最新11种面积/30个实测精度点整合入口为 `hw/data/dp_latest_area_power_20261112.{md,csv}`；原六种取已保留测量，本轮五种新测，未重测旧六种。定点缓冲入口提交 `0ec0f2c`，54项流程测试通过；不手改网表，不放宽约束。
+
+low32/low48 的七种 Q/E 功能和功耗输入已复制入本项目，1011 个原文件及 SHA-256 见 `hw/power/workloads/petile_extended/`，原 sibling 数据未改；14套新增功能语料进入 `test/data/dp/`。本轮运行及其冻结源、原始验证、模型参考、数据、网表和SAIF属于当前报告依赖；下文“仅六份最终结果”是11月10日清理完成时状态，不授权删除本轮新增证据。源树后续验证不覆盖原 DC 绑定的历史回执；隔离执行目录也属于必要重放依赖。
+
+## 最新产物清理与记录约定（2026-11-10）
+
+用户最新授权覆盖此前“全部旧功耗及依赖保留”的口径：仅保留当前六种 DP 的最终 DC、15 点功耗、精度验证和必要重放依赖，删除被替代历史运行大产物；历史 `hw/dc_syn/records/`、`hw/power/records/` 的 MD/JSON/CSV 数值与对比继续保留。当前查阅入口为这两个目录的 README.md；当前功耗重审计使用 `hw/power/plans/latest_six_retained.json`，不再依赖被清理的旧功耗批次。DC `runs/` 只保留六份最终结果。电气违例和 hold 违例的修复源及旧 `baseline_v18_reference_1109` 已删除。已完成测量的复核使用清理前的修复链回执和功耗批次内的原输入及 golden。现用 RTL 回执、E64 兼容回归、v1.9 CModel 参考和七类统计保留。清理明细见 `hw/dc_syn/maintenance/latest_six_artifacts_cleanup_20261110.json` 和 `hw/dc_syn/maintenance/final_six_dependency_retirement.json`。旧记录内“全部原始产物保留”描述是历史状态，以新入口的可用状态为准。 后续每次实验在对应 records/ 新增日期/版本明确的 MD 结果记录与 JSON/CSV，写明面积/时序或动态/静态/总功耗、run/export ID 和工况，并更新 README 的最新入口；旧数值不覆盖，清理时标记原始产物可用状态。
+
+## dp_top v1.8 基础实现与独立修复（2026-11-10）
+
+基础 `dp_top` 已按 `src/spec/dp/dptop/dp-top-v1.8.md` 实现：E 窄 pair/共享树/局部 e2 融合，无跨 lane MAX/宽移位依赖；无偏 scale、S3 A_raw、S5 compare_exp；C 不做 LZD；S7 4:2+3:2+CPA。CModel、冻结 Verilog 的 L8/II=1/完整数据和新定向断点已通过，回执见 `test/results/dp-top-v1.8.md`。原v1.8批次未迁移其余E/QE/混合顶层；后续v1.9范围见下一节。`BASELINE_V18` 静态参数默认0，dp_top及新版混合顶层的基础组显式开启；CModel 的 legacy_multi 保留旧回放。该批扩展ADD/CSA/MUX只更新规格，后续v1.9已实现。旧功耗/综合结果仍保留为历史；v1.8 首次 N12 TT/1GHz DC 面积为16163.057770 µm²，setup/hold通过但有1条最大电容违例，该首次结果flow_pass=false。后续独立修复已通过，并完成三种真实负载功耗，见下一节。详见 hw/dc_syn/records/dp_top_v18_n12_1000mhz_20261109.md。
+
+## 三种混合DP及Q32E64 v1.9实现与验收（2026-11-10）
+
+用户已授权CModel→RTL冻结验证→同工况DC→六架构真实负载功耗与七类功能占比。三混合顶层及独立Q32E64的CModel、Verilator全量/断点/L8/II=1/门控验证已通过，见test/results/mixed-cmodel-v1.9.md与mixed-rtl-v1.9.md；baseline v1.8复核通过，E64保持旧设计并通过兼容回归。E专用S3完成HiF4 e2融合，S4窄组和/abs，S5 U22 LZD、补零输出U31；QE保留Q U5指数/宽对齐，E旁路并在S4 lane树后消耗e2。三种扩展采用carry-save合并、双行MUX及唯一CPA，E96 S43、E128/Q64E128 S44；Q32E64五源4:2+3:2+CPA为S43。active屏蔽MAX，非参与特殊/负零贡献分别处理。详细入口src/spec/dp/dptop/mixed-precision-expansion.md与low-precision-tops.md。五份新DC已通过1GHz setup/hold、电气及VT门禁；六架构15个兼容精度点均重新采样SAIF并通过功耗审计。旧PPA保留对照。独立E64及dp_top_e通过ARCHITECTURE_V19默认0保留旧合同。
+
+当前交付入口：hw/power/records/v19_design_report_20261110.md；DC索引hw/dc_syn/records/v19_six_dp_20261110.{md,json}；完整动态/静态/总功耗及旧版对照hw/power/records/v19_six_architectures_20261110.{md,json,csv}；六架构七类面积及图paper/data/H16Q32E64_area/README.md，总功耗及图paper/data/H16Q32E64_power/README.md。N12 TT/0.7V/85°C、1GHz、ICG开启，setup正裕量极小，仅综合后/CTS布线前结论。E64沿用原通过网表，但本轮SAIF与功耗为新采样。所有旧功耗及引用依赖继续保留。
+
+baseline电气修复独立run dc_dp_top_11092301，面积16165.122154 µm²，setup/hold/电气/VT均通过；三种新负载功耗见hw/power/records/baseline_v18_repaired_1109.md，旧结果及依赖继续保留。原DC引用的完整验证回执按其verification_id定位，不因同一RTL快照再次验证而替换历史验收；当前源码综合仍使用严格最新门禁。
+
 ## 当前优先约定：新版 DP / Cube（2026-11-04）
 
-用户已明确旧 DP 设计过时，由用户重新定义整体架构 spec。新设计统一放在根目录 `src/spec/`、`src/cmodel/`、`src/chisel/`、`src/verilog/`，共用测试放在根目录 `test/`。先逐项完善并确认整体 spec，再编写 CModel，之后开发 Chisel 和独立手写可综合 Verilog；用户已授权实现 DP CModel，当前已完成首批精度与周期测试；Chisel、手写 RTL、阵列和 EDA 尚未实施。首批要求已写入 [新 spec 索引](src/spec/README.md)：TensorCore → DP-Group → DP，16×4 阵列由四个竖直 4×4 广播组组成；组内无脉动。具体格式、精度、K、≤8级流水、1.41 GHz 和功耗优先约束以新版 spec 为准，未决口径不得从旧设计补齐。
+用户已明确旧 DP 设计过时，由用户重新定义整体架构 spec。新设计统一放在根目录 `src/spec/`、`src/cmodel/`、`src/chisel/`、`src/verilog/`，共用测试放在根目录 `test/`。先逐项完善并确认整体 spec，再编写 CModel，之后开发 Chisel 和独立手写可综合 Verilog；用户已授权实现单 DP 手写 Verilog，SystemVerilog 已冻结为当前 T8H16Q32E64 的历史参考，不再同步维护；CModel 与单 DP RTL 已建立共用验证，Chisel、阵列尚未实施，单 DP 已完成 N12 DC 综合。首批要求已写入 [新 spec 索引](src/spec/README.md)：TensorCore → DP-Group → DP，16×4 阵列由四个竖直 4×4 广播组组成；组内无脉动。具体格式、精度、K、≤8级流水、1.41 GHz 和功耗优先约束以新版 spec 为准，未决口径不得从旧设计补齐。
 
-旧 Chisel 与 Mill 构建文件归档在 `hw/legacy/`，仅供参考。下面涉及旧六种 PE、层级、位宽、11/18 级流水、原生 K、阵列候选及旧源码/spec/test 路径的专用条款，只解释历史设计，不约束新架构。不得自行从旧设计补齐新版未决项。新的具体模块确定后，在 `src/spec/` 建立三实现共用的模块合同与源码映射；不机械沿用旧 Scala 路径镜像。
+E 专用前端已按所选 E64 方案实现 CModel（S2 pair、S3 lane 树、S4 组和/abs、S5 scale），与多精度前端共用 S5 Token/C 解包及 S6–S8。配置为 src/configs/dp/e64.json；E 纯 Verilog 顶层为 src/verilog/top/dp_top_e.v，专用 dp_lane_e/dp_group_e 使用 files_e.f，--frontend e 完成独立 Verilator/lint/断点/协议验证。混合组 v1.7 已实现 QE CModel/Verilog 和三个固定配比顶层，验证入口为 test/run_mixed_verilog.py，阶段记录见 test/results/mixed-cmodel-v1.7.md、test/results/mixed-rtl-v1.7.md；三个混合顶层和当前多精度基线已完成 N12 TT/1GHz、门控开启的综合，保持 L8/II=1，setup/hold/VT/电气规则均通过，比较见 hw/dc_syn/records/mixed_n12_1000mhz_20261108.md；本轮用户明确授权 DC 综合并要求此次验证、综合及比较基线长期保留，精简证据见 test/results/e64-v1.5.8.md 与 hw/dc_syn/records/e64_n12_comparison_20261105.md，不把仿真通过作为时序/功耗证据。
 
-新设计入口为 [src/README.md](src/README.md)，规格索引为 [src/spec/README.md](src/spec/README.md)。历史证据保留原归属；新的数值、周期、参数、模式、数据流和验收规则均以用户确认的新 spec 为准。通用代码质量、Git、产物与证据追踪规则继续适用；生成 RTL 仍集中在 `hw/rtl/`，DC/power 仍由 `hw/dc_syn/` 与 `hw/power/` 承担，当前不运行 EDA。
+历史 PE 实现及其规格、配置和验证从 Git 历史查阅。新版设计由 `src/spec/` 的共用合同和源码映射定义。
 
-新版 spec 文档维护遵从 [版本与修订规则](src/spec/document-control.md)：每份 `src/spec/**/*.md` 第一行必须写功能、范围、固定版本、修改时间及时区、对应代码文件（未建时明确标注并指向现有入口）。当前架构 v1.4，文档整理版 v1.4.1；同架构修订追加 `.x`，架构合同修改升新 vM.N 并记录原因与影响。按用户最新要求，正文只展示当前有效合同，清除过时草案与重复历史；仅相邻两个主要版本的核心变更保留简短删除线对照，非核心小修直接更新。完整历史由 Git 保存，当前索引与两版摘要见 [版本记录](src/spec/CHANGELOG.md)。版本编号不代表待决规格已批准或实现已验证。
+当前工作目录使用根 `src/` 开发、`test/` 验证、`hw/` 做综合与功耗。分析前将设计冻结到 `hw/rtl/<export-id>/`，在 manifest 记录顶层、时钟、复位和来源。DC 流程自身的测试位于 `hw/dc_syn/tests/`。
+
+新版 spec 文档维护遵从 [版本与修订规则](src/spec/document-control.md)：每份 `src/spec/**/*.md` 第一行必须写功能、范围、固定版本、修改时间及时区、对应代码文件（未建时明确标注并指向现有入口）。当前基础dp_top为v1.8、三个混合顶层及Q32E64为v1.9，E64保留原合同；同架构修订追加 `.x`，架构合同修改升新 vM.N 并记录原因与影响。按用户最新要求，正文只展示当前有效合同，清除过时草案与重复历史；仅相邻两个主要版本的核心变更保留简短删除线对照，非核心小修直接更新。完整历史由 Git 保存，当前索引与两版摘要见 [版本记录](src/spec/CHANGELOG.md)。版本编号不代表待决规格已批准或实现已验证。
+
+用户于 2026-11-05 另行授权在本机 EDA 环境执行单 DP 的 N12 DC 综合及 1.41GHz 时序分析。此授权覆盖验证门禁与综合基础设施接入，不扩展计算阵列；后续按用户授权和真实证据运行对应 EDA 流程。
+
+用户于 2026-11-05 明确：`src/verilog/systemverilog/` 仅保留 T8H16Q32E64、K16/28/40、L8/II=1 的历史版本，后续新特性、数值/流水优化和 E 类专用 DP 不再同步到 SV。当前维护 CModel 与纯 Verilog；默认 RTL 回归只运行 Verilog，显式 SV 重放为历史参考检查，不作为新版本门禁。Chisel 仍按原计划待实施；测试台使用 Verilog/SystemVerilog 语言不改变 DUT 的维护范围。冻结来源见 [SV 说明](src/verilog/systemverilog/README.md)。
+
+
+用户于2026-11-08最新要求：补齐精度寄存器门控后三种混合顶层的1GHz DC/真实负载功耗，汇总六种架构，E64保持原设计。用户随后明确要求全部旧功耗数据先不删除、保留作对照，因此其依赖的历史DC、RTL快照和验证回执也保留；该要求优先于此前仅留新结果的清理口径。该历史批次综合索引为hw/dc_syn/records/latest_six_dp.{md,json}，功耗报告为hw/power/records/current_six_precision_gated.{md,json,csv}；最新v1.9批次入口见本文开头。15个兼容格式点经冻结RTL/门级1024笔及L8检查、512ns VCS原生SAIF、Power Compiler显式注释100%和真实引脚无X/Z审计。三种混合架构本轮新测；dp_top/Q32E64复用已测门控版，E64复用未变的原结果。工况N12 TT/0.7V/85°C、1GHz、L8/II=1、ICG开启，限于综合后零延迟、CTS/布线前。仅清理无引用旧测试大产物与被替代快照，失效快照元数据保留在hw/rtl/retired；回执为hw/dc_syn/maintenance/precision_gated_six_cleanup_20261108.json。旧精简测试摘要保留作历史索引，不代表其大产物仍存在。现用及历史功耗点的冻结RTL、完整回归、网表/SAIF与必要修复依赖均保留；功耗复用仍走scripts/rtl_gate.verify_power_input，不放宽当前源码综合门禁。
 
 ## 历史设计约定与通用工程规则
 
 本文件适用于整个仓库。目标是构建面向 AI 芯片张量计算的多精度算力配比 DSE 系统，对 BF16/FP16、MXFP8/6、MXFP4/NVFP4/HiF4 等设计选择的面积、功耗和负载延迟进行成本收益权衡。
 
-**当前阶段按用户批准方案实现五族目录与六种基础PE：PE_HQE_g4、PE_QE_g4、PE_H_g4、PE_Q_g4、PE_E_g4、PE_E_g2。** 原MidGroup改称PE；SubPE/PEGroup/PE层级保留。HQE/QE/E保留原分级复用组织；H/Q专用路径采用16/32路全局对齐和流水自然位宽累加。Utils维护公共接口/算术/C-D；K_PE/MN_PE编排基础PE，不写阵列代码。统一PE输出F=pe_align_width、11级，g2规范化后精确补一个低零对齐g4；K/MN总18级。完整RTL精度/周期回归与EDA仍在后续阶段，不能将有限定向检查称为完整精度验证通过。
+**阵列扩展当前仅获授权调研和方案讨论，用户审核确定方案前不写阵列代码。** 已确认采用 2×2 group 组内广播、组间脉动；M8N32 是逻辑指令输出块，物理阵列参数化；FP4 目标 K64/96/128/192/256，FP8 目标 K32/64/96/128。控制、L0 和 layout 候选见 [讨论稿](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/array-design-discussion.md)，其中建议不等于已批准的实现合同。
 
-**阵列扩展当前仅获授权调研和方案讨论，用户审核确定方案前不写阵列代码。** 已确认采用 2×2 group 组内广播、组间脉动；M8N32 是逻辑指令输出块，物理阵列参数化；FP4 目标 K64/96/128/192/256，FP8 目标 K32/64/96/128。控制、L0 和 layout 候选见 [讨论稿](hw/spec/array_ref/array-design-discussion.md)，其中建议不等于已批准的实现合同。
-
-阵列调研须覆盖逻辑指令以下的物理 tile 切分、preload/compute/drain、本地 accumulator 与累加 RAW。区分 L0 层输出驻留和 PE/group 内 OS；文献已实现机制、逆向推断与本项目建议分别标记。当前候选与证据见 [OS 调度调研](hw/spec/array_ref/os-array-scheduling-research.md)。
+阵列调研须覆盖逻辑指令以下的物理 tile 切分、preload/compute/drain、本地 accumulator 与累加 RAW。区分 L0 层输出驻留和 PE/group 内 OS；文献已实现机制、逆向推断与本项目建议分别标记。当前候选与证据见 [OS 调度调研](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/os-array-scheduling-research.md)。
 
 当前讨论方向为 `K_inst = K_native(mode, config)`：指令内只调度 M/N 输出子块；更长 GEMM 的 K 由软件组织多条原生指令，K-PE 内部空间规约保留。不得继续将 E64 分三轮执行 K192 作为单条原生指令的默认方案，也不得由固定 PTX K 推断 NVIDIA 内部没有时分计算。跨指令 C/D 依赖及驻留合同仍需审核；本方向不构成阵列代码实施授权。
 
-Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研](hw/spec/array_ref/ascend-cube-scheduling-research.md)。不能把其FP16基本K16误当作指令K上限；原生K指令和可变K矩阵指令属于不同候选边界，等待用户讨论确定。
+Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/ascend-cube-scheduling-research.md)。不能把其FP16基本K16误当作指令K上限；原生K指令和可变K矩阵指令属于不同候选边界，等待用户讨论确定。
 
-厂商指令边界应从官方仓库的固定版本源码出发，追到编译器 intrinsic 和可获得的 IR/汇编/机器码；不能用一次 API 调用代替一条机器指令。参数可编码范围、L0/布局约束与真实芯片验收分别记录。官方 Ascend C v9.1.0 的编译核验见 [ISA 分析](hw/spec/array_ref/ascend-official-mmad-isa-analysis.md)。
+厂商指令边界应从官方仓库的固定版本源码出发，追到编译器 intrinsic 和可获得的 IR/汇编/机器码；不能用一次 API 调用代替一条机器指令。参数可编码范围、L0/布局约束与真实芯片验收分别记录。官方 Ascend C v9.1.0 的编译核验见 [ISA 分析](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/ascend-official-mmad-isa-analysis.md)。
 
 先阅读 `README.md`、`CONTEXT.md` 和 `docs/architecture.md`。`hw` 只负责单阵列/单核心；`ratio_dse` 负责多核心、多阵列芯片级建模。未定案事项记录在 `docs/roadmap.md`，不能用 INT4/INT8 示例代替目标浮点格式。
 
 ## 1. 目录与职责
 
-- `hw/spec/`：接口、数值语义、参数约束、数据流、流水级、周期定义和验收标准。
-- `hw/chisel_src/`：可综合 Chisel，按 package 组织；一个硬件 Module 一个同名 Scala 文件。
-  目录为config/、Utils/、pe/PE_H/、pe/PE_Q/、pe/PE_E/、pe/PE_HQE/、pe/PE_QE/、core/、elaborate/。五族目录按用户命名，Scala package保持小写dp.pe.h/q/e/hqe/qe；Utils为dp.utils。`hw/spec/` 镜像全部路径。
-- `hw/configs/`：可复现的硬件参数配置。
-- `hw/rtl/`：全仓库唯一的生成 RTL 存储位置。
-- `hw/test/`：参考模型、测试驱动、回归；禁止在此保留另一份设计 RTL。
+- `src/spec/`：接口、数值语义、参数约束、数据流、周期和验收标准。
+- `src/cmodel/`、`src/chisel/`、`src/verilog/`：模型及设计源码、可复现参数配置。
+- `test/`：参考模型、测试数据、功能验证与回执。
+- `hw/rtl/`：用于综合和功耗分析的唯一 RTL 快照位置。
 - `hw/dc_syn/`：挂载 EDA 环境内的 Design Compiler 综合、面积与时序流程。
 - `hw/power/`：活动信息、功耗分析脚本和报告。
 - `hw/characterization/`：经过验证、可追溯的硬件特征数据，供 DSE 引用。
@@ -54,16 +83,26 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 3. 硬件端口、寄存器、连线用 `lower_snake_case`。端口用 `in_`、`out_` 前缀，寄存器用 `_q`，组合下一状态用 `_d`，使能用 `_en`，低有效信号用 `_n`。时钟/复位保留 Chisel 默认 `clock`/`reset`；异步复位必须由 spec 明确要求。
 4. 实例名表达功能，例如 `dot_product`、`input_buffer`；避免 `tmp1`、`data2` 等无语义名称。顶层 `desiredName` 稳定，与导出映射一致。
 5. 使用不可变 `case class` 集中参数化，使用 `require` 检查合法范围、整除关系和位宽约束。不得把测试配置写死在设计里，不增加尚无需求的参数。
-   当前集中入口为 `hw/chisel_src/config/Parameters.scala`，可调参数由 `hw/configs/*.json` 传入，运行生成命令时选择配置即可改变结构。固定流水/位宽合同与可调参数明确分开，禁止通过隐式环境变量改变电路。AlignmentConfig公开q_align_width=26..30、group_guard_bits=2..4、pe_align_width=38..48、top_align_width=38..48且不小于PE窗口，默认28/2/40/40。构造期用require检查范围；硬件运行期用assert。默认<JSON<CLI，完整有效参数进入manifest；RTL为已elaboration特化结果。乘/加按自然位宽增长，不另开输出宽度旋钮。
 6. 位宽、signed/unsigned、扩展、截断、舍入、饱和和溢出行为必须显式定义。乘法/累加保留所需精度，禁止依赖隐式截断获得“正确结果”。单元素和非二次幂参数必须有明确行为。
 7. 每个 Module 注释说明功能、接口协议、延迟、吞吐、复位和数值语义；关键逻辑注释说明设计理由、位宽推导或时序取舍，不逐句翻译代码。
 8. 组合逻辑完整赋值，避免锁存器、组合环和多驱动；禁止以 `DontCare` 掩盖未实现功能。提交的模块必须具备完整可运行实现，未实现方案只放在 spec。
-9. 修改 Chisel 前读取 [.skill/chisel-design/SKILL.md](.skill/chisel-design/SKILL.md)。每个 `hw/chisel_src/<relative>.scala` 必须对应 `hw/spec/<relative>.md`，包括参数、Bundle、算术辅助和展开入口；源码与 spec 在同一 PR 更新。spec 解释架构、设计理由、位宽/二进制小数点、共享资源、接口、周期、限制和待验收内容，不能只有文件名或函数列表。
-10. 层级为SubPE_X → PEGroup_X → PE_X_gN → K_PE/MN_PE。X仅H/Q/E/HQE/QE；g4为4个PG，只有E另有g2。H/Q的PG是产品簇，不做局部对齐或和；全局PE内可流水拆分，不能强迫其恢复复用路径。HQE/QE/E本轮保留原组织。
-11. H/Q/E为half/quarter/eighth支持族，容量根据PG数派生。基础RTL名为PE_HQE_g4等六个profile，子模块SubPE_H、PEGroup_QE等；非默认对齐附参数后缀。K/MN以合计H/Q/E命名，完整有序布局仍须记录。统一输出layout不代表全局/分级RTZ有相同误差，精度与PPA比较分别保留证据。
+9. 修改 Chisel 前读取 [.skill/chisel-design/SKILL.md](.skill/chisel-design/SKILL.md)。源码与对应 `src/spec/` 合同在同一批次更新。规格解释架构、位宽、共享资源、接口、周期和验收。
+
+## 2a. 手写 RTL 风格与流水寄存器
+
+设计、修改或审查维护中的 Verilog 前读取 [.skill/dp-rtl-code-style/SKILL.md](.skill/dp-rtl-code-style/SKILL.md)。用户于 2026-11-06 确认：每条声明只定义一个变量，端口逐行重复完整方向/类型/位宽，`parameter/localparam` 等同样拆开；这取代之前合并同类变量的排版约定。时钟保留 `clock`，复位采用**同步低有效 `rst_n`**；所有流水寄存器统一实例化参数化 DFF 模块，区分带同步复位的控制寄存器和无复位、带使能的数据寄存器。valid 每拍推进以传递气泡，payload 仅在有效时更新，不增加流水级数。
+
+参考 SN 风格适配后的项目规范采用模块 `dp_`、宏 `DP_`、DFF 实例 `ff_<源阶段>_<目标阶段>_<功能>` 命名；字段布局集中定义，内部寄存打包紧邻解包。DFF 生产实现位于 src/verilog/common/；skill assets 保留参考模板，不能同时加入生产清单。 用户进一步要求尽量保留 SN 完整规范：主体包含详细规则、示例、六种 DFF/组合单元说明及逐项自检；新功能组合使用 assign（FSM 次态例外）、条件先归约后按位组合、动态选择显式组织 MUX。DFF 统一紧凑两行：模块类型/参数一行，实例名及全部端口一行（豁免 100 列）；连续 DFF 区块局部关闭 Verible 排版保护，声明仍每行一个。DFF 紧随本级计算、置于下一级使用之前，旁带就地同行；不得将各级 DFF 统一集中到文件末尾。
+
+最新流水变量约定先在 dp_lane.v 落实：寄存值用 rN_<功能>（r1_valid、r2_product_magnitudes），组合候选用功能名_d；同组赋值按等号对齐，完整函数/分支不机械拆行，参数及变量首次声明前说明作用。其他模块按任务范围逐步迁移，冻结 SV 不改。
+
+命名相关设计、修改和审查同时读取 [.skill/dp-naming-convention/SKILL.md](.skill/dp-naming-convention/SKILL.md)。文件/module/实例/变量需表达实际功能，禁止局部数值使用裸 e/f/a 等不明缩写；指数域、指数值、域宽、定点小数位数分别命名。父层互联使用 driver_receiver_function，复用模块端口保持 in_/out_，本地变量不重复端点；数学操作数 in_a/in_b/in_c、E 前端后缀 _e 和库端口 in_d/out_q 是已定义例外。循环索引使用 lane_index/element_index 等角色名。现用 CModel/Verilog 已按任务迁移命名，稳定的数学操作数及 JSON trace 字段保留其已定义语义。
+
+v1.6 已迁移现用 Verilog 为同步低有效 `rst_n` 和显式 DFF，并同步接口 spec、TB、导出及 EDA 阶段识别；当前验收见 test/results/dp-style-v1.6.md，不将旧快照/PPA 视为新实现验收。冻结 SystemVerilog 不迁移，Chisel 默认端口约定保持原范围。
 
 ## 3. 面积、时序与功耗
 
+- 工作负载功耗的方案和实测流程见 [power-analysis](.skill/power-analysis/SKILL.md)。实际测量遵循当前任务的授权范围。
 - 选择满足精度与吞吐的最小位宽；控制计数器不得习惯性使用 32/64 位。
 - 点积优先使用平衡加法树，避免长串行加法链；流水位置由目标周期和实测时序确定，并同步修改延迟 spec 和测试。
 - 显式控制资源复制、MUX 深度和广播扇出；仅在吞吐允许且数据支持时复用运算器。
@@ -73,13 +112,12 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 
 ## 4. RTL 单一来源与导出
 
-1. 后续实现统一 RTL 导出入口，参数来自已版本化的 `hw/configs/`。每次导出创建独立目录：
-   `hw/rtl/K-PE_HxQxEx_<MMddHHmm>/`、`MN-PE_HxQxEx_<MMddHHmm>/`；基础PE为`<PE-profile>_<MMddHHmm>/`。时间使用Asia/Singapore。完整参数、源码/config hash和UTC时间存manifest，不拼入目录；同名拒绝覆盖，稍后一分钟重试。
+1. 将待分析设计从 `src/` 冻结或导出到独立的 `hw/rtl/<export-id>/`。DP 手写实现使用源内容指纹形成 `DP_verilog_<fingerprint>`，导出流程记录实际顶层、时钟、复位和参数。
 2. 每个目录必须有 `README.md`、`manifest.json`、`files.f`、`src/`。README 每次记录时间、原因、源码指纹/Git commit（可用时）、参数、工具版本、模块映射、命令和验证状态。不能静默覆盖旧导出。
 3. 使用编译工具的 split Verilog 能力导出；每个生成 module 独立保存为同名 `.sv`，记录对应的 Chisel 类/文件和参数特化。共享 module 定义只保存一次；不得随意 flatten/inline 破坏映射。工具辅助 module、blackbox、头文件也必须进入清单并说明来源。新增层级时同时更新映射和检查。
 4. `files.f` 使用相对导出目录的路径；仿真、DC、功耗流程用显式 export ID 解析该清单并核对 SHA-256。禁止复制到各自目录、手工修补 `.sv`、用模糊 glob 或“最新文件”作为分析输入。
 5. 导出状态为 `generated`，对该份 RTL 仿真通过后才能成为 `passed`。仅 Scala 编译/Chisel elaboration 成功不等于 RTL 验证通过。RTL 或验证代码发生修改必须重新验证；失败或文件指纹不一致立即阻止 PPA。
-6. 后续 PPA 入口必须调用统一的 RTL 验证门禁，校验导出清单、RTL hash 和该份 RTL 的通过证据；不能手改 manifest 伪造通过。门禁接口与实现须在接入 EDA 前完成。
+6. PPA 入口必须调用统一的 RTL 验证门禁，校验导出清单、RTL hash 和该份 RTL 的通过证据；不能手改 manifest 伪造通过。门禁接口与实现须在接入 EDA 前完成。
 7. 综合 netlist、DDC、SDF 是衍生产物，放在对应分析 run 内并记录源 export ID。功耗使用经验证 RTL，或经一致性验证、具有完整来源的综合 netlist；两者不混用。
 
 ## 5. 测试与分析顺序
@@ -92,8 +130,8 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 - 参数变体分别导出、分别测试；一个配置通过不代表所有配置通过。
 - DC 记录 PDK/library 标识、PVT、时钟/IO 约束、面积单位、critical path、slack 和未约束路径。缺少工艺库或许可证时明确报告未执行，禁止填写估算值冒充测量。
 - 功耗记录电压、频率、温度、活动来源、仿真窗口、层次路径、annotation coverage、静态/动态功耗和工具版本。与 RTL 不匹配的 VCD/SAIF 不得使用。
-- 每个结果保留配置、版本、命令、摘要和输入指纹；可复现实验与论文引用数据明确标记保留。
-- `dc_syn` 和 `power` 必须在当前机器挂载的 EDA 环境中执行；当前会话无法直接运行，不启动、不虚构结果。环境接入后记录挂载路径与工具/库版本，私有路径和许可证配置不提交。
+- 每个运行记录配置、版本、命令、摘要和输入指纹，记录寿命遵从第 7 节。重大版本、里程碑、论文与 DSE 的长期证据在与用户确认后标记保留。
+- `dc_syn` 和 `power` 必须在当前机器挂载的 EDA 环境中执行；按用户授权与工具环境运行，记录挂载路径与工具/库版本，私有路径和许可证配置不提交。
 
 ## 6. ratio_dse 约定
 
@@ -109,15 +147,16 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 
 ## 7. 清理与版本管理
 
-- 失败的导出/测试及时删除不再使用的 RTL、仿真可执行文件、临时 testbench 和波形，只保留必要错误日志、参数、状态和复现信息。测试源代码及仍在调查的最小复现不得当作垃圾删除。
+- CModel、RTL 验证、DC、功耗各自滚动保留最近两次已结束且无引用的普通运行。读完结果后用 [运行保留入口](scripts/README.md#运行产物保留) 预览并清理超出的最旧普通运行。失败且仍在调查的最小复现与日志保留到调查结束。
+- 重大版本与重要节点先向用户确认具体 run ID 和理由，再标记长期保留。现用 RTL 回执、仍被报告或下游运行引用的输入及无法确认状态的旧目录不参与滚动删除。确认的重要运行也不占普通运行的两个名额。
 - 清理只限本项目拥有的生成目录。禁止 `git clean -xfd` 等无差别清理，禁止触及开发配置、凭据、用户文件、论文引用结果和正在运行的实验。
 - 历史成功 RTL 若无测试/PPA/DSE/论文引用且已被替代，可在确认引用关系后清理；manifest/README 保留失效记录。不得删除仍被下游引用的输入。
 - 远程仓库为 `git@github.com:Futuresxy/DP-Puzzel.git`。开始工作先检查 status、当前分支与远程历史，保护用户未提交变更，不 force-push。
-- 新功能必须先建分支，如 `feat/<topic>`；修复用 `fix/<topic>`，基础设施用 `chore/<topic>`。完成检查和提交后 push 分支、创建 PR，经过审查和必要检查后通过 PR 合并到主分支，不直接把功能提交推到 main。
-- 有代码修改的每个工作日（Asia/Singapore）至少完成一次 commit + 远程 push；当天未完成的工作推送到工作分支并创建/更新 draft PR，不能假装通过验证。无变更时不制造空提交。
-- 重大架构变更、关键实验/特征数据更新在形成可复现批次并通过适用检查后立即 commit + push，不等日终。日常每个有意义批次也应及时同步。
-- 每个批次顺序为：相关检查 → 更新文档/记录 → 审查 diff 与待提交文件大小 → 显式 git add → commit → push → 创建/更新 PR。PR 写清问题、行为变化、验证结果、数据来源和限制；不可执行的检查必须明确。
-- 首次空仓库允许建立只含仓库约定的 main 基线，工程功能仍在新分支中通过 PR 并入。主分支不可合并未解决冲突或失败的必要检查。
+- 小功能、修复和文档更新直接在本地 `feat/dp-verilog-v14` 开发并提交。只有需要独立并行推进的大任务才建立工作分支，经审查和必要检查后通过 PR 合入 `main`。
+- 创建或删除本地和远端分支前须获得用户同意。临时工作分支合入目标分支后，核对提交已包含在目标历史中，经用户同意清理本地及远端分支。保留仍在开发的分支。
+- 小改动在完成检查后保留本地提交。并行工作分支应及时提交和推送，未完成的工作可用 draft PR 记录进度。重大架构变更、关键实验和特征数据在形成可复现批次后及时同步。
+- 每个批次先检查，再更新文档和记录，审查 diff 与待提交文件大小，然后显式 `git add` 并提交。并行任务推送分支后创建或更新 PR，说明问题、变化、验证、数据来源和限制。
+- 合入 `main` 前须解决冲突并通过必要检查。
 - 不提交缓存、大型仿真产物、PDK、商业库、密钥或机器私有路径。源码、测试、配置、文档及小型结果摘要进入 Git；大产物使用有校验和的归档位置。
 - 单文件超过 5 MiB 默认拒绝加入版本控制；确有必要时先选择外部归档/LFS 策略并记录原因。关键数据更新提交精简摘要、schema、配置和归档 hash/位置，不提交原始巨大数据。`.gitignore` 无法移除已经被跟踪的文件，检查 staged 文件仍是必需步骤。
 - 网络、权限、凭据或冲突阻止同步时，明确记录未完成的 commit/push；不能宣称已远程保存，也不能绕过受保护的 `.git`。
@@ -136,6 +175,8 @@ Ascend 的16³基本计算粒度与可变M/N/K的MMAD指令另见 [对照调研]
 
 - `paper/template/` 保存有来源/版本/许可证的 LaTeX 模板，`paper/main.tex` 为论文入口，章节、图、表、参考文献分目录维护。当前只准备空白写作结构，不生成研究结果或贡献声明。
 - 论文写作/润色时按任务读取 `.skill/academic-humanizer/SKILL.md`；这是用户指定安装的项目技能，保持数据、引用、符号与结论强度不被润色改变。其上游版本见同目录 INSTALLATION.md。
+- 制作、修改或审阅项目论文插图时，先读并按 [academic-figures](.skill/academic-figures/SKILL.md) 执行，覆盖面积、功耗、性能、DSE、机制和作者提供的架构图。图内采用精简英文标签，图名和解释写入 LaTeX，交付矢量 PDF。
 - 图表必须关联实验 run、配置、profile 和生成数据；不能把未校准假设写成实测结论。参考文献先核验真实来源，禁止编造引用。
+- 用户于 2026-11-11 明确：后续论文插图以 PDF 为主要插入格式。数据图直接导出矢量 PDF，架构图使用作者提供的矢量 PDF 或由可编辑 SVG 转换；SVG 保留为源文件，PNG 可用于预览或已有位图素材。不要通过将 PNG 包装为 PDF 声称获得矢量质量；文字应嵌入字体或转为路径。架构图仍由作者绘制，不自行生成。
 - DAC 规则按 `paper/submission/requirements.md` 及官方最新页面核对；维护匿名性、页数与适用 AI 使用披露。仅语言编辑与生成研究内容的记录分开，不把 skill 当作免除披露的手段。
 - 编译产物、大型原文 PDF/数据不提交；必要的图表 PDF、BibTeX、模板文件与图源可提交，不能用全局 `*.pdf` 忽略误伤图表。

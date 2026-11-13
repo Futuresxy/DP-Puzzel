@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "model_id": "DeepSeek-V4.1-Flash",
+  "model_revision": "dba1be0a40aa45a94ad051997016db3960a90277",
+  "stage": "prefill",
+  "schedule": "simplified",
+  "variant": "target_native_20261112",
+  "batch": 1,
+  "past_tokens": 0,
+  "query_tokens": 256,
+  "routing_policy": "balanced",
+  "candidate_policy": "pinned_blocks"
+}

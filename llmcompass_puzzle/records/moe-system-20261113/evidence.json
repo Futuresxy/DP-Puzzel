@@ -1,0 +1,38 @@
+{
+  "run": "llmcompass_puzzle/runs/moe-system-20261113-v3",
+  "manifest_sha256": "8d1270b65dd54bc6ce780a2bed643b3563a0997b133cad690e8ec5b26778db3b",
+  "primary_case": {
+    "model": "DeepSeek-V4-Flash",
+    "tokens": 2048,
+    "fusion": true
+  },
+  "fixed_system": {
+    "physical_sms": 128,
+    "vector_scale": 1,
+    "hbm_id": "hbm5",
+    "l2_id": "l2_base"
+  },
+  "designs": 486,
+  "candidates": 23328,
+  "modeled": 20152,
+  "quality_recommendations": 0,
+  "checks": [
+    "all modeled area/capacity/power envelopes",
+    "energy <= peak envelope * duration",
+    "primary trace duration sums",
+    "quality gate admission",
+    "all source run output hashes"
+  ],
+  "script_sha256": "e27a196712b5313bdd19bf0ea2d4ec3cdb6eebb6f37b36d79732a54762fd6557",
+  "summary_sha256": {
+    "controlled_cells.csv": "a662ed0d8c92be81b3da4f8d3009b077441a7669675fd2b7bd3b0eff5a3a5a07",
+    "primary_cells.csv": "ea78dc80d2f295ff008b19b185b2469a6154125b298e4565d9b9e38069459a8c",
+    "fusion_ablation.csv": "b6d9e2b63f374b676c4d5dc71b9b11ecb29af92c397a7f6e5aa3a51b7d69a882",
+    "primary_operator_breakdown.csv": "afbc5ed3dbdb0ada27b5e4ebda7b0f41b25517bcb235f7ed27aaf9383bbb4b7e",
+    "paired_comparisons.csv": "5884678212c20b447d40a6819927bf4ede15748e36b64cd9b95fc397388db951",
+    "workload_to_hardware.csv": "adeced65a81ec7aac939266d64609802ef89091611754f46a12f7d853bf5d865",
+    "quality_constrained_selections.csv": "7703741f562b3f2c276fc35a9aba6f2de114df21e80f56ebf257cdb5ea03115c"
+  },
+  "scope": "one_deepseek_moe_prefill_sublayer",
+  "power_calibration": "assumed_scenario_only"
+}

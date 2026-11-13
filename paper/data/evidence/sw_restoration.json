@@ -1,0 +1,28 @@
+{
+  "source": "DP-puzzle-SW/paper/DP-Puzzle: Exploring Throughput Ratios in Multi-Precision Floating-Point Tensor Cores with Composable Dot-Product Units.tex",
+  "source_sha256": "bb819118a9886b9fa64764e08550dcf4cf328887a8f78ae9f523051f996926d9",
+  "source_k4_sha256": "248ffcfdd2bab24a06140305fd76a52dd5e7e4424f87bbeadb860f6a529f11a4",
+  "changes": [
+    "Remove original Fig. 7 and extended-ratio grid/comparison text",
+    "Remove abstract/contribution claims of 16 added ratios",
+    "Use local tables and PNG figure references"
+  ],
+  "preserved": [
+    "Source prose and numbers outside requested deletions",
+    "10 pt IEEEtran and existing XeLaTeX/editor configuration",
+    "Three-model reference/NVFP4 trajectories and editable plot scripts"
+  ],
+  "figures": [
+    "fp_format.png",
+    "H16Q32E64_area_pie.png",
+    "selected8_area.png",
+    "selected8_power.png",
+    "k4_n12_prefill_time.png",
+    "k4_n12_prefill_energy.png",
+    "DP-Architecture.png",
+    "unpack_layout.png",
+    "KorMN_expend.png"
+  ],
+  "references": 32,
+  "source_triangles": "Existing reproducible PNGs; same workload/cost inputs as the source version"
+}

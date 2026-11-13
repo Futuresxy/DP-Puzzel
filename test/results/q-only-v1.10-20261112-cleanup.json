@@ -1,0 +1,236 @@
+{
+  "scope": "Q-only environment/debug/final simulation build intermediates only",
+  "runs": [
+    {
+      "build": "test/runs/verilog/20261112T104629534855Z/build-l28-g40",
+      "removed_files": 77,
+      "removed_bytes": 17733841,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T104710531006Z/build-l28-g40",
+      "removed_files": 81,
+      "removed_bytes": 17971226,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T104940071738Z/build-l28-g40",
+      "removed_files": 83,
+      "removed_bytes": 17988469,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T105015906284Z/build-l28-g40",
+      "removed_files": 215,
+      "removed_bytes": 213627333,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T105255076422Z/build-l27-g40",
+      "removed_files": 215,
+      "removed_bytes": 213609506,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T105255076422Z/build-l28-g40",
+      "removed_files": 215,
+      "removed_bytes": 213628879,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T105255076422Z/build-l32-g64",
+      "removed_files": 228,
+      "removed_bytes": 215086456,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    }
+  ],
+  "total_removed_bytes": 909645710,
+  "preserved": "RTL snapshots, inputs/goldens/schedules/results/cutpoints, validation receipts and compile/lint logs; shared ccache untouched",
+  "compatibility_build_cleanup": {
+    "build_directories": [
+      {
+        "path": "test/runs/verilog/20261112T104652595425Z/build-l28-g40",
+        "removed_bytes": 15957048,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T104652596186Z/build-l28-g40",
+        "removed_bytes": 21096438,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T104652603128Z/build-l28-g40",
+        "removed_bytes": 17301070,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T104714747012Z/build-l28-g40",
+        "removed_bytes": 16194498,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T104714738735Z/build-l28-g40",
+        "removed_bytes": 17538455,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T104714738758Z/build-l28-g40",
+        "removed_bytes": 21333823,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105014047246Z/build-l27-g40",
+        "removed_bytes": 210742413,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105014047246Z/build-l28-g40",
+        "removed_bytes": 210751957,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105014052725Z/build-l27-g40",
+        "removed_bytes": 212243397,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105014052725Z/build-l28-g40",
+        "removed_bytes": 212257521,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105014052725Z/build-l32-g64",
+        "removed_bytes": 213636684,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105014054479Z/build-l27-g40",
+        "removed_bytes": 217538054,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105014054479Z/build-l28-g40",
+        "removed_bytes": 217548739,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105014054479Z/build-l32-g64",
+        "removed_bytes": 219032028,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105253439575Z/build-l27-g40",
+        "removed_bytes": 210742413,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105253439575Z/build-l28-g40",
+        "removed_bytes": 210753459,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105253439575Z/build-l32-g64",
+        "removed_bytes": 211822539,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105253437676Z/build-l27-g40",
+        "removed_bytes": 217539550,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105253437676Z/build-l28-g40",
+        "removed_bytes": 217550395,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      },
+      {
+        "path": "test/runs/verilog/20261112T105253437676Z/build-l32-g64",
+        "removed_bytes": 219033672,
+        "kept": [
+          "lint.log",
+          "compile.log"
+        ]
+      }
+    ],
+    "removed_bytes": 3110614153
+  },
+  "batch_total_removed_bytes": 4020259863
+}

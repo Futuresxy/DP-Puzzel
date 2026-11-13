@@ -1,0 +1,455 @@
+[
+  {
+    "frontend": "t8h16q64e128",
+    "export_id": "DP_verilog_t8h16q64e128_2ffd38fa6ecd68c2",
+    "verification_id": "20261107T155749808687Z",
+    "scopes": 14,
+    "fixed_checked": 10747,
+    "cutpoints_checked": 315339,
+    "native": [
+      {
+        "name": "tf32",
+        "golden_exact": 1053,
+        "math_exact": 1040,
+        "max_ulp": 1
+      },
+      {
+        "name": "fp16",
+        "golden_exact": 961,
+        "math_exact": 949,
+        "max_ulp": 1
+      },
+      {
+        "name": "bf16",
+        "golden_exact": 961,
+        "math_exact": 958,
+        "max_ulp": 3
+      },
+      {
+        "name": "mxfp8_e4m3",
+        "golden_exact": 961,
+        "math_exact": 959,
+        "max_ulp": 1
+      },
+      {
+        "name": "mxfp8_e5m2",
+        "golden_exact": 961,
+        "math_exact": 958,
+        "max_ulp": 1
+      },
+      {
+        "name": "mxfp6_e3m2",
+        "golden_exact": 961,
+        "math_exact": 958,
+        "max_ulp": 1
+      },
+      {
+        "name": "mxfp6_e2m3",
+        "golden_exact": 961,
+        "math_exact": 960,
+        "max_ulp": 1
+      },
+      {
+        "name": "mxfp4_e2m1",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "nvfp4",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "hif4",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "int8",
+        "golden_exact": 1045,
+        "math_exact": 1045,
+        "max_ulp": null
+      }
+    ],
+    "stress": [
+      {
+        "name": "mixed-k16-l27-g40",
+        "result": "PASS cycles=7063 accepted=5841 checked=5377 cancelled=464",
+        "cutpoints_checked": 105113
+      },
+      {
+        "name": "mixed-k16-l28-g40",
+        "result": "PASS cycles=7063 accepted=5841 checked=5377 cancelled=464",
+        "cutpoints_checked": 105113
+      },
+      {
+        "name": "mixed-k16-l32-g64",
+        "result": "PASS cycles=7063 accepted=5841 checked=5377 cancelled=464",
+        "cutpoints_checked": 105113
+      }
+    ]
+  },
+  {
+    "frontend": "t8h16q32e96",
+    "export_id": "DP_verilog_t8h16q32e96_e6ec3988d4a438c2",
+    "verification_id": "20261107T155800980506Z",
+    "scopes": 14,
+    "fixed_checked": 10747,
+    "cutpoints_checked": 248145,
+    "native": [
+      {
+        "name": "tf32",
+        "golden_exact": 1053,
+        "math_exact": 1040,
+        "max_ulp": 1
+      },
+      {
+        "name": "fp16",
+        "golden_exact": 961,
+        "math_exact": 949,
+        "max_ulp": 1
+      },
+      {
+        "name": "bf16",
+        "golden_exact": 961,
+        "math_exact": 958,
+        "max_ulp": 3
+      },
+      {
+        "name": "mxfp8_e4m3",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp8_e5m2",
+        "golden_exact": 961,
+        "math_exact": 958,
+        "max_ulp": 1
+      },
+      {
+        "name": "mxfp6_e3m2",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp6_e2m3",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp4_e2m1",
+        "golden_exact": 961,
+        "math_exact": 960,
+        "max_ulp": 1
+      },
+      {
+        "name": "nvfp4",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "hif4",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "int8",
+        "golden_exact": 1045,
+        "math_exact": 1045,
+        "max_ulp": null
+      }
+    ],
+    "stress": [
+      {
+        "name": "mixed-k16-l27-g40",
+        "result": "PASS cycles=7055 accepted=5833 checked=5369 cancelled=464",
+        "cutpoints_checked": 82715
+      },
+      {
+        "name": "mixed-k16-l28-g40",
+        "result": "PASS cycles=7055 accepted=5833 checked=5369 cancelled=464",
+        "cutpoints_checked": 82715
+      },
+      {
+        "name": "mixed-k16-l32-g64",
+        "result": "PASS cycles=7055 accepted=5833 checked=5369 cancelled=464",
+        "cutpoints_checked": 82715
+      }
+    ]
+  },
+  {
+    "frontend": "t8h16q32e128",
+    "export_id": "DP_verilog_t8h16q32e128_5445bcfaea80f9e9",
+    "verification_id": "20261107T155800988891Z",
+    "scopes": 14,
+    "fixed_checked": 10747,
+    "cutpoints_checked": 312735,
+    "native": [
+      {
+        "name": "tf32",
+        "golden_exact": 1053,
+        "math_exact": 1040,
+        "max_ulp": 1
+      },
+      {
+        "name": "fp16",
+        "golden_exact": 961,
+        "math_exact": 949,
+        "max_ulp": 1
+      },
+      {
+        "name": "bf16",
+        "golden_exact": 961,
+        "math_exact": 958,
+        "max_ulp": 3
+      },
+      {
+        "name": "mxfp8_e4m3",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp8_e5m2",
+        "golden_exact": 961,
+        "math_exact": 958,
+        "max_ulp": 1
+      },
+      {
+        "name": "mxfp6_e3m2",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp6_e2m3",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp4_e2m1",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "nvfp4",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "hif4",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "int8",
+        "golden_exact": 1045,
+        "math_exact": 1045,
+        "max_ulp": null
+      }
+    ],
+    "stress": [
+      {
+        "name": "mixed-k16-l27-g40",
+        "result": "PASS cycles=7055 accepted=5833 checked=5369 cancelled=464",
+        "cutpoints_checked": 104245
+      },
+      {
+        "name": "mixed-k16-l28-g40",
+        "result": "PASS cycles=7055 accepted=5833 checked=5369 cancelled=464",
+        "cutpoints_checked": 104245
+      },
+      {
+        "name": "mixed-k16-l32-g64",
+        "result": "PASS cycles=7055 accepted=5833 checked=5369 cancelled=464",
+        "cutpoints_checked": 104245
+      }
+    ]
+  },
+  {
+    "frontend": "multi",
+    "export_id": "DP_verilog_094a23e8843f8ee1",
+    "verification_id": "20261107T155940228035Z",
+    "scopes": 17,
+    "fixed_checked": 10747,
+    "cutpoints_checked": 231654,
+    "native": [
+      {
+        "name": "bf16",
+        "golden_exact": 961,
+        "math_exact": 958,
+        "max_ulp": 3
+      },
+      {
+        "name": "fp16",
+        "golden_exact": 961,
+        "math_exact": 949,
+        "max_ulp": 1
+      },
+      {
+        "name": "hif4",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "int8",
+        "golden_exact": 1045,
+        "math_exact": 1045,
+        "max_ulp": null
+      },
+      {
+        "name": "mxfp4_e2m1",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp6_e2m3",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp6_e3m2",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp8_e4m3",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp8_e5m2",
+        "golden_exact": 961,
+        "math_exact": 958,
+        "max_ulp": 1
+      },
+      {
+        "name": "nvfp4",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "tf32",
+        "golden_exact": 1053,
+        "math_exact": 1040,
+        "max_ulp": 1
+      }
+    ],
+    "stress": [
+      {
+        "name": "mixed-k4-l27-g40",
+        "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+        "cutpoints_checked": 17405
+      },
+      {
+        "name": "mixed-k8-l27-g40",
+        "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+        "cutpoints_checked": 33308
+      },
+      {
+        "name": "mixed-k16-l28-g40",
+        "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+        "cutpoints_checked": 65114
+      },
+      {
+        "name": "mixed-k4-l28-g48",
+        "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+        "cutpoints_checked": 17405
+      },
+      {
+        "name": "mixed-k8-l32-g64",
+        "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+        "cutpoints_checked": 33308
+      },
+      {
+        "name": "mixed-k16-l32-g64",
+        "result": "PASS cycles=653 accepted=528 checked=487 cancelled=41",
+        "cutpoints_checked": 65114
+      }
+    ]
+  },
+  {
+    "frontend": "e",
+    "export_id": "DP_verilog_e_c36605507c4d0709",
+    "verification_id": "20261107T155926305533Z",
+    "scopes": 10,
+    "fixed_checked": 2883,
+    "cutpoints_checked": 1106924,
+    "native": [
+      {
+        "name": "hif4",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "mxfp4_e2m1",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "nvfp4",
+        "golden_exact": 961,
+        "math_exact": 961,
+        "max_ulp": 0
+      },
+      {
+        "name": "directed-e",
+        "golden_exact": 5288,
+        "math_exact": 5288,
+        "max_ulp": 0
+      }
+    ],
+    "stress": [
+      {
+        "name": "mixed-k4-l27-g40",
+        "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+        "cutpoints_checked": 7162
+      },
+      {
+        "name": "mixed-k8-l27-g40",
+        "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+        "cutpoints_checked": 13905
+      },
+      {
+        "name": "mixed-k16-l28-g40",
+        "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+        "cutpoints_checked": 27391
+      },
+      {
+        "name": "mixed-k4-l28-g48",
+        "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+        "cutpoints_checked": 7162
+      },
+      {
+        "name": "mixed-k8-l32-g64",
+        "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+        "cutpoints_checked": 13905
+      },
+      {
+        "name": "mixed-k16-l32-g64",
+        "result": "PASS cycles=190 accepted=144 checked=137 cancelled=7",
+        "cutpoints_checked": 27391
+      }
+    ]
+  }
+]

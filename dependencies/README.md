@@ -13,3 +13,5 @@ Ascend ISA 调研使用直接克隆的官方 `cann/asc-devkit` 和官方 CANN 9.
 Chisel 构建使用 Maven 发布依赖，由 Mill/Coursier 获取并缓存，源码没有 vendoring：Mill 0.11.8、Scala 2.13.12、Chisel/plugin 6.4.0、os-lib 0.9.1、ujson 3.1.0，具体坐标在 [hw/build.sc](../hw/build.sc)；RTL 生成器要求 firtool 1.62.0。版本与有效工具字符串随导出 manifest 保存。本机已有缓存，不从旧工程复制构建产物或 FPU 依赖。
 
 DP CModel 使用系统头文件依赖 Boost 1.83.0 和 nlohmann_json 3.11.3，来源、许可证与关键头文件SHA256见 [cmodel.json](cmodel.json)。CMake用EXACT核对版本，未vendoring第三方源码，也不自动下载。
+
+单DP功耗审计使用固定MIT依赖 [petile-power.json](petile-power.json) 中的3个Python标准库模块及LICENSE。通过 `python3.11 hw/power/scripts/setup_dependency.py --source-repo /path/to/upstream-clone` 从指定完整commit提取至 `.deps/`，逐文件核对SHA256；不依赖上游工作树或浮动分支、不复制整个参考工程。来源声明见 [NOTICE](../hw/power/NOTICE.md)。

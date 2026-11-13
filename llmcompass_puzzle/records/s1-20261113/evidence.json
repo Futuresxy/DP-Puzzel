@@ -1,0 +1,40 @@
+{
+  "stage": "S1",
+  "run": "llmcompass_puzzle/runs/s1-reference-20261113-v3",
+  "command": "bash llmcompass_puzzle/run_reference.sh llmcompass_puzzle/runs/s1-reference-20261113-v3",
+  "test_command": "llmcompass_puzzle/.venv/bin/python -W ignore::ResourceWarning -m unittest discover -s llmcompass_puzzle/tests -v",
+  "tests_passed": 4,
+  "test_source_sha256": "ffb826c32ac0f5a12bf675f3cd11eb2b716a9f5b3e3ce835ccee1640a692e707",
+  "run_script_sha256": "fca646e1a21d23da7b1315d2403fc466e99bf09ca2e0a8640f09c8366e8aa277",
+  "copied_files_sha256": {
+    "area_candidates.csv": "97dda4d3b4bc176be10a1ac0c261c8273c6dc89fa0f13e0c7c5ef58f725c7e7b",
+    "a100_gemm_replay.csv": "bf0dc7613d72f9485d376344caf93a75923a9592c1f7cd2b2dccf80e7dc71a4a",
+    "a100_vector_replay.csv": "ffb90bee6d39c3a1660cc64eba3d61bdd2455353fcfb1572cea077e361dd8e80",
+    "area_manifest.json": "5ba4f516932b4a95c60b6ca0bd226439f25670b7efc03d531510619440dee08f",
+    "reference_manifest.json": "922d384054dfc3e3d61371ae3fadb7e90c69a5e5b90f9737066a898b8be90b58",
+    "reference_area.json": "3d729291f6d7680f7da94b99bf8e68c014ed8487af7473e9a04c94b3bc72daa1",
+    "tests.txt": "15a1794919d30cd37838d6490fd6b56d8067c95cc0a6220ed7cf2e6fd1ca2dd6"
+  },
+  "coverage": "DP process proxy and area integration; original scalar A100 GEMM/Softmax CPU replay only",
+  "inference_latency_claim": false,
+  "hardware_calibrated": false,
+  "legacy_ratio_dse_modified": false,
+  "environment": "Python 3.11 venv; system-site-packages disabled; pinned CPU dependencies",
+  "prior_attempts": [
+    {
+      "run": "llmcompass_puzzle/runs/a100-replay-v1",
+      "status": "failed",
+      "reason": "pandas object-typed empty lookup table produced Python int without .item(); adapter now initializes numeric dtype"
+    },
+    {
+      "run": "llmcompass_puzzle/runs/s1-reference-20261113",
+      "status": "superseded",
+      "reason": "reference HBM units, isolated environment and source provenance finalized in v3"
+    },
+    {
+      "run": "llmcompass_puzzle/runs/s1-reference-20261113-v2",
+      "status": "superseded",
+      "reason": "v3 adds reused source hashes; numerical outputs unchanged"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "figure_sha256": {
+    "bandwidth_rank.pdf": "f893109ed6a157aae70320348c22360ea4897086827e3b5c8a401c5b1657f7c2",
+    "power_energy_tradeoff.pdf": "6dee14d036461399cdd0f9c691c445332149687c4c9f8b01f7fb6e30ccb38ea8",
+    "precision_migration.pdf": "d6b0f5559ae417beb705c0f7df087d0d3bb8f32ca1a03d80207b9c29327e328b",
+    "worst_case_regret.pdf": "19631c7777432adde81a31ab50bb00e32346889283924541000dd7b1a69c1e1d"
+  },
+  "matplotlib_version": "3.11.2",
+  "plot_script": "ratio_dse/dse/figures.py",
+  "plot_script_sha256": "d766a76a12c6052e40f60f0a02fdc391d5bf8845efcb293e60487ab5df7d2b9a",
+  "plot_style": ".skill/academic-figures/assets/paper.mplstyle",
+  "plot_style_sha256": "d72aad2a78880e7f548384bd45118a749bddfd540f6070b7260f0cf10380368f",
+  "schema_version": 1,
+  "selection": {
+    "batch": 1,
+    "local_tb_s": 4,
+    "tokens": 2048,
+    "topology": "sm_4x16x4"
+  },
+  "source_outputs_sha256": {
+    "bandwidth_boundaries.csv": "b4de48829d0be372693607859f623a985c6b3e3d037b77f7073eff88a882ba54",
+    "candidate_evaluations.csv": "f6e7194d91464eb3d684d3e46db3cf8a2778220d2a14347a224ad9f5b1e868f3",
+    "excluded_work.csv": "f5a442f74630be22c9d94c22a4af8937f3a08d9ea23fae6f820961979d2c71a6",
+    "operator_breakdown.csv": "cc096ae7f56168055ad7c556c139d1b65f1a754f76260c883b6dcd898634f395",
+    "pareto.csv": "3141ecf7b404b95d92ce2c3f12116046f7d53cc42e0cc2f08b6d434671628a06",
+    "precision_migrations.csv": "e48dd592a4dc470e0fb3c212800f52f1ff19d1908c1888e8c427bdfd9cb597bd",
+    "robustness.csv": "55d506e9e29bb832e8c3f9840245fce7b32f2b48efc826a9dda5f3e4f3eefec4",
+    "selection_summary.csv": "dc0acd3b0446efd869abd5eeed2fb76c3a5c33be73da25d9cc93a1d17a5ceedf",
+    "study.json": "0d37754f3775205d36a4afce29a9c164fe08a1e6bfa42156b31731b22ad011f8",
+    "summary.md": "f319c08b749bc14143fffb47bd5401c5d02bc08953be7912b833261641b4682c",
+    "validation.json": "5bc08ae11e15e56c2f08e8ba1f45f0af1432caa2658cac5f0a27e39a7485eb03"
+  },
+  "study_manifest_sha256": "2578d4529418a65e46dec07f89c46e9e8bc3cbdfa3146a419c15494543c5a011",
+  "table_sha256": {
+    "anchor_evidence.csv": "5eabaf2051369b58548aa63e81300f98441fb6650f7b6f09c1558ed679f4391d",
+    "bandwidth_boundaries.csv": "dbc9cb48170e144666999a0bd8faad865a59b29ab8cab563477d7cd1a8c38e10",
+    "robustness.csv": "e09d0a2740c1a494abefc3b52d86f58d3d081418284c6984abd38825db3f1655"
+  }
+}

@@ -1,8 +1,32 @@
 # 后续实施路线
 
+## 九配比与 DeepSeek GEMM DSE 任务（2026-11-12）
+
+本轮明确软件建模分为 [面积与部署](../ratio_dse/area_model/README.md)、[DeepSeek 计算与利用率](../ratio_dse/compute_model/README.md)、[芯片双视角 DSE](../ratio_dse/dse/README.md)。故事线与接口见 [ratio_dse 索引](../ratio_dse/README.md)。九种目标配比最终两项已由用户更正为 1:6:12、1:8:16，当前实验不因早先文字误写而变更。先内置 V4/V4.1 Attention/MoE GEMM；不扩展阵列 RTL。
+
+实施待决项：分析场景的阵列尺寸与广播/累加反馈合同；等每核输入带宽的模式集合、scale/packing 和复用；W4A8 到现用同格式 DP 的转换路径；目标 Global-KV BF16 映射与本地参考 ratio=2 FP32 分支的来源差异；SCALE-Sim 固定版本与广播/native-K 适配；idle/外围功耗与质量数据。未决只阻塞依赖它的指标，其余账本、面积、解析下界继续实施。质量先作为外部参数/约束，未知值不填零；具体质量预测/量化测量后续安排。本批只生成任务说明，模型尚未实施。
+
+## 五种新增 DP 配比实施（2026-11-12）
+
+已实现 Q4 lane、Q8 group 和四组 Q 扩展的 T8H16Q64E64，以及四个基础组加 8/12 个 E16 组的 T8H16Q32E192/E256。Q 专用前端保持 S4 lane 出口、S5 group token 及顶层 L8/II=1，只支持四种 MXFP8/6；T/H/E/INT8 请求不启用新增 Q 组。
+
+Q 专用扩展的 CModel、冻结 RTL 及三个既有混合顶层兼容回归均已通过，见[本轮回执](../test/results/q-only-v1.10-20261112.md)；Q64E64 已通过 1 GHz DC 和三点真实负载功耗，见[功耗入口](../hw/power/records/README.md)。
+
+用户已确认 E192/E256 的 13/17 路同周期全局对齐：统一 Emax、各源一次 RTZ，S7 扩展支路用 3/5 个 CSA4:2 压至两行，再与基础两行合并、片选后进入唯一 CPA；完整增长位为 S44/S45，保持 L8/II=1。两种冻结 RTL 的完整回归已通过，DC 与真实负载功耗已按独立快照完成。E192/E256 的 1 GHz DC 已通过；E256 展开组合 MAX/移位等边界后保持 L8，无需加拍。若后续更大配比无法通过后端优化收敛，用户已授权优先保证时序并增加一级流水，需同步模型/接口/验证并保持 II=1。旧六架构 PPA 不作新设计验收；阵列与跨请求累加驻留不在本轮实现范围。
+
+新增 8/12 个 QE group 的 T8H16Q96E192、T8H16Q128E256 已实现并通过冻结 RTL 完整验证，连同本轮三种形成五种新增配比；两种完整 T8H16 QE 扩展的独立 DC 和三点功耗均已通过。T8H16Q128E256 经组合层展开及八个输入类型位支路缓冲修复 hold，保留 L8/II=1；本轮未增加流水级。最新11种DP的面积和30个实测精度点见 [hw/data](../hw/data/dp_latest_area_power_20261112.md)。Q96/Q128 与 E192/E256 的功能及真实功耗输入已复制到项目内，见[数据入口](../hw/power/workloads/petile_extended/README.md)。
+
+## 当前论文研究路线（2026-11-10）
+
+单 DP 六架构已经完成本轮功能及 N12/1 GHz 验收，当前优先[微架构写作与配比研究路线](../paper/research_plan.md)。研究依次覆盖共享 DP、E/QE 专用化、K/N 同能力比较、固定面积负载分区以及带宽/功耗约束。已有 DeepSeek 工作量沿用，已迁移当前 N12/1 GHz 硬件成本并重算四配比分区；初稿按基线、扩展、硬件评估、负载建模分章。NVFP4 暂用 MXFP4 功耗代理。尚待定义每核心/全芯片带宽边界、累加驻留与 RAW、空闲和外围功耗。下方早期“待实现”记录不代表当前 DP 状态，阵列仍未实施。
+
+### 混合 DP 当前待评审项（2026-11-07）
+
+[三种低精度扩展草案](../src/spec/dp/dptop/mixed-precision-expansion.md) 已建立：四个多精度组加 2/4 个 E 组，或加四个 QE 组；QE lane/group 尚未实现。先评审 S5 兼容、参与掩码、双分支 MAX/求和和 L8 切分，再开发 CModel/RTL。原生 E96/E128、Q64 数据与精确数学 golden 在本轮独立准备，不代表混合硬件已验证。当前已实现/EDA 授权边界以根 AGENTS.md 和 [spec 索引](../src/spec/README.md) 为准；下文早期路线中的“尚无实现/不执行 EDA”是此前阶段记录。
+
 ## 当前路线：先完成新版整体 spec
 
-2026-11-04 用户明确旧 DP 设计过时，新设计在根目录 `src/` 展开，共用测试在根目录 `test/`。旧 Chisel 已移至 `hw/legacy/`；历史记录保留，不能作为新版的默认结构或通过证据。
+2026-11-04 用户明确旧 DP 设计过时，新设计在根目录 `src/` 展开，共用测试在根目录 `test/`。旧 Chisel 和相关记录保留在 Git 历史，不能作为新版的默认结构或通过证据。
 
 1. 从 [新 spec 索引](../src/spec/README.md) 逐项定义系统范围、数值语义、DP 微架构、接口、周期状态、Cube、参数与验收。已记录首批要求，其余合同继续逐项定义。
 2. 整体规范闭合并经用户确认后，开始 CModel，验证位精确运算与周期行为。
@@ -11,15 +35,25 @@
 
 当前首批要求已写入 [spec](../src/spec/README.md)：TensorCore 为 16×4 个 DP，由四个 4×4 广播 DP-Group 竖直拼接，组内无脉动；DP 支持 FP16 基准 K4/K8/K16 和 TF32/FP16/BF16/MXFP8/6/4/NVFP4/HiF4/INT8，HiF8 暂不支持。精度目标为主浮点模式至少 25 位、MXFP4/NVFP4 35 位、HiF4 约 37 位并复用 NVFP4 通路；INT8 并行度等于 MXFP8。DP 不超过 8 级，目标 1.41 GHz，功耗优先、面积其次。尚无实现或验收结果。
 
+### 当前 RTL 维护范围（2026-11-05）
+
+现用 CModel 与纯 Verilog 持续开发；[SystemVerilog](../src/verilog/systemverilog/README.md) 冻结为 T8H16Q32E64、K16/28/40、L8/II=1 历史参考，不再同步新特性。默认 RTL 回归只选择 Verilog；E 类新设计不添加 SV 对照。Chisel 仍待后续实施。
+
+### E 类专用 DP 候选（2026-11-05）
+
+当前多精度单 DP 的 CModel、两版 RTL 和 N12 DC 流程已建立；EDA 执行以 AGENTS.md 的本机授权为准。新增 [dp_lane_E](../src/spec/dp/lane/dp_lane_E.md) 与 [dp_group_E](../src/spec/dp/group/dp_group_E.md) 定义 MXFP4/NVFP4/HiF4 专用 E64 单元，保留现有多精度设计作比较。
+
+用户已明确 HiF4 先求和再在 lane 内融合 e2，删除组内元素指数 MAX/差值/右移对齐；group 输出保持原多精度布局和 S5 到达拍，默认 M31，复用现有 group 外计算。当前优先讨论的 E64 切分为 S2 完成乘法及第一层 pair、S3 完成四项 TC 树、S4 完成局部小左移及两 lane TC 合并/组 abs、S5 完成 scale/LZD。MX/NV 组内无可变移位，S6 仍负责各组块 scale 与 C 的全局对齐。已按用户授权完成该切分的 CModel，S5 起调用同一公共后端，三格式各 961 笔与既有结果及精确数学结果一致，max_ulp=0。E 纯 Verilog 已实现并完成完整回归，用户已授权此次 N12 DC 及同工况多精度面积比较，结果作为重要证据长期保留。混合组和真实负载功耗仍待实施。
+
 ### DP spec 闭合清单（CModel 前）
 
 已确定 T2H4Q8E16 基本组、两个 T1H2Q4E8 lane，1/2/4 个基本组构成 FP16 K4/K8/K16。A/B/C 原子接收、DP 内 FP32 C 合并、无输出背压已写入接口；独立移位对齐留作后续探索。
 
-~~本轮已收敛的边界：C 的来源/指令依赖由上层处理，DP 仅计算本笔缩放点积加 C；输入/输出 last 保留，末结果输出后才能切换 mode；全局复位统一取消在途。固定 E/M/S 解包已确定，T/FP16 为 I1F10、BF16 为 I1F7、Q 统一 E5M3/I1F3、E2M1 转 I3F1、HiF4 S1P2/e1 融合为 I2F2，保留 1-bit e2，块 scale 为 E6M2 bias=48。特殊值分类、NaN/Inf 传播及渐进下溢行为目标已写入 [解包](../src/spec/dp/unpack.md) 和 [特殊值](../src/spec/dp/special-values.md)。这些定义尚无实现验收证据。~~
+~~本轮已收敛的边界：C 的来源/指令依赖由上层处理，DP 仅计算本笔缩放点积加 C；输入/输出 last 保留，末结果输出后才能切换 mode；全局复位统一取消在途。固定 E/M/S 解包已确定，T/FP16 为 I1F10、BF16 为 I1F7、Q 统一 E5M3/I1F3、E2M1 转 I3F1、HiF4 S1P2/e1 融合为 I2F2，保留 1-bit e2，块 scale 为 E6M2 bias=48。特殊值分类、NaN/Inf 传播及渐进下溢行为目标已写入 [解包](../src/spec/dp/lane/unpack.md) 和 [特殊值](../src/spec/dp/common/special-values.md)。这些定义尚无实现验收证据。~~
 
 **v1.2 当前定义：** C 来源/指令依赖归上层，DP 仅本笔 dot+C；v1.2 逐请求 datatype 控制，last 只透传，全局复位取消在途。A/B 首版同格式，各自带 datatype，scale E8M0/E4M3/E6M2；C raw32 传至 S5 再按 FP32/INT32 解包。既有固定 E/M/S 和特殊值目标保持，尚无实现验收。
 
-**v1.1 架构进展（2026-11-04）：** 当前按 T1H2Q4E8→T2H4Q8E16→H16Q32E64（T8）的模块边界定义八级共享流水；S2 乘/指数并行、S3 幅值 RTZ、S4 lane 树、S5 scale 后 sign/magnitude、S6+C 幅值 RTZ、S7 全部规约、S8 RNE/INT32 回绕。E8M3 scale、bias 坐标、参数位宽和树深公式已补充；未来 Q/E/QE 仅在 S6 接入点规划，额外 1–2 级限于后续 profile。当前仍仅 spec，见 [模块层级](../src/spec/dp/module-hierarchy.md) 与 [数值布局](../src/spec/dp/numeric-layout.md)。
+**v1.1 架构进展（2026-11-04）：** 当前按 T1H2Q4E8→T2H4Q8E16→H16Q32E64（T8）的模块边界定义八级共享流水；S2 乘/指数并行、S3 幅值 RTZ、S4 lane 树、S5 scale 后 sign/magnitude、S6+C 幅值 RTZ、S7 全部规约、S8 RNE/INT32 回绕。E8M3 scale、bias 坐标、参数位宽和树深公式已补充；未来 Q/E/QE 仅在 S6 接入点规划，额外 1–2 级限于后续 profile。当前仍仅 spec，见 [模块层级](../src/spec/dp/dptop/module-hierarchy.md) 与 [数值布局](../src/spec/dp/common/numeric-layout.md)。
 
 开始 CModel 前继续闭合：
 
@@ -53,15 +87,15 @@
 
 ## 历史路线（保留供参考）
 
-当前已完成定义/论文准备，用户已授权五族六profile的基础PE迁移与H/Q专用全局对齐。详见 [设计](../hw/spec/six-pe-design.md)。HQE/QE/E保留分级组织，公共输出F和11级周期统一，K/MN总18级；AlignmentConfig暴露四个对齐参数。后续优先完成完整数值/协议回归、验证门禁和EDA；阵列仍只调研讨论。
+当前已完成定义/论文准备，用户已授权五族六profile的基础PE迁移与H/Q专用全局对齐。详见 [设计](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/six-pe-design.md)。HQE/QE/E保留分级组织，公共输出F和11级周期统一，K/MN总18级；AlignmentConfig暴露四个对齐参数。后续优先完成完整数值/协议回归、验证门禁和EDA；阵列仍只调研讨论。
 
-LAB1 已确定回到基础 PE（原 MidGroup）层组合，复用六种 profile，先完成 1:2:4 基线及 1:2:6、1:2:8、1:4:8 的 K/MN 比较流程。K 1:2:4 同时作为 MN 增配的共用基线，MN 只增加 E64 和 Q32E64 两种实验类型。当前不采用 PEGroup 层混合扩展，不改内部微架构；完整路线与参数构建示例见 [LAB1 实验说明](../hw/legacy/chisel_src/core/LAB1/four_ratio_design.md)。目标工艺/PVT/时钟、真实 workload 与 HiF4 规范版本仍待明确，完成 RTL 验证门禁后再进入 EDA。
+LAB1 已确定回到基础 PE（原 MidGroup）层组合，复用六种 profile，先完成 1:2:4 基线及 1:2:6、1:2:8、1:4:8 的 K/MN 比较流程。K 1:2:4 同时作为 MN 增配的共用基线，MN 只增加 E64 和 Q32E64 两种实验类型。当前不采用 PEGroup 层混合扩展，不改内部微架构；完整路线与参数构建示例见 [LAB1 实验说明](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/legacy/chisel_src/core/LAB1/four_ratio_design.md)。目标工艺/PVT/时钟、真实 workload 与 HiF4 规范版本仍待明确，完成 RTL 验证门禁后再进入 EDA。
 
-阵列扩展进入调研讨论阶段，见 [阵列方案](../hw/spec/array_ref/array-design-discussion.md)。用户已确认逻辑 M8N32、物理阵列参数化，以及 FP4 K64/96/128/192/256、FP8 K32/64/96/128；L0 布局、调度、累加语义和首版配置待审核，当前不编写阵列代码。
+阵列扩展进入调研讨论阶段，见 [阵列方案](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/array-design-discussion.md)。用户已确认逻辑 M8N32、物理阵列参数化，以及 FP4 K64/96/128/192/256、FP8 K32/64/96/128；L0 布局、调度、累加语义和首版配置待审核，当前不编写阵列代码。
 
-指令内部的物理 tile 切分与 OS 状态机另见 [深入调研](../hw/spec/array_ref/os-array-scheduling-research.md)。当前按用户提出的原生 K 方向讨论：`K_inst=K_native(mode, config)`，单条指令仅切 M/N，软件用多条原生指令完成完整 GEMM 的 K。优先审核跨指令累加驻留位置、依赖/反馈路径、context 数量与排出结构；不再要求较小 K 单元在同一条指令内循环补足较大 K。
+指令内部的物理 tile 切分与 OS 状态机另见 [深入调研](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/os-array-scheduling-research.md)。当前按用户提出的原生 K 方向讨论：`K_inst=K_native(mode, config)`，单条指令仅切 M/N，软件用多条原生指令完成完整 GEMM 的 K。优先审核跨指令累加驻留位置、依赖/反馈路径、context 数量与排出结构；不再要求较小 K 单元在同一条指令内循环补足较大 K。
 
-[Ascend 对照调研](../hw/spec/array_ref/ascend-cube-scheduling-research.md) 补充另一种边界：16³ Cube 基本粒度之上，单条 MMAD 可描述更大的 K，软件仍可跨指令切 K。原生 K 绑定是本项目候选约束，不是厂商统一规律；最终指令接口须结合此次对照审核。
+[Ascend 对照调研](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/array_ref/ascend-cube-scheduling-research.md) 补充另一种边界：16³ Cube 基本粒度之上，单条 MMAD 可描述更大的 K，软件仍可跨指令切 K。原生 K 绑定是本项目候选约束，不是厂商统一规律；最终指令接口须结合此次对照审核。
 
 | 阶段 | 交付 | 验收依据 |
 | --- | --- | --- |
@@ -85,11 +119,11 @@ LAB1 已确定回到基础 PE（原 MidGroup）层组合，复用六种 profile�
 7. CACTI 等依赖来源、固定版本、适用范围与校准方法。
 8. 大型证据归档与保留策略、论文复现方式。
 
-当前六种 PE 的合同和默认参数已在 [六种PE设计](../hw/spec/six-pe-design.md) 与 [参数 spec](../hw/spec/config/Parameters.md) 明确，后续优先完成用户源码审查及 SV RTL 验收。其余系统/实验参数不填任意默认值。论文投稿日期与规则仍在 paper/submission 中维护。
+当前六种 PE 的合同和默认参数已在 [六种PE设计](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/six-pe-design.md) 与 [参数 spec](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/config/Parameters.md) 明确，后续优先完成用户源码审查及 SV RTL 验收。其余系统/实验参数不填任意默认值。论文投稿日期与规则仍在 paper/submission 中维护。
 
 ## 六种 PE 后续验收
 
 - 审查六个合法 profile、四个对齐参数、batch 固定格式，以及逐层 S/I/F、scale block 和 PE 11级 / K-MN 18级周期合同。
 - 以独立 reference 验证 H/Q 全局 RTZ 与 HQE/QE/E 分级 RTZ，覆盖一般尾数/指数、scale、特殊值、严重抵消和参数边界，分别记录误差。
-- 完成 K/MN 的 C/D 数值与完整 batch 握手、排空、气泡和复位回归。当前[有限定向检查](../hw/spec/six-pe-checks.md)不能替代这些验收。
+- 完成 K/MN 的 C/D 数值与完整 batch 握手、排空、气泡和复位回归。当前[有限定向检查](https://github.com/Futuresxy/DP-Puzzel/blob/5f53f19877e1f4750aaf1688b8ecb84c598ee8bc/hw/spec/six-pe-checks.md)不能替代这些验收。
 - 完成 export/hash 验证门禁后，再接入挂载 EDA 的 DC 与真实负载 power；位宽、流水和后续阵列优化另列可验证合同。

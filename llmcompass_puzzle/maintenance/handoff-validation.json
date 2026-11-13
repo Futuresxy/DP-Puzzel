@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-13",
+  "test_context": "archive extracted outside repository; existing pinned CPU Python environment reused; no source import from original repository",
+  "isolated_root_verified": true,
+  "source_mode": "hash-verified portable snapshot without upstream Git metadata",
+  "unittest_count": 21,
+  "unittest_result": "PASS",
+  "full_test_log_sha256": "d04494dfeb04dc8ad6c93b6c367867c6a570d712c5b4aea0ee677bad6c3353eb",
+  "setup_check": "PASS",
+  "a100_area_identical_to_retained_s1": true,
+  "notes": [
+    "No new-machine pip installation or foreign CPU/OS execution was claimed.",
+    "Final archive additionally includes the existing 11-hardware / 30-mode-point cost summary and owner-neutral tar metadata.",
+    "Runtime numeric algorithms were not changed by this reorganization."
+  ],
+  "retained_moe_primary_case_reproduced": {
+    "plan": "routed_nvfp4",
+    "ratio": "1:2:4",
+    "tokens": 2048,
+    "seconds": 0.00047110343828861656,
+    "absolute_tolerance_s": 1e-15
+  }
+}

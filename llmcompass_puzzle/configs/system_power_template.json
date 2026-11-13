@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "boundary": "device_including_hbm",
+  "status": "uncalibrated_template",
+  "clock_hz": 1000000000,
+  "design_id": "REQUIRED: coefficients belong to one concrete system design",
+  "base_w": null,
+  "dynamic_j_per_event": {
+    "bf16_dp_issues": null,
+    "mxfp8_dp_issues": null,
+    "mxfp4_dp_issues": null,
+    "vector_work": null,
+    "special_work": null,
+    "rf_sram_bytes": null,
+    "l2_noc_bytes": null,
+    "hbm_path_bytes": null,
+    "device_link_bytes": null,
+    "other_dynamic_work": null
+  },
+  "required_event_keys": [
+    "bf16_dp_issues", "mxfp8_dp_issues", "mxfp4_dp_issues",
+    "vector_work", "special_work", "rf_sram_bytes", "l2_noc_bytes",
+    "hbm_path_bytes", "device_link_bytes", "other_dynamic_work"
+  ],
+  "coefficient_units": "dynamic J/event above base; base W includes all installed-resource idle/static power",
+  "missing_policy": "null coefficients for active events or omitted required counts block admission",
+  "notes": [
+    "Fill each coefficient with [lower, upper], its evidence source and matching design/clock.",
+    "HBM path includes HBM device, controller and PHY incremental energy; base includes their idle power.",
+    "RF/SRAM and L2/NoC terms must not duplicate energy already included in compute coefficients.",
+    "DP issue counts sum over active physical DPs and include padded issues; source activity remains a proxy.",
+    "Do not insert an arbitrary residual chosen to make a preferred ratio meet the cap."
+  ]
+}

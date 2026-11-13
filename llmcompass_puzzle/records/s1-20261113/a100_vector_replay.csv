@@ -1,0 +1,3 @@
+operator,m,n,seconds,mapping,status
+softmax,64,128,5.957446808510638e-08,"{""is_l1_double_buffering"": true, ""is_l2_double_buffering"": false, ""l1_tile_M"": 1, ""l1_tile_N"": 128, ""l2_tile_M"": 64, ""l2_tile_N"": 128}",upstream_cpu_replay
+softmax,128,512,3.716312056737589e-07,"{""is_l1_double_buffering"": true, ""is_l2_double_buffering"": false, ""l1_tile_M"": 1, ""l1_tile_N"": 512, ""l2_tile_M"": 128, ""l2_tile_N"": 512}",upstream_cpu_replay

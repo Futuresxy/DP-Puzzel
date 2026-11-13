@@ -1,0 +1,151 @@
+{
+  "status": "synthetic_not_hardware_measurement",
+  "quantization": {
+    "mxfp8_e4m3": {
+      "standalone": {
+        "values": 66,
+        "blocks": 4,
+        "target_format": "mxfp8_e4m3",
+        "work": {
+          "vector_work": 216,
+          "special_work": 8
+        },
+        "source_read_bytes": 132,
+        "output_payload_bytes": 66,
+        "output_scale_bytes": 4,
+        "replaced_producer_write_bytes": 0,
+        "extra_launches": 1,
+        "minimum_block_scratch_bytes": 64,
+        "coefficient_status": "synthetic_contract_example",
+        "latency_s": null,
+        "traffic_scope": "logical tensor bytes; mapper must assign memory level and transaction alignment"
+      },
+      "fused": {
+        "values": 66,
+        "blocks": 4,
+        "target_format": "mxfp8_e4m3",
+        "work": {
+          "vector_work": 216,
+          "special_work": 8
+        },
+        "source_read_bytes": 0,
+        "output_payload_bytes": 66,
+        "output_scale_bytes": 4,
+        "replaced_producer_write_bytes": 132,
+        "extra_launches": 0,
+        "minimum_block_scratch_bytes": 64,
+        "coefficient_status": "synthetic_contract_example",
+        "latency_s": null,
+        "traffic_scope": "logical tensor bytes; mapper must assign memory level and transaction alignment"
+      }
+    },
+    "mxfp4_e2m1": {
+      "standalone": {
+        "values": 66,
+        "blocks": 4,
+        "target_format": "mxfp4_e2m1",
+        "work": {
+          "vector_work": 208,
+          "special_work": 8
+        },
+        "source_read_bytes": 132,
+        "output_payload_bytes": 34,
+        "output_scale_bytes": 4,
+        "replaced_producer_write_bytes": 0,
+        "extra_launches": 1,
+        "minimum_block_scratch_bytes": 64,
+        "coefficient_status": "synthetic_contract_example",
+        "latency_s": null,
+        "traffic_scope": "logical tensor bytes; mapper must assign memory level and transaction alignment"
+      },
+      "fused": {
+        "values": 66,
+        "blocks": 4,
+        "target_format": "mxfp4_e2m1",
+        "work": {
+          "vector_work": 208,
+          "special_work": 8
+        },
+        "source_read_bytes": 0,
+        "output_payload_bytes": 34,
+        "output_scale_bytes": 4,
+        "replaced_producer_write_bytes": 132,
+        "extra_launches": 0,
+        "minimum_block_scratch_bytes": 64,
+        "coefficient_status": "synthetic_contract_example",
+        "latency_s": null,
+        "traffic_scope": "logical tensor bytes; mapper must assign memory level and transaction alignment"
+      }
+    }
+  },
+  "power": {
+    "boundary": "device_including_hbm",
+    "cap_w": 60,
+    "status": "infeasible",
+    "admitted": false,
+    "coefficient_status": "synthetic_contract_example",
+    "peak_window_power_w": [
+      70.0,
+      70.0
+    ],
+    "energy_j": [
+      160.0,
+      160.0
+    ],
+    "windows": [
+      {
+        "window": 0,
+        "duration_s": 1,
+        "power_w": [
+          70.0,
+          70.0
+        ],
+        "energy_j": [
+          70.0,
+          70.0
+        ],
+        "components_w": {
+          "base": [
+            10,
+            10
+          ],
+          "matrix": [
+            40.0,
+            40.0
+          ],
+          "vector": [
+            10.0,
+            10.0
+          ],
+          "hbm": [
+            10.0,
+            10.0
+          ]
+        },
+        "unknown_terms": [],
+        "status": "infeasible"
+      },
+      {
+        "window": 1,
+        "duration_s": 9,
+        "power_w": [
+          10,
+          10
+        ],
+        "energy_j": [
+          90,
+          90
+        ],
+        "components_w": {
+          "base": [
+            10,
+            10
+          ]
+        },
+        "unknown_terms": [],
+        "status": "robust_feasible"
+      }
+    ],
+    "scope": "piecewise-constant window power; caller must supply a complete system event ledger"
+  }
+}

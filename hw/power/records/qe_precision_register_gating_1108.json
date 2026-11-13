@@ -1,0 +1,110 @@
+{
+  "lane_clock_gating": {
+    "mxfp8_e4m3": {
+      "S1": {
+        "total": 1072,
+        "inactive": 0
+      },
+      "S4": {
+        "total": 352,
+        "inactive": 0
+      },
+      "S2": {
+        "total": 1016,
+        "inactive": 256
+      },
+      "S3": {
+        "total": 1072,
+        "inactive": 0
+      }
+    },
+    "mxfp4_e2m1": {
+      "S1": {
+        "total": 1072,
+        "inactive": 320
+      },
+      "S4": {
+        "total": 352,
+        "inactive": 0
+      },
+      "S2": {
+        "total": 1016,
+        "inactive": 208
+      },
+      "S3": {
+        "total": 1072,
+        "inactive": 544
+      }
+    }
+  },
+  "schema_version": 1,
+  "status": "PASS",
+  "created_utc": "2026-11-08T08:42:02.564082+00:00",
+  "baseline_run": "hw/power/runs/power_qwen8b_six_1108",
+  "optimized_run": "hw/power/runs/power_qe_precision_register_gating_1108",
+  "dc_comparison": "hw/dc_syn/records/qe_precision_register_gating_1108.json",
+  "condition": "N12 TT 0.7V 85C, 1GHz L8/II1; same Qwen3 inputs and 512ns VCS native gate SAIF window; pre-CTS zero-delay",
+  "validation": "Frozen RTL/GLS outputs and activity audits pass; source artifact hashes rechecked",
+  "rows": [
+    {
+      "format": "mxfp8_e4m3",
+      "baseline": {
+        "dynamic_mw": 13.8865842819214,
+        "static_mw": 0.13623890625,
+        "total_mw": 14.0228023529053,
+        "internal_mw": 10.7475891113281,
+        "switching_mw": 3.1389951705933,
+        "area_um2": 11542.081582,
+        "clock_pins": 4648,
+        "inactive_clock_pins": 0,
+        "pj_per_mac": 0.4382125735282906
+      },
+      "optimized": {
+        "dynamic_mw": 13.6381058692932,
+        "static_mw": 0.135929171875,
+        "total_mw": 13.773998260498,
+        "internal_mw": 10.494499206543,
+        "switching_mw": 3.1436066627502,
+        "area_um2": 11873.120309,
+        "clock_pins": 4744,
+        "inactive_clock_pins": 264,
+        "pj_per_mac": 0.4304374456405625
+      },
+      "dynamic_reduction_percent": 1.7893414793995532,
+      "total_reduction_percent": 1.774282245058889,
+      "baseline_audit": "hw/power/runs/power_qwen8b_six_1108/dp_top_q32e64__mxfp8_e4m3/power_audit.json",
+      "optimized_audit": "hw/power/runs/power_qe_precision_register_gating_1108/dp_top_q32e64__mxfp8_e4m3/power_audit.json",
+      "optimized_audit_sha256": "b5415bb1b42d60de8e69413120669659d9b63c30ab987aa8bd4c4efd8c058b9c"
+    },
+    {
+      "format": "mxfp4_e2m1",
+      "baseline": {
+        "dynamic_mw": 12.6993818283081,
+        "static_mw": 0.134605546875,
+        "total_mw": 12.8339462280273,
+        "internal_mw": 10.0625476837158,
+        "switching_mw": 2.6368341445923,
+        "area_um2": 11542.081582,
+        "clock_pins": 4648,
+        "inactive_clock_pins": 0,
+        "pj_per_mac": 0.20053040981292655
+      },
+      "optimized": {
+        "dynamic_mw": 10.894651889801,
+        "static_mw": 0.1335634375,
+        "total_mw": 11.0281782150269,
+        "internal_mw": 8.446346282959,
+        "switching_mw": 2.448305606842,
+        "area_um2": 11873.120309,
+        "clock_pins": 4744,
+        "inactive_clock_pins": 1104,
+        "pj_per_mac": 0.1723152846097953
+      },
+      "dynamic_reduction_percent": 14.211163684236894,
+      "total_reduction_percent": 14.070247614540332,
+      "baseline_audit": "hw/power/runs/power_qwen8b_six_1108/dp_top_q32e64__mxfp4_e2m1/power_audit.json",
+      "optimized_audit": "hw/power/runs/power_qe_precision_register_gating_1108/dp_top_q32e64__mxfp4_e2m1/power_audit.json",
+      "optimized_audit_sha256": "32bfb867efe783a1c4b8acec1e72fac53d44a3e77b529032da08005ae7c5e807"
+    }
+  ]
+}

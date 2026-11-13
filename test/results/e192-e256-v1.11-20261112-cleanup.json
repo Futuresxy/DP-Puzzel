@@ -1,0 +1,168 @@
+{
+  "scope": "Six completed RTL regressions: build intermediates only; all functional and gate evidence retained",
+  "runs": [
+    {
+      "build": "test/runs/verilog/20261112T112212019154Z/build-l27-g40",
+      "files": 177,
+      "bytes": 215513376,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112212019154Z/build-l28-g40",
+      "files": 177,
+      "bytes": 215533798,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112212019154Z/build-l32-g64",
+      "files": 200,
+      "bytes": 215442583,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112213175348Z/build-l27-g40",
+      "files": 202,
+      "bytes": 218736727,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112213175348Z/build-l28-g40",
+      "files": 202,
+      "bytes": 218771811,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112213175348Z/build-l32-g64",
+      "files": 209,
+      "bytes": 218518973,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447584174Z/build-l27-g40",
+      "files": 184,
+      "bytes": 210742401,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447584174Z/build-l28-g40",
+      "files": 184,
+      "bytes": 210753382,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447584174Z/build-l32-g64",
+      "files": 184,
+      "bytes": 211822462,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447616383Z/build-l27-g40",
+      "files": 171,
+      "bytes": 212244906,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447616383Z/build-l28-g40",
+      "files": 171,
+      "bytes": 212259030,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447616383Z/build-l32-g64",
+      "files": 184,
+      "bytes": 213638201,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447600466Z/build-l27-g40",
+      "files": 227,
+      "bytes": 217539628,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447600466Z/build-l28-g40",
+      "files": 227,
+      "bytes": 217550393,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447600466Z/build-l32-g64",
+      "files": 240,
+      "bytes": 219033755,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447595511Z/build-l27-g40",
+      "files": 215,
+      "bytes": 213609497,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447595511Z/build-l28-g40",
+      "files": 215,
+      "bytes": 213628870,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    },
+    {
+      "build": "test/runs/verilog/20261112T112447595511Z/build-l32-g64",
+      "files": 228,
+      "bytes": 215086366,
+      "retained": [
+        "compile.log",
+        "lint.log"
+      ]
+    }
+  ],
+  "total_removed_bytes": 3870426159
+}

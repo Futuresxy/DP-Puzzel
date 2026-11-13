@@ -1,0 +1,286 @@
+{
+  "version": "v1.12",
+  "date": "2026-11-12",
+  "source_scope": "isolated source copy; main-tree source validation remains separate",
+  "binary_sha256": "2ad7541c12aa4218833700599982b79f69e0c541964e3f6590c3cbe617cdc39c",
+  "source_changes_manifest": "qe_source_handoff.json",
+  "cmodel_tests": {
+    "total": 52,
+    "passed": 52,
+    "expanded_config_cutpoint_serial_tests": 2
+  },
+  "flow_tests": {
+    "dc": 45,
+    "power": 74,
+    "power_skipped": 1
+  },
+  "rtl": [
+    {
+      "profile": "t8h16q96e192",
+      "export_id": "DP_verilog_t8h16q96e192_1e63c2625d0dd101",
+      "verification_id": "20261112T122236879949Z",
+      "receipt": "test/runs/verilog/20261112T122236879949Z/verification.json",
+      "receipt_sha256": "491accd014d1efe649b9a7fd119ef02975c413bfd930ea53977f9bbdcc6ddd1e",
+      "summary": "test/runs/verilog/20261112T122236879949Z/verilator-verilog-all-summary.json",
+      "latency": 8,
+      "ii": 1,
+      "campaigns": 14,
+      "native_checked": 10747,
+      "cutpoints_checked": 2819997,
+      "stress": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "result": "PASS cycles=7565 accepted=6256 checked=5759 cancelled=497",
+          "cutpoints_checked": 939999
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=7565 accepted=6256 checked=5759 cancelled=497",
+          "cutpoints_checked": 939999
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=7565 accepted=6256 checked=5759 cancelled=497",
+          "cutpoints_checked": 939999
+        }
+      ],
+      "precision": [
+        {
+          "name": "tf32",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1
+        },
+        {
+          "name": "fp16",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "bf16",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "golden_exact": 961,
+          "math_exact": 959,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "nvfp4",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "hif4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null
+        }
+      ]
+    },
+    {
+      "profile": "t8h16q128e256",
+      "export_id": "DP_verilog_t8h16q128e256_f8209095129aa89a",
+      "verification_id": "20261112T122135109358Z",
+      "receipt": "test/runs/verilog/20261112T122135109358Z/verification.json",
+      "receipt_sha256": "b1ee87db36ffbc1015649ee4dfbc0199c04c7bad65f38ff26b03128c652fb4f9",
+      "summary": "test/runs/verilog/20261112T122135109358Z/verilator-verilog-all-summary.json",
+      "latency": 8,
+      "ii": 1,
+      "campaigns": 14,
+      "native_checked": 10747,
+      "cutpoints_checked": 3754053,
+      "stress": [
+        {
+          "name": "mixed-k16-l27-g40",
+          "result": "PASS cycles=7612 accepted=6296 checked=5799 cancelled=497",
+          "cutpoints_checked": 1251351
+        },
+        {
+          "name": "mixed-k16-l28-g40",
+          "result": "PASS cycles=7612 accepted=6296 checked=5799 cancelled=497",
+          "cutpoints_checked": 1251351
+        },
+        {
+          "name": "mixed-k16-l32-g64",
+          "result": "PASS cycles=7612 accepted=6296 checked=5799 cancelled=497",
+          "cutpoints_checked": 1251351
+        }
+      ],
+      "precision": [
+        {
+          "name": "tf32",
+          "golden_exact": 1053,
+          "math_exact": 1040,
+          "max_ulp": 1
+        },
+        {
+          "name": "fp16",
+          "golden_exact": 961,
+          "math_exact": 949,
+          "max_ulp": 1
+        },
+        {
+          "name": "bf16",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 3
+        },
+        {
+          "name": "mxfp8_e4m3",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "mxfp8_e5m2",
+          "golden_exact": 961,
+          "math_exact": 958,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e3m2",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp6_e2m3",
+          "golden_exact": 961,
+          "math_exact": 960,
+          "max_ulp": 1
+        },
+        {
+          "name": "mxfp4_e2m1",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "nvfp4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "hif4",
+          "golden_exact": 961,
+          "math_exact": 961,
+          "max_ulp": 0
+        },
+        {
+          "name": "int8",
+          "golden_exact": 1045,
+          "math_exact": 1045,
+          "max_ulp": null
+        }
+      ]
+    }
+  ],
+  "power_goldens": {
+    "points": 6,
+    "rows_each": 1024,
+    "independent_exact_each": 1024
+  },
+  "ppa_status": "DC running; no timing or power conclusion yet",
+  "independent_review": [
+    {
+      "export_id": "DP_verilog_t8h16q96e192_1e63c2625d0dd101",
+      "directory": "test/runs/verilog/20261112T122236879949Z/auxiliary/qe_independent_review_1112",
+      "files_sha256": {
+        "qe_independent_review_1112.py": "58e219a283d7efd2dbb2b3da9ddde6210bf1388fb978c63779d905f8eddec73a",
+        "review.json": "9e1b3703f36bff611594f65bcd1ff1478fa8d982745340d9b0985b78b950fead",
+        "review.md": "e7a013974cbd8e3d3394f78d7b3f41098701dc51293c6c4b0daf3f39055b77b7",
+        "t8h16q128e256_checked.json": "542cdcc83f8f88ad8d6187db121a0eddba2723fbc721d4f3638db89dc2160a5d",
+        "t8h16q128e256_inputs.jsonl": "f10ecea27822292aa7fe4fb207e56175e952732e2504a832d9833e765e7406e8",
+        "t8h16q96e192_checked.json": "19e501e4ad9c64439165eb9733b26428ae34481d6d51b42d36673109e76085c2",
+        "t8h16q96e192_inputs.jsonl": "6de3bc8ca25c2255a0a8a9e29dfc41f94e3cc4d2bfd0d575d2fe528a4603e902"
+      }
+    },
+    {
+      "export_id": "DP_verilog_t8h16q128e256_f8209095129aa89a",
+      "directory": "test/runs/verilog/20261112T122135109358Z/auxiliary/qe_independent_review_1112",
+      "files_sha256": {
+        "qe_independent_review_1112.py": "58e219a283d7efd2dbb2b3da9ddde6210bf1388fb978c63779d905f8eddec73a",
+        "review.json": "9e1b3703f36bff611594f65bcd1ff1478fa8d982745340d9b0985b78b950fead",
+        "review.md": "e7a013974cbd8e3d3394f78d7b3f41098701dc51293c6c4b0daf3f39055b77b7",
+        "t8h16q128e256_checked.json": "542cdcc83f8f88ad8d6187db121a0eddba2723fbc721d4f3638db89dc2160a5d",
+        "t8h16q128e256_inputs.jsonl": "f10ecea27822292aa7fe4fb207e56175e952732e2504a832d9833e765e7406e8",
+        "t8h16q96e192_checked.json": "19e501e4ad9c64439165eb9733b26428ae34481d6d51b42d36673109e76085c2",
+        "t8h16q96e192_inputs.jsonl": "6de3bc8ca25c2255a0a8a9e29dfc41f94e3cc4d2bfd0d575d2fe528a4603e902"
+      }
+    }
+  ],
+  "architecture_scope": {
+    "base": "four original dp_group instances retain T8/H16/Q32/E64/INT8 K32 capability",
+    "extension_groups": [
+      8,
+      12
+    ],
+    "capacities": [
+      "T8H16Q96E192",
+      "T8H16Q128E256"
+    ],
+    "active_groups": {
+      "T_H_INT8": 4,
+      "Q_E": [
+        12,
+        16
+      ]
+    },
+    "not_a_pure_qe_dp": true
+  },
+  "isolated_software_test_logs": {
+    "qe-v112-cmodel-20261112.log": {
+      "path": "test/runs/verilog/20261112T122236879949Z/auxiliary/isolated_software_logs/qe-v112-cmodel-20261112.log",
+      "sha256": "d1ae6307c93e06c35869da6dc5ac84e085ed5323a615e6a186810620caae46d2"
+    },
+    "qe-v112-cutpoints-20261112.log": {
+      "path": "test/runs/verilog/20261112T122236879949Z/auxiliary/isolated_software_logs/qe-v112-cutpoints-20261112.log",
+      "sha256": "9c4ff500ae0bdcca79013e01bd57fca780358b8d6845823ccd9d6c8b05a57f6d"
+    },
+    "qe-v112-dcflow-20261112.log": {
+      "path": "test/runs/verilog/20261112T122236879949Z/auxiliary/isolated_software_logs/qe-v112-dcflow-20261112.log",
+      "sha256": "72983601e2055fa9ed36b9a2e5e6af11c0b58a705437a2eb08e7921230eb10f3"
+    },
+    "qe-v112-powerflow-20261112.log": {
+      "path": "test/runs/verilog/20261112T122236879949Z/auxiliary/isolated_software_logs/qe-v112-powerflow-20261112.log",
+      "sha256": "d9a170a990a304b7e75c191c022343a89917883b32dc814b9934e207e26e11ed"
+    }
+  }
+}

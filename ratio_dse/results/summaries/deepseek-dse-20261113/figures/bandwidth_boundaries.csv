@@ -1,0 +1,6 @@
+workload_id,model,schedule,batch,tokens,routing,plan,topology,lower_tb_s,upper_tb_s,lower_ratio,upper_ratio,lower_candidate_id,upper_candidate_id
+workload-13e3a5b4094fa8b4f91f,DeepSeek-V4-Flash,full,1,2048,balanced,expert_fp8,sm_4x16x4,2.5,2.75,1:2:4,1:4:4,candidate-cb0d14e2d8469ef7b3b1,candidate-4669427976462afe02b7
+workload-13e3a5b4094fa8b4f91f,DeepSeek-V4-Flash,full,1,2048,balanced,expert_fp4,sm_4x16x4,6.5,7.0,1:2:4,1:4:8,candidate-31ad11d2807323a21f74,candidate-4fad2ef62a516f29d76e
+workload-13c10085adcf5f9d8895,DeepSeek-V4.1-Flash,simplified,1,2048,balanced,expert_fp8,sm_4x16x4,2.5,2.75,1:2:4,1:4:4,candidate-fa7895432170110f0282,candidate-4a1ebea2350558784531
+workload-13c10085adcf5f9d8895,DeepSeek-V4.1-Flash,simplified,1,2048,balanced,expert_fp4,sm_4x16x4,6.0,6.5,1:2:4,1:2:6,candidate-ed29a60d4e95f00b6e26,candidate-8061dac808c711e978de
+workload-13c10085adcf5f9d8895,DeepSeek-V4.1-Flash,simplified,1,2048,balanced,expert_fp4,sm_4x16x4,6.5,7.0,1:2:6,1:4:8,candidate-8061dac808c711e978de,candidate-3cab186ea7aa4d0257f5

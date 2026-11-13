@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "candidates": [
+    {
+      "profile_id": "H16Q32E64",
+      "top": "dp_top",
+      "ratio_label": "1:2:4",
+      "latency_cycles": 8,
+      "ii_cycles": 1
+    },
+    {
+      "profile_id": "H16Q32E96",
+      "top": "dp_top_t8h16q32e96",
+      "ratio_label": "1:2:6",
+      "latency_cycles": 8,
+      "ii_cycles": 1
+    },
+    {
+      "profile_id": "H16Q32E128",
+      "top": "dp_top_t8h16q32e128",
+      "ratio_label": "1:2:8",
+      "latency_cycles": 8,
+      "ii_cycles": 1
+    },
+    {
+      "profile_id": "H16Q64E64",
+      "top": "dp_top_t8h16q64e64",
+      "ratio_label": "1:4:4",
+      "latency_cycles": 8,
+      "ii_cycles": 1
+    },
+    {
+      "profile_id": "H16Q64E128",
+      "top": "dp_top_t8h16q64e128_opt",
+      "ratio_label": "1:4:8",
+      "latency_cycles": 8,
+      "ii_cycles": 1
+    },
+    {
+      "profile_id": "H16Q32E192",
+      "top": "dp_top_t8h16q32e192",
+      "ratio_label": "1:2:12",
+      "latency_cycles": 8,
+      "ii_cycles": 1
+    },
+    {
+      "profile_id": "H16Q32E256",
+      "top": "dp_top_t8h16q32e256",
+      "ratio_label": "1:2:16",
+      "latency_cycles": 8,
+      "ii_cycles": 1
+    },
+    {
+      "profile_id": "H16Q96E192",
+      "top": "dp_top_t8h16q96e192",
+      "ratio_label": "1:6:12",
+      "latency_cycles": 8,
+      "ii_cycles": 1
+    },
+    {
+      "profile_id": "H16Q128E256",
+      "top": "dp_top_t8h16q128e256",
+      "ratio_label": "1:8:16",
+      "latency_cycles": 8,
+      "ii_cycles": 1
+    }
+  ],
+  "sources": {
+    "dc": [
+      {
+        "path": "hw/dc_syn/records/v19_six_dp_20261110.json",
+        "sha256": "ef79fe0c64d8ca6803fa6d21f67c28fd1b73b02f0ad6870366854a88214c957a"
+      },
+      {
+        "path": "hw/dc_syn/records/five_expansions_20261112.json",
+        "sha256": "556e0bd84b4b43122e06c2125155eea8dc8095648891b416bdf44b253354edf5"
+      }
+    ],
+    "power": [
+      {
+        "path": "hw/power/records/v19_six_architectures_20261110.json",
+        "sha256": "a894ac00cee47a361ce4ee7c046ef9125f6c15e90dc6240c97ef5eab7e449f35"
+      },
+      {
+        "path": "hw/power/records/five_expansions_20261112.json",
+        "sha256": "c024e7f9c45262078a017700a5045e6914dacdc0e16f5710d129f9d134a36b83"
+      }
+    ],
+    "spec": [
+      {
+        "path": "src/spec/dp/dptop/interface.md",
+        "sha256": "0fb1180a0a32271e1eec6255460997d9f633905d0f0896cf2a1da2be6f0f19de"
+      },
+      {
+        "path": "src/spec/dp/dptop/layout-and-scales.md",
+        "sha256": "69f44c55a330258816edeb0a8002ceee919f27734549bec860de63f55a270b2e"
+      },
+      {
+        "path": "src/spec/dp/dptop/mixed-precision-expansion.md",
+        "sha256": "0e6dfe0218ca7850c4b3c2aeb904aefd11a4759e8a03eeccbe81930eeed378c7"
+      },
+      {
+        "path": "src/spec/dp/dptop/t8h16q64e64.md",
+        "sha256": "dcfc6e4a1edd682820c21aa7b6401b7445fb5d2326d53794ef04406a58f33cd6"
+      },
+      {
+        "path": "src/spec/dp/dptop/e192-e256-expansion-analysis.md",
+        "sha256": "80be5caec6c8e13c0a3f9478adb4dc2434374c42cea128932dab1419626b6793"
+      },
+      {
+        "path": "src/spec/dp/dptop/qe192-qe256-expansion.md",
+        "sha256": "a7466feed3cb9c633b5b12972d69b823e296a08597a6d0ce379ee996f78dfe3e"
+      }
+    ]
+  }
+}

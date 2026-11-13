@@ -1,0 +1,35 @@
+{
+  "upstream_repository": "Quant_LLM_Chip_Codesign",
+  "area_rows": 17,
+  "power_rows": 51,
+  "process": "N12",
+  "scope": "Legacy PETile standard-cell area and archived zero-delay VCD/OpenSTA power",
+  "inputs_sha256": {
+    "DAC2027/figures/petile21_dc_area_formats.png": "f23f2bc5687ed2917a135db8391a6731f7e876fcd8b665cc19be03ea53bcab0d",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/analysis/area_comparison.csv": "7832db30601d6b933f0aada0686bd47285f15b3397150e87197af180c75beaf9",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/analysis/compute_density.csv": "94e5f715e1b869bba516470f91dd33006e0c2bd263537585c8ba74bdd2222c14",
+    "HW/power_analysis/reports/PETile20_Precision_0928174706/summary.json": "7d0163a89e2fa7b18d40782198075c81c84ac8b804d52d2fa093f3cec4a66f16",
+    "HW/power_analysis/reports/PETileFP4Half_N12PPA_1018181343/summary.json": "d38e78b7373604114c059a46b00abde641793fcf28062b18757b5a4af93e18d6",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full/report/area_detailed.rpt": "1fac710b4adc9ab73e8c56c7b02eb191e945799da982f9ede66f67e220ca0210",
+    "HW/dc_syn/syn_report/PETileFP4Half_N12PPA_1018181343/petile_full16_fp48/report/area_detailed.rpt": "465a083ace2e26ae295963b33f02b6f5b5ddbc54d19a246d6031f736cba4d1ca",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_fp4/report/area_detailed.rpt": "14ebed200668fccf46276399b93dd2c7252714291d385a91c837da10269bd8a2",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_fp4x2/report/area_detailed.rpt": "1131d28f0d28c8b9e595d383eb54fead8ab3c74c268b251492d994209557b075",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_fp4x3/report/area_detailed.rpt": "c812296bf3e4527ae7b89c72b1cb4be02081663cc281d154f7ca0711360aff52",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_fp8/report/area_detailed.rpt": "9760f5bd416eae96935b769ca27f68f462e2f3723c7649cc5ad6dad6724e4c9d",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_low/report/area_detailed.rpt": "0decc0554c1cf2a46b43c626cca070d0c84c9f6f4590581ff0c383ede076eba3",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_low_fp4/report/area_detailed.rpt": "ffd9a09d53d47324ed5e1898937193458eb3f3a3aee541a525a0fdac31398b7c",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_low_fp4x2/report/area_detailed.rpt": "eda8e7a6463e432ccebc65ee43312bda539378ea6e2c0af0d1f8c31e6d21bd8d",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_fp8x2/report/area_detailed.rpt": "7cad02aff50ca574c43c0319ea7095ae69dfd3956456b0e73b0f90f12b8f0948",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_low_fp8/report/area_detailed.rpt": "1dc1c2f457ad035e26928f1c86cf5daafee4a0c8763222c73eb9bb0cee3588f8",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_lowx2/report/area_detailed.rpt": "24da0efcec21ec6a26dee19b72c2ddb125a124b04c5c2e62ec728f2b7018d5cd",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_lowx2_fp4/report/area_detailed.rpt": "9c0dce50cc74330a980061c77b9882c080e9d9ba55947c41cca44ab509967f2e",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_fp8x3/report/area_detailed.rpt": "0ba9f8c8c93444d72fc377b6127b9b7bd54e9127243849209f5454c2d18c6f0f",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_low_fp8x2/report/area_detailed.rpt": "b8cb65cfbd37a01fd1a805a08ca8ccafec58bffa4c7c702cf0e1e6eaf22e4c19",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_lowx2_fp8/report/area_detailed.rpt": "142c49d00aa397d0b3c71d9f80409e1779750fae25941dfcf622550ad202ea34",
+    "HW/dc_syn/syn_report/PETile20_Precision_0928174706/petile_full_lowx3/report/area_detailed.rpt": "a76708113984044fb9f29904334ece7aef2b973133cfde9c88b562749d6f9dbb"
+  },
+  "outputs_sha256": {
+    "petile17_area.csv": "c70569a2fea90a723d125611bebf0703d1405f1f9f98d6c6fba0c0d9270883cf",
+    "petile17_power.csv": "204dc7f1df23ab98b7d9b251d380b8fa3aef1ccac85e7eeb3143c798e91bf893"
+  }
+}

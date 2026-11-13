@@ -167,11 +167,11 @@
   "golden": {
     "config": {
       "k_fp16": 16,
-      "local_shift_mag_width": 27,
+      "local_shift_mag_width": 28,
       "global_signed_align_width": 40,
       "post_scale_norm_extra_stage": 0
     },
-    "model_source_sha256": "5ffabc43bc785bbe41066462ff16dce8f2379ff4fd3ab2c1611a15340f82f927",
+    "model_source_sha256": "3edc4dba7663df7ad5101f23a006590b63e84ca6328be3481bedca68072dfcd2",
     "expected_sha256": "ae3e30add66ff827c5ee4d531191c219723812fc8685452bbb5d7f32573bdc40",
     "reference": "independent Fraction finite-window oracle + exact mathematical reference",
     "status": "cmodel_verified_not_rtl"

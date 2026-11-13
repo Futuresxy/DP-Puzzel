@@ -1,0 +1,38 @@
+{
+  "figure_cells_sha256": "1eae4af250706342653eb45946ce79d26212df5d52c64d0c6011900a28443228",
+  "highlighted_bandwidth_tb_s": 4,
+  "local_read_bandwidth_tb_s": [
+    0.5,
+    1,
+    2,
+    4,
+    8,
+    16
+  ],
+  "matplotlib_version": "3.11.2",
+  "pdf": "paper/figures/dse_precision_selection.pdf",
+  "pdf_sha256": "e8759a8b3d07d11954bb9300d47db4a6149c1e389dd04bf309a710b642297bea",
+  "plan_order": [
+    "expert_fp8",
+    "expert_fp8+grouped_fp8",
+    "expert_fp8+grouped_fp4",
+    "expert_fp4",
+    "expert_fp4+grouped_fp4",
+    "expert_fp4+grouped_fp4+linears_fp4+attention_fp8"
+  ],
+  "plot_script": "ratio_dse/dse/migration_figure.py",
+  "plot_script_sha256": "ece45d537d2cfb15a93ec05503fb438bba61b2ff013d59c493673b5ef8c9a0ee",
+  "power_caps_w": [
+    null,
+    150
+  ],
+  "runner_up_marker_pct": 1,
+  "schema_version": 1,
+  "study_manifest_sha256": "5b0fa2be5957a79c6cde57d848fb494d7b49d290973275247c72f6ba2a0bb678",
+  "study_selections_sha256": "afc85bc814a854f90cd2cfabae84e02bfd3717c05dcccb3e4f21f7296c6c69fe",
+  "style_sha256": "d72aad2a78880e7f548384bd45118a749bddfd540f6070b7260f0cf10380368f",
+  "workloads": [
+    "DeepSeek-V4-Flash",
+    "DeepSeek-V4.1-Flash"
+  ]
+}

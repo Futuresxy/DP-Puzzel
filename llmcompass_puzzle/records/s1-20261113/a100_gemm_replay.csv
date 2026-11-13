@@ -1,0 +1,4 @@
+m,n,k,scalar_array_cycles,upstream_a100_gemm_seconds,mapping,status
+16,16,16,45,,,upstream_cpu_replay
+64,64,128,2069,5.602836879432624e-08,"{""dataflow"": ""os"", ""is_l2_double_buffering"": true, ""l0_K_tiling_factor"": 1, ""l0_M_tiling_factor"": 2, ""l0_N_tiling_factor"": 2, ""l1_loop_order"": ""knm"", ""l1_tile_K"": 8, ""l1_tile_M"": 32, ""l1_tile_N"": 32, ""l2_loop_order"": ""knm"", ""l2_tile_K"": 128, ""l2_tile_M"": 64, ""l2_tile_N"": 64}",upstream_cpu_replay
+128,256,512,66198,4.716312056737589e-07,"{""dataflow"": ""os"", ""is_l2_double_buffering"": true, ""l0_K_tiling_factor"": 1, ""l0_M_tiling_factor"": 2, ""l0_N_tiling_factor"": 2, ""l1_loop_order"": ""knm"", ""l1_tile_K"": 64, ""l1_tile_M"": 32, ""l1_tile_N"": 32, ""l2_loop_order"": ""knm"", ""l2_tile_K"": 512, ""l2_tile_M"": 128, ""l2_tile_N"": 256}",upstream_cpu_replay
