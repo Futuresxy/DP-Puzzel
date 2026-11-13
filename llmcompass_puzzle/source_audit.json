@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "upstream_commit": "2e015fd2ee750e6cad8d7152df52551e5b41ef20",
+  "source_sha256": {
+    "LICENSE": "fc6d95c0d7e137e183a8341b453a7959f1f670558acf0a57c03de83a329ac32f",
+    "configs/GA100.json": "53a1274a0e4854729376cdb41d38f53eb8c58fa2b87d9185c3e85b6c876e901b",
+    "hardware_model/compute_module.py": "4f3ca9d14be5b1d58c9aa7e6557ec0de5d3d944d4d91ae9ac4539e162f0eeea3",
+    "hardware_model/io_module.py": "fa1c37da2590c9b36a2198a60935cf6091d9d2deeb4f59937785ae465c1c5862",
+    "hardware_model/memory_module.py": "1505cf985a4f2da2e09aff3400edb6b05a2dfdb70be08eff822a885eebf88871",
+    "software_model/matmul.py": "5e2d7db2385483f1e4bacb8764ebf59cc77f7db6fc9513321433766e0f0e63f6",
+    "software_model/utils.py": "dce51ba9b08698530a91702b628d1961839a2796454cc2923d574dd39fa8fec9",
+    "software_model/transformer.py": "cc3c316b7421fe1a4089880e1c542a5f832034f2ae32ec8633cf967d9da51c47",
+    "software_model/softmax.py": "ad280bb885f519fc23973422a08ec14c223f94bab06b80238abe8dc09aff76db",
+    "software_model/layernorm.py": "acff948744dbc75653caa9b3a6618bc4e078647ff93b3988f187e91a1bbcaf6a",
+    "software_model/gelu.py": "0d0404a7bb1942b5f21f172f3fadc606f4a566c0e370e201b5c8dce1a0f29320",
+    "software_model/communication_primitives.py": "55b4a46c3696bb8b4af44bf555b9e0495efd5d6dc7905a43027477e0de285cf0",
+    "cost_model/cost_model.py": "8081123b0d317330bee36cda58eed597652b9c64251e0142f674277b5139bf54",
+    "design_space_exploration/dse.py": "a08b12af03b6392e998fad219501ffb3f814fe97d0a8cd7df3351f891932b71c"
+  },
+  "inspection": "Static source inspection, not simulation validation",
+  "findings": [
+    {
+      "id": "baseline_split",
+      "files": [
+        "configs/GA100.json",
+        "hardware_model/compute_module.py"
+      ],
+      "finding": "JSON has 128 running cores/48 MiB global buffer; built-in A100 has 108/40 MiB. Physical and enabled resources must be distinct."
+    },
+    {
+      "id": "vector_cost_coupling",
+      "files": [
+        "design_space_exploration/dse.py",
+        "cost_model/cost_model.py"
+      ],
+      "finding": "Throughput vector_width/flop_per_cycle and ALU area counts are separate fields; changes need consistent resource bundles."
+    },
+    {
+      "id": "tensor_cycle_scaling",
+      "files": [
+        "software_model/matmul.py"
+      ],
+      "finding": "Cycle backend uses utilization shortcuts or SCALE-Sim lookup, then divides total scalar cycles by mac_per_clock; native-K DP integration requires a distinct latency-aware hook."
+    },
+    {
+      "id": "packing",
+      "files": [
+        "software_model/utils.py",
+        "design_space_exploration/dse.py"
+      ],
+      "finding": "Only int8/fp16/fp32 in default types; integer bitwidth//8 template conversion cannot represent FP4 plus block scales. Operand/storage/output layouts must be separate."
+    },
+    {
+      "id": "memory",
+      "files": [
+        "software_model/matmul.py",
+        "hardware_model/compute_module.py"
+      ],
+      "finding": "HBM and chip-global L2 transfers, tile reuse and double buffering exist; SM SRAM has capacity but no separate measured collector/RF bandwidth."
+    },
+    {
+      "id": "power",
+      "files": [
+        "hardware_model/compute_module.py",
+        "cost_model/cost_model.py",
+        "design_space_exploration/dse.py"
+      ],
+      "finding": "Reviewed modules do not supply a whole-chip runtime power estimator; DP evidence is only one component."
+    },
+    {
+      "id": "search_porting",
+      "files": [
+        "design_space_exploration/dse.py"
+      ],
+      "finding": "Use enumeration/filter/mapper strategy, not the script unchanged: cost imports are commented, active core updates are separate from physical area count, best_arch_specs aliases the mutable current config, and layer-count normalization differs between filters."
+    },
+    {
+      "id": "workload",
+      "files": [
+        "software_model/transformer.py",
+        "software_model/communication_primitives.py"
+      ],
+      "finding": "Dense TP transformer and all-reduce are available; DeepSeek MoE/compressed attention/quantization and all-to-all require adapters."
+    }
+  ],
+  "symbols": {
+    "hardware_model/compute_module.py": [
+      {
+        "symbol": "VectorUnit",
+        "line": 5
+      },
+      {
+        "symbol": "SystolicArray",
+        "line": 34
+      },
+      {
+        "symbol": "Core",
+        "line": 59
+      },
+      {
+        "symbol": "ComputeModule",
+        "line": 118
+      }
+    ],
+    "hardware_model/io_module.py": [],
+    "hardware_model/memory_module.py": [],
+    "software_model/matmul.py": [
+      {
+        "symbol": "Matmul",
+        "line": 122
+      },
+      {
+        "symbol": "compile_and_simulate",
+        "line": 57
+      },
+      {
+        "symbol": "compile_and_simulate",
+        "line": 275
+      },
+      {
+        "symbol": "simulate_systolic_array_cycle_count",
+        "line": 1357
+      }
+    ],
+    "software_model/utils.py": [],
+    "software_model/transformer.py": [
+      {
+        "symbol": "compile_and_simulate",
+        "line": 194
+      },
+      {
+        "symbol": "compile_and_simulate",
+        "line": 551
+      }
+    ],
+    "software_model/softmax.py": [
+      {
+        "symbol": "compile_and_simulate",
+        "line": 66
+      }
+    ],
+    "software_model/layernorm.py": [
+      {
+        "symbol": "compile_and_simulate",
+        "line": 75
+      }
+    ],
+    "software_model/gelu.py": [
+      {
+        "symbol": "compile_and_simulate",
+        "line": 63
+      }
+    ],
+    "software_model/communication_primitives.py": [],
+    "cost_model/cost_model.py": [
+      {
+        "symbol": "calc_systolic_array_area_mm2",
+        "line": 91
+      },
+      {
+        "symbol": "calc_compute_chiplet_area_mm2",
+        "line": 205
+      },
+      {
+        "symbol": "calc_io_die_area_mm2",
+        "line": 272
+      }
+    ],
+    "design_space_exploration/dse.py": [
+      {
+        "symbol": "template_to_system",
+        "line": 28
+      },
+      {
+        "symbol": "find_cheapest_design",
+        "line": 125
+      }
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "status": "design_only",
+  "research_focus": "prefill_first_bidirectional_ratio_dse",
+  "legacy_line": "ratio_dse preserved",
+  "questions": [
+    "ratio_only_regression",
+    "bottleneck_and_adaptation",
+    "cooptimized_gain_over_baseline",
+    "precision_migration_and_ratio_selection"
+  ],
+  "precision_plans": [
+    "baseline",
+    "step1",
+    "step2",
+    "step3"
+  ],
+  "quality_policy": "out_of_scope",
+  "reference": {
+    "sku": "A100_80GB_SXM",
+    "upstream_active_sms": 108,
+    "physical_sms": 128,
+    "clock_hz": 1410000000,
+    "l2_enabled_mib": 40,
+    "hbm_bandwidth_bytes_s": 2039000000000,
+    "l2_bandwidth_bytes_cycle": 5120,
+    "hbm_capacity_bytes": 80000000000
+  },
+  "dp_anchor": {
+    "common_clock_hz": 1000000000,
+    "physical_dp_shape": [
+      4,
+      4
+    ],
+    "arrays_per_sm": 4,
+    "anchor": "same_bf16_peak_per_sm_at_common_clock",
+    "area_policy": "replace_tensor_component_only"
+  },
+  "process": {
+    "source": "N12",
+    "proxy_source_node_nm": 14,
+    "target_node_nm": 7,
+    "area_divisor": 7.273,
+    "delay_divisor": 1.132,
+    "energy_divisor": 1.727,
+    "leakage_scaling": null,
+    "status": "analytical_process_proxy"
+  },
+  "search_stages": [
+    {
+      "id": "ratio_only",
+      "variables": [
+        "dp_profile"
+      ],
+      "fixed": [
+        "shape",
+        "sm_count",
+        "vector",
+        "memory"
+      ]
+    },
+    {
+      "id": "coadapt",
+      "variables": [
+        "dp_profile",
+        "vector_bundle",
+        "sm_count",
+        "l2_bundle",
+        "hbm_bundle",
+        "sram_bundle"
+      ]
+    },
+    {
+      "id": "migration",
+      "variables": [
+        "precision_plan",
+        "dp_profile"
+      ],
+      "quantization": "norm_fusion_when_legal_with_incremental_reduction_conversion_scale_cost"
+    }
+  ],
+  "future_scenarios": [
+    "context_length",
+    "batch",
+    "active_experts",
+    "expert_skew",
+    "precision_plan"
+  ],
+  "decode_policy": "secondary_control",
+  "power_policy": "DP_caps_are_partial_until_non_DP_power_is_characterized",
+  "inputs": [
+    "ratio_dse/configs/area/dp_n12_20261112.lock.json",
+    "ratio_dse/configs/compute/v4_prefill.json",
+    "ratio_dse/configs/compute/v41_prefill.json"
+  ],
+  "executable_area_config": "llmcompass_puzzle/configs/characterize.json"
+}

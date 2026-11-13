@@ -1,0 +1,9 @@
+test_area_energy_scaling_does_not_invent_leakage_or_timing (test_integration.IntegrationTests.test_area_energy_scaling_does_not_invent_leakage_or_timing) ... ok
+test_exact_tensor_replacement_and_enabled_core_accounting (test_integration.IntegrationTests.test_exact_tensor_replacement_and_enabled_core_accounting) ... ok
+test_upstream_scalesim_and_mapper_run_on_cpu (test_integration.IntegrationTests.test_upstream_scalesim_and_mapper_run_on_cpu) ... ok
+test_vector_gain_has_alu_and_rf_area_cost (test_integration.IntegrationTests.test_vector_gain_has_alu_and_rf_area_cost) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 10.068s
+
+OK

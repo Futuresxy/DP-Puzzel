@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "stage": "S1_area_characterization",
+  "dp_evidence": "ratio_dse/configs/area/dp_n12_20261112.lock.json",
+  "common_clock_hz": 1000000000,
+  "physical_dp_shape": [
+    4,
+    4
+  ],
+  "arrays_per_sm": 4,
+  "vector_scales": [
+    0.5,
+    1,
+    2
+  ],
+  "extra_tensor_mm2_per_sm": 0,
+  "process": {
+    "source": "N12",
+    "proxy_source_node_nm": 14,
+    "target_node_nm": 7,
+    "area_divisor": 7.273,
+    "delay_divisor": 1.132,
+    "energy_divisor": 1.727,
+    "leakage_scaling": null,
+    "status": "analytical_process_proxy"
+  }
+}
