@@ -34,6 +34,37 @@ DP/SM = subcores_per_core × tensorcores_per_subcore × m_array × n_array
 
 这三份是 256 DP 的解析实验配置。采用同一 DP、时钟、面积比例及零阵列增量时，基线面积和逐格式理想峰值相同。每个 TensorCore 按自己的形状计算广播和供数，各 TensorCore 的需求在 SM/AICore 层求和。计算模型也按单个 TensorCore 的 M/N 形状做 tiling。等带宽横向比较时可显式指定同一个 `input_budget_bytes_s`，避免各布局各自派生预算。
 
+## 建模架构与带宽边界
+
+```text
+单 DP 的面积、native K、L、II、格式布局和功耗记录
+  → TensorCore 的 M/N 形状、广播组和每拍发射量
+  → SM/AICore 的 TensorCore 数、固定外围面积和本地供数需求
+  → 同面积预算下的整数 SM 数、分精度峰值和供数余量
+  → GEMM 模型 / DSE 按工作负载估算时间
+```
+
+面积模型在给定频率下用 `每 SM DP 数 × native_k / II × 频率` 算各精度峰值。DP 的 `L` 记录在 profile 中供时序模型使用。面积阶段的供数判断是**持续按 II 发射时，A/B 的平均供数是否够用**，计算和搬移的时间由下游根据具体 GEMM 求得。
+
+当前带宽的计量切面是**每 SM 的本地操作数源向 TensorCore 输入侧交付预格式化 A/B 的有效带宽**。这个抽象端口可用具体硬件上对应的数据路径来标定。shared memory、collector/驻留缓冲和阵列内部端口在当前模型里合用一个有效供数切面，各自的带宽、容量、bank conflict 和链路时延尚无独立参数。跨 SM 互连和 HBM 属于上游路径。[TensorCore 存储与调度合同](../../src/spec/tensorcore/README.md#3-后续必须完成的合同)
+
+每个格式先按 native K、打包、scale 和元数据求一个向量的字节数，再乘同次发射需要的独立 A/B 向量数。A 在同一行广播，B 在同一列广播，跨组共享由 `broadcast_model` 的两个开关决定。面积模型还接受 A、B 各自的**平均时间复用次数**。
+
+```text
+每 SM A/B 满速需求 = TensorCore/SM × 频率 / II
+                  × (A 向量数 × A 向量字节 / A 复用次数
+                   + B 向量数 × B 向量字节 / B 复用次数)
+```
+
+例如，四个 `16×4` TensorCore、`4×4` 广播组、1 GHz、基线 MXFP4 K=64 时，一个 A 或 B 向量为 32 B 数据加 2 B scale。无跨组共享时，每阵列每次发射读 16 份 A 和 16 份 B，满速需求是 **4.352 TB/s/SM**。若 A 在同一带宽切面平均装入一次、消费两次，B 仍逐次装入，则平均需求变成 **3.264 TB/s/SM**。这项参数只折算带宽需求。实现这种复用需要相同 A 的 tile 连续或重叠驻留，并满足缓冲容量与访问端口条件。C/D 流量单列。面积表里的 `dp_d_stream_bytes_s_per_core` 是持续发射时 DP 的 D 端口流量，GEMM 的最终写回按完成的输出 tile 另计。
+
+| 场景 | 如何用带宽 |
+|---|---|
+| `equal_array` | 固定单 TensorCore 形状及每 SM 的数量。输出逐模式满速需求、预算余量和 `saturation_feasible`，保留供数低于峰值需求的候选。当前精度迁移图用此场景，再由 DSE 按选定带宽计算运行时间。 |
+| `equal_input_bandwidth` | 用固定的每 SM 输入预算，要求 `supported_format_set` 内各模式都通过满速门槛。可在一个 shape 上筛选 DP 配比，也可枚举多个 `legal_shapes`。这个门槛适用于目标是持续满速发射的场景。 |
+
+例如，固定 `4×16×4`、各模式默认复用次数为 1、预算 **8 TB/s/SM** 时，BF16、MXFP8、MXFP4 都满速的候选是 `1:2:4` 和 `1:2:6`。如果系统允许等操作数 ready，用 `equal_array` 保留其余配比，再比较带等待的 GEMM 时间。阵列驻留、ping-pong 及其硬件面积需要单独给定，本模型通过 `array_extra_area_um2` 接收已知增量。[供数公式与门槛实现](model.py#L130) · [下游数据搬移与计算](../compute_model/README.md#建模架构与周期)
+
 ## Inputs
 
 | 参数或字段 | 说明 |

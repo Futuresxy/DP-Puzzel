@@ -2,6 +2,8 @@
 
 [单张矢量图](../../../../../paper/figures/dse_precision_selection.pdf) · [图中数据](figure_cells.csv) · [绘图来源](figure_manifest.json) · [复算命令](../../../../dse/README.md#precision-migration--chip-selection)
 
+这份记录保留原 24 方案的消融。当前主图使用 [四个累积方案](../staged_migration/README.md)。
+
 前一轮扫描对路由专家的 W4A8/W4A4 方案比较了全部九种配比，其余迁移方案只比较了三个固定部署。这次在同一面积预算、1 GHz 和 4×16×4 DP/SM 组织下，将 **24 个精度方案与九种芯片配比完整交叉**。V4 用全量 prefill，V4.1 用简化 CED。两者均为 batch 1、2,048 tokens，各扫六个本地读带宽点和三个 DP 功率条件（无上限、150 W、250 W），共 7,776 次评价、864 个配比比较组。
 
 上方堆叠条显示每个方案的 BF16/MXFP8/MXFP4 有用 MAC 占比。下方两组矩阵显示无 DP 功率上限和 150 W 时的最快配比，横轴与上方的迁移方案对齐，纵轴为每 SM 本地读带宽。星号表示次优配比的时延相对最快者高不到 1%，方框标出 4 TB/s 的比较行。250 W 与其余方案可在复算结果的 `selections.csv` 中查到。

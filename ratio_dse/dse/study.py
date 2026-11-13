@@ -21,6 +21,7 @@ Q = "mxfp8_e4m3"
 E = "mxfp4_e2m1"
 CATEGORIES = {"attention_core", "attention_projection", "shared_or_dense_ffn", "routed_expert"}
 PROJECTIONS = {"q_down", "q_up", "o_final", "window_kv", "swa_kv"}
+ATTENTION_PRODUCTS = {"swa.qk", "swa.pv", "csa.qk", "csa.pv"}
 
 
 def make_cases(config):
@@ -35,24 +36,38 @@ def make_cases(config):
 
 
 def build_plan(workload, choice):
+    """Build one of the original factorial sensitivity plans."""
     expert, grouped, linear, attention = choice
+    name = "+".join(filter(None, [
+        "expert_fp4" if expert else "expert_fp8",
+        "grouped_" + ("fp8" if grouped == Q else "fp4") if grouped else "",
+        "linears_fp4" if linear else "", "attention_fp8" if attention else "",
+    ]))
+    return build_gemm_plan(workload, name, routed_fp4=expert, grouped_format=grouped, shared_fp4=linear,
+                           projections_fp4=linear, attention_fp8=attention)
+
+
+def build_gemm_plan(workload, name, *, routed_fp4=False, grouped_format=None, shared_fp4=False,
+                    projections_fp4=False, attention_fp8=False):
+    """Resolve operator-specific precision choices at the preformatted local boundary."""
     rules = []
     for op in workload["operators"]:
-        name = op["operator"]
+        operator = op["operator"]
+        category = op["category"]
         mode = None
         path = "preformatted_inputs_at_local_boundary"
         weight_storage = None
-        if op["category"] == "routed_expert":
-            mode = E if expert else Q
-            if not expert:
+        if category == "routed_expert":
+            mode = E if routed_fp4 else Q
+            if not routed_fp4:
                 path = "w4a8_materialized_weight_expansion_before_local_boundary"
                 weight_storage = "fp4"
-        elif name == "o_group" and grouped:
-            mode = grouped
-        elif linear and op["precision_label"] == "FP8" and (
-                name in PROJECTIONS or op["category"] == "shared_or_dense_ffn"):
+        elif operator == "o_group" and grouped_format:
+            mode = grouped_format
+        elif op["precision_label"] == "FP8" and (
+                (projections_fp4 and operator in PROJECTIONS) or (shared_fp4 and operator.startswith("moe.shared."))):
             mode = E
-        elif attention and name.startswith(("swa.", "csa.")):
+        elif attention_fp8 and operator in ATTENTION_PRODUCTS:
             mode = Q
         if mode is None:
             continue
@@ -60,11 +75,6 @@ def build_plan(workload, choice):
             "format_id": mode, "weight_storage_format": weight_storage or mode,
             "activation_storage_format": mode, "execution_path": path, "conversion": {"kind": "offline"},
         }})
-    name = "+".join(filter(None, [
-        "expert_fp4" if expert else "expert_fp8",
-        "grouped_" + ("fp8" if grouped == Q else "fp4") if grouped else "",
-        "linears_fp4" if linear else "", "attention_fp8" if attention else "",
-    ]))
     return resolve_plan(workload, {"schema_version": 1, "name": name, "format_proxies": {"fp8": Q, "fp4": E},
                                    "rules": rules})
 

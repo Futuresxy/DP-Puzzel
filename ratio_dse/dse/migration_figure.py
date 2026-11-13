@@ -12,8 +12,9 @@ from matplotlib.patches import Patch, Rectangle
 
 from ..common import digest, json_text, path_label, read_json, require
 from .figures import MODELS, PAPER_WIDTH_IN, STYLE, load, save
+from .migration_selection import STAGED_LABELS
 
-PLANS = (
+FACTORIAL_PLANS = (
     ("expert_fp8", "Base"),
     ("expert_fp8+grouped_fp8", "O-down 8"),
     ("expert_fp8+grouped_fp4", "O-down 4"),
@@ -45,7 +46,7 @@ def _work_mix(ax, cells):
     ax.tick_params(axis="x", bottom=False, labelbottom=False)
 
 
-def _ratio_grid(ax, plan_rows, rates, anchor, show_plans):
+def _ratio_grid(ax, plan_rows, rates, anchor, plans, show_plans):
     for y, bandwidth in enumerate(rates):
         for x, row in enumerate(plan_rows[bandwidth]):
             winner = row["winner_ratio"]
@@ -55,10 +56,10 @@ def _ratio_grid(ax, plan_rows, rates, anchor, show_plans):
             label = (winner + ("*" if near else "")) if winner else "–"
             ax.text(x, y, label, ha="center", va="center", fontsize=8.1, color="#202d38")
     if anchor in rates:
-        ax.add_patch(Rectangle((-.5, rates.index(anchor) - .5), len(PLANS), 1, fill=False,
+        ax.add_patch(Rectangle((-.5, rates.index(anchor) - .5), len(plans), 1, fill=False,
                                edgecolor="#536677", linewidth=.75, zorder=3, clip_on=False))
     ax.set(ylim=(-.5, len(rates) - .5), yticks=range(len(rates)), yticklabels=[f"{rate:g}" for rate in rates])
-    ax.set_xticks(range(len(PLANS)), [label for _, label in PLANS])
+    ax.set_xticks(range(len(plans)), [label for _, label in plans])
     ax.tick_params(axis="x", bottom=False, labelbottom=show_plans, pad=4)
     ax.tick_params(axis="y", length=0, pad=3)
     for spine in ax.spines.values():
@@ -67,17 +68,19 @@ def _ratio_grid(ax, plan_rows, rates, anchor, show_plans):
 
 def run(run_dir, pdf, evidence, cap):
     manifest = read_json(run_dir / "manifest.json")
+    plan_set = manifest["config"].get("migration_plan_set", "factorial")
+    plans = STAGED_LABELS if plan_set == "staged" else FACTORIAL_PLANS
     rates = sorted(manifest["config"]["local_read_tb_s_per_core"])
     anchor = manifest["config"]["anchor_local_tb_s"]
     rows = load(run_dir, manifest, "selections.csv")
-    plan_names = {plan for plan, _ in PLANS}
+    plan_names = {plan for plan, _ in plans}
     caps = ("", float(cap))
     cells = {
         (row["model"], row["plan"], float(row["local_tb_s"]), float(row["cap_w"]) if row["cap_w"] else ""): row
         for row in rows if row["model"] in MODELS and row["plan"] in plan_names
         and (not row["cap_w"] or float(row["cap_w"]) == cap)
     }
-    require(len(cells) == len(MODELS) * len(PLANS) * len(rates) * len(caps),
+    require(len(cells) == len(MODELS) * len(plans) * len(rates) * len(caps),
             "selected figure cohorts do not match the run's bandwidth and power-cap grid")
 
     plt.style.use(STYLE)
@@ -86,8 +89,8 @@ def run(run_dir, pdf, evidence, cap):
     exported = []
     for j, model in enumerate(MODELS):
         mix = fig.add_subplot(layout[0, j])
-        mix.set(xlim=(-.5, len(PLANS) - .5), title=f"({chr(97 + j)}) {model.removeprefix('DeepSeek-')}")
-        _work_mix(mix, [cells[model, plan, float(rates[0]), ""] for plan, _ in PLANS])
+        mix.set(xlim=(-.5, len(plans) - .5), title=f"({chr(97 + j)}) {model.removeprefix('DeepSeek-')}")
+        _work_mix(mix, [cells[model, plan, float(rates[0]), ""] for plan, _ in plans])
         mix.spines[["top", "right"]].set_visible(False)
         if j == 0:
             mix.set_ylabel("Useful MACs (%)")
@@ -96,8 +99,8 @@ def run(run_dir, pdf, evidence, cap):
         for i, budget in enumerate(caps, start=1):
             ax = fig.add_subplot(layout[i, j], sharex=mix)
             ax.set_title("Uncapped DP" if not budget else f"{budget:g} W DP cap", pad=5)
-            plan_rows = {rate: [cells[model, plan, float(rate), budget] for plan, _ in PLANS] for rate in rates}
-            _ratio_grid(ax, plan_rows, rates, anchor, show_plans=i == len(caps))
+            plan_rows = {rate: [cells[model, plan, float(rate), budget] for plan, _ in plans] for rate in rates}
+            _ratio_grid(ax, plan_rows, rates, anchor, plans, show_plans=i == len(caps))
             if j == 0:
                 ax.set_ylabel("Local read BW (TB/s)")
             else:
@@ -114,17 +117,22 @@ def run(run_dir, pdf, evidence, cap):
 
     evidence.mkdir(parents=True, exist_ok=True)
     data = evidence / "figure_cells.csv"
-    with data.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]), lineterminator="\n")
-        writer.writeheader()
-        writer.writerows(exported)
+    tables = {"figure_cells.csv": exported}
+    if plan_set == "staged":
+        tables["step_moves.csv"] = load(run_dir, manifest, "step_moves.csv")
+    for name, contents in tables.items():
+        with (evidence / name).open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(contents[0]), lineterminator="\n")
+            writer.writeheader()
+            writer.writerows(contents)
     (evidence / "figure_manifest.json").write_text(json_text({
         "schema_version": 1, "plot_script": path_label(__file__), "plot_script_sha256": digest(__file__),
         "style_sha256": digest(STYLE), "matplotlib_version": matplotlib.__version__,
         "study_manifest_sha256": digest(run_dir / "manifest.json"),
         "study_selections_sha256": manifest["outputs_sha256"]["selections.csv"],
         "pdf": path_label(pdf), "pdf_sha256": digest(pdf), "figure_cells_sha256": digest(data),
-        "workloads": MODELS, "plan_order": [plan for plan, _ in PLANS], "power_caps_w": [None, cap],
+        "published_tables_sha256": {name: digest(evidence / name) for name in tables},
+        "workloads": MODELS, "plan_set": plan_set, "plan_order": [plan for plan, _ in plans], "power_caps_w": [None, cap],
         "local_read_bandwidth_tb_s": rates, "highlighted_bandwidth_tb_s": anchor, "runner_up_marker_pct": 1,
     }) + "\n", encoding="utf-8")
 

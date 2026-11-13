@@ -2,7 +2,7 @@
 
 **2026-11-13 · N12 DP evidence · analytical chip/GEMM results.** The study evaluated **2,196 candidates** from nine DP ratios, 27 physical profile/layout combinations and eight workload cases. The fixed-deployment sweep tested 24 precision plans per operating point and checked 414 paired migrations. The anchor uses batch 1 and 2,048-token prefill. V4-Flash uses the full prefill path and V4.1-Flash uses the simplified CED path. Their modeled scopes cover **97.16%** and **99.42%** of their respective ledger GEMM MACs. Compare changes within each workload. [Study config](../../../configs/dse/deepseek_study.json) · [Anchor data](figures/anchor_evidence.csv) · [Validation record](figures/validation.json)
 
-The [precision-plan × chip-ratio extension](migration_selection/README.md) evaluates all 24 plans on all nine profiles. A single figure pairs each plan's workload mix with the fastest ratio across bandwidth and DP-budget conditions.
+The [staged precision-plan study](staged_migration/README.md) compares four cumulative plans on all nine profiles and reports the conversion budget at each step. The [earlier factorial extension](migration_selection/README.md) evaluates 24 independent choices.
 
 ## Power and energy
 
