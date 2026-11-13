@@ -1,0 +1,25 @@
+{
+  "input": "llmcompass_puzzle/runs/system-audit-20261113-v4/area_fitted_resources.csv",
+  "input_sha256": "070cba1a323fcd02abae25eda0c4845d3941160897fb0a7e8bd7707d067070e4",
+  "script_sha256": "f7b621e465d9d31086a36e0cf1c44e6ac3d87d795ced80b8a4c6f8dfeb47555a",
+  "style_sha256": "d72aad2a78880e7f548384bd45118a749bddfd540f6070b7260f0cf10380368f",
+  "pdf": "paper/figures/llmcompass_system_resource_tradeoff.pdf",
+  "pdf_sha256": "2992456157f9ef2a7b70c04c23bad60f66cd36148ca2fc7223f7b28c2f510fec",
+  "matplotlib_version": "3.11.2",
+  "ratio": "1:2:4",
+  "normalized_to": {
+    "matrix_tflops": "221.184",
+    "vector_tflops": "55.296"
+  },
+  "matrix_normalized": [
+    1.1203703703703705,
+    1.0,
+    0.8055555555555555
+  ],
+  "vector_normalized": [
+    0.5601851851851852,
+    1.0,
+    1.611111111111111
+  ],
+  "scope": "area-feasible peak capacities, not inference latency or calibrated power"
+}

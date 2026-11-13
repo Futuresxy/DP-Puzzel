@@ -4,6 +4,8 @@
 
 **当前已完成 S1 接入验证**：真实调用固定版本 LLMCompass 成本模型，接入九种实测 DP 的工艺代理/面积替换；运行原始 A100 的 SCALE-Sim、GEMM mapper 与 Softmax CPU 仿真。尚未接入多精度 DP 时序及 DeepSeek 完整算子图，**本阶段没有端到端推理加速结论**。
 
+后续已增加[系统参数与功率约束方案](SYSTEM_PARAMETERS.md)、可执行的量化工作量/窗口功率准入接口及[系统资源审计](records/system-audit-20261113/README.md)。这些接口尚未连接完整推理时序；非DP功率未知项不会被当作零功耗放行。
+
 ## 运行
 
 从项目根目录执行；Python 3.11+，CPU 即可，不需要 CUDA、GPU 或 PyTorch。首次安装需要访问公共 Git/Python 包仓库。
@@ -62,6 +64,7 @@ S1 系统基线固定在 `backend.baseline_config()`：128 个物理 SM、108 �
 ## 实验与后续接口
 
 - [四个问题与成对实验](EXPERIMENTS.md)：只改配比→瓶颈→协同最优→精度迁移；同预算优化基线；融合 Norm 的量化增量。
+- [系统参数、量化与功率](SYSTEM_PARAMETERS.md)：主搜索变量、W4A8基线开销、运行时并发限制、功率/能耗区间和可执行接口。
 - [系统设计及 S2–S5 验收](DESIGN.md)：多精度 ArrayService、混合精度字节、算子图、通信、分层调度、两方向选择与功率边界。
 - [S1 运行记录](records/s1-20261113/README.md)：本阶段实际结果、测试和局限。
 - [依赖锁](../dependencies/llmcompass.json)、[源码审查](source_audit.json)、[硬件证据](../ratio_dse/configs/area/dp_n12_20261112.lock.json)、[现有负载解析](../ratio_dse/compute_model/README.md)。

@@ -1,0 +1,19 @@
+{
+  "run": "llmcompass_puzzle/runs/system-audit-20261113-v4",
+  "command": "llmcompass_puzzle/.venv/bin/python -m llmcompass_puzzle.system_audit --output llmcompass_puzzle/runs/system-audit-20261113-v4",
+  "tests_passed": 10,
+  "test_command": "llmcompass_puzzle/.venv/bin/python -W ignore::ResourceWarning -m unittest discover -s llmcompass_puzzle/tests -v",
+  "test_sources_sha256": {
+    "llmcompass_puzzle/tests/test_integration.py": "ffb826c32ac0f5a12bf675f3cd11eb2b716a9f5b3e3ce835ccee1640a692e707",
+    "llmcompass_puzzle/tests/test_system_contract.py": "3a551ce204fe93a723150e6db75ac2a56a2adb11b99691f7e54b67644d049ab8"
+  },
+  "files_sha256": {
+    "area_fitted_resources.csv": "070cba1a323fcd02abae25eda0c4845d3941160897fb0a7e8bd7707d067070e4",
+    "resource_observations.json": "e4c9ae4bee8e387561820df152dd70195a7f0928fed0943451a2625e9c0bf063",
+    "contract_examples.json": "76c030642ca468d0d17e12eeaa5e37804214b79c4d6a5d6032349fef9bc34562",
+    "manifest.json": "53a0332086b38efcc3a52fba211bd23d33cc72f310a3b15d738d85c01af91b95",
+    "tests.txt": "c397a08f3a5f29279abb9f63161bff95009760e5394c8aa93664cf4276a94e3e"
+  },
+  "inference_latency_simulated": false,
+  "hardware_power_calibrated": false
+}
