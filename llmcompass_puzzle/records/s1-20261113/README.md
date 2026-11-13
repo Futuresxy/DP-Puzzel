@@ -35,6 +35,6 @@ llmcompass_puzzle/.venv/bin/python -W ignore::ResourceWarning -m unittest discov
 
 ## 下一阶段与校准边界
 
-S2 接入 native-K、L8/II1、尾部、累加反馈和不同格式真实字节；S3 接 DeepSeek prefill 图及合法 Norm 融合量化增量、非 GEMM 和通信；S4 才运行四个成对研究问题。主图见 [实验协议](../../EXPERIMENTS.md)。
+S2 接入 native-K、L8/II1、尾部、累加反馈和不同格式真实字节；S3 接 DeepSeek prefill 图及合法 Norm 融合量化增量、非 GEMM 和通信；S4 才运行四个成对研究问题。主图见 [当前受控实验协议](../../MOE_STUDY.md)。
 
 校准先在同 SKU/时钟下对持出 GEMM/Softmax 的独立设备 trace 或可信公开 kernel 数据比较，分开 launch、缓存状态与映射误差；新 DP 阵列时序/供数、N7 工艺和整芯片功率需分别表征，不能继承上游验证精度。当前未进行 GPU 测量，也不宣称满足 A100 400W 整卡功率约束。

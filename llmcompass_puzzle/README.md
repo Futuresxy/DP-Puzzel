@@ -1,5 +1,7 @@
 # LLMCompass-Puzzle：多精度配比与系统参数协同设计
 
+**交接与迁移入口：[handoff.md](handoff.md)**。统一命令为 `python -m llmcompass_puzzle`；包含固定上游源码的整合包由 `export` 生成。
+
 本目录是与 `ratio_dse/` **并行、独立**的研究主线，保留原模型和实验。以 prefill 为主、decode 为对照，研究在面积、存储和可用功率预算下，如何共同选择 Tensor 精度配比、vector、存储/带宽及模型精度迁移方案。
 
 **已完成 S1 接入验证**：真实调用固定版本 LLMCompass 成本模型，接入九种实测 DP 的工艺代理/面积替换；运行原始 A100 的 SCALE-Sim、GEMM mapper 与 Softmax CPU 仿真。S1 验证的是上游标量时序，未包含 DeepSeek 完整算子图，**本阶段没有端到端推理加速结论**。
@@ -43,7 +45,7 @@ SCALE-Sim 在部分 Python 警告配置下会报告上游 topology 文件句柄�
 
 ## 当前可执行输入
 
-[characterize.json](configs/characterize.json) 是 S1 可执行配置。[study_plan.json](configs/study_plan.json) 是后续 DSE 的声明式研究计划，不能作为推理仿真配置使用。
+[characterize.json](configs/characterize.json) 是 S1 面积配置；[moe_system_study.json](configs/moe_system_study.json) 是当前系统 DSE 配置。已删除被替代的 design-only 计划，统一研究顺序见 [交接文档](handoff.md)。
 
 | 字段 | 单位、含义和限制 |
 |---|---|
@@ -75,7 +77,7 @@ S1 系统基线固定在 `backend.baseline_config()`：128 个物理 SM、108 �
 
 ## 实验与后续接口
 
-- [四个问题与成对实验](EXPERIMENTS.md)：只改配比→瓶颈→协同最优→精度迁移；同预算优化基线；融合 Norm 的量化增量。
+- [受控研究与交接](handoff.md)：固定资源改配比、同预算协同、固定硬件迁移；当前状态、复现和下一步验收。
 - [系统参数、量化与功率](SYSTEM_PARAMETERS.md)：主搜索变量、W4A8基线开销、运行时并发限制、功率/能耗区间和可执行接口。
 - [系统设计及 S2–S5 验收](DESIGN.md)：多精度 ArrayService、混合精度字节、算子图、通信、分层调度、两方向选择与功率边界。
 - [S1 运行记录](records/s1-20261113/README.md)：本阶段实际结果、测试和局限。

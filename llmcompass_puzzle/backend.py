@@ -13,14 +13,33 @@ from ratio_dse.common import ROOT, digest, require
 LOCK = ROOT / "dependencies/llmcompass.json"
 
 
+def verify_source_snapshot(path, lock):
+    """Verify a portable source export without pretending it is a Git checkout."""
+    snapshot = json.loads((path / ".puzzle-source.json").read_text())
+    require(snapshot['schema_version'] == 1 and snapshot['commit'] == lock['commit'],
+            'portable LLMCompass revision mismatch')
+    require(snapshot['submodules'] == {s['path']: s['commit'] for s in lock['submodules']},
+            'portable submodule revision mismatch')
+    for name, expected in lock['upstream_source_sha256'].items():
+        require(snapshot['files_sha256'].get(name) == expected, f'portable source lock mismatch: {name}')
+    for name, expected in snapshot['files_sha256'].items():
+        relative = Path(name)
+        require(not relative.is_absolute() and '..' not in relative.parts, 'unsafe snapshot path')
+        require(digest(path / relative) == expected, f'modified portable source: {name}')
+
+
 def upstream():
     lock = json.loads(LOCK.read_text())
     path = ROOT / lock["directory"]
-    head = subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()
-    require(head == lock["commit"], "LLMCompass checkout does not match its fixed revision")
+    portable = (path / '.puzzle-source.json').is_file() and not (path / '.git').exists()
+    if portable:
+        verify_source_snapshot(path, lock)
+    else:
+        head = subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()
+        require(head == lock["commit"], "LLMCompass checkout does not match its fixed revision")
     for name, expected in lock["upstream_source_sha256"].items():
         require(digest(path / name) == expected, f"modified upstream source: {name}")
-    for sub in lock["submodules"]:
+    for sub in ([] if portable else lock["submodules"]):
         subhead = subprocess.check_output(["git", "-C", str(path / sub["path"]), "rev-parse", "HEAD"],
                                           text=True).strip()
         require(subhead == sub["commit"], f"submodule revision mismatch: {sub['path']}")

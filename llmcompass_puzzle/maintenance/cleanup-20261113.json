@@ -1,0 +1,389 @@
+{
+  "authorization": "user requested cleanup of historical garbage for continued ratio system DSE",
+  "date": "2026-11-13",
+  "retained_runs": [
+    "s1-reference-20261113-v3",
+    "system-audit-20261113-v4",
+    "moe-system-20261113-v3"
+  ],
+  "removed": [
+    {
+      "path": "llmcompass_puzzle/runs/a100-replay-v1",
+      "reason": "superseded or failed exploratory run; final referenced run retained",
+      "files": {
+        "systolic_array_model/look_up_table_16_16.csv": {
+          "bytes": 86,
+          "sha256": "a821ffa79a99783b726c06e7f29c79199b04f8ffc8780bff3c74d79fb887a16e"
+        },
+        "systolic_array_model/temp/systolic_array_2.cfg": {
+          "bytes": 320,
+          "sha256": "9cc03a237aa522446b7fbfebe640d0a10a9730ef7252c2b7364c83e2a59a303e"
+        },
+        "systolic_array_model/temp/matmul_2.csv": {
+          "bytes": 36,
+          "sha256": "b01beeff29a6266a3184bfc965f230b7d26718cdfcfd3e18a07d4eadea5c89e1"
+        },
+        "systolic_array_model/temp/systolic_array/COMPUTE_REPORT.csv": {
+          "bytes": 147,
+          "sha256": "007058b0bc7aad7e69d2feba4d78273d7ed2286a0942064efb8bb144e512a96d"
+        },
+        "systolic_array_model/temp/systolic_array/BANDWIDTH_REPORT.csv": {
+          "bytes": 232,
+          "sha256": "285dc92d6b821379b6d00194845a84c9eaa60dfae9da769177f1bb7bbe932aaf"
+        },
+        "systolic_array_model/temp/systolic_array/DETAILED_ACCESS_REPORT.csv": {
+          "bytes": 525,
+          "sha256": "551144cdb93b1c9015463de9b1d9f0e4ed5acd87662c8edef29a0bebf0453beb"
+        }
+      }
+    },
+    {
+      "path": "llmcompass_puzzle/runs/a100-replay-v2",
+      "reason": "superseded or failed exploratory run; final referenced run retained",
+      "files": {
+        "a100_replay.csv": {
+          "bytes": 842,
+          "sha256": "bf0dc7613d72f9485d376344caf93a75923a9592c1f7cd2b2dccf80e7dc71a4a"
+        },
+        "manifest.json": {
+          "bytes": 902,
+          "sha256": "f6ef88341d276332b67480349441e6c5f8cf668a5f586de794c2739b07316811"
+        },
+        "systolic_array_model/look_up_table_16_16.csv": {
+          "bytes": 2241,
+          "sha256": "ddc9c253426a4849c91c5f7dd20e781aabc5d5a1543633b88d4c53de3e5e6a9f"
+        },
+        "systolic_array_model/temp/systolic_array_2.cfg": {
+          "bytes": 320,
+          "sha256": "9cc03a237aa522446b7fbfebe640d0a10a9730ef7252c2b7364c83e2a59a303e"
+        },
+        "systolic_array_model/temp/matmul_2.csv": {
+          "bytes": 37,
+          "sha256": "51e97fcf768562625e6fdfb7c0420c731b1399ea13559fea3314fba42f8c9549"
+        },
+        "systolic_array_model/temp/systolic_array/COMPUTE_REPORT.csv": {
+          "bytes": 149,
+          "sha256": "c780309a006b2be9fe3a2daeab029ffda7b3ea69323ea35c2e73c85d3228d3c1"
+        },
+        "systolic_array_model/temp/systolic_array/BANDWIDTH_REPORT.csv": {
+          "bytes": 234,
+          "sha256": "4d951e40e1c6a9bd23708ff47624efb6008953f1e92b4e183ccc83cbcb347152"
+        },
+        "systolic_array_model/temp/systolic_array/DETAILED_ACCESS_REPORT.csv": {
+          "bytes": 531,
+          "sha256": "62d47f2e0edddb0154ea8b338a80ba4203a2b6e6030f8f434d3d4d4ba4ebdfae"
+        }
+      }
+    },
+    {
+      "path": "llmcompass_puzzle/runs/area-integration-v1",
+      "reason": "superseded or failed exploratory run; final referenced run retained",
+      "files": {
+        "normalized_a100.json": {
+          "bytes": 1807,
+          "sha256": "0f0434c929c2f9c21613ebd00ce2db80099dde006f3d588ab820490e2a0efb24"
+        },
+        "a100_area_breakdown.json": {
+          "bytes": 770,
+          "sha256": "3d729291f6d7680f7da94b99bf8e68c014ed8487af7473e9a04c94b3bc72daa1"
+        },
+        "dp_profiles_7nm_proxy.json": {
+          "bytes": 107521,
+          "sha256": "0d09fa2613215e3b860f93e5a9b24e767676c2aa4bf08b0a30928f921a2d783d"
+        },
+        "tensor_vector_area_candidates.csv": {
+          "bytes": 21391,
+          "sha256": "5d688f1e36e9b1c5a5e78ccaee7e7433a6e737b47c388037e4c238faf4da189e"
+        },
+        "manifest.json": {
+          "bytes": 3374,
+          "sha256": "8c8c64968f8ff3d00f5cc3c39c151ee6a531d478169dce89fa677fb3e4c3c64a"
+        }
+      }
+    },
+    {
+      "path": "llmcompass_puzzle/runs/moe-system-20261113-v1",
+      "reason": "superseded or failed exploratory run; final referenced run retained",
+      "files": {
+        "designs.csv": {
+          "bytes": 94450,
+          "sha256": "d02a6c8642fb9ba16ccece38695bc4f3f0c10a1eca4952e3b1b69fc40dd9e36e"
+        },
+        "candidates.csv": {
+          "bytes": 7936893,
+          "sha256": "ad640fafc028351cce6f8c9b7edf120c55fb1ad3e926593514462c895d7713eb"
+        },
+        "operator_breakdown.csv": {
+          "bytes": 118816235,
+          "sha256": "527807e4e3f5c36fff07de34d40c1d13e324d16f477fa82c0481403559ad1f46"
+        },
+        "cost_only_selections.csv": {
+          "bytes": 2553541,
+          "sha256": "2ed21733217de830881f202e863b0a78379b2d3116f6cf9a3b9331a257f9a25f"
+        },
+        "quality_constrained_selections.csv": {
+          "bytes": 8,
+          "sha256": "7703741f562b3f2c276fc35a9aba6f2de114df21e80f56ebf257cdb5ea03115c"
+        },
+        "paired_comparisons.csv": {
+          "bytes": 8074,
+          "sha256": "7be4df7203edc5f05310125736dea65f8d82308f8c5f769bb17e0ef63321c9fe"
+        },
+        "quality_bindings.json": {
+          "bytes": 917,
+          "sha256": "d84c82013f79044c6a66939bf7333778a528149b4d382ec09eba4e4ca3391509"
+        },
+        "config.json": {
+          "bytes": 2969,
+          "sha256": "118b26b00b02ded7ef11a9fc98a4b0f74d70501b3bece138d8204672e1799e97"
+        },
+        "manifest.json": {
+          "bytes": 5010,
+          "sha256": "fdffd5979f36988f2371b51e512049f335579cdbe5fa9897dff2a03f4c61ec6c"
+        }
+      }
+    },
+    {
+      "path": "llmcompass_puzzle/runs/moe-system-20261113-v2",
+      "reason": "superseded or failed exploratory run; final referenced run retained",
+      "files": {
+        "designs.csv": {
+          "bytes": 94450,
+          "sha256": "d02a6c8642fb9ba16ccece38695bc4f3f0c10a1eca4952e3b1b69fc40dd9e36e"
+        },
+        "candidates.csv": {
+          "bytes": 7936163,
+          "sha256": "55dab628746e0bf703c2596eb84dd598df4e41b520698a98d0cab80ebd260bde"
+        },
+        "operator_breakdown.csv": {
+          "bytes": 119734749,
+          "sha256": "dff79cbd62eced3d9a06f659d29674a50e0ccf5451184458ef4369b65c1a8d23"
+        },
+        "cost_only_selections.csv": {
+          "bytes": 2553609,
+          "sha256": "46630b27e3371fff0b97ef5c303540da6d05db85dda387ada6a1f5844a0e3cc9"
+        },
+        "quality_constrained_selections.csv": {
+          "bytes": 8,
+          "sha256": "7703741f562b3f2c276fc35a9aba6f2de114df21e80f56ebf257cdb5ea03115c"
+        },
+        "paired_comparisons.csv": {
+          "bytes": 8070,
+          "sha256": "76a81c19c1ccdcaf96a44e3a7b50cddd05a8838e761b408e451a7b218cce96f4"
+        },
+        "quality_bindings.json": {
+          "bytes": 917,
+          "sha256": "4d3c6ca8ce1e27b8f9c90943e08f961a485c4675155dbc2752df43146d84ffb7"
+        },
+        "config.json": {
+          "bytes": 3720,
+          "sha256": "5fac3d6df8f80154e39a44f7dd871cfe62b58147794c7fa907efd85ae55ed213"
+        }
+      }
+    },
+    {
+      "path": "llmcompass_puzzle/runs/s1-reference-20261113",
+      "reason": "superseded or failed exploratory run; final referenced run retained",
+      "files": {
+        "area/normalized_a100.json": {
+          "bytes": 1807,
+          "sha256": "0f0434c929c2f9c21613ebd00ce2db80099dde006f3d588ab820490e2a0efb24"
+        },
+        "area/a100_area_breakdown.json": {
+          "bytes": 770,
+          "sha256": "3d729291f6d7680f7da94b99bf8e68c014ed8487af7473e9a04c94b3bc72daa1"
+        },
+        "area/dp_profiles_7nm_proxy.json": {
+          "bytes": 107521,
+          "sha256": "0d09fa2613215e3b860f93e5a9b24e767676c2aa4bf08b0a30928f921a2d783d"
+        },
+        "area/tensor_vector_area_candidates.csv": {
+          "bytes": 21472,
+          "sha256": "97dda4d3b4bc176be10a1ac0c261c8273c6dc89fa0f13e0c7c5ef58f725c7e7b"
+        },
+        "area/manifest.json": {
+          "bytes": 3502,
+          "sha256": "10830c985b5b56bd826b2ec9fd79f3009516413f34e5dd097e4535da6259d336"
+        },
+        "reference/a100_replay.csv": {
+          "bytes": 842,
+          "sha256": "bf0dc7613d72f9485d376344caf93a75923a9592c1f7cd2b2dccf80e7dc71a4a"
+        },
+        "reference/a100_vector_replay.csv": {
+          "bytes": 450,
+          "sha256": "ffb90bee6d39c3a1660cc64eba3d61bdd2455353fcfb1572cea077e361dd8e80"
+        },
+        "reference/manifest.json": {
+          "bytes": 998,
+          "sha256": "b15eb549327b48bd9decaa1834123dcaba307ba61782f5d6fbbf72638230963e"
+        },
+        "reference/systolic_array_model/look_up_table_16_16.csv": {
+          "bytes": 2241,
+          "sha256": "ddc9c253426a4849c91c5f7dd20e781aabc5d5a1543633b88d4c53de3e5e6a9f"
+        },
+        "reference/systolic_array_model/temp/systolic_array_178.cfg": {
+          "bytes": 320,
+          "sha256": "9cc03a237aa522446b7fbfebe640d0a10a9730ef7252c2b7364c83e2a59a303e"
+        },
+        "reference/systolic_array_model/temp/matmul_178.csv": {
+          "bytes": 37,
+          "sha256": "51e97fcf768562625e6fdfb7c0420c731b1399ea13559fea3314fba42f8c9549"
+        },
+        "reference/systolic_array_model/temp/systolic_array/COMPUTE_REPORT.csv": {
+          "bytes": 149,
+          "sha256": "c780309a006b2be9fe3a2daeab029ffda7b3ea69323ea35c2e73c85d3228d3c1"
+        },
+        "reference/systolic_array_model/temp/systolic_array/BANDWIDTH_REPORT.csv": {
+          "bytes": 234,
+          "sha256": "4d951e40e1c6a9bd23708ff47624efb6008953f1e92b4e183ccc83cbcb347152"
+        },
+        "reference/systolic_array_model/temp/systolic_array/DETAILED_ACCESS_REPORT.csv": {
+          "bytes": 531,
+          "sha256": "62d47f2e0edddb0154ea8b338a80ba4203a2b6e6030f8f434d3d4d4ba4ebdfae"
+        }
+      }
+    },
+    {
+      "path": "llmcompass_puzzle/runs/s1-reference-20261113-v2",
+      "reason": "superseded or failed exploratory run; final referenced run retained",
+      "files": {
+        "area/normalized_a100.json": {
+          "bytes": 1822,
+          "sha256": "a7f439efc97281a9f7474b238921f653e86a3e6e174a2963d877d831bc8e927f"
+        },
+        "area/a100_area_breakdown.json": {
+          "bytes": 770,
+          "sha256": "3d729291f6d7680f7da94b99bf8e68c014ed8487af7473e9a04c94b3bc72daa1"
+        },
+        "area/dp_profiles_7nm_proxy.json": {
+          "bytes": 107521,
+          "sha256": "0d09fa2613215e3b860f93e5a9b24e767676c2aa4bf08b0a30928f921a2d783d"
+        },
+        "area/tensor_vector_area_candidates.csv": {
+          "bytes": 21472,
+          "sha256": "97dda4d3b4bc176be10a1ac0c261c8273c6dc89fa0f13e0c7c5ef58f725c7e7b"
+        },
+        "area/manifest.json": {
+          "bytes": 3505,
+          "sha256": "e55f6bbf876d89f5f395b25cab4d081debc01eb5cc6ab11c8c40d62cafb330dd"
+        },
+        "reference/a100_replay.csv": {
+          "bytes": 842,
+          "sha256": "bf0dc7613d72f9485d376344caf93a75923a9592c1f7cd2b2dccf80e7dc71a4a"
+        },
+        "reference/a100_vector_replay.csv": {
+          "bytes": 450,
+          "sha256": "ffb90bee6d39c3a1660cc64eba3d61bdd2455353fcfb1572cea077e361dd8e80"
+        },
+        "reference/manifest.json": {
+          "bytes": 998,
+          "sha256": "6638399656738c9079bf1dc399ceac9f530dbd98b6b98166f5ee1cd0020c3955"
+        },
+        "reference/systolic_array_model/look_up_table_16_16.csv": {
+          "bytes": 2241,
+          "sha256": "ddc9c253426a4849c91c5f7dd20e781aabc5d5a1543633b88d4c53de3e5e6a9f"
+        },
+        "reference/systolic_array_model/temp/systolic_array_180.cfg": {
+          "bytes": 320,
+          "sha256": "9cc03a237aa522446b7fbfebe640d0a10a9730ef7252c2b7364c83e2a59a303e"
+        },
+        "reference/systolic_array_model/temp/matmul_180.csv": {
+          "bytes": 37,
+          "sha256": "51e97fcf768562625e6fdfb7c0420c731b1399ea13559fea3314fba42f8c9549"
+        },
+        "reference/systolic_array_model/temp/systolic_array/COMPUTE_REPORT.csv": {
+          "bytes": 149,
+          "sha256": "c780309a006b2be9fe3a2daeab029ffda7b3ea69323ea35c2e73c85d3228d3c1"
+        },
+        "reference/systolic_array_model/temp/systolic_array/BANDWIDTH_REPORT.csv": {
+          "bytes": 234,
+          "sha256": "4d951e40e1c6a9bd23708ff47624efb6008953f1e92b4e183ccc83cbcb347152"
+        },
+        "reference/systolic_array_model/temp/systolic_array/DETAILED_ACCESS_REPORT.csv": {
+          "bytes": 531,
+          "sha256": "62d47f2e0edddb0154ea8b338a80ba4203a2b6e6030f8f434d3d4d4ba4ebdfae"
+        }
+      }
+    },
+    {
+      "path": "llmcompass_puzzle/runs/system-audit-20261113",
+      "reason": "superseded or failed exploratory run; final referenced run retained",
+      "files": {
+        "area_fitted_resources.csv": {
+          "bytes": 9759,
+          "sha256": "070cba1a323fcd02abae25eda0c4845d3941160897fb0a7e8bd7707d067070e4"
+        },
+        "resource_observations.json": {
+          "bytes": 1845,
+          "sha256": "e4c9ae4bee8e387561820df152dd70195a7f0928fed0943451a2625e9c0bf063"
+        },
+        "contract_examples.json": {
+          "bytes": 3887,
+          "sha256": "76c030642ca468d0d17e12eeaa5e37804214b79c4d6a5d6032349fef9bc34562"
+        },
+        "manifest.json": {
+          "bytes": 3721,
+          "sha256": "6344e37ba56d729307d817abac3d448502d788c323ac927a0ee717345d6878d5"
+        }
+      }
+    },
+    {
+      "path": "llmcompass_puzzle/runs/system-audit-20261113-v2",
+      "reason": "superseded or failed exploratory run; final referenced run retained",
+      "files": {
+        "area_fitted_resources.csv": {
+          "bytes": 9759,
+          "sha256": "070cba1a323fcd02abae25eda0c4845d3941160897fb0a7e8bd7707d067070e4"
+        },
+        "resource_observations.json": {
+          "bytes": 1845,
+          "sha256": "e4c9ae4bee8e387561820df152dd70195a7f0928fed0943451a2625e9c0bf063"
+        },
+        "contract_examples.json": {
+          "bytes": 3887,
+          "sha256": "76c030642ca468d0d17e12eeaa5e37804214b79c4d6a5d6032349fef9bc34562"
+        },
+        "manifest.json": {
+          "bytes": 3748,
+          "sha256": "e82fedc008eac91b752cddb3828564da255280ae70035119c3e01a3293184aa0"
+        }
+      }
+    },
+    {
+      "path": "llmcompass_puzzle/runs/system-audit-20261113-v3",
+      "reason": "superseded or failed exploratory run; final referenced run retained",
+      "files": {
+        "area_fitted_resources.csv": {
+          "bytes": 9759,
+          "sha256": "070cba1a323fcd02abae25eda0c4845d3941160897fb0a7e8bd7707d067070e4"
+        },
+        "resource_observations.json": {
+          "bytes": 1845,
+          "sha256": "e4c9ae4bee8e387561820df152dd70195a7f0928fed0943451a2625e9c0bf063"
+        },
+        "contract_examples.json": {
+          "bytes": 3887,
+          "sha256": "76c030642ca468d0d17e12eeaa5e37804214b79c4d6a5d6032349fef9bc34562"
+        },
+        "manifest.json": {
+          "bytes": 3860,
+          "sha256": "65532d9d0f65ead3054ae76061c76156dc6ff66342be1a7bf153a81f3e5dbf7b"
+        }
+      }
+    },
+    {
+      "path": "llmcompass_puzzle/configs/study_plan.json",
+      "reason": "outdated design-only plan; quality-out-of-scope policy superseded; useful controls merged into MOE_STUDY.md and handoff.md",
+      "bytes": 2322,
+      "sha256": "ec39520c7eef230c5350b254b3f29207ee6e912596f370eaef9e9729e0227882"
+    },
+    {
+      "path": "llmcompass_puzzle/EXPERIMENTS.md",
+      "reason": "outdated design-only plan; quality-out-of-scope policy superseded; useful controls merged into MOE_STUDY.md and handoff.md",
+      "bytes": 5561,
+      "sha256": "68f80717a1af05728bf8ffdcba7f7d62016be060ad5c8ffe9da8057a39e559c0"
+    }
+  ],
+  "freed_file_bytes": 260238699,
+  "scope": "llmcompass_puzzle only; retained all published numerical records and final replay dependencies"
+}
