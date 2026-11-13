@@ -34,6 +34,35 @@ DP/SM = subcores_per_core × tensorcores_per_subcore × m_array × n_array
 
 这三份是 256 DP 的解析实验配置。采用同一 DP、时钟、面积比例及零阵列增量时，基线面积和逐格式理想峰值相同。每个 TensorCore 按自己的形状计算广播和供数，各 TensorCore 的需求在 SM/AICore 层求和。计算模型也按单个 TensorCore 的 M/N 形状做 tiling。等带宽横向比较时可显式指定同一个 `input_budget_bytes_s`，避免各布局各自派生预算。
 
+## 两种阵列构建与双向 DSE
+
+[联合搜索配置](../configs/dse/joint_search.json) 用相同的基线核心池面积、外围面积、频率、每 SM 四个 TensorCore 和广播结构，对比两种构建方式：
+
+- `equal_array` 固定每阵列为基线 `16×4`，枚举九种 DP 配比，允许运行时等数据。
+- `equal_input_bandwidth` 枚举 `legal_shapes`，要求 BF16、MXFP8、MXFP4 的满速输入需求均不超过**同一个每 SM 预算**。同一物理 shape 服务所有模式。
+
+联合搜索从第二类候选中输出两个视角：`bandwidth_filled` 对每种 DP 配比选择最接近用满带宽的合法 shape，并保留同等带宽占用的不同 M/N；`bandwidth_feasible` 保留预算内所有 shape，由负载运行时间选择。整数尺寸不一定恰好用满，且小于满带宽的 shape 可能因功率、容量或尾块利用率更优。前者回答等带宽构建问题，后者检查“用满带宽”是否是有益限制。
+
+```bash
+bash ratio_dse/run_joint_dse.sh ratio_dse/results/my-joint-run
+```
+
+所有候选共用基线标定的面积预算，**不会随候选 shape 重新标定预算**。令 q 为每 SM 的阵列数，a(r) 为配比 r 的单 DP 面积：
+
+```text
+A_SM(r,M,N) = A_peripheral_baseline + q × (M × N × a(r) + A_extra_per_array)
+N_SM = floor(A_pool_budget / A_SM)
+installed_DP = N_SM × q × M × N
+peak_MAC/s(p) = installed_DP × native_K(r,p) / II(r,p) × frequency
+peak_FLOP/s(p) = 2 × peak_MAC/s(p)
+```
+
+因此 `1:2:4` 也能通过扩大 M/N 增加 DP 个数与绝对算力；新增 TensorCore 面积会减少可安装 SM 数，最终比较的是 `N_SM × qMN`，不能只比较单 SM 的 DP 个数。各精度峰值属于共享单元的不同运行模式，不相加。
+
+每 SM 带宽固定时，SM 数变化会改变本地端口带宽总和 `N_SM × B_SM`，联合结果单列 `local_input_port_sum_tb_s`。这不是固定整芯片共享带宽，更不是 HBM 带宽。当前 4×4 组间不共享 A/B，扩展 M/N 会复制广播组；不能套用全阵列行列广播的 `M+N` 供数公式。
+
+面积边界仍为固定外围加 DP 综合面积。64 KiB/阵列的容量是运行时容量假设，单/双缓冲实验使用相同总容量；SRAM 的分 bank、端口、扩展广播及布线增量尚未表征，不能据此声称新阵列已在 1 GHz 通过实现。`array_extra_area_um2` 是场景级附加面积参数；更细的 shape 专属成本需要外部表征。本轮不将未表征成本填成实测零。
+
 ## 建模架构与带宽边界
 
 ```text
@@ -46,7 +75,7 @@ DP/SM = subcores_per_core × tensorcores_per_subcore × m_array × n_array
 
 面积模型在给定频率下用 `每 SM DP 数 × native_k / II × 频率` 算各精度峰值。DP 的 `L` 记录在 profile 中供时序模型使用。面积阶段的供数判断是**持续按 II 发射时，A/B 的平均供数是否够用**，计算和搬移的时间由下游根据具体 GEMM 求得。
 
-当前带宽的计量切面是**每 SM 的本地操作数源向 TensorCore 输入侧交付预格式化 A/B 的有效带宽**。这个抽象端口可用具体硬件上对应的数据路径来标定。shared memory、collector/驻留缓冲和阵列内部端口在当前模型里合用一个有效供数切面，各自的带宽、容量、bank conflict 和链路时延尚无独立参数。跨 SM 互连和 HBM 属于上游路径。[TensorCore 存储与调度合同](../../src/spec/tensorcore/README.md#3-后续必须完成的合同)
+当前带宽的计量切面是**每 SM 的本地操作数源向 TensorCore 输入缓冲交付预格式化 A/B 的有效带宽**。这个抽象端口可用具体硬件上对应的数据路径来标定。面积阶段不模拟缓存和 bank 冲突；联合 DSE 的缓冲后端另声明每阵列缓冲到 DP 具有按 native II 供给整份输入的独立端口，用单/双 bank 计算 refill 等待。shared memory 与 collector 的详细内部互连、端口面积和链路时延尚未分层表征。跨 SM 互连和 HBM 属于上游路径。[TensorCore 存储与调度合同](../../src/spec/tensorcore/README.md#3-后续必须完成的合同)
 
 每个格式先按 native K、打包、scale 和元数据求一个向量的字节数，再乘同次发射需要的独立 A/B 向量数。A 在同一行广播，B 在同一列广播，跨组共享由 `broadcast_model` 的两个开关决定。面积模型还接受 A、B 各自的**平均时间复用次数**。
 

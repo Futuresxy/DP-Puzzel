@@ -119,25 +119,30 @@ def evaluate(compiled, deployment, profile, settings, detail=False):
         repeat = len(op["op_ids"])
         row["ideal_s"] = op["useful_macs"] / peak
         for field in ("seconds", "compute_s", "read_s", "write_s", "dp_energy_j", "issued_macs",
-                      "ab_bytes", "d_bytes", "useful_macs", "ideal_s"):
+                      "ab_bytes", "d_bytes", "useful_macs", "ideal_s", "overlap_s"):
             contribution = row[field] * repeat
             totals[field] += contribution
             if detail:
                 by_operator[op["operator"], op["category"], op["fmt"]][field] += contribution
-        for field in ("dp_envelope_w", "dp_full_pool_mode_w"):
+        for field in ("dp_envelope_w", "dp_full_pool_mode_w", "active_cores", "active_arrays",
+                      "buffer_required_bytes"):
             totals[field] = max(row[field], totals[field])
         if detail:
             summary = by_operator[op["operator"], op["category"], op["fmt"]]
             summary["instances"] += repeat
             summary["active_arrays_max"] = max(summary["active_arrays_max"], row["active_arrays"])
+            summary["active_cores_max"] = max(summary["active_cores_max"], row["active_cores"])
             summary["eligible_arrays"] = row["eligible_arrays"]
+            summary["eligible_cores"] = row["eligible_cores"]
+            summary["effective_contexts"] = row["effective_contexts"]
+            summary["buffer_required_bytes"] = max(summary["buffer_required_bytes"], row["buffer_required_bytes"])
             summary["native_k"] = row["native_k"]
             summary["peak_macs_s_per_local_byte_s"] = row["peak_macs_s_per_local_byte_s"]
     result = dict(totals)
     result["dp_average_w"] = ratio(result["dp_energy_j"], result["seconds"])
     result["local_intensity_macs_byte"] = ratio(result["useful_macs"], result["ab_bytes"] + result["d_bytes"])
     result["geometry_utilization"] = ratio(result["useful_macs"], result["issued_macs"])
-    result["local_time_share"] = ratio(result["read_s"] + result["write_s"], result["seconds"])
+    result["local_time_share"] = ratio(result["read_s"] + result["write_s"] - result["overlap_s"], result["seconds"])
     result["effective_tflops_s"] = 2e-12 * result["useful_macs"] / result["seconds"]
     breakdown = [{"operator": op, "category": category, "format_id": fmt, **metrics,
                   "shape_utilization": ratio(metrics["useful_macs"], metrics["issued_macs"]),
@@ -171,6 +176,10 @@ def _candidate(label, workload, plan, deployment, profile, settings, compiled, d
         "cap_w": settings["cap_w"], "contexts": settings["contexts"], "partition": settings["partition"],
         "include_local": settings["include_local"], "idle_fraction": settings["idle_fraction"],
         "activity_scale": settings.get("activity_scale", 1.0),
+        "io_schedule": settings.get("io_schedule", "serial"),
+        "power_granularity": settings.get("power_granularity", "array"),
+        "operand_delivery": settings.get("operand_delivery"),
+        "buffer_bytes_per_array": settings["buffer_bytes_per_array"],
         "all_gemm_macs": sum(op["useful_macs"] for op in workload["operators"]),
     }
     key = identity("candidate", meta)

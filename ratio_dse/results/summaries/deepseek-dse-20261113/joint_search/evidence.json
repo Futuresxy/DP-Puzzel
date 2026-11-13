@@ -1,0 +1,247 @@
+{
+  "run_directory": "ratio_dse/results/deepseek-joint-dse-20261113-v3",
+  "manifest_sha256": "6eba70b050dbb9bf74b5e7cae404d04e383e6c957acef05cc83c67037b01381a",
+  "model_version": "0.3.0",
+  "command": [
+    "python3.11",
+    "-m",
+    "ratio_dse.dse.joint_search",
+    "--config",
+    "/home/songxy/DP-Puzzel/ratio_dse/configs/dse/joint_search.json",
+    "--output",
+    "/home/songxy/DP-Puzzel/ratio_dse/results/deepseek-joint-dse-20261113-v3"
+  ],
+  "config": {
+    "anchor_batch": 1,
+    "anchor_length": 2048,
+    "anchor_local_tb_s": 4,
+    "bandwidth_scope": "per_core_local_input",
+    "baseline_topology": "ratio_dse/configs/area/sm_4x16x4.json",
+    "buffer_bytes_per_array": 65536,
+    "contexts": 8,
+    "evidence": "ratio_dse/configs/area/dp_n12_20261112.lock.json",
+    "io_schedules": [
+      "single_buffer",
+      "pingpong"
+    ],
+    "legal_shapes": [
+      [
+        4,
+        4
+      ],
+      [
+        8,
+        4
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        12,
+        4
+      ],
+      [
+        4,
+        12
+      ],
+      [
+        16,
+        4
+      ],
+      [
+        8,
+        8
+      ],
+      [
+        4,
+        16
+      ],
+      [
+        20,
+        4
+      ],
+      [
+        4,
+        20
+      ],
+      [
+        24,
+        4
+      ],
+      [
+        12,
+        8
+      ],
+      [
+        8,
+        12
+      ],
+      [
+        4,
+        24
+      ],
+      [
+        28,
+        4
+      ],
+      [
+        4,
+        28
+      ],
+      [
+        32,
+        4
+      ],
+      [
+        16,
+        8
+      ],
+      [
+        8,
+        16
+      ],
+      [
+        4,
+        32
+      ],
+      [
+        12,
+        12
+      ],
+      [
+        20,
+        8
+      ],
+      [
+        8,
+        20
+      ],
+      [
+        24,
+        8
+      ],
+      [
+        16,
+        12
+      ],
+      [
+        12,
+        16
+      ],
+      [
+        8,
+        24
+      ],
+      [
+        28,
+        8
+      ],
+      [
+        8,
+        28
+      ],
+      [
+        16,
+        16
+      ],
+      [
+        32,
+        16
+      ],
+      [
+        16,
+        32
+      ]
+    ],
+    "local_read_tb_s_per_core": [
+      4,
+      8,
+      16
+    ],
+    "operand_delivery": "native_issue_width",
+    "power_caps_w": [
+      null,
+      150
+    ],
+    "power_granularity": "core",
+    "quality_policy": "out_of_scope",
+    "schema_version": 1,
+    "workloads": [
+      "ratio_dse/configs/compute/v4_prefill.json",
+      "ratio_dse/configs/compute/v41_prefill.json"
+    ],
+    "write_read_ratio": 1.0
+  },
+  "inputs_sha256": {
+    "hw/dc_syn/records/five_expansions_20261112.json": "556e0bd84b4b43122e06c2125155eea8dc8095648891b416bdf44b253354edf5",
+    "hw/dc_syn/records/v19_six_dp_20261110.json": "ef79fe0c64d8ca6803fa6d21f67c28fd1b73b02f0ad6870366854a88214c957a",
+    "hw/power/records/five_expansions_20261112.json": "c024e7f9c45262078a017700a5045e6914dacdc0e16f5710d129f9d134a36b83",
+    "hw/power/records/v19_six_architectures_20261110.json": "a894ac00cee47a361ce4ee7c046ef9125f6c15e90dc6240c97ef5eab7e449f35",
+    "paper/data/inputs/models/DeepSeek-V4-Flash/inference/config.json": "6cc6f816ca73a8d38750194e330398e4f6955b4b45f674f7d29c96da14ccb733",
+    "paper/data/inputs/models/DeepSeek-V4.1-Flash/inference/config.json": "2e84f45cf1dac8c7fcbb200e96667d4b913275690668ed496f24c7747207a809",
+    "ratio_dse/configs/area/dp_n12_20261112.lock.json": "9e868d55301d90268298c0d55ac7637fe024769e7a9941da7b18b936cffc1447",
+    "ratio_dse/configs/area/sm_4x16x4.json": "f49f227aaec723683ddbc3918418885f20b38ad8f629e4ba6117c4107d3a9e2c",
+    "ratio_dse/configs/compute/v41_prefill.json": "1342397a352e0c890dad0bc915045c91b9cefffeed81fd077520468e6b719383",
+    "ratio_dse/configs/compute/v4_prefill.json": "11f091ee2bc40cdcc517f833727a63eaf02c220a819277231e4f141d07a448f9",
+    "ratio_dse/configs/dse/joint_search.json": "e4af2beb3be2fccd25c82631b8175780dfa8379249ebcf4e51af04ff3fc0ec7a",
+    "src/spec/dp/dptop/e192-e256-expansion-analysis.md": "80be5caec6c8e13c0a3f9478adb4dc2434374c42cea128932dab1419626b6793",
+    "src/spec/dp/dptop/interface.md": "0fb1180a0a32271e1eec6255460997d9f633905d0f0896cf2a1da2be6f0f19de",
+    "src/spec/dp/dptop/layout-and-scales.md": "69f44c55a330258816edeb0a8002ceee919f27734549bec860de63f55a270b2e",
+    "src/spec/dp/dptop/mixed-precision-expansion.md": "0e6dfe0218ca7850c4b3c2aeb904aefd11a4759e8a03eeccbe81930eeed378c7",
+    "src/spec/dp/dptop/qe192-qe256-expansion.md": "a7466feed3cb9c633b5b12972d69b823e296a08597a6d0ce379ee996f78dfe3e",
+    "src/spec/dp/dptop/t8h16q64e64.md": "dcfc6e4a1edd682820c21aa7b6401b7445fb5d2326d53794ef04406a58f33cd6"
+  },
+  "sources_sha256": {
+    "paper/scripts/deepseek_v41.py": "ad6257b601b0b89a56a1570caf243ae7d13d1a2e85b0d9ae7d54af2e5563d031",
+    "ratio_dse/__init__.py": "2e79edb5bb89b0f0d31292a4117cb1d526c8ccaf5264fedb1df7921d82774535",
+    "ratio_dse/area_model/__init__.py": "76010941b5014d20c91bc7e12f7f4281825d89109e3103008be81ea622b8f671",
+    "ratio_dse/area_model/__main__.py": "89ad9d114acac722d8651df72977cb09689276ba260155d861574f3676c21cd4",
+    "ratio_dse/area_model/model.py": "bc5eedc7b081794654ed84fe755f0e9b6d6c46be3c9f8f6f543f7c0604f21455",
+    "ratio_dse/common.py": "cd9e457e2b421a323a11b2f9ae7960dc7539c5af8158d17aea2bd911ca68615f",
+    "ratio_dse/compute_model/__init__.py": "128a9ef2669321ba47b527f619385e326cbc13ab5270bd16a4e73e60d068ccec",
+    "ratio_dse/compute_model/__main__.py": "911078106d1ab6e50abe6b36ed393a652b4267a43a2b5286815b3672f21f0509",
+    "ratio_dse/compute_model/precision.py": "1abb2917c9ef2a9a1de997b9027fb7afd69ad7fe5e3ce37fcc97b555e4400164",
+    "ratio_dse/compute_model/tiling.py": "12988fa51807279d783a47f417a969a6e3c85b092bb0a8d286157c158168455a",
+    "ratio_dse/compute_model/workload.py": "c45d91612ed54f69b68cb879f8054779bc15db68e5b96c64e9fcb2a78be17cc8",
+    "ratio_dse/dse/__init__.py": "3af7b2006545b5f7b8559fdb4010413e9b0d987ab91c1f2d211e97e1762ab37f",
+    "ratio_dse/dse/figures.py": "d766a76a12c6052e40f60f0a02fdc391d5bf8845efcb293e60487ab5df7d2b9a",
+    "ratio_dse/dse/joint_search.py": "143b80e33b78f9f13fb7ed88b29c972ea1686c9c2192cbafb6bd28c2590cc157",
+    "ratio_dse/dse/migration_figure.py": "ba2c7551dd013f0adc99d020c8519731ec9c933c65e66df1148b503c15ef7f01",
+    "ratio_dse/dse/migration_selection.py": "c825dfc71f7b81ace04d68b177c016f5ece284312ae4c5e5c147f4c6e4f2419a",
+    "ratio_dse/dse/model.py": "9cd8c42949e15743e02e7c17e92b855bd3ddefbc8dc9339958707ea9a429b8ad",
+    "ratio_dse/dse/study.py": "1ce851a69ffd2046397943dca21ab6cb6de18c3176bee96e5c8c137e50bc2623",
+    "ratio_dse/formats.py": "307ede100ac62301e2742ef9ee7a317acfacaaf27f15d3fbe5c2036e64133735"
+  },
+  "run_outputs_sha256": {
+    "candidate_evaluations.csv": "a27879c46d62f341faf05aac7f478623a5755d17342798e65cf66a850bd38016",
+    "deployments.json": "84f397b57e969c8e48f0cf13970f79e54078d1aa8ed02b90d73d9f8c156751a0",
+    "excluded_work.csv": "bd2216a222f3cc2fb2961188819914482e914df4b71fe755c3e6b3b46c3281c6",
+    "hardware_to_migration.csv": "5524e80fec08f3e3df0a4c6024582cc7dfcc87af2cf44bc0dd34cd9972e54542",
+    "pareto.csv": "b931f79d4fbc41c4885a05878d74721a5141f1a241116642f30f788690842998",
+    "precision_workloads.csv": "e9057c3750cca0eaff6b6b9c816ad016cdc8dc3d51a2148643b32e6b9ea56b0b",
+    "step_moves.csv": "edd98ff927aad765be481a0d44d83a565cee6cdbc1e95a0ee281618b06f3496d",
+    "summary.md": "24850a0fc3a9ee241142d2065456ccf40065ca52796d2ff59408bfc68bd0a70e",
+    "validation.json": "473f6eba5a70ccc622498bff59bc209666b1d93d3de4f05dfd4e84ae083603c0",
+    "winning_operator_breakdown.csv": "3149b5e97491eda7b1e7e52f5ec0e9894e3da750395e5fcf7029765ba60b1035",
+    "workload_to_hardware.csv": "96dc11e2d7896bf37285880193617d2766df0fb598a580d4306607624bbab490"
+  },
+  "checks": {
+    "unit_tests_passed": 31,
+    "buffer_round_random_cases": 500,
+    "buffer_modes_per_case": 2,
+    "independent_candidate_audit": 6752,
+    "independent_forward_ranking_audit": 288,
+    "independent_reverse_ranking_audit": 1688,
+    "legacy_numerically_unchanged_candidates": 1296,
+    "original_examples": "passed",
+    "manifest_hash_audit": "passed"
+  },
+  "snapshot_normalization": "CSV line endings converted from CRLF to LF; parsed cells unchanged.",
+  "snapshot_sha256": {
+    "workload_to_hardware.csv": "f925c518c8c11d795e325805a96c5494567233e34b20a7a80c4dd7a02e23d18b",
+    "precision_workloads.csv": "e8bd8ee5333b7c3821244f270bbe14231068f3ac3c0fd75d9b5c8c77b15b3083",
+    "step_moves.csv": "7e34751ba28e2c9502be586a4bccae277c9fe0a5b3ab77792a0e9e3fdd25f95a",
+    "validation.json": "473f6eba5a70ccc622498bff59bc209666b1d93d3de4f05dfd4e84ae083603c0"
+  }
+}

@@ -5,7 +5,7 @@ from functools import lru_cache
 from math import ceil, floor
 
 from ..area_model.model import broadcast_vectors
-from ..common import ratio
+from ..common import ratio, require
 from ..compute_model.tiling import service_cycles, tile_geometry
 from ..formats import vector_bytes
 
@@ -58,6 +58,54 @@ def group_service(tiles, available_arrays, cores, ii, latency, feedback, context
     return critical, active, max((row[3] for row in classes), default=0)
 
 
+@lru_cache(maxsize=65536)
+def buffered_lane_service(tiles, ii, latency, feedback, contexts, issue_bytes,
+                          output_bytes, read_bytes_per_cycle, write_bytes_per_cycle, banks):
+    """K-round buffers; independent refill/issue ports, serial wave writeback.
+
+    One bank holds A/B (including scales) for all contexts in one K round.
+    A consumed bank is reusable after that round's last issue interval. For
+    two banks the exact equal-round recurrence reduces to max(refill, RAW,
+    issue duration). Waves drain/write before the next wave's first refill.
+    No cross-request operand reuse or cross-wave prefetch is assumed.
+    """
+    require(banks in (1, 2), "input banks must be one or two")
+    total = compute = read = write = largest = 0
+    for steps, count in tiles:
+        waves, tail = divmod(count, contexts)
+        for active, repeat in ((contexts, waves), (tail, int(bool(tail)))):
+            if not repeat:
+                continue
+            refill = ceil(active * issue_bytes / read_bytes_per_cycle)
+            issue = active * ii
+            stride = max(refill, issue, feedback) if banks == 2 else max(refill + issue, feedback)
+            drain = (active - 1) * ii + max(latency, ii)
+            store = ceil(active * output_bytes / write_bytes_per_cycle)
+            duration = refill + (steps - 1) * stride + drain + store
+            service = (steps - 1) * max(issue, feedback) + drain
+            total += repeat * duration
+            compute += repeat * service
+            read += repeat * steps * refill
+            write += repeat * store
+            largest = max(largest, active)
+    return (total, compute, read, write, largest)
+
+
+@lru_cache(maxsize=32768)
+def buffered_group_service(tiles, available_arrays, cores, ii, latency, feedback, contexts,
+                           issue_bytes, output_bytes, read_bytes_per_cycle, write_bytes_per_cycle, banks):
+    active = min(available_arrays, sum(count for _, count in tiles))
+    if not active:
+        return (0, 0, 0, 0, 0), 0, 0
+    occupancy = Counter(lane % cores for lane in range(active))
+    classes = {(tuple(sorted(lane.items())), occupancy[index % cores])
+               for index, lane in enumerate(partition_tiles(tiles, active))}
+    costs = [buffered_lane_service(lane, ii, latency, feedback, contexts, issue_bytes, output_bytes,
+                                  read_bytes_per_cycle / slots, write_bytes_per_cycle / slots, banks)
+             for lane, slots in classes]
+    return max(costs), active, max(row[4] for row in costs)
+
+
 def tile_groups(shape, m, n, native_k, policy):
     """Return separate launch groups with multiplicities and the pooled B geometry."""
     geometry = tile_geometry(shape, m, n, native_k)
@@ -99,7 +147,14 @@ def operator_cost(op, geometry, groups, deployment, mode, settings):
     idle, increment = power_terms(arrays * dp_per_array, dp_per_array, mode, settings["idle_fraction"],
                                   settings.get("activity_scale", 1.0))
     cap = settings["cap_w"]
-    allowed = array_limit(arrays, cap, idle, increment)
+    power_granularity = settings.get("power_granularity", "array")
+    require(power_granularity in ("array", "core"), "power_granularity must be array or core")
+    if power_granularity == "core":
+        scheduling_cores = array_limit(cores, cap, idle, deployment["arrays_per_core"] * increment)
+        allowed = scheduling_cores * deployment["arrays_per_core"]
+    else:
+        allowed = array_limit(arrays, cap, idle, increment)
+        scheduling_cores = cores
     requests = geometry["issue_requests"]
     if requests and not allowed:
         return None
@@ -109,16 +164,30 @@ def operator_cost(op, geometry, groups, deployment, mode, settings):
     issue_bytes = ab if settings["include_local"] else 0
     output_bytes = d if settings["include_local"] else 0
     bw = settings["local_tb_s"] * 1e12 / freq
+    schedule = settings.get("io_schedule", "serial")
+    require(schedule in ("serial", "single_buffer", "pingpong"), "unknown io_schedule")
+    contexts = settings["contexts"]
+    banks = 2 if schedule == "pingpong" else 1
+    if schedule != "serial":
+        require(settings.get("operand_delivery") == "native_issue_width",
+                "buffered schedule requires an explicit native_issue_width operand port")
+        contexts = min(contexts, settings["buffer_bytes_per_array"] // (banks * ab + d))
+        if not contexts:
+            return None
     cycles = compute = read = write = 0
     concurrency = 0
+    required_buffer = 0
     for count, tiles in groups:
         if not tiles:
             continue
-        critical, active, largest_context_count = group_service(
-            tiles, allowed, cores, ii, latency, latency, settings["contexts"],
-            issue_bytes, output_bytes, bw, bw * settings["write_read_ratio"],
-        )
-        if ab + d * largest_context_count > settings["buffer_bytes_per_array"]:
+        args = (tiles, allowed, scheduling_cores, ii, latency, latency, contexts,
+                issue_bytes, output_bytes, bw, bw * settings["write_read_ratio"])
+        critical, active, largest_context_count = (group_service(*args) if schedule == "serial" else
+                                                   buffered_group_service(*args, banks))
+        buffer = (ab + d * largest_context_count if schedule == "serial" else
+                  (banks * ab + d) * largest_context_count)
+        required_buffer = max(buffer, required_buffer)
+        if buffer > settings["buffer_bytes_per_array"]:
             return None
         duration, c, a, b, _ = critical
         cycles += count * duration
@@ -139,6 +208,10 @@ def operator_cost(op, geometry, groups, deployment, mode, settings):
         "ab_bytes": payload, "d_bytes": output, "useful_macs": op["useful_macs"],
         "intensity_macs_byte": ratio(op["useful_macs"], payload + output),
         "active_arrays": concurrency, "eligible_arrays": allowed,
+        "active_cores": min(scheduling_cores, concurrency),
+        "eligible_cores": scheduling_cores if power_granularity == "core" else min(cores, allowed),
+        "buffer_required_bytes": required_buffer, "effective_contexts": contexts,
+        "overlap_s": (compute + read + write - cycles) / freq,
         "native_k": mode["native_k"], "shape_utilization": ratio(op["useful_macs"], geometry["issued_macs"]),
         "peak_macs_s_per_local_byte_s": deployment["dp_per_core"] * mode["macs_per_cycle"] / bw,
     }

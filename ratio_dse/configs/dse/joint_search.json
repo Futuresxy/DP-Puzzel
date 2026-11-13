@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "evidence": "ratio_dse/configs/area/dp_n12_20261112.lock.json",
+  "baseline_topology": "ratio_dse/configs/area/sm_4x16x4.json",
+  "legal_shapes": [
+    [4, 4], [8, 4], [4, 8], [12, 4], [4, 12], [16, 4], [8, 8], [4, 16],
+    [20, 4], [4, 20], [24, 4], [12, 8], [8, 12], [4, 24], [28, 4], [4, 28],
+    [32, 4], [16, 8], [8, 16], [4, 32], [12, 12], [20, 8], [8, 20],
+    [24, 8], [16, 12], [12, 16], [8, 24], [28, 8], [8, 28], [16, 16], [32, 16], [16, 32]
+  ],
+  "workloads": ["ratio_dse/configs/compute/v4_prefill.json", "ratio_dse/configs/compute/v41_prefill.json"],
+  "anchor_length": 2048,
+  "anchor_batch": 1,
+  "anchor_local_tb_s": 4,
+  "local_read_tb_s_per_core": [4, 8, 16],
+  "power_caps_w": [null, 150],
+  "power_granularity": "core",
+  "bandwidth_scope": "per_core_local_input",
+  "io_schedules": ["single_buffer", "pingpong"],
+  "operand_delivery": "native_issue_width",
+  "contexts": 8,
+  "buffer_bytes_per_array": 65536,
+  "write_read_ratio": 1.0,
+  "quality_policy": "out_of_scope"
+}

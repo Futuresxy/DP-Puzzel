@@ -2,6 +2,63 @@
 
 This study combines the measured DP profiles from the [area model](../area_model/README.md) with the GEMM and precision contracts from the [compute model](../compute_model/README.md). The [2026-11-13 findings](../results/summaries/deepseek-dse-20261113/README.md) document the first controlled sweep and its validation boundary.
 
+## Joint hardware × workload search
+
+The current chip-design study treats the four cumulative precision plans as supplied scenarios. PPL and accuracy thresholds are **out of scope**; no quality record is required or used to reject a plan. This does not assert that a quantizer has validated those plans. Useful MACs stay fixed; precision distribution, native-K padding, bytes and completion time change.
+
+The [joint-search results](../results/summaries/deepseek-dse-20261113/joint_search/README.md) contain 6,752 evaluations and show how extra baseline DPs, power allocation and bandwidth-filling policies change the chosen ratio.
+
+```bash
+bash ratio_dse/run_joint_dse.sh ratio_dse/results/my-joint-run
+# Optional second argument: a replacement joint-search JSON.
+python3.11 -m ratio_dse.dse.joint_search \
+  --config ratio_dse/configs/dse/joint_search.json \
+  --output ratio_dse/results/my-other-joint-run
+```
+
+Both commands require a fresh output directory. Python 3.11+ standard library is sufficient. The [configuration](../configs/dse/joint_search.json) combines nine measured DP profiles, 32 analytical shapes, two models, four precision plans, 4/8/16 TB/s per SM, uncapped/150 W DP budgets and same-capacity single/ping-pong buffers. Shape legality is an explicit search assumption, not array RTL validation.
+
+```text
+DP evidence + fixed baseline core-pool area
+  → fixed array / bandwidth-constrained variable array → installed SMs and DP count
+model config + runtime scenario → GEMM shapes → four supplied precision plans
+  → native-K output tiles → power-limited active SMs → per-SM port shares
+  → capacity-limited contexts → input-bank refill / RAW / compute / write timeline
+  → workload-to-hardware ranking + hardware-to-migration ranking + Pareto set
+```
+
+**Construction.** `equal_array` keeps the baseline M/N; bandwidth may stall it. `bandwidth_filled` selects shapes whose maximum full-issue demand over the required formats is closest to the fixed budget for each profile; all tied orientations remain. `bandwidth_feasible` additionally allows every smaller feasible shape, to test whether filling the bandwidth is helpful. The latter two use the area model's `equal_input_bandwidth` gate. A fixed-array design can run faster even though it fails that full-rate gate: these are different construction policies, not an optimization over nested spaces. All policies retain one baseline area budget. The `1:2:4` design can grow its DP count when allowed more area per SM, while the total SM count decreases.
+
+**Power.** The default `power_granularity: "core"` allocates complete SMs at the fixed profile clock. For the current precision, `enabled_SM = min(installed_SM, floor((cap - installed_idle_power) / (arrays_per_SM × active_increment_per_array)))`, clamped to zero. All installed DP leakage remains; disabled SMs are idle, not assumed power-gated. A nonempty GEMM with zero eligible SMs is infeasible. Active arrays may be fewer if there are fewer output tiles. The scheduler uses the maximum permitted SM count; it does not search voltage/frequency or optimize smaller runtime allocations. `"array"` retains the historical finer-grained policy. The budget is for the DP pool, not a whole-chip TDP.
+
+**I/O.** `single_buffer` and `pingpong` explicitly schedule whole native-K rounds; they share the same total storage per array. The [round recurrence and capacity rule](../compute_model/README.md#ab-驻留和-ping-pong) retain first fill, last drain, per-context RAW and final writes. Each active array reserves an equal share of its SM's refill/write ports. Buffer-to-DP delivery has an explicitly assumed independent native-width port. Cross-request operand reuse and cross-wave prefetch are absent. Single-buffer refill may overlap feedback waiting, so it differs from historical `serial` compute+transfer totals.
+
+| Input | Meaning |
+|---|---|
+| `evidence`, `baseline_topology`, `legal_shapes` | Locked DP evidence; common area/topology baseline; discrete M/N search space including baseline shape |
+| `workloads`, `anchor_length`, `anchor_batch` | Registered model scenario files and the query-token/batch override; other scenario fields remain in force |
+| `local_read_tb_s_per_core`, `bandwidth_scope` | Decimal TB/s at each SM's preformatted input boundary; supported scope is `per_core_local_input` |
+| `power_caps_w`, `power_granularity` | `null` means uncapped; W allocated to installed DP pool; `core` or `array` |
+| `io_schedules`, `operand_delivery` | `single_buffer`, `pingpong`, optional legacy `serial`; buffered modes require `native_issue_width` |
+| `buffer_bytes_per_array`, `contexts` | Total input + accumulator capacity; maximum output contexts, reduced if necessary by capacity |
+| `write_read_ratio` | Write-port bandwidth / read-port bandwidth; writebacks do not overlap the next wave's refill |
+| `quality_policy` | Required `out_of_scope` in this chip-design entry point |
+
+| Output | Meaning |
+|---|---|
+| `deployments.json` | All requested shapes, area, SM/DP counts, per-mode peaks and bandwidth-gate failures; invalid shapes are retained for audit |
+| `precision_workloads.csv`, `step_moves.csv`, `excluded_work.csv` | Per-format useful work, exact migration transitions, excluded GEMM categories/precisions |
+| `candidate_evaluations.csv` | Model × plan × valid deployment × bandwidth × power × buffer schedule; time, overlap, capacity, active-core maximum, area, DP power/energy, peak and effective TFLOP/s |
+| `winning_operator_breakdown.csv` | Forward winners by operator family/format; allowed/active SMs and arrays, effective contexts, buffer demand and time components; join through `candidate_id` |
+| `workload_to_hardware.csv` | Fixed model/plan/runtime constraints → fastest ratio and shape in each construction view; independent minimum-DP-energy winner |
+| `hardware_to_migration.csv` | Fixed physical deployment/runtime constraints → fastest supplied migration plan; no quality penalty |
+| `pareto.csv` | Nondominated area, modeled completion time and DP-envelope points per forward cohort; exact ties retained |
+| `validation.json`, `manifest.json`, `summary.md` | Invariants, commands, input/source/output fingerprints, scope and assumptions |
+
+`bandwidth_utilization_at_full_issue` is maximum required-mode full-rate demand / budget; it may exceed one for fixed-array designs and is not measured runtime bandwidth utilization. `local_input_port_sum_tb_s` is installed SM count × local bandwidth, not HBM bandwidth. `compute_s/read_s/write_s` are critical-lane service components; `seconds = compute_s + read_s + write_s - overlap_s`. `effective_tflops_s` uses useful modeled GEMM work and includes local waits; `per_mode_peak_tflops_s` lists mutually exclusive single-mode peaks. Peak fields for unmeasured-power modes do not imply they participated in the runtime search.
+
+All timing is `analytical_uncalibrated`. Inputs start after packing/quantization/gather, with zero initial GEMM C and FP32 accumulation. HBM, non-GEMM operations, SRAM/interconnect power, thermal/DVFS behavior and online conversion are outside this completion boundary. Fixed per-SM peripheral area is a scenario assumption; shape-dependent bank/port/broadcast timing and area require characterization. Historical studies below retain their earlier single-array concurrency and serial-transfer assumptions.
+
 ## Reproduce
 
 From the repository root with Python 3.11 or later.

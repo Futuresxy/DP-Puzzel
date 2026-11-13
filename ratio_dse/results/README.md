@@ -5,3 +5,5 @@
 仅经过选择、可复现的核心摘要放在 summaries/；图表放 figures/ 并附生成配置，较大文件使用外部归档 URI + SHA-256。已引用结果禁止随意覆盖；新增关键数据及时走 commit/push/PR。
 
 样例见 [快速启动](../README.md#quick-start)。下游芯片搜索的 Pareto 结果使用同样的来源和归档约定。
+
+最新联合构建实验见 [固定面积下的 shape、精度迁移与供数搜索](summaries/deepseek-dse-20261113/joint_search/README.md)：6,752 项评价，包含固定阵列、等输入带宽可变阵列、整 SM 并发限制和双缓冲。历史固定阵列/串行供数结果保留。

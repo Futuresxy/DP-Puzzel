@@ -46,7 +46,30 @@ V4.1 示例选择简化 prefill、batch 1、256 tokens。在第 0–19 层把 Gr
 
 当前周期路径已计入同次发射内的空间广播。A/B **跨发射**的驻留复用仍按 1 处理，面积模型的 `a_temporal_reuse` 和 `b_temporal_reuse` 只用于满速需求估算。若固定 `(M tile, K slice)` 依次处理多个 N tile，可以把 A 连同 scale 留在驻留缓冲，在每次发射前只补 B；换 K 段或 A 被驱逐时再补 A。这需要明确发射顺序、缓冲容量和各输出的部分和依赖，才能把上游读次数降下来。
 
-Ping-pong 缓冲可以在阵列计算当前块时预取下一块。建模时应分别给出上游到缓冲的 refill 带宽、缓冲到 DP 的供数带宽、A/B 两 bank 容量、端口独立性和就绪时间。对等长块且双 bank 和端口允许重叠的场景，稳态步长可取 `max(T_refill, T_compute)`，首块预取和最后一块排空仍要计入。若与写回共享端口，或某个块尚未 ready，则加入竞争和等待。**当前结果使用单缓冲、串行 I/O**，所以图里的换配比边界依赖这一基准。带驻留和双缓冲的结果需等具体数据流建模后再作同条件比较。
+历史 `study` / `migration_selection` 及单阵列 CLI 保留 `serial` 汇总模型。新的 [joint_search](../dse/README.md#joint-hardware--workload-search) 使用同容量 `single_buffer` / `pingpong` 对照：一个输入 bank 存放一轮 native-K 对所有活跃输出上下文的 A/B 与 scale；第二个 bank 可在当前轮发射时预取下一轮。每一轮等待其 bank 全部 ready，再轮转发射各输出；缓冲到 DP 假定有独立的全 native 发射宽度端口，配置必须声明 `operand_delivery: "native_issue_width"`。每 SM 的活跃阵列均分 refill / write 带宽，分配贯穿该 launch，不随某阵列提前完成而借用空闲份额。
+
+令 a 为本波上下文数，k 为 K 轮数，S 为每次请求的 A/B+scale 字节，D 为一个完整输出 tile 的 FP32 字节，b 为 bank 数，r/w 为分配给阵列的每周期读/写字节：
+
+```text
+可用上下文 = min(配置上下文数, floor(buffer_bytes_per_array / (b × S + D)))
+所需容量 = a × (b × S + D)，b = 1 或 2
+R = ceil(a × S / r)             # 首轮/每轮 refill
+I = a × II                     # 一轮发射占用
+W = ceil(a × D / w)             # 一波最终写回
+single_buffer_stride = max(R + I, feedback)
+pingpong_stride = max(R, I, feedback)
+T_wave = R + (k-1) × stride + (a-1) × II + max(L, II) + W
+```
+
+这来自逐轮 bank 可重用时刻、refill 完成时刻和每个上下文 RAW 的递推；独立事件参考测试覆盖不同 K、II、L、反馈和带宽。第一轮装载、最后流水排空和 D 写回都保留。每波写完才开始下一波，写回与 refill 不重叠；不模拟跨波预取、每请求部分 ready 或 bank 冲突。`single_buffer` 也允许 refill 填进反馈等待，所以与历史的全串行汇总路径不同。
+
+输出 `compute_s` 是无搬移的阵列服务时间，`read_s/write_s` 是对应关键阵列的端口服务量，`overlap_s` 是其在时间线中的重叠，满足 `seconds = compute_s + read_s + write_s - overlap_s`。双缓冲不减少读取字节；只在明确允许的时段隐藏等待。总容量相同可能减少双缓冲的累加上下文数，故不保证它总是更快。A/B 跨请求驻留仍未启用，联合入口要求时间复用系数为 1；今后要以张量身份、遍历顺序和实际驱逐记录扩展，不能把面积阶段的平均复用系数直接套入运行时。
+
+### 当前芯片设计研究的精度边界
+
+按当前研究范围，四种累计迁移方案作为输入情景，**不设置困惑度、准确率或精度阈值筛选**，联合结果标为 `quality_status: out_of_scope`。纯精度迁移保持模型形状和 useful MAC 总量，改变逐精度 MAC 分布、native-K 请求数、尾块浪费、输入字节及运行时间。量化算法和训练如何达到所需模型质量属于外部工作，不在这里假定已经解决。
+
+转换计算仍是硬件工作，但本轮边界从预格式化 A/B 开始，因此没有额外在线量化/scale 生成时间；不能把 GEMM 时间解释成完整推理端到端时间。工作量模型输出解析与迁移账本；面积模型输出可安装的硬件；联合 DSE 才施加 SM 并发功率、端口、缓冲和调度约束。
 
 ## 接入新模型
 
@@ -95,7 +118,9 @@ Ping-pong 缓冲可以在阵列计算当前块时预取下一块。建模时应�
 
 利用率分四项报告。 `shape_utilization = useful / issued`，`k_tail_utilization` 按有效输出位置比较有用 K 与原生 K 槽位，`temporal_utilization = 发射请求数 × II / 服务周期`，`effective_utilization = useful / (峰值 MAC/cycle × 服务周期)`。完整时间需要相应的缓冲、带宽、反馈和转换成本。
 
-## 精度迁移的质量与转换成本
+## 可选的外部质量记录与转换成本
+
+以下接口保留给后续社区接入，当前联合芯片设计实验不启用质量门槛。
 
 - **模型质量作为可行性约束。** 用同一 checkpoint、量化方法、校准数据和推理协议实际运行完整累计方案，记录 PPL、任务分数及长上下文任务结果。按具体模型版本、量化器、数据集与 `plan_id` 绑定证据，再用 `max_degradation` 检查各项指标。路由和注意力的变化可能相互影响，应直接评估每个完整方案。当前 `unknown` 的方案可用于硬件收益分析，质量筛选结果只收录通过的方案。
 - **离线和在线成本分开。** 离线权重校准、量化和打包按一次部署记录时间、能耗和存储。若要报告摊到每请求的部署成本，注明摊销请求数。在线激活量化、scale 生成、重打包、上游 W4A8 权重展开和可能的 KV 重编码，按发生的算子/数据边界记录额外周期、字节和能耗。同一份转换结果被多处使用时按实际发生次数计。

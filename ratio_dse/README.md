@@ -2,7 +2,7 @@
 
 面积与部署、DeepSeek GEMM 工作量与精度迁移已提供可运行的解析模型。两者可独立运行，也可通过 `deployment_id` 联用。任务 C 已加入多核解析调度、DP 功耗代理与双视角搜索。首轮结果和验证边界见 [DeepSeek DSE 报告](results/summaries/deepseek-dse-20261113/README.md)。
 
-目标：以组合式 DP 的同工况硬件成本为依据，分析固定核心总面积与输入带宽条件下，DeepSeek V4/V4.1 的 Attention、MoE GEMM 负载与芯片算力配比的匹配关系。输出面积、计算功耗、GEMM 时间、利用率及派生能耗；支持固定硬件选择执行精度、固定负载选择硬件两种视角。模型质量代价先保留为外部参数与约束接口。
+目标：以组合式 DP 的同工况硬件成本为依据，分析固定核心总面积与输入带宽条件下，DeepSeek V4/V4.1 的 Attention、MoE GEMM 负载与芯片算力配比的匹配关系。输出面积、计算功耗、GEMM 时间、利用率及派生能耗；支持固定硬件选择执行精度、固定负载选择硬件两种视角。当前联合研究将精度方案作为输入，不加困惑度或准确率门槛；外部质量记录接口保留，但不参与选优。
 
 ## Quick start
 
@@ -11,9 +11,12 @@ Run from the repository root with Python 3.11 or later. Both models use the Pyth
 ```bash
 bash ratio_dse/run_examples.sh
 python3.11 -m unittest discover -s ratio_dse/tests -v
+bash ratio_dse/run_joint_dse.sh ratio_dse/results/my-joint-run
 ```
 
 `run_examples.sh [new-output-directory]` prints the output root. It runs both area constraints, three 256-DP SM layouts, a V4 workload-only example, a V4.1 precision comparison, and a synthetic GEMM with complete array-local timing. Each run emits JSON, CSV and a manifest with input, source and output hashes. Use `python3.11 -m ratio_dse.area_model --help` and `python3.11 -m ratio_dse.compute_model --help` for individual runs.
+
+`run_joint_dse.sh new-output-directory [config.json]` runs the [joint search](dse/README.md#joint-hardware--workload-search): fixed shape versus fixed-input-bandwidth variable shapes, four migration plans, whole-SM power allocation and same-capacity single/ping-pong buffers. Outputs include both search directions, separate power/energy/time metrics and a Pareto set. The default uses [joint_search.json](configs/dse/joint_search.json); historical runs are retained.
 
 ## 阅读与任务分配
 
